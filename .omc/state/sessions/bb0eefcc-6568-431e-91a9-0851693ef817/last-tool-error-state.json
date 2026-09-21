@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /Users/eunjukim/Desktop/workspace/chagok-app\\ntail -20 /private/tmp/claude-501/-Users-eunjukim/bb0eefcc-6568-431e-91a9-0851693ef817/tasks/bb0qx0in1.output\\necho \\\"=== jest 로컬 설치 확인 ===\\...",
+  "error": "Exit code 1\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n\nRun `npm audit` for details.\n=== react-dom 사라졌나 ===\n19.3.0\nnpm error to accept an incorrect (and potentially broken) dependency resolution.\nnpm error\nnpm error\nnpm error For a full report see:\nnpm error /Users/eunjukim/.npm/_logs/2026-09-21T08_43_10_475Z-eresolve-report.txt\nnpm error A complete log of this run can be found in: /Users/eunjukim/.npm/_logs/2026-09-21T08_43_10_475Z-debug-0.log\n=== 최종 devDe...",
+  "timestamp": "2026-09-21T08:43:19.712Z",
+  "retry_count": 1
+}
