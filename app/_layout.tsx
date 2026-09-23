@@ -12,6 +12,7 @@ export default function RootLayout() {
     >
       <Stack.Screen name="index" options={{ title: '차곡차곡' }} />
       <Stack.Screen name="goal/new" options={{ title: '새 목표', presentation: 'modal' }} />
+      <Stack.Screen name="goal/[id]" options={{ title: '목표 설정' }} />
       <Stack.Screen name="sticker/[id]" options={{ title: '기록' }} />
     </Stack>
   );
