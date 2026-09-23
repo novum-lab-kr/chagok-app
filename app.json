@@ -7,9 +7,22 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": { "bundleIdentifier": "com.eunjukim.chagok", "supportsTablet": false },
-    "android": { "package": "com.eunjukim.chagok", "edgeToEdgeEnabled": true },
-    "plugins": ["expo-router", "expo-sqlite", "expo-image-picker"],
-    "experiments": { "typedRoutes": true }
+    "ios": {
+      "bundleIdentifier": "com.eunjukim.chagok",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.eunjukim.chagok",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-image-picker",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
