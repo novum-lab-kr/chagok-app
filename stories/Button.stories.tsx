@@ -1,0 +1,13 @@
+import React from 'react';
+import { View } from 'react-native';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { fn, expect, userEvent, within } from 'storybook/test';
+import { PixelButton } from '../src/design-system';
+const meta={title:'Components/Button',component:PixelButton,args:{label:'저장하기',variant:'primary',onPress:fn()},argTypes:{variant:{control:'inline-radio',options:['primary','secondary']},icon:{control:false},style:{control:false}},parameters:{docs:{description:{component:'48px 이상 터치 영역. Primary #FD855F / Secondary #FEF1D1 / 글씨 #01241C. 눌림, 키보드 포커스, 비활성, 저장 중 상태를 확인합니다.'}}}} satisfies Meta<typeof PixelButton>;
+export default meta;
+type Story=StoryObj<typeof meta>;
+export const Primary:Story={play:async({canvasElement,args})=>{await userEvent.click(within(canvasElement).getByRole('button',{name:'저장하기'}));await expect(args.onPress).toHaveBeenCalled();}};
+export const Secondary:Story={args:{variant:'secondary',label:'건너뛰기'}};
+export const Disabled:Story={args:{disabled:true},play:async({canvasElement,args})=>{const b=within(canvasElement).getByRole('button');await expect(b).toHaveAttribute('aria-disabled','true');await userEvent.click(b);await expect(args.onPress).not.toHaveBeenCalled();}};
+export const Loading:Story={args:{loading:true}};
+export const AllStates:Story={render:()=> <View style={{gap:20,maxWidth:320}}><PixelButton label="저장하기"/><PixelButton label="건너뛰기" variant="secondary"/><PixelButton label="저장하기" disabled/><PixelButton label="저장하기" loading/></View>};

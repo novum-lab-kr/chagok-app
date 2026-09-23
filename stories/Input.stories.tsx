@@ -1,0 +1,11 @@
+import React from 'react';
+import { View } from 'react-native';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect,userEvent,within } from 'storybook/test';
+import { PixelInput } from '../src/design-system';
+const meta={title:'Components/Input',component:PixelInput,args:{label:'목표 이름',defaultValue:'책 읽기'},decorators:[Story=><View style={{maxWidth:360}}><Story/></View>]} satisfies Meta<typeof PixelInput>;
+export default meta;
+type Story=StoryObj<typeof meta>;
+export const GoalName:Story={play:async({canvasElement})=>{const input=within(canvasElement).getByRole('textbox',{name:'목표 이름'});await userEvent.clear(input);await userEvent.type(input,'Reading');await expect(input).toHaveValue('Reading');}};
+export const Empty:Story={args:{defaultValue:'',placeholder:'목표 이름'}};
+export const Memo:Story={args:{label:'메모',defaultValue:'열 페이지만 읽으려다가\n한 챕터를 다 읽었다.',multiline:true,style:{minHeight:144,textAlignVertical:'top'}}};

@@ -1,0 +1,11 @@
+@font-face {
+  font-family: NeoDunggeunmo;
+  src: url('/fonts/neodgm-1.601.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+html, body { margin: 0; }
+#storybook-root { min-height: 100vh; }
+#storybook-root, #storybook-root * { font-synthesis: none; }
+#storybook-root :focus-visible { outline: 2px dashed #06261C; outline-offset: 3px; }
