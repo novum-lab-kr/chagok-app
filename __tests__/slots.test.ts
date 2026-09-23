@@ -3,16 +3,16 @@ import type { Goal, Sticker } from '../src/domain/types';
 
 const tallyGoal: Goal = {
   id: 'g1', name: '러닝 30회', boardType: 'tally',
-  totalSlots: 30, createdAt: 0,
+  totalSlots: 30, defaultStickerId: 'sprout', createdAt: 0,
 };
 
 const calendarGoal: Goal = {
   id: 'g2', name: '매일 독서', boardType: 'calendar',
-  totalSlots: null, createdAt: 0,
+  totalSlots: null, defaultStickerId: 'sprout', createdAt: 0,
 };
 
 const sticker = (slotIndex: number, placedAt = 0): Sticker => ({
-  id: `s${slotIndex}`, goalId: 'g1', placedAt, slotIndex, stickerType: 'stamp',
+  id: `s${slotIndex}`, goalId: 'g1', placedAt, slotIndex, stickerType: 'sprout',
 });
 
 describe('buildSlots - tally', () => {

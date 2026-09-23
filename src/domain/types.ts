@@ -1,9 +1,15 @@
 export type BoardType = 'calendar' | 'tally';
 
-/** 판 하단 팔레트에 노출되는 스티커 5종. 선택은 유지된다. */
-export const STICKER_TYPES = ['stamp', 'star', 'heart', 'flower', 'dot'] as const;
+/**
+ * 붙일 수 있는 스티커 종류. src/stickers/pocket/catalog.ts가 단일 원본이며
+ * 여기 값은 그 id와 일치해야 한다.
+ *
+ * 저장소 계층은 이 유니온을 강제하지 않는다. DB에 알 수 없는 값이 들어있어도
+ * 읽기가 실패하면 안 되고, 화면에서 안전하게 대체해 렌더한다.
+ */
+export const STICKER_TYPES = ['sprout', 'cat', 'star', 'flower', 'book', 'shoe'] as const;
 export type StickerType = (typeof STICKER_TYPES)[number];
-export const STICKER_TYPE_DEFAULT: StickerType = 'stamp';
+export const STICKER_TYPE_DEFAULT: StickerType = 'sprout';
 
 export type Goal = {
   id: string;
@@ -11,8 +17,16 @@ export type Goal = {
   boardType: BoardType;
   /** tally일 때만 값, calendar는 null */
   totalSlots: number | null;
+  /**
+   * 빈칸을 눌렀을 때 붙는 스티커 (PRD 4.4/4.5).
+   * src/stickers/pocket/catalog.ts의 id를 저장한다. 목표마다 독립이다.
+   */
+  defaultStickerId: string;
   createdAt: number;
 };
+
+/** 목표가 기본 스티커 없이 만들어졌을 때의 값 */
+export const DEFAULT_STICKER_ID = 'sprout';
 
 export type Sticker = {
   id: string;

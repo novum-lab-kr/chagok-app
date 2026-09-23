@@ -1,4 +1,13 @@
 /**
+ * ⚠️ 이 파일은 현재 어떤 화면 코드도 참조하지 않는다 (2026-09-23).
+ *
+ * 종이 테마 시절의 저장용 카탈로그다. 현재 디자인 시스템과 DB 기본값은
+ * `src/stickers/pocket/catalog.ts`(6종)를 쓴다.
+ *
+ * 임의로 삭제하지 않는다. 과거 id로 저장된 데이터를 옮길 때 매핑 근거가 된다.
+ * 새 스티커는 여기가 아니라 pocket 쪽에 추가한다.
+ * 근거: docs/HANDOFF.md 5절, docs/PRD.md 5절.
+ *
  * 스티커 22종. 시안(claude.ai/artifact/L2FvWa53FDxhZLVdQVsRcx)에서 확정된 값.
  * id가 그대로 stickers.sticker_type 컬럼에 저장된다.
  */

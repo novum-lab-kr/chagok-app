@@ -60,3 +60,17 @@ export async function removeSticker(id: string): Promise<void> {
   const db = await getDb();
   await db.run('DELETE FROM stickers WHERE id = ?', id);
 }
+
+/**
+ * 누적 총계 (PRD 4.3). 그 목표에 **현재 붙어 있는** 스티커 수다.
+ * 뗀 스티커는 행이 지워지므로 자동으로 빠진다.
+ * 달력판의 월별 진행과는 다른 값이며, 같은 자리에 섞어 표시하지 않는다.
+ */
+export async function countStickers(goalId: string): Promise<number> {
+  const db = await getDb();
+  const row = await db.first<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM stickers WHERE goal_id = ?',
+    goalId,
+  );
+  return row?.n ?? 0;
+}
