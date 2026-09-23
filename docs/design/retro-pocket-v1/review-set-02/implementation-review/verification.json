@@ -1,0 +1,126 @@
+{
+  "checks": [
+    "create goal and custom count",
+    "select and persist sticker",
+    "change month and date record",
+    "place/remove sticker",
+    "upload/delete photo",
+    "save memo",
+    "tutorial next/finish/Escape and keyboard containment"
+  ],
+  "captures": [
+    {
+      "story": "tally-home",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 844
+    },
+    {
+      "story": "calendar-home",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 844
+    },
+    {
+      "story": "new-goal",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 844
+    },
+    {
+      "story": "goal-settings",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 851
+    },
+    {
+      "story": "sticker-record",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 850
+    },
+    {
+      "story": "tutorial-goal",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 844
+    },
+    {
+      "story": "tutorial-sticker",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 851
+    },
+    {
+      "story": "tutorial-place",
+      "width": 390,
+      "scrollWidth": 390,
+      "viewport": 390,
+      "height": 844
+    },
+    {
+      "story": "tally-home",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 844
+    },
+    {
+      "story": "calendar-home",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 844
+    },
+    {
+      "story": "new-goal",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 844
+    },
+    {
+      "story": "goal-settings",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 851
+    },
+    {
+      "story": "sticker-record",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 849
+    },
+    {
+      "story": "tutorial-goal",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 844
+    },
+    {
+      "story": "tutorial-sticker",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 851
+    },
+    {
+      "story": "tutorial-place",
+      "width": 320,
+      "scrollWidth": 320,
+      "viewport": 320,
+      "height": 844
+    }
+  ],
+  "errors": []
+}

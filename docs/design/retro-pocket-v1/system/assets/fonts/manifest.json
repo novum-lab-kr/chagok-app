@@ -1,0 +1,12 @@
+{
+  "neodgm-1.601.ttf": {
+    "source": "https://github.com/neodgm/neodgm/releases/download/v1.601/neodgm.ttf",
+    "sha256": "77305267996073aae07bad9313dad2e306a4128e55bfafbed4c41558fee57b4d",
+    "bytes": 651044
+  },
+  "OFL.txt": {
+    "source": "https://raw.githubusercontent.com/neodgm/neodgm/main/LICENSE.txt",
+    "sha256": "c1997f54b659ff8bbe2addf4e7f03fb823db7d1b81b043fb2633183b1fc0c2f0",
+    "bytes": 4556
+  }
+}

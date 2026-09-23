@@ -68,7 +68,7 @@ chagok-app/
 
 ---
 
-### Task 1: 프로젝트 스캐폴딩
+### Task 1: 프로젝트 스캐폴딩 ✅ 완료
 
 **Files:**
 - Create: `package.json`, `app.json`, `tsconfig.json` (create-expo-app 생성물)
@@ -210,7 +210,7 @@ git commit -m "chore: scaffold expo project with router, sqlite, theme tokens"
 
 ---
 
-### Task 2: 도메인 타입과 슬롯 배치 로직
+### Task 2: 도메인 타입과 슬롯 배치 로직 ✅ 완료
 
 판 타입 2종의 차이가 전부 이 태스크에 모인다. UI가 없으므로 순수 TDD로 진행한다.
 
@@ -422,17 +422,29 @@ git commit -m "feat: add domain types and slot layout logic for both board types
 
 ---
 
-### Task 3: DB 스키마와 클라이언트
+### Task 3: DB 드라이버 계층 ✅ 완료
+
+> **구현 중 변경됨.** 원안은 `expo-sqlite`를 리포지토리가 직접 호출하는 구조였으나,
+> `expo-sqlite`는 네이티브 모듈이라 node의 jest에서 실행되지 않는다. 리포지토리 테스트를
+> 포기하는 대신 **드라이버를 주입 가능한 인터페이스로 분리**했다. 프로덕션은 expo-sqlite,
+> 테스트는 Node 24 내장 `node:sqlite`가 같은 자리를 채워 **실제 SQL을 실행**한다.
+> 이 경계는 Plan B(클라우드 동기화)의 교체 지점으로도 그대로 쓰인다.
 
 **Files:**
+- Create: `src/db/driver.ts` — `DbDriver` 인터페이스
 - Create: `src/db/schema.ts`
+- Create: `src/db/expoDriver.ts` — 프로덕션 구현 (동적 import라 node에서 로드되지 않음)
 - Create: `src/db/client.ts`
+- Create: `__tests__/support/nodeDriver.ts` — 테스트 구현
+- Create: `__tests__/support/setup.ts` — `useFreshDb()`
 
 **Interfaces:**
 - Consumes: 없음
 - Produces:
-  - `getDb(): Promise<SQLiteDatabase>` — 싱글턴 연결, 최초 호출 시 마이그레이션 실행
-  - `resetDbForTest(): void` — 테스트에서 싱글턴 초기화
+  - `interface DbDriver { exec, run, all<T>, first<T> }`
+  - `getDb(): Promise<DbDriver>` — 싱글턴, 최초 호출 시 마이그레이션 실행
+  - `setDriverFactory(f): void` — 테스트에서 드라이버 교체
+  - `resetDbForTest(): void`
 
 - [ ] **Step 1: 스키마 작성**
 
@@ -508,7 +520,7 @@ git commit -m "feat: add sqlite schema and client with migrations"
 
 ---
 
-### Task 4: goalRepository
+### Task 4: goalRepository ✅ 완료
 
 **Files:**
 - Create: `src/repositories/goalRepository.ts`
@@ -658,7 +670,7 @@ git commit -m "feat: add goal repository with crud"
 
 ---
 
-### Task 5: stickerRepository
+### Task 5: stickerRepository ✅ 완료
 
 **Files:**
 - Create: `src/repositories/stickerRepository.ts`
@@ -667,7 +679,7 @@ git commit -m "feat: add goal repository with crud"
 **Interfaces:**
 - Consumes: `getDb()` (Task 3), `Sticker`, `STICKER_TYPE_DEFAULT` (Task 2)
 - Produces:
-  - `placeSticker(goalId: string, slotIndex: number): Promise<Sticker>`
+  - `placeSticker(goalId: string, slotIndex: number, stickerType?: StickerType): Promise<Sticker>` — 기본값 `'stamp'`
   - `listStickers(goalId: string): Promise<Sticker[]>`
   - `getSticker(id: string): Promise<Sticker | null>`
   - `removeSticker(id: string): Promise<void>`
@@ -810,7 +822,7 @@ git commit -m "feat: add sticker repository with place and remove"
 
 ---
 
-### Task 6: recordRepository
+### Task 6: recordRepository ✅ 완료
 
 기록은 선택 사항이므로, **기록이 없는 스티커도 정상**이라는 점을 테스트로 고정한다.
 
@@ -1902,4 +1914,20 @@ Plan A 완료 후 별도 계획으로 진행한다:
 - 충돌 해소 정책
 
 ---
-**Status: pending approval**
+
+## 진행 현황 (2026-09-21)
+
+| Task | 상태 | 비고 |
+|---|---|---|
+| 1 스캐폴딩 | ✅ | Expo SDK 57.0.24. react-dom을 overrides로 19.2.3 고정 |
+| 2 슬롯 로직 | ✅ | 10 tests green |
+| 3 DB 드라이버 | ✅ | 원안 수정 — 드라이버 주입 구조로 변경 |
+| 4 goalRepository | ✅ | 6 tests green |
+| 5 stickerRepository | ✅ | 6 tests green, 5종 팔레트 대응 |
+| 6 recordRepository | ✅ | 7 tests green |
+| 7—11 화면 계층 | 대기 | 스티커 디자인 확정 후 착수 |
+
+**총 29 tests green / tsc clean**
+
+---
+**Status: tasks 1-6 done, 7-11 pending design**

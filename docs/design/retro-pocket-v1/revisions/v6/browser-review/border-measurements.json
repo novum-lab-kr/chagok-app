@@ -1,0 +1,77 @@
+[
+  {
+    "name": "책 읽기, 6 / 15",
+    "box": {
+      "x": 24,
+      "y": 244,
+      "width": 141,
+      "height": 58
+    },
+    "width": 141,
+    "height": 58,
+    "top": 3,
+    "left": 3,
+    "rightIncludingShadow": 4,
+    "bottomIncludingShadow": 5
+  },
+  {
+    "name": "산책, 7 / 30",
+    "box": {
+      "x": 173,
+      "y": 244,
+      "width": 141,
+      "height": 58
+    },
+    "width": 141,
+    "height": 58,
+    "top": 3,
+    "left": 3,
+    "rightIncludingShadow": 4,
+    "bottomIncludingShadow": 5
+  },
+  {
+    "name": "목표 추가",
+    "box": {
+      "x": 322,
+      "y": 244,
+      "width": 52,
+      "height": 58
+    },
+    "width": 52,
+    "height": 58,
+    "top": 3,
+    "left": 3,
+    "rightIncludingShadow": 4,
+    "bottomIncludingShadow": 5
+  },
+  {
+    "name": "저장하기",
+    "box": {
+      "x": 24,
+      "y": 366,
+      "width": 350,
+      "height": 50
+    },
+    "width": 350,
+    "height": 50,
+    "top": 3,
+    "left": 3,
+    "rightIncludingShadow": 4,
+    "bottomIncludingShadow": 5
+  },
+  {
+    "name": "건너뛰기",
+    "box": {
+      "x": 24,
+      "y": 432,
+      "width": 350,
+      "height": 50
+    },
+    "width": 350,
+    "height": 50,
+    "top": 3,
+    "left": 3,
+    "rightIncludingShadow": 4,
+    "bottomIncludingShadow": 5
+  }
+]

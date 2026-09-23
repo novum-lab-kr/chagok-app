@@ -1,0 +1,13 @@
+{
+  "tool": "built-in image_gen",
+  "homeSource": "../revisions/v6/screens/01-home.png",
+  "generated": {
+    "02-home-calendar": "exec-e6a746c8-62a9-47c3-a34c-f41007d6a917.png",
+    "03-new-goal": "exec-487f810e-45a5-4cc7-acb0-2fa758ad67bc.png",
+    "04-goal-settings": "exec-7fbb9c03-bd62-4343-bbc5-aeeba9f5a064.png",
+    "05-sticker-record": "exec-5770ff6a-dbf9-469a-b2f0-c71438b790c1.png",
+    "06-tutorial-goal": "exec-d7118df3-f535-4be1-be6d-1ce3629e9aff.png",
+    "07-tutorial-sticker": "exec-881c786c-3911-4e91-aa12-339c1be3cff0.png",
+    "08-tutorial-place": "exec-a7e0afb3-716a-4edb-bf63-2c2780197d48.png"
+  }
+}
