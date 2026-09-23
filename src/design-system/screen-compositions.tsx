@@ -1,5 +1,5 @@
 import React,{useCallback,useRef,useState,type ReactNode} from 'react';
-import {View,Pressable,type LayoutRectangle,type ImageSourcePropType} from 'react-native';
+import {View,Pressable,PanResponder,type LayoutRectangle,type ImageSourcePropType} from 'react-native';
 import {retro} from './tokens';
 import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,GoalChip,DefaultStickerLink,StickerSlot,StickerGrid} from './components';
 import {ActionSymbol,StickerGlyph,stickerLabel,type PocketStickerId} from './sticker-glyphs';
@@ -26,19 +26,27 @@ export function GoalStickerCell({number,sticker,state,onPress}:{number:number;st
   if(sticker==='sprout'||state!=='filled')return <StickerSlot number={number} width="100%" height="100%" state={state} onPress={onPress}/>;
   return <Pressable accessibilityRole="button" accessibilityLabel={`${number}번 칸, ${stickerLabel(sticker)} 스티커`} onPress={onPress} style={{width:'100%',height:'100%'}}><PixelFrame variant="slot" style={{height:'100%'}} contentStyle={{height:'100%',alignItems:'center',justifyContent:'center'}}><StickerGlyph id={sticker} size={44}/></PixelFrame></Pressable>;
 }
-export function HomeScreen({goals,selectedId,onSelectGoal,onAdd,onSettings,onSlotPress,year,month,onMonthChange,selectedDate,onDateSelect,onTarget}:{goals:readonly PocketGoal[];selectedId:string;onSelectGoal:(id:string)=>void;onAdd:()=>void;onSettings:()=>void;onSlotPress:(number:number)=>void;year:number;month:number;onMonthChange:(year:number,month:number)=>void;selectedDate?:string;onDateSelect:(date:string)=>void;onTarget?:TargetHandler}) {
+export function HomeScreen({goals,selectedId,onSelectGoal,onAdd,onSettings,onSlotPress,year,month,onMonthChange,selectedDate,onDateSelect,onTarget,cumulative}:{goals:readonly PocketGoal[];selectedId:string;onSelectGoal:(id:string)=>void;onAdd:()=>void;onSettings:()=>void;onSlotPress:(number:number)=>void;year:number;month:number;onMonthChange:(year:number,month:number)=>void;selectedDate?:string;onDateSelect:(date:string)=>void;onTarget?:TargetHandler;/** 그 목표에 현재 붙어 있는 스티커 총수 (PRD 4.3). 월별 진행과 별개 값이다. */cumulative?:number}) {
   const root=useRef<View>(null),add=useRef<View>(null),slot=useRef<View>(null);
   const goal=goals.find(item=>item.id===selectedId)??goals[0];
   const capture=()=>{measureTarget(root.current,add.current,'add',onTarget);measureTarget(root.current,slot.current,'slot',onTarget)};
   const count=goal.kind==='tally'?goal.filled.length:Object.keys(goal.calendarRecords).filter(date=>date.startsWith(`${year}-${String(month).padStart(2,'0')}`)).length;
   const total=goal.kind==='calendar'?new Date(year,month,0).getDate():goal.total;
   const next=Array.from({length:goal.total},(_,i)=>i+1).find(n=>!goal.filled.includes(n));
+  // 달력판에서만 좌우 스와이프로 월을 넘긴다 (PRD 4.3). 적립판은 월 개념이 없다.
+  const shiftMonth=(delta:number)=>{const d=new Date(year,month-1+delta,1);onMonthChange(d.getFullYear(),d.getMonth()+1)};
+  const swipe=useRef(PanResponder.create({
+    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onPanResponderRelease:(_,g)=>{if(g.dx<=-48)shiftMonth(1);else if(g.dx>=48)shiftMonth(-1)},
+  })).current;
   return <View ref={root} onLayout={capture}><RetroScreen style={{gap:12}}>
     <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}><PixelIcon name="flower" size={44}/><PixelText variant="brand">차곡차곡</PixelText><PixelText variant="title" style={{marginLeft:'auto'}}>{month}월</PixelText></View>
     <View style={{flexDirection:'row',alignItems:'stretch',gap:8,flexWrap:'wrap'}}>{goals.map(item=><GoalChip key={item.id} label={item.name} value={item.kind==='tally'?item.filled.length:Object.keys(item.calendarRecords).length} total={item.total} selected={goal.id===item.id} onPress={()=>onSelectGoal(item.id)} style={{flexGrow:1,flexBasis:100,width:undefined}}/>)}<View ref={add} onLayout={capture}><PixelButton label="" accessibilityLabel="목표 추가" variant="secondary" minHeight={56} icon={<PixelIcon name="plus" size={20}/>} onPress={onAdd} style={{width:52}}/></View></View>
     <PixelPanel title={goal.name} action={<Pressable accessibilityRole="button" accessibilityLabel="목표 설정" onPress={onSettings} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
-      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:retro.layout.progressGridGap}}><PixelText variant="number">{count} / {total}</PixelText><GoalStickerLink sticker={goal.sticker} onPress={onSettings}/></View>
-      {goal.kind==='calendar'?<CalendarBoard year={year} month={month} records={goal.calendarRecords} selectedDate={selectedDate} onSelect={onDateSelect} onMonthChange={onMonthChange}/>:<StickerGrid>{Array.from({length:goal.total},(_,i)=>{const n=i+1;return <View key={n} ref={n===next?slot:undefined} onLayout={n===next?capture:undefined} style={{width:'100%',height:'100%'}}><GoalStickerCell number={n} sticker={goal.sticker} state={goal.filled.includes(n)?'filled':n===next?'available':'empty'} onPress={()=>onSlotPress(n)}/></View>})}</StickerGrid>}
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><PixelText variant="number">{count} / {total}</PixelText><GoalStickerLink sticker={goal.sticker} onPress={onSettings}/></View>
+      {cumulative!==undefined&&<PixelText style={{marginTop:4}}>차곡차곡 {cumulative}칸</PixelText>}
+      <View style={{height:retro.layout.progressGridGap}}/>
+      {goal.kind==='calendar'?<View {...swipe.panHandlers}><CalendarBoard year={year} month={month} records={goal.calendarRecords} selectedDate={selectedDate} onSelect={onDateSelect} onMonthChange={onMonthChange}/></View>:<StickerGrid>{Array.from({length:goal.total},(_,i)=>{const n=i+1;return <View key={n} ref={n===next?slot:undefined} onLayout={n===next?capture:undefined} style={{width:'100%',height:'100%'}}><GoalStickerCell number={n} sticker={goal.sticker} state={goal.filled.includes(n)?'filled':n===next?'available':'empty'} onPress={()=>onSlotPress(n)}/></View>})}</StickerGrid>}
     </PixelPanel>
   </RetroScreen></View>;
 }

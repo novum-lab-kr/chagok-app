@@ -1,11 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { HomeScreen, RetroScreen, PixelText, PixelButton, retro } from '../src/design-system';
+import {
+  HomeScreen, RetroScreen, PixelText, PixelButton, TutorialScreen, retro,
+} from '../src/design-system';
 import { useGoals } from '../src/app-data/useGoals';
 import { localDateKey } from '../src/app-data/pocketAdapter';
-import { placeSticker, listStickers } from '../src/repositories/stickerRepository';
+import { placeSticker, listStickers, countStickers } from '../src/repositories/stickerRepository';
+import { getFlag, setFlag } from '../src/repositories/appSettingsRepository';
 import { nextSlotIndex } from '../src/domain/slots';
 
 export default function Home() {
@@ -15,8 +18,15 @@ export default function Home() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [cumulative, setCumulative] = useState<number | undefined>(undefined);
+  /** undefined = 아직 모름. 값을 읽기 전에 튜토리얼을 띄우지 않는다. */
+  const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
 
   useFocusEffect(useCallback(() => { void reload(); }, [reload]));
+
+  useEffect(() => {
+    void (async () => setShowTutorial(!(await getFlag('tutorialDone'))))();
+  }, []);
 
   if (loading) {
     return (
@@ -25,6 +35,17 @@ export default function Home() {
           <ActivityIndicator color={retro.color.ink} />
         </View>
       </RetroScreen>
+    );
+  }
+
+  if (showTutorial) {
+    return (
+      <TutorialScreen
+        onFinish={() => {
+          setShowTutorial(false);
+          void setFlag('tutorialDone', true);
+        }}
+      />
     );
   }
 
@@ -41,6 +62,10 @@ export default function Home() {
   }
 
   const current = goals.find((g) => g.id === selectedId) ?? goals[0];
+
+  useEffect(() => {
+    void (async () => setCumulative(await countStickers(current.id)))();
+  }, [current.id, stickers.length]);
 
   /** 적립판: 다음 빈칸에만 붙는다. 칸 번호는 1부터, slotIndex는 0부터다. */
   async function onSlotPress(slotNumber: number) {
@@ -68,6 +93,7 @@ export default function Home() {
 
   return (
     <HomeScreen
+      cumulative={cumulative}
       goals={pocket}
       selectedId={current.id}
       onSelectGoal={setSelectedId}

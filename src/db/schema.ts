@@ -62,6 +62,18 @@ export const MIGRATIONS: readonly (readonly string[])[] = [
     `ALTER TABLE stickers_v2 RENAME TO stickers;`,
     `CREATE INDEX IF NOT EXISTS idx_stickers_goal ON stickers(goal_id);`,
   ],
+
+  // v3 — 앱 설정 플래그. 튜토리얼 완료/건너뛰기 상태를 담는다 (PRD 4.6).
+  //
+  // 저장 위치는 PRD에서 미확정이었다. 새 의존성 없이 기존 DB에 두어
+  // 사용자 범위로 잡았다. 동기화를 붙이면 함께 따라간다.
+  // 기기 범위로 바꿔야 하면 이 테이블을 비우고 로컬 저장소로 옮기면 된다.
+  [
+    `CREATE TABLE IF NOT EXISTS app_settings (
+       key TEXT PRIMARY KEY NOT NULL,
+       value TEXT NOT NULL
+     );`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
