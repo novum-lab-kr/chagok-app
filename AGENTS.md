@@ -19,6 +19,7 @@
 npm test                 # 도메인·저장소 (jest + ts-jest)
 npm run test:components  # 컴포넌트 (vitest)
 npm run typecheck
+npm run lint             # ESLint — react-hooks 규칙이 핵심이다
 npm run storybook        # 화면 검토
 npx expo start           # 앱 실행 — docs/DEV-SETUP.md 참고
 ```
@@ -35,3 +36,5 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 - `jest-expo` 도입 — 같은 react-dom 충돌. `jest` + `ts-jest`가 맞다
 - `src/stickers/catalog.ts` — 참조는 없지만 마이그레이션 매핑 근거다
 - `src/design-system/` 토큰·프레임·팔레트 — 사용자 승인 기준. 추가는 하되 기존 값은 바꾸지 않는다
+- `overrides` 때문에 의존성을 추가할 때는 **설치 전 `package.json`·`package-lock.json`을 백업**하고,
+  설치 후 `npm ls react-dom --all`이 `19.2.3` 하나만 내놓는지 확인한다

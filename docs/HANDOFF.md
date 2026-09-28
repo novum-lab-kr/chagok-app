@@ -137,12 +137,84 @@ Playwright 모듈은 프로젝트 의존성이 아닌 임시 설치다. 경로 �
 
 Storybook의 RN Web 번들 지시문/번들 크기 경고는 남아 있다. 과거 SVG 개발 서버 무한 로딩 수정은 유지한다: RN→RN Web alias, SVG 웹 진입점 alias, `.web.*` 우선, SVG/RN Web optimizeDeps 포함. SVG를 optimizeDeps.exclude로 돌리지 않는다. 생성 폴더는 watcher 및 TS 검사에서 제외한다.
 
+## 7-1. 화면 적응성 정비 (2026-09-23)
+
+사용성 점검에서 찾은 네 가지를 고쳤다. 디자인 토큰과 프레임 값은 건드리지 않았고 추가만 했다.
+
+| 문제 | 조치 | 위치 |
+| --- | --- | --- |
+| 스크롤 컨테이너가 없어 적립판 30칸부터 화면 밖으로 잘림 (복구 불가) | `RetroScreen`을 `ScrollView`로 감싸고 `minHeight:760` 제거 | `composition-controls.tsx` |
+| 노치·홈 인디케이터 침범 (`SafeArea` 호출 0건) | `SafeAreaProvider`를 루트에 두고 `RetroScreen`이 inset을 padding으로 적용 | `app/_layout.tsx`, `composition-controls.tsx` |
+| 네비게이터 헤더와 화면 자체 헤더가 겹쳐 제목·뒤로가기가 두 벌 | `headerShown:false`. 레트로 헤더를 남기는 쪽을 택함 | `app/_layout.tsx` |
+| 기록 화면 메모 입력창을 키보드가 가림 | `avoidKeyboard` prop → `KeyboardAvoidingView` | `screen-compositions.tsx:73` |
+| `RetroScreen`이 넓은 화면에서 좌측 정렬 | `alignItems:'center'` + `maxWidth` | `composition-controls.tsx` |
+| 측정 전 첫 프레임이 하드코딩 294로 그려져 깜빡임 | `useContentWidth(measured)` 훅으로 실제 폭 추정 | `components.tsx`, `calendar.tsx` |
+
+**`useSafeAreaInsets()`를 쓰지 않은 이유.** 그 훅은 `SafeAreaProvider`가 없으면 예외를 던진다.
+컴포넌트 테스트와 Storybook은 Provider 없이 화면을 렌더하므로 `SafeAreaInsetsContext`를
+`useContext`로 직접 읽고 `null`이면 0으로 둔다. 바꾸면 테스트가 깨진다.
+
+**래퍼에 높이가 필요하다.** `RetroScreen`은 `flex:1` + `ScrollView`라 부모에 확정된 높이가 없으면
+0으로 접혀 **화면이 통째로 비어 보인다.** 실제로 「목표 만들기」가 빈 흰 시트로 떴다.
+`HomeScreen`·`GoalEditorScreen`의 `<View ref={root}>` 래퍼와 `TutorialScreen` 루트에 `flex:1`을 줬다.
+앞으로 `RetroScreen`을 감싸는 래퍼를 새로 만들면 **반드시 높이를 이어줘야 한다.**
+
+**키보드를 내릴 방법을 넣었다.** 「칸 수 직접 입력」은 `number-pad`라 iOS에 리턴 키가 없고, 메모는
+`multiline`이라 리턴이 줄바꿈이다. 둘 다 스스로 내릴 수 없었다. 세 가지를 더했다 —
+빈 곳 탭(`Pressable`+`Keyboard.dismiss`), 드래그(iOS `interactive` / Android `on-drag`),
+단일행 입력의 리턴 키(`PixelInput`의 `returnKeyType` 기본값 `done`).
+탭 처리는 자식 `Pressable`이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
+
+**훅은 조건부 return보다 위에 모은다.** `app/index.tsx`의 누적 총계 `useEffect`가 분기 세 개
+(`loading` / `showTutorial` / `goals.length===0`) 아래에 있어 `Rendered more hooks than during the
+previous render`로 죽었다. 시뮬레이터에는 목표와 `tutorialDone` 플래그가 이미 있어 항상 끝까지
+내려가므로 재현되지 않고, **새로 설치한 실기기에서만** 터진다. 화면 코드는 이 분기 구조를 그대로
+쓰므로 훅을 추가할 때 위치를 반드시 확인한다. 이 저장소에는 ESLint가 없어 자동으로 잡히지 않는다.
+
+## 7-2. ESLint 도입과 그것이 찾아낸 것 (2026-09-28)
+
+`eslint` + `eslint-config-expo@57` (flat config, `eslint.config.js`). `npm run lint`. 현재 **0 에러 0 경고**.
+
+`react-dom` override 때문에 설치 전 `package.json`·`package-lock.json`을 백업하고 `--dry-run`으로
+확인한 뒤 설치했다. 설치 후 `npm ls react-dom --all`이 `19.2.3` 하나만 내놓는 것을 확인했다.
+eslint 계열은 `react-dom`에 의존하지 않아 실제 충돌은 없었다. 위험은 패키지가 아니라
+`npm install`이 트리를 다시 푸는 동작 쪽이다.
+
+린트가 찾아낸 **실제 버그 두 개** —
+
+1. **스와이프 월 이동이 한 번만 동작했다.** `screen-compositions.tsx`에서
+   `useRef(PanResponder.create(...)).current`가 첫 렌더의 `year`/`month`를 가둬서, 두 번째
+   스와이프부터 늘 같은 달로 갔다. `useCallback`+`useMemo`로 바꿨다 (`react-hooks/refs`).
+2. **응답 경쟁과 언마운트 후 setState.** `app/index.tsx`의 누적 총계와
+   `app/sticker/[id].tsx`의 초기 로드가 늦게 도착한 응답으로 값을 덮거나, 화면을 떠난 뒤
+   `setState`/`router.back()`을 부를 수 있었다. 둘 다 `alive` 가드를 넣었다
+   (`react-hooks/set-state-in-effect`).
+
+그 밖에 `__tests__/support/setup.ts`의 `useFreshDb`를 `withFreshDb`로 바꿨다. 훅이 아닌데
+`use` 접두사라 린트와 사람 모두를 오해시켰다. `.cjs` 빌드 스크립트에는 Node 전역을 선언했다.
+
+**vitest와 Storybook 설정이 각각 하나 늘었다.** `react-native-safe-area-context`를 `src/index.tsx`로 별칭했다.
+패키지 기본 진입점(`lib/module`)을 타면 네이티브 변형이 잡혀 RN 원본의 Flow 문법에서
+`SyntaxError: Unexpected token 'typeof'`로 죽는다. `.web.tsx` 변형이 잡히도록 하는 것이 목적이다.
+
+검증: `npm run typecheck` 통과, `npm test` 53개 통과, `npm run test:components` 11개 통과,
+`npx expo export --platform ios` 번들 성공(2.8MB).
+
+**스크롤은 렌더해서 확인했다.** Storybook을 정적 빌드하고 Playwright로 320×568(iPhone SE)에서 쟀다.
+주의할 점: Storybook 래퍼 div는 `display:block`·높이 auto라 `flex:1` 사슬이 거기서 끊긴다.
+그대로 재면 스크롤 컨테이너가 0개로 나오는데 **버그가 아니라 측정 환경 문제다.**
+조상에 높이를 주고(실제 화면 컨테이너와 같은 조건) 다시 재면 새 목표 568/738,
+기록 568/869로 스크롤이 확인된다. 재현 스크립트는 세션 스크래치패드에 있었다.
+
+---
+
 ## 8. 한계와 다음 작업 시 주의
 
 - **구현 범위는 공통 RN 컴포넌트 + Storybook 메모리 데모다.** 실제 Expo Router 화면/DB/네이티브 사진 선택기 연결은 하지 않았다. 네이티브 실기기 검수도 미수행이다.
 - 기록 사진/메모 상태는 데모용이며 실제 기록별 영속 모델이 아니다. 새로고침하면 데모 상태가 초기화된다.
 - 시안과 픽셀 단위 일치/최종 사용자 승인은 아니다. 현재 폰트·프레임 치수·공통 focus·단색 asset 때문에 남는 차이를 설명해야 한다.
-- 많은 목표, 긴 제목/메모, 키보드 노출, 네이티브 접근성, 전체 화면 높이 대응은 제품 통합 시 추가 검증한다.
+- 긴 제목/메모, 네이티브 접근성은 제품 통합 시 추가 검증한다. 스크롤·세이프에어리어·키보드·화면 폭 대응은 7-1에서 처리했으나 **실기기 검수는 아직이다.**
+- **튜토리얼 스포트라이트는 스크롤 중에 좌표가 어긋난다.** 좌표를 `onLayout`에서만 다시 재고 스크롤 이벤트는 듣지 않는다. 첫 실행 시 스크롤 0에서 뜨므로 실사용에는 문제가 없지만, 스크롤한 뒤 튜토리얼을 다시 열면 구멍이 엉뚱한 곳에 생긴다.
 - 새 세션은 이 문서와 관련 기준 이미지를 읽고 현재 브라우저부터 확인한다. 사용자 추가 요청 없이 기존 DS를 다시 재해석하지 않는다.
 - 루트 AGENTS.md에 따라 **코드 작성 전 Expo 57 버전 문서** `https://docs.expo.dev/versions/v57.0.0/`를 읽는다. 현재 Expo ~57.0.24 / RN 0.86.3 / React·React DOM 19.2.3, React DOM override 유지.
 - 커밋되지 않은 사용자/기존 작업이 많다. 일괄 reset/복원/삭제 금지. 관련 없는 `.omc`, 앱 설정, 기존 계획 등을 건드리지 않는다. 이 작업에서 커밋·푸시는 하지 않았다.
