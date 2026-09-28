@@ -1,8 +1,8 @@
 import { createGoal } from '../src/repositories/goalRepository';
 import { placeSticker, listStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
-import { useFreshDb } from './support/setup';
+import { withFreshDb } from './support/setup';
 
-useFreshDb();
+withFreshDb();
 
 async function goal() {
   return createGoal({ name: '테스트', boardType: 'tally', totalSlots: 10 });

@@ -1,6 +1,6 @@
 import React,{useState} from 'react';
 import {View,Pressable} from 'react-native';
-import {PixelButton,PixelFocusRing,PixelIcon,PixelText} from './components';
+import {PixelFocusRing,PixelIcon,PixelText,useContentWidth} from './components';
 import {retro} from './tokens';
 import {ActionSymbol,StickerGlyph,type PocketStickerId} from './sticker-glyphs';
 
@@ -20,7 +20,8 @@ export function MonthNavigation({year,month,onChange}:{year:number;month:number;
   </View>;
 }
 export function CalendarBoard({year,month,records={},selectedDate,onSelect,onMonthChange}:{year:number;month:number;records?:Record<string,PocketStickerId>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void}) {
-  const [width,setWidth]=useState(294);
+  const [measured,setWidth]=useState<number|null>(null);
+  const width=useContentWidth(measured);
   const border=retro.shape.cellBorder;
   const cellWidth=Math.max(0,Math.floor((width-border)/7));
   return <View onLayout={e=>setWidth(e.nativeEvent.layout.width)} style={{gap:16}}>

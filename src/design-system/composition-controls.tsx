@@ -1,6 +1,7 @@
-import React, {useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
-import {PixelButton,PixelFrame,PixelFocusRing,PixelInput,PixelPanel,PixelText,StickerFilters,type StickerGroup} from './components';
+import React, {useContext, useState, type ReactNode} from 'react';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
+import {PixelButton,PixelFrame,PixelFocusRing,PixelInput,PixelPanel,PixelText,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,type StickerGroup} from './components';
+import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
 import Svg,{Path} from 'react-native-svg';
 import {pixelOutline} from './geometry';
@@ -99,8 +100,34 @@ export function MemoEditor({value,onChange}:{value:string;onChange:(value:string
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
 }
-export function RetroScreen({children,style}:{children:ReactNode;style?:StyleProp<ViewStyle>}) {
-  return <View style={[{width:390,maxWidth:'100%',minHeight:760,padding:20,gap:20,backgroundColor:retro.color.screen},style]}>{children}</View>;
+const NO_INSETS={top:0,right:0,bottom:0,left:0};
+/**
+ * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
+ *
+ * `useSafeAreaInsets()`가 아니라 컨텍스트를 직접 읽는 이유: 그 훅은 `SafeAreaProvider`가 없으면
+ * 예외를 던지는데, 컴포넌트 테스트와 Storybook은 Provider 없이 화면을 렌더한다. 값이 없으면 0이다.
+ *
+ * `avoidKeyboard`는 하단에 입력창이 있는 화면(기록)만 켠다. 홈처럼 입력이 없는 화면에서 켜면
+ * 안드로이드에서 불필요한 리사이즈가 생긴다.
+ */
+export function RetroScreen({children,style,avoidKeyboard=false}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean}) {
+  const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
+  // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
+  // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
+  // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
+  const body=<ScrollView
+    style={{flex:1}}
+    contentContainerStyle={{flexGrow:1,alignItems:'center',paddingTop:insets.top,paddingBottom:insets.bottom+SCREEN_PADDING}}
+    keyboardShouldPersistTaps="handled"
+    keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
+    <Pressable accessible={false} onPress={()=>Keyboard.dismiss()}
+      style={[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20},style]}>{children}</Pressable>
+  </ScrollView>;
+  return <View style={{flex:1,backgroundColor:retro.color.screen}}>
+    {avoidKeyboard
+      ? <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>{body}</KeyboardAvoidingView>
+      : body}
+  </View>;
 }
 
 export function SelectionBadge() {

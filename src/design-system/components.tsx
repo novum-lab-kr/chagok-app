@@ -1,6 +1,6 @@
 import React, { useState, type ReactNode } from 'react';
 import {
-  View, Text, Pressable, TextInput, StyleSheet, Platform,
+  View, Text, Pressable, TextInput, StyleSheet, Platform, useWindowDimensions,
   type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -72,6 +72,7 @@ export function PixelInput({label, style, onFocus, onBlur, ...props}: TextInputP
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
     <PixelFrame variant="input" fill={c.secondary} focused={focused}>
       <TextInput {...props} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
+        returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
         style={[{minHeight:48,paddingHorizontal:12,paddingVertical:10,color:c.ink,...retro.typography.body},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
     </PixelFrame>
@@ -150,9 +151,22 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
   </View>;
 }
 
+/**
+ * 화면 콘텐츠 폭의 기준값. 이보다 넓은 기기에서는 가운데로 모은다.
+ * `RetroScreen`이 이 값으로 레이아웃하므로 측정 전 첫 프레임의 추정치도 여기서 나온다.
+ */
+export const SCREEN_MAX_WIDTH=390;
+export const SCREEN_PADDING=20;
+/** onLayout 이전 첫 프레임에 쓸 콘텐츠 폭. 실제 측정값과 같아 깜빡이지 않는다. */
+export function useContentWidth(measured:number|null) {
+  const {width}=useWindowDimensions();
+  return measured??Math.max(0,Math.min(SCREEN_MAX_WIDTH,width)-2*SCREEN_PADDING);
+}
+
 /** Shared three-column board spacing. Slots inside use width/height 100%. */
 export function StickerGrid({children}: {children:ReactNode}) {
-  const [width,setWidth]=useState(294);
+  const [measured,setWidth]=useState<number|null>(null);
+  const width=useContentWidth(measured);
   const cellWidth=Math.max(0,Math.floor((width-2*retro.layout.boardInset-2*retro.layout.boardGap)/3));
   const cellHeight=Math.round(cellWidth*64/84);
   return <View onLayout={e=>setWidth(Math.round(e.nativeEvent.layout.width))}

@@ -1,9 +1,9 @@
 import { createGoal } from '../src/repositories/goalRepository';
 import { placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord, getRecord, listRecordedStickerIds, deleteRecord } from '../src/repositories/recordRepository';
-import { useFreshDb } from './support/setup';
+import { withFreshDb } from './support/setup';
 
-useFreshDb();
+withFreshDb();
 
 async function stickerOnGoal() {
   const g = await createGoal({ name: '테스트', boardType: 'tally', totalSlots: 10 });

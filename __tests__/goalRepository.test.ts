@@ -1,9 +1,9 @@
 import {
   createGoal, listGoals, getGoal, deleteGoal, updateGoal,
 } from '../src/repositories/goalRepository';
-import { useFreshDb } from './support/setup';
+import { withFreshDb } from './support/setup';
 
-useFreshDb();
+withFreshDb();
 
 describe('goalRepository', () => {
   it('목표를 만들고 id를 부여한다', async () => {

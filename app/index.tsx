@@ -22,11 +22,29 @@ export default function Home() {
   /** undefined = 아직 모름. 값을 읽기 전에 튜토리얼을 띄우지 않는다. */
   const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
 
+  /**
+   * 훅은 조건부 return보다 위에 전부 모은다. 아래 분기들은 렌더마다 다른 경로를 타므로
+   * 훅이 하나라도 분기 아래에 있으면 호출 순서가 바뀌어 "Rendered more hooks" 오류가 난다.
+   * 목표가 없을 때는 `current`가 null이다.
+   */
+  const current = goals.find((g) => g.id === selectedId) ?? goals[0] ?? null;
+  const currentId = current?.id;
+
   useFocusEffect(useCallback(() => { void reload(); }, [reload]));
 
   useEffect(() => {
     void (async () => setShowTutorial(!(await getFlag('tutorialDone'))))();
   }, []);
+
+  useEffect(() => {
+    // 목표를 빠르게 바꾸면 이전 요청이 나중에 도착해 값을 덮을 수 있다. alive로 막는다.
+    let alive = true;
+    void (async () => {
+      const next = currentId ? await countStickers(currentId) : undefined;
+      if (alive) setCumulative(next);
+    })();
+    return () => { alive = false; };
+  }, [currentId, stickers.length]);
 
   if (loading) {
     return (
@@ -61,11 +79,8 @@ export default function Home() {
     );
   }
 
-  const current = goals.find((g) => g.id === selectedId) ?? goals[0];
-
-  useEffect(() => {
-    void (async () => setCumulative(await countStickers(current.id)))();
-  }, [current.id, stickers.length]);
+  // goals가 비어 있지 않으면 current는 항상 있다. 타입을 좁히기 위한 방어다.
+  if (!current) return null;
 
   /** 적립판: 다음 빈칸에만 붙는다. 칸 번호는 1부터, slotIndex는 0부터다. */
   async function onSlotPress(slotNumber: number) {
