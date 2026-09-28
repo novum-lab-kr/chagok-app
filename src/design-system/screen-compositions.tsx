@@ -7,7 +7,7 @@ import {RetroScreen,ScreenHeader,BoardTypePicker,SlotCountPicker,StickerSummary,
 import {CalendarBoard} from './calendar';
 import {TutorialSpotlight,type TutorialStep} from './tutorial';
 
-export interface PocketGoal {id:string;name:string;kind:BoardKind;total:number;sticker:PocketStickerId;filled:number[];calendarRecords:Record<string,PocketStickerId>}
+export interface PocketGoal {id:string;name:string;kind:BoardKind;total:number;sticker:PocketStickerId;filled:number[];calendarRecords:Record<string,PocketStickerId>;/** 칸 번호 → 실제로 붙은 스티커. 없으면 기본 스티커로 그린다. 기본 스티커를 바꿔도 이미 붙은 칸은 그대로여야 한다 (PRD 4.4). */filledStickers?:Record<number,PocketStickerId>}
 export const exampleGoals:readonly PocketGoal[]=[
   {id:'reading',name:'책 읽기',kind:'tally',total:15,sticker:'sprout',filled:[1,2,3,4,5,6],calendarRecords:{}},
   {id:'walking',name:'산책',kind:'calendar',total:30,sticker:'shoe',filled:[],calendarRecords:Object.fromEntries([2,4,7,10,14,17,20].map(day=>[`2026-09-${String(day).padStart(2,'0')}`,'shoe' as const]))},
@@ -50,7 +50,7 @@ export function HomeScreen({goals,selectedId,onSelectGoal,onAdd,onSettings,onSlo
       <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><PixelText variant="number">{count} / {total}</PixelText><GoalStickerLink sticker={goal.sticker} onPress={onSettings}/></View>
       {cumulative!==undefined&&<PixelText style={{marginTop:4}}>차곡차곡 {cumulative}칸</PixelText>}
       <View style={{height:retro.layout.progressGridGap}}/>
-      {goal.kind==='calendar'?<View {...swipe.panHandlers}><CalendarBoard year={year} month={month} records={goal.calendarRecords} selectedDate={selectedDate} onSelect={onDateSelect} onMonthChange={onMonthChange}/></View>:<StickerGrid>{Array.from({length:goal.total},(_,i)=>{const n=i+1;return <View key={n} ref={n===next?slot:undefined} onLayout={n===next?capture:undefined} style={{width:'100%',height:'100%'}}><GoalStickerCell number={n} sticker={goal.sticker} state={goal.filled.includes(n)?'filled':n===next?'available':'empty'} onPress={()=>onSlotPress(n)}/></View>})}</StickerGrid>}
+      {goal.kind==='calendar'?<View {...swipe.panHandlers}><CalendarBoard year={year} month={month} records={goal.calendarRecords} selectedDate={selectedDate} onSelect={onDateSelect} onMonthChange={onMonthChange}/></View>:<StickerGrid>{Array.from({length:goal.total},(_,i)=>{const n=i+1;return <View key={n} ref={n===next?slot:undefined} onLayout={n===next?capture:undefined} style={{width:'100%',height:'100%'}}><GoalStickerCell number={n} sticker={goal.filledStickers?.[n]??goal.sticker} state={goal.filled.includes(n)?'filled':n===next?'available':'empty'} onPress={()=>onSlotPress(n)}/></View>})}</StickerGrid>}
     </PixelPanel>
   </RetroScreen></View>;
 }
@@ -72,9 +72,9 @@ export function GoalEditorScreen({mode,initialGoal,onBack,onSubmit,onTarget}:{mo
     <PixelButton label={mode==='create'?'만들기':'저장하기'} disabled={!valid} onPress={()=>onSubmit({name:name.trim(),kind,total:kind==='calendar'?30:Number(count),sticker})}/>
   </RetroScreen></View>;
 }
-export function RecordScreen({goal,date,initialMemo='',photo,photoPreview,onChoosePhoto,onRemovePhoto,onBack,onSave,onRemoveSticker}:{goal:PocketGoal;date:string;initialMemo?:string;photo?:ImageSourcePropType;photoPreview?:ReactNode;onChoosePhoto:()=>void;onRemovePhoto:()=>void;onBack:()=>void;onSave:(memo:string)=>void;onRemoveSticker:()=>void}) {
+export function RecordScreen({goal,sticker,date,initialMemo='',photo,photoPreview,onChoosePhoto,onRemovePhoto,onBack,onSave,onRemoveSticker}:{goal:PocketGoal;/** 이 기록의 스티커. 없으면 목표의 기본 스티커 */sticker?:PocketStickerId;date:string;initialMemo?:string;photo?:ImageSourcePropType;photoPreview?:ReactNode;onChoosePhoto:()=>void;onRemovePhoto:()=>void;onBack:()=>void;onSave:(memo:string)=>void;onRemoveSticker:()=>void}) {
   const [memo,setMemo]=useState(initialMemo);
-  return <RetroScreen style={{gap:16}} avoidKeyboard><ScreenHeader title="기록" onBack={onBack} action={<PixelButton label="저장" onPress={()=>onSave(memo)}/>}/><RecordSummary goalName={goal.name} date={date} sticker={goal.sticker}/><PhotoAttachment source={photo} preview={photoPreview} onChoose={onChoosePhoto} onRemove={onRemovePhoto}/><MemoEditor value={memo} onChange={setMemo}/><TextAction label="스티커 떼기" icon={<ActionSymbol name="minus" size={20}/>} onPress={onRemoveSticker}/></RetroScreen>;
+  return <RetroScreen style={{gap:16}} avoidKeyboard><ScreenHeader title="기록" onBack={onBack} action={<PixelButton label="저장" onPress={()=>onSave(memo)}/>}/><RecordSummary goalName={goal.name} date={date} sticker={sticker??goal.sticker}/><PhotoAttachment source={photo} preview={photoPreview} onChoose={onChoosePhoto} onRemove={onRemovePhoto}/><MemoEditor value={memo} onChange={setMemo}/><TextAction label="스티커 떼기" icon={<ActionSymbol name="minus" size={20}/>} onPress={onRemoveSticker}/></RetroScreen>;
 }
 export function TutorialScreen({initialStep=1,onFinish}:{initialStep?:TutorialStep;onFinish?:()=>void}) {
   const [step,setStep]=useState<TutorialStep>(initialStep),[done,setDone]=useState(false);

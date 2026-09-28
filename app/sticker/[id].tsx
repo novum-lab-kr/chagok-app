@@ -3,16 +3,17 @@ import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { RecordScreen, RetroScreen, PixelText } from '../../src/design-system';
-import type { PocketGoal } from '../../src/design-system';
+import type { PocketGoal, PocketStickerId } from '../../src/design-system';
 import { getSticker, listStickers, removeSticker } from '../../src/repositories/stickerRepository';
 import { getGoal } from '../../src/repositories/goalRepository';
 import { getRecord, upsertRecord } from '../../src/repositories/recordRepository';
-import { toPocketGoal, localDateKey } from '../../src/app-data/pocketAdapter';
+import { toPocketGoal, localDateKey, safeStickerId } from '../../src/app-data/pocketAdapter';
 
 export default function StickerRecord() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [goal, setGoal] = useState<PocketGoal | null>(null);
+  const [stickerType, setStickerType] = useState<PocketStickerId | undefined>(undefined);
   const [date, setDate] = useState('');
   const [memo, setMemo] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -32,6 +33,7 @@ export default function StickerRecord() {
       const record = await getRecord(id);
       if (!alive) return;
       setGoal(toPocketGoal(g, siblings));
+      setStickerType(safeStickerId(sticker.stickerType));
       setDate(localDateKey(sticker.placedAt));
       setMemo(record?.memo ?? '');
       setPhotoUri(record?.photoUri ?? null);
@@ -75,7 +77,17 @@ export default function StickerRecord() {
       {
         text: '뗄게요',
         style: 'destructive',
-        onPress: () => { void (async () => { await removeSticker(id); router.back(); })(); },
+        onPress: () => {
+          void (async () => {
+            try {
+              await removeSticker(id);
+            } catch {
+              Alert.alert('스티커를 떼지 못했어요', '잠시 후 다시 시도해주세요.');
+              return;
+            }
+            router.back();
+          })();
+        },
       },
     ]);
   }
@@ -83,6 +95,7 @@ export default function StickerRecord() {
   return (
     <RecordScreen
       goal={goal}
+      sticker={stickerType}
       date={date}
       initialMemo={memo}
       photo={photoUri ? { uri: photoUri } : undefined}

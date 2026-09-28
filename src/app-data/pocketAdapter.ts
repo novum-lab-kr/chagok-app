@@ -38,6 +38,11 @@ export function toPocketGoal(goal: Goal, stickers: readonly Sticker[]): PocketGo
     ? mine.map((s) => s.slotIndex + 1).sort((a, b) => a - b)
     : [];
 
+  const filledStickers: Record<number, PocketStickerId> = {};
+  if (goal.boardType === 'tally') {
+    for (const s of mine) filledStickers[s.slotIndex + 1] = safeStickerId(s.stickerType);
+  }
+
   const calendarRecords: Record<string, PocketStickerId> = {};
   if (goal.boardType === 'calendar') {
     for (const s of mine) {
@@ -52,6 +57,7 @@ export function toPocketGoal(goal: Goal, stickers: readonly Sticker[]): PocketGo
     total: goal.totalSlots ?? 0,
     sticker: safeStickerId(goal.defaultStickerId),
     filled,
+    filledStickers,
     calendarRecords,
   };
 }
