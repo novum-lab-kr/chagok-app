@@ -1,12 +1,13 @@
-import React, { useState, type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import {
-  View, Text, Pressable, TextInput, StyleSheet, Platform, useWindowDimensions,
+  View, Text, Pressable, TextInput, StyleSheet, Platform, Modal, AccessibilityInfo, useWindowDimensions,
   type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { retro, type TextVariant } from './tokens';
 import { pixelOutline, progressRatio } from './geometry';
 import { sproutPath, sproutViewBox } from './assets/sprout';
+import { StickerGlyph, type PocketStickerId } from './sticker-glyphs';
 import { gearPath, gearViewBox } from './assets/gear';
 
 const c = retro.color;
@@ -46,6 +47,33 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
   </View>;
 }
 
+/** 기기의 모션 감소 설정. 켜져 있으면 반복 모션을 멈춘다 (PRD 6.1). */
+function useReducedMotion() {
+  const [reduced,setReduced] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(value => { if (alive) setReduced(value); }).catch(() => {});
+    // RN Web은 구독 객체를 돌려주지 않는다.
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced) as { remove?: () => void } | undefined;
+    return () => { alive = false; subscription?.remove?.(); };
+  }, []);
+  return reduced;
+}
+/** 픽셀 로딩 점 세 개. 진한 점이 왼쪽에서 오른쪽으로 옮겨 가며, 모션 감소 설정이면 가운데 점에 멈춘다. 의미는 호스트가 접근성 이름으로 전달한다. */
+export function PixelLoadingDots({ size = 12, gap = 6 }: { size?: number; gap?: number }) {
+  const reduced = useReducedMotion();
+  const [active,setActive] = useState(0);
+  useEffect(() => {
+    if (reduced) return;
+    const timer = setInterval(() => setActive(index => (index + 1) % 3), 250);
+    return () => clearInterval(timer);
+  }, [reduced]);
+  const current = reduced ? 1 : active;
+  return <View accessible={false} style={{ flexDirection: 'row', gap }}>
+    {[0, 1, 2].map(i => <View key={i} style={{ width: size, height: size, backgroundColor: c.ink, opacity: i === current ? 1 : 0.45 }}/>)}
+  </View>;
+}
+
 export function PixelButton({ label, variant = 'primary', disabled = false, loading = false, onPress, icon, accessibilityLabel, style, minHeight = retro.layout.controlHeight }:
   { label: string; variant?: 'primary' | 'secondary'; disabled?: boolean; loading?: boolean; onPress?: () => void; icon?: ReactNode; accessibilityLabel?: string; style?: StyleProp<ViewStyle>; minHeight?: number }) {
   const [focused,setFocused] = useState(false);
@@ -55,7 +83,9 @@ export function PixelButton({ label, variant = 'primary', disabled = false, load
     onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={[{opacity: disabled ? retro.opacity.disabled : 1}, style]}>
     {({pressed}) => <PixelFrame variant="button" fill={variant === 'primary' ? c.primary : c.secondary} pressed={pressed} focused={focused}
       contentStyle={{ minHeight, paddingHorizontal: label ? 16 : 8, paddingVertical: 10, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-      {icon}{(label || loading) && <PixelText variant="button" style={{color:c.buttonText}}>{loading ? '저장 중' : label}</PixelText>}
+      {/* 저장 중에는 원래 내용을 투명하게 남겨 버튼 폭을 유지하고, 그 위에 로딩 점을 겹친다. */}
+      {icon && <View style={{opacity: loading ? 0 : 1}}>{icon}</View>}{label !== '' && <PixelText variant="button" style={{color:c.buttonText, opacity: loading ? 0 : 1}}>{label}</PixelText>}
+      {loading && <View pointerEvents="none" style={[StyleSheet.absoluteFill, {alignItems:'center', justifyContent:'center'}]}><PixelLoadingDots size={8} gap={4}/></View>}
     </PixelFrame>}
   </Pressable>;
 }
@@ -67,6 +97,10 @@ export function PixelPanel({ children, title, action, style }: {children: ReactN
   </PixelFrame>;
 }
 
+/** 네이티브 한 줄 입력에 lineHeight를 주면 iOS는 입력 글자를 줄 상자 아래로 붙인다. 가운데 정렬로 대신한다. */
+const singleLineText = Platform.OS === 'web'
+  ? retro.typography.body
+  : { fontSize: retro.typography.body.fontSize, textAlignVertical: 'center' as const, includeFontPadding: false };
 export function PixelInput({label, style, onFocus, onBlur, ...props}: TextInputProps & {label: string}) {
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
@@ -74,7 +108,7 @@ export function PixelInput({label, style, onFocus, onBlur, ...props}: TextInputP
       <TextInput {...props} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
         returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
-        style={[{minHeight:48,paddingHorizontal:12,paddingVertical:10,color:c.ink,...retro.typography.body},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
+        style={[{minHeight:48,paddingHorizontal:12,paddingVertical:Platform.OS==='web'?10:0,color:c.ink,...(props.multiline?retro.typography.body:singleLineText)},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
     </PixelFrame>
   </View>;
 }
@@ -175,13 +209,16 @@ export function StickerGrid({children}: {children:ReactNode}) {
   </View>;
 }
 
-export function StickerSlot({number,state='empty',onPress,width=84,height=64}: {number:number;state?:'empty'|'available'|'filled';onPress?:()=>void;width?:DimensionValue;height?:DimensionValue}) {
+/** 붙인 칸의 기록 열기를 스크린리더에서도 쓸 수 있게 하는 접근성 동작 (두 번 누르기·꾹 누르기 대체). */
+export const openRecordAction={name:'longpress',label:'기록 열기'} as const;
+export function StickerSlot({number,state='empty',onPress,onLongPress,width=84,height=64,enabled=state!=='empty'}: {number:number;state?:'empty'|'available'|'filled';onPress?:()=>void;/** 붙인 칸을 꾹 눌렀을 때 (기록 열기) */onLongPress?:()=>void;width?:DimensionValue;height?:DimensionValue;enabled?:boolean}) {
   const [focused,setFocused]=useState(false);
   const [slotSize,setSlotSize]=useState({width:84,height:64});
   const sh=slotSize.height;
-  return <Pressable onLayout={e=>setSlotSize(e.nativeEvent.layout)} disabled={state==='empty'} onPress={onPress} accessibilityRole="button"
-    accessibilityLabel={`${number}번 칸, ${state==='filled'?'새싹이 스티커':state==='available'?'붙일 수 있음':'빈칸'}`}
-    accessibilityState={{disabled:state==='empty'}} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} style={{width,height}}>
+  return <Pressable onLayout={e=>setSlotSize(e.nativeEvent.layout)} disabled={!enabled} onPress={onPress} onLongPress={onLongPress}
+    accessibilityActions={onLongPress?[openRecordAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===openRecordAction.name)onLongPress?.()}} accessibilityRole="button"
+    accessibilityLabel={`${number}번 칸, ${state==='filled'?'새싹이 스티커':enabled?'붙일 수 있음':'빈칸'}`}
+    accessibilityState={{disabled:!enabled}} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} style={{width,height}}>
     <PixelFrame variant={state==='available'?'selection':'slot'} style={{height:'100%'}} focused={focused} contentStyle={{height:'100%',padding:0,paddingBottom:state==='filled'?retro.layout.stickerBottomInset:0,alignItems:'center',justifyContent:state==='filled'?'flex-end':'center'}}>
       {state==='filled'?<SproutSticker size={Math.max(0, Math.min(retro.layout.stickerSize, sh-retro.layout.stickerBottomInset-6))}/>:<PixelText variant="slotNumber">{number}</PixelText>}
     </PixelFrame>
@@ -200,16 +237,62 @@ export function PixelIcon({name,size=24}: {name:'plus'|'chevron'|'gear'|'flower'
   return <Svg width={size} height={size} viewBox={name==='flower'?'0 0 18 26':name==='gear'?gearViewBox:'0 0 16 16'} {...decorativeSvg}><Path d={paths[name]} fill={c.ink} fillRule="evenodd"/>{name==='flower' && <><Path d="M7 2H11V4H12V7H15V6H16V10H12V12H11V14H7V12H6V10H2V6H5V7H6V4H7Z" fill={c.secondary}/><Path d="M7 6H11V7H12V10H11V11H7V10H6V7H7Z" fill={c.ink}/><Path d="M8 7H10V10H8Z" fill={c.lcd}/></>}</Svg>;
 }
 
-/** Dialog surface; the host owns modal focus, dismissal and the scrim. */
-export function PixelDialog({step,title,description,primaryLabel='다음',secondaryLabel='건너뛰기',onPrimary,onSecondary}:
-  {step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void}) {
-  return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:360}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
-    {step && <PixelText>{step}</PixelText>}
-    <View style={{height:2,backgroundColor:c.ink}}/>
-    <PixelText variant="title">{title}</PixelText><PixelText>{description}</PixelText>
+type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;onPrimary?:()=>void;onSecondary?:()=>void};
+function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,onPrimary,onSecondary}:DialogContentProps) {
+  return <><PixelText variant="title" style={centerText?{textAlign:'center'}:undefined}>{title}</PixelText><PixelText style={centerText?{textAlign:'center'}:undefined}>{description}</PixelText>
     <View style={{flexDirection:'row',gap:12}}>
       <PixelButton label={secondaryLabel} variant="secondary" onPress={onSecondary} style={{flex:1}}/>
       <PixelButton label={primaryLabel} onPress={onPrimary} style={{flex:1}}/>
-    </View>
+    </View></>;
+}
+
+/** Shared dialog surface. The host positions tutorial near its target and basic at screen center. */
+export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary}:
+  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void}) {
+  return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:360}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
+    {variant==='tutorial'&&<>{step&&<PixelText>{step}</PixelText>}<View style={{height:2,backgroundColor:c.ink}}/></>}
+    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'건너뛰기':'취소')} onPrimary={onPrimary} onSecondary={onSecondary}/>
   </PixelFrame>;
+}
+
+/** 일반 화면용 확인 호스트. `basic` 다이얼로그를 화면 중앙에 두고 배경을 막는다. Android 뒤로가기는 onRequestClose로 닫는다. */
+export function PixelDialogModal({visible,onRequestClose,...dialog}:{visible:boolean;onRequestClose:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void}) {
+  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} statusBarTranslucent>
+    <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:SCREEN_PADDING}}>
+      <View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.scrim}]}/>
+      <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH-2*SCREEN_PADDING,alignItems:'center'}}><PixelDialog variant="basic" {...dialog}/></View>
+    </View>
+  </Modal>;
+}
+
+/** 배지 색 조합. 새 배지는 여기에 tone을 **추가**한다. 기존 조합은 바꾸지 않는다. */
+export const badgeTones={
+  /** 판 종류(적립판·달력판) */
+  ink:{fill:c.ink,text:c.lcd},
+  /** 완성 */
+  primary:{fill:c.primary,text:c.buttonText},
+} as const;
+export type BadgeTone=keyof typeof badgeTones;
+/** 짧은 글자 배지. 선택 프레임과 같은 계단 모서리를 쓰고 글씨는 `badge` 토큰이다. */
+export function PixelBadge({label,tone='ink',large=false}:{label:string;tone?:BadgeTone;/** 제목 글씨로 크게 (완성 스티커) */large?:boolean}) {
+  const colors=badgeTones[tone];
+  return <PixelFrame variant="selection" fill={colors.fill} contentStyle={{paddingHorizontal:large?8:6,paddingVertical:large?2:1}}>
+    <PixelText variant={large?'title':'badge'} style={[{color:colors.text},large?{fontSize:18,lineHeight:24}:undefined]}>{label}</PixelText>
+  </PixelFrame>;
+}
+/** 판이 100%가 되면 붙는 완성 스티커: 그 판의 기본 스티커 + 「완성」 배지. */
+export function CompletionSticker({sticker,size=36,tilted=false}:{sticker:PocketStickerId;size?:number;/** 스티커를 붙인 듯 비스듬히 (완성한 판 설정) */tilted?:boolean}) {
+  return <View accessible accessibilityLabel="완성" style={{flexDirection:'row',alignItems:'center',gap:4,transform:tilted?[{rotate:'-10deg'}]:undefined}}>
+    <StickerGlyph id={sticker} size={size}/><PixelBadge label="완성" tone="primary" large/>
+  </View>;
+}
+/** 작은 채움 탭. 선택한 탭은 잉크로 채우고 LCD 글씨를 쓴다 (`StickerFilters`와 같은 표현). */
+export function PixelTabs<K extends string>({items,value,onChange}:{items:readonly {key:K;label:string}[];value:K;onChange:(key:K)=>void}) {
+  return <View accessibilityRole="tablist" style={{flexDirection:'row',alignItems:'center',gap:4}}>
+    {items.map(item=>{const selected=item.key===value;return <Pressable key={item.key} accessibilityRole="tab" accessibilityState={{selected}} aria-selected={selected} onPress={()=>onChange(item.key)}>
+      <PixelFrame variant="selection" fill={selected?c.ink:'transparent'} contentStyle={{minHeight:retro.layout.touch,paddingHorizontal:8,alignItems:'center',justifyContent:'center'}}>
+        <PixelText style={{fontSize:17,lineHeight:24,color:selected?c.lcd:c.buttonText}}>{item.label}</PixelText>
+      </PixelFrame>
+    </Pressable>;})}
+  </View>;
 }

@@ -18,7 +18,7 @@ export const retro = {
   typography: Object.fromEntries(Object.entries(source.type).map(([name, value]) => [name, {
     fontSize: value.size.$value.value,
     lineHeight: value.lineHeight.$value.value,
-  }])) as Record<'brand' | 'title' | 'body' | 'label' | 'button' | 'number' | 'slotNumber', {fontSize: number; lineHeight: number}>,
+  }])) as Record<'brand' | 'title' | 'body' | 'label' | 'button' | 'number' | 'slotNumber' | 'caption' | 'badge', {fontSize: number; lineHeight: number}>,
   space: Object.fromEntries(Object.entries(source.space).map(([key, value]) => [key, value.$value.value])) as Record<string, number>,
   shape: {
     unit: source.shape.pixelUnit.$value.value,
