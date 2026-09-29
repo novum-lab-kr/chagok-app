@@ -1,6 +1,6 @@
 # 차곡차곡 디자인 시스템
 
-형태 1.2.0 · 컬러 1.1.0 · Neo둥근모 v1.601 · 공통 컴포넌트 검토 단계
+형태 1.3.0 · 컬러 1.1.0 · Neo둥근모 v1.601 · 공통 컴포넌트 검토 단계
 
 ## Storybook
 
@@ -15,7 +15,9 @@ npm run storybook
 
 왼쪽 목록의 Foundations에서 컬러·글씨·프레임·새싹을 비교하고, Components에서 개별 상태를 확인한다. Text의 Controls에서 한글 문구와 글씨 역할을 바꿀 수 있다. 버튼은 누르거나 Tab으로 포커스하고, 입력창은 직접 입력하며, 필터와 목표 칩은 선택을 바꿀 수 있다. 붙이기 데모는 칸을 눌러 상태를 전환한다. 데모 상태는 저장하지 않는다.
 
-32개 스토리: Reference Match 2개, Overview 2개, Foundations 4개, Button 5개, Text 4개, Input 3개, Goal chip 4개, Stickers 5개, Dialog 3개. Docs는 별도로 자동 생성된다. 브라우저 외곽 Storybook 메뉴는 도구 UI이며 앱 폰트 규칙 적용 대상이 아니다.
+`Components / Dialog`에서 튜토리얼용 스토리 3개와 [일반 화면용 기본형 시안](design/retro-pocket-v1/basic-dialog-review/README.md) 1개를 확인할 수 있다. Docs는 별도로 자동 생성된다. 브라우저 외곽 Storybook 메뉴는 도구 UI이며 앱 폰트 규칙 적용 대상이 아니다.
+
+[PRD 시안에서 보강한 공통 컴포넌트](design/retro-pocket-v1/component-additions-review/README.md)는 사진 프레임의 세 상태, 기록 표식 칸, 설정 목록 행, 짧은 알림과 로딩 표시로 나눠 확인할 수 있다.
 
 정적 배포 파일은 `npm run build-storybook`으로 `storybook-static/`에 생성한다. `file://`로 열지 말고 HTTP 정적 서버에서 제공해야 한다. 개발 서버는 로컬 주소에만 바인딩한다.
 
@@ -43,6 +45,7 @@ npm run storybook
 - SHA-256: `77305267996073aae07bad9313dad2e306a4128e55bfafbed4c41558fee57b4d`.
 - SIL OFL 1.1: 동일 assets 폴더의 `OFL.txt`.
 - 브랜드 32/40, 제목·진행 숫자 24/32, 본문·버튼·필터·입력 16/24.
+- 1.3.0 추가: 보조 글씨 `caption` 14/20(목록 요약, 안내 문장), 배지 `badge` 12/18. 기존 값은 그대로다.
 - 합성 bold, 외곽선, 글자 가로 늘리기는 사용하지 않는다. 글자 확대 접근성은 유지한다.
 - Storybook은 로컬 파일을 `@font-face`로 등록하고 로딩 후 스토리를 표시한다.
 - Native는 `RetroFontProvider`의 expo-font로 동일 파일을 로드한 후 children을 표시한다. 로딩 오류는 숨기지 않는다.
@@ -56,7 +59,7 @@ npm run storybook
 | PixelText | 모든 앱 글씨 역할, 한글·영문·숫자 |
 | PixelFrame | 정수 좌표 SVG 계단형 프레임; panel/button/input/dialog/slot |
 | PixelPanel | LCD 겹테두리와 선택적 제목 |
-| PixelButton | primary/secondary, 눌림, 포커스, disabled, loading |
+| PixelButton | primary/secondary, 눌림, 포커스, disabled, loading. loading은 원래 글자를 투명하게 남겨 폭을 유지하고 그 위에 움직이는 로딩 점을 겹친다. 접근성 이름은 `저장 중` |
 | PixelInput | Neo둥근모 입력·메모, 라벨, 포커스 |
 | ProgressBar | 진행 비율과 접근성 값 |
 | GoalChip | 이름+진행 막대, 선택 상태 |
@@ -64,9 +67,24 @@ npm run storybook
 | SproutSticker | 스티커 라이브러리의 56×56 새싹 경로, 투명 얼굴 |
 | DefaultStickerLink | 새싹+기본 스티커+화살표 |
 | StickerSlot | 빈칸/붙일 수 있음/붙임 |
-| PixelDialog | 진행·제목·한 문장·두 버튼으로 된 표면 |
+| PixelDialog | `tutorial`은 단계 숫자·구분선과 왼쪽 정렬 텍스트를, `basic`은 숫자·구분선 없는 중앙 정렬 텍스트를 사용. 제목·설명·버튼 스타일은 동일 |
+| GoalStickerCell | 붙인 칸의 사진·메모 기록 표식 B안. 비어 있거나 기록이 없으면 표식 없음 |
+| PhotoAttachment | 사진 프레임 안 추가 버튼과 첨부 사진 오른쪽 위 삭제 버튼 (`actionsInFrame`) |
+| SettingRow | 앱 설정·약관의 이동 행, 값 표시, 비활성 상태 |
+| ShortNotice / PixelLoadingIndicator | 백업·저장 알림 표면과 복원·로그아웃 로딩 표시. 로딩 점(`PixelLoadingDots`)은 진한 점이 250ms마다 오른쪽으로 옮겨 가고, 기기의 모션 감소 설정이면 가운데 점에 멈춘다 |
+| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
+| PixelBadge | 짧은 글자 배지. `tone`: `ink`(판 종류), `primary`(완성). `badge` 글씨 |
+| PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |
+| CompletionSticker | 판의 기본 스티커 + `primary` 「완성」 배지. `tilted`는 붙인 듯 비스듬히 |
+| AppHeader / GoalListHeader | 앱 최상단(꽃·차곡차곡·앱 설정) / 목록 탭 `내 목표 n · 완성한 판 n` + 오른쪽 끝 `+` |
+| GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대 |
+| BoardProgressRow | 판 상세 `n / nn [여백] m% 달성중`, 완성하면 완성 스티커 |
+| EmptyState | 목록이 비었을 때의 안내 상자 |
+| OptionButtons | 둘 이상 중 하나를 고르는 버튼 줄 |
+| EndDatePicker / PeriodField | 종료일 고르기(앞선 날짜 비활성) / 달력판 기간(시작일 고정, 종료일 정하기·바꾸기·지우기) |
+| DeleteSection | 화면 맨 아래 구분선 + [삭제하기] + 안내 |
 
-다이얼로그는 **표면 컴포넌트**다. 실제 Modal 호스트의 포커스 관리·배경 차단·Escape/뒤로가기 등은 화면 통합 단계에서 구현한다. 데모의 붙인 칸 재클릭은 데모 리셋이며 제품의 스티커 삭제 정책을 정의하지 않는다. 새싹 픽셀 원본은 공통화한 초안으로, 이미지 시안과 픽셀 단위 일치를 확정한 자산이 아니다.
+다이얼로그는 **표면 컴포넌트**다. 일반 화면용 호스트는 `PixelDialog variant="basic"`을 화면의 가로·세로 중앙에 놓는다. 실제 Modal 호스트의 포커스 관리·배경 차단·Escape/뒤로가기 등은 화면 통합 단계에서 구현한다. 데모의 붙인 칸 재클릭은 데모 리셋이며 제품의 스티커 삭제 정책을 정의하지 않는다. 새싹 픽셀 원본은 공통화한 초안으로, 이미지 시안과 픽셀 단위 일치를 확정한 자산이 아니다.
 
 ## 앱에서 사용
 
@@ -141,3 +159,25 @@ npm run check:storybook
 2026-09-23: 스티커 자산 소유 위치는 `src/stickers/pocket/`로 분리했다. `catalog.ts`에서 6종과 메타데이터를 관리하며 `StickerGlyph`가 현재 디자인 시스템의 ink를 전달한다. 새싹 경로는 그대로 유지했다. 추가 5종은 review-set-02 설정 시안 윤곽을 추출했고 꽃은 헤더용 `PixelIcon`과 다른 자산이다. [확장 방법](../src/stickers/pocket/README.md), [시안 비교](design/retro-pocket-v1/review-set-02/asset-review/README.md).
 
 `StickerGrid`가 3열 배치와 여백을 관리한다. 자식 `StickerSlot`에는 width/height를 `100%`로 전달한다. `retro.layout`에 boardInset6, boardGap15, boardRowGap10, stickerSize54, stickerBottomInset2, progressGridGap2, stickerPreviewSize32를 정의했다. 칸의 새싹은 아래 정렬하며, 숫자는 slotNumber28/32를 사용한다.
+
+## 홈 목록·판 상세 컴포넌트 (2026-09-29)
+
+[PRD](PRD.md) 4.1–4.7의 2026-09-29 결정을 그린 시안(`Screens / Home structure · proposals`)에서 공통 부분을 추출했다. 개별 상태는 Storybook `Components / Goal list & board`에서 본다. 시안 화면도 이 컴포넌트로 다시 조립했고, 기존 캡처와 같은지 대조했다.
+
+**배지 색을 늘리는 방법.** `badgeTones`(`components.tsx`)에 tone을 **추가**한다. `fill`과 `text` 두 색을 토큰에서 고른다. 기존 `ink`·`primary` 조합은 바꾸지 않는다. 지금은 시안에 있는 두 가지만 있다.
+
+**판 조작 (PRD 4.5).** 빈칸 한 번 누르기 = 붙이기, 붙인 칸 한 번 누르기 = 떼기, 붙인 칸 두 번 누르기·꾹 누르기 = 기록 열기. `GoalStickerCell`과 `CalendarBoard`에 `onOpenRecord`를 주면 이 구분이 켜지고, 주지 않으면 지금처럼 누르는 즉시 `onPress`/`onSelect`가 불린다. 두 번 누르기를 가르기 위해 한 번 누르기는 250ms(`DOUBLE_PRESS_MS`, `gestures.ts`) 뒤에 실행된다. 스크린리더에는 같은 칸에 `기록 열기` 접근성 동작(`openRecordAction`)을 붙인다.
+
+**기존 컴포넌트에 추가한 선택 props.** 넘기지 않으면 기존 동작·모양과 같다.
+
+| 컴포넌트 | 추가 props |
+| --- | --- |
+| `StickerSlot` | `onLongPress` |
+| `GoalStickerCell` | `onOpenRecord`, `readonly` (완성한 판: 붙이기·떼기 막고 기록 열기만) |
+| `CalendarBoard` | `isDateEnabled`, `canGoPrev`, `canGoNext` (기간 밖 날짜·달), `onOpenRecord`, `readonly` |
+| `RecordScreen` · `PhotoAttachment` · `MemoEditor` | `readonly` (저장·사진 바꾸기·떼기 숨김, 메모 읽기 전용) |
+| `ShortNotice` | `emphasis` (제목을 크게, 화면 맨 위 안내) |
+| `TutorialSpotlight` | `content` (첫 실행 1–3단계 밖 문구) |
+
+**아직 디자인 시스템에 넣지 않은 것.** 화면 조합(목록 화면, 판 상세 화면, 완성한 판 설정, 종료일 늘리기)과 `GoalEditorScreen`의 새 배치(이름 → 기본 스티커 → 기간 → [삭제하기]), 5단계 `TutorialScreen`은 앱 화면을 옮길 때 함께 바꾼다. 지금 앱이 기존 `HomeScreen`·`GoalEditorScreen`·`TutorialScreen`을 그대로 쓰기 때문이다. `GoalChip`, `HomeScreen`, `DefaultStickerLink`는 새 구조에서 쓰지 않게 되지만 앱을 옮기기 전까지 남긴다.
+
