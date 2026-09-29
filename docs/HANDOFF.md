@@ -10,7 +10,8 @@
 - 스티커는 앞으로 계속 추가된다. 화면 코드와 분리해 자산·메타데이터를 관리한다 (5절).
 - 판 종류 선택은 사용자가 첨부한 [상세 시안](design/retro-pocket-v1/review-set-02/references/board-type-detail-user.png)이 기존 03-new-goal 이미지보다 우선한다.
 - 확대 화면만 보고 완료 처리하지 않는다. Playwright로 **100% 배율, DPR 1, 390px와 320px**에서 실제 렌더링을 확인한다.
-- 테스트 통과, 토큰 버전 `1.3.0`, 문서의 baseline 표기를 사용자 디자인 승인으로 해석하지 않는다. 폰트 차이도 해결됐다고 말하지 않는다.
+- **Storybook 확정 (2026-09-29).** 현재 Storybook(`Screens / Home structure · proposals`, `Components / Goal list & board` 포함)을 앱 전환의 기준으로 확정했다. 새 기능이 생기면 그때 보완한다. 안 쓰게 된 부분과 버그는 별도로 고친다 (9절 끝).
+- 테스트 통과, 토큰 버전, 문서의 baseline 표기만으로 사용자 승인을 추정하지 않는다. 폰트 차이도 해결됐다고 말하지 않는다.
 - 디자인 시스템을 사용자 요청 없이 다시 해석하거나 바꾸지 않는다. 앱 연결 작업은 기존 컴포넌트에 선택(optional) prop을 더하는 방식으로 한다.
 
 ## 2. 시각 기준
@@ -97,7 +98,8 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 ```
 
 - 실행 중인 Storybook·Metro를 임의로 종료하지 않는다. 포트와 프로세스는 세션마다 다시 확인한다.
-- 시안 캡처는 `scripts/review-*.mjs` 패턴을 따른다(Storybook `index.json`에서 스토리를 찾아 390·320px로 찍고 렌더 오류·가로 넘침을 기록).
+- 시안 캡처는 `scripts/review-*.mjs` 패턴을 따른다(Storybook `index.json`에서 스토리를 찾아 390·320px로 찍고 렌더 오류·가로 넘침을 기록). 제목에 `·`가 든 스토리 ID는 URL 인코딩해서 연다.
+- Docs 페이지의 반복 렌더링은 3초 동안의 DOM 변경 수(MutationObserver)와 스크롤 위치로 확인한다. 정상이면 0, 0이다.
 - Playwright 모듈은 프로젝트 의존성이 아니라 임시 설치다. 경로를 확인한다. `MachPortRendezvousServer Permission denied`가 나오면 우회하지 말고 Chromium 실행 권한을 요청한다.
 - Android 확인은 이 저장소 전용 에뮬레이터 `Chagok_Pixel_7`(포트 5556)을 쓴다. `Pixel_7`은 다른 프로젝트와 함께 쓴다.
 
@@ -113,6 +115,9 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 - Storybook·vitest는 `react-native-safe-area-context`를 `src/index.tsx`로 별칭한다. 기본 진입점을 타면 RN Flow 문법에서 죽는다. SVG를 `optimizeDeps.exclude`로 돌리지 않는다.
 - Storybook 래퍼 div는 높이가 auto라 `flex:1` 사슬이 끊긴다. 스크롤을 잴 때는 조상에 높이를 준다.
 - 달력 키는 로컬 시간으로 만든다. `toISOString()`은 자정 근처에서 하루를 민다.
+- **Storybook Docs는 한 파일의 스토리를 한 페이지에 모두 그린다.** 포커스를 옮기거나 위치를 재는 스토리는 Docs에서 반복 렌더링·스크롤 끌림을 일으킨다. 튜토리얼 스토리는 Docs에서 `autoFocus={false}`로 그리고, 측정 결과를 담는 context 값은 `useMemo`로 고정하고 같은 좌표면 상태를 바꾸지 않는다.
+- RN Web의 `AccessibilityInfo.addEventListener`는 구독 객체를 돌려주지 않는다. 정리할 때 `?.remove?.()`로 부른다.
+- 붙인 칸의 한 번 누르기(떼기)는 두 번 누르기와 가르느라 250ms 늦게 실행된다(`gestures.ts`). 의도된 동작이다.
 
 ## 8. 현재 앱 상태
 
@@ -142,10 +147,18 @@ Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다
 **그 밖에**
 
 - OS `Alert` 7곳(저장·붙이기·떼기·생성 실패 5곳, 사진 권한 안내 1곳, 기록 있는 스티커 떼기 확인 1곳)이 남아 있다. 확정된 `basic` 다이얼로그로 바꾼다.
-- 배치 시 시각 피드백과 모션 감소 대응이 없다. 지금은 햅틱뿐이다 (PRD 4.5·6.1).
+- 배치 시 시각 피드백이 없다. 지금은 햅틱뿐이다 (PRD 4.5·6.1). 로딩 점(`PixelLoadingDots`)은 모션 감소 설정을 따른다.
 - `useGoals`가 모든 목표의 스티커를 전부 읽는다. PRD 6.3은 표시 중인 범위로 한정하라고 한다.
 - 계정·백업·복원, 앱 설정 항목, 약관·라이선스 화면은 시안만 있고 연결 전이다 (PRD 4.8·4.9·8.1). **로그인 버튼은 디자인 시스템의 예외**다. Apple·Google 브랜드 가이드라인 때문에 픽셀 프레임으로 다시 그리지 않고 주변 레이아웃만 맞춘다.
 - 튜토리얼 스포트라이트는 스크롤 중 좌표가 어긋난다. `onLayout`에서만 다시 잰다. 첫 실행은 스크롤 0이라 문제없지만 다시 보기 진입을 만들 때 고쳐야 한다.
+
+**커밋하지 않은 앱 변경 (2026-09-28–29)은 폐기하지 않고 이어서 고친다.** 루트 폰트·배경, 사진 문서 폴더 보존과 유실 안내(`recordPhotos.ts`, `expo-file-system`), 사진 권한 문구(`app.json`), `goBackOrHome`·`useUnsavedBack`, `canPlaceAtSlot`, 기록 표식 대상 수정, 기록 화면 저장·떼기 확인, 앱 설정 자리 화면은 새 구조에서도 그대로 쓴다. 교체 대상은 `app/index.tsx`의 칩 + 판 구조(약 60줄)뿐이고, 붙이기·기록 표식 로직은 판 상세 라우트로 옮긴다. 선택 목표를 URL 파라미터(`selectedGoalId`)로 유지하던 방식은 상세 라우트로 대체한다. 실기기 확인은 하지 않았다. 앱 전환을 시작하기 전에 이 변경을 "앱 기반 작업" 커밋 하나로 묶어 두면 전환 diff가 깔끔하다.
+
+**나중에 따로 고칠 것 (Storybook 확정 뒤 정리)**
+
+- `Screens / PRD additions · proposals`와 `Screens / Review Set 02` Docs는 열 때 스크롤이 한 번 아래로 간다. 기존 `TutorialScreen`이 첫 버튼에 포커스를 주기 때문이다. `TutorialScreen`에도 `autoFocus`를 넘기면 된다.
+- 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
+- 새 구조에서 안 쓰게 되는 것: `GoalChip`, `HomeScreen`, `GoalStickerLink`/`DefaultStickerLink`, 그리고 옛 결정(판 흐림 + 큰 도장, 3개 선택지)을 그린 `PRD additions` 장면. 앱 전환이 끝난 뒤 지운다.
 
 **PRD 미확정인데 코드에 값이 들어간 것:** 칸 수 1–100, 튜토리얼 상태를 DB(사용자 범위)에 저장, `app.json`의 `userInterfaceStyle: "automatic"`.
 
@@ -153,5 +166,5 @@ Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다
 
 - 코드 작성 전 [Expo 57 문서](https://docs.expo.dev/versions/v57.0.0/)를 읽는다. 현재 Expo ~57.0.24 / RN 0.86.3 / React·React DOM 19.2.3, React DOM override 유지.
 - 의존성을 추가할 때는 `package.json`·`package-lock.json`을 백업하고, 설치 후 `npm ls react-dom --all`이 `19.2.3` 하나인지 확인한다.
-- 작업 브랜치는 `chore/lint-and-app-hardening`이다. 2026-09-28 이후 작업(홈 구조 시안, 디자인 시스템 선택 prop, 문서)은 아직 커밋하지 않았다. 일괄 reset/복원/삭제 금지. 관련 없는 `.omc`, 앱 설정, 기존 계획을 건드리지 않는다.
-- 시안과 픽셀 단위 일치나 최종 사용자 승인은 아니다. 폰트·프레임 치수·focus·단색 asset에서 오는 차이를 설명해야 한다.
+- 작업 브랜치는 `chore/lint-and-app-hardening`이고 원격에 올라가 있다(PR 없음). 디자인 시스템(`8456e72`)과 문서(`2df26ba`)는 커밋했고, **커밋하지 않은 것은 앱 코드 변경뿐이다**(9절). 일괄 reset/복원/삭제 금지. 관련 없는 `.omc`, 앱 설정, 기존 계획을 건드리지 않는다.
+- Storybook은 확정했지만 원본 이미지 시안(`review-set-02` 등)과 픽셀 단위로 일치한다는 뜻은 아니다. 폰트·프레임 치수·focus·단색 asset에서 오는 차이는 남아 있다.
