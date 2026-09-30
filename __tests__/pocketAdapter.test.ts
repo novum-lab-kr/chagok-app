@@ -35,6 +35,18 @@ describe('toPocketGoal - 적립판', () => {
     expect(p.total).toBe(20);
     expect(p.sticker).toBe('shoe');
   });
+  it('칸마다 실제로 붙은 스티커 종류를 담는다 (기본 스티커를 바꿔도 유지)', () => {
+    const p = toPocketGoal(tally, [
+      stk({ slotIndex: 0, stickerType: 'cat' }),
+      stk({ slotIndex: 2, stickerType: 'star' }),
+    ]);
+    expect(p.sticker).toBe('shoe');
+    expect(p.filledStickers).toEqual({ 1: 'cat', 3: 'star' });
+  });
+  it('붙은 칸의 폐기된 종류는 대체한다', () => {
+    const p = toPocketGoal(tally, [stk({ slotIndex: 0, stickerType: 'dot' })]);
+    expect(p.filledStickers).toEqual({ 1: 'sprout' });
+  });
   it('달력 기록은 비어 있다', () => {
     expect(toPocketGoal(tally, [stk({})]).calendarRecords).toEqual({});
   });

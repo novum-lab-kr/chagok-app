@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { GoalEditorScreen, RetroScreen, PixelText } from '../../src/design-system';
 import type { GoalDraft, PocketGoal } from '../../src/design-system';
@@ -31,7 +32,12 @@ export default function GoalSettings() {
    * 이미 붙은 스티커의 종류도 그대로 둔다 (PRD 4.4).
    */
   async function submit(draft: GoalDraft) {
-    await updateGoal(id, { name: draft.name.trim(), defaultStickerId: draft.sticker });
+    try {
+      await updateGoal(id, { name: draft.name.trim(), defaultStickerId: draft.sticker });
+    } catch {
+      Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해주세요. 입력한 내용은 그대로 있어요.');
+      return;
+    }
     router.back();
   }
 
