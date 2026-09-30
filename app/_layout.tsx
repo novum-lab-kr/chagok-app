@@ -1,8 +1,15 @@
-import { View } from 'react-native';
+import { useEffect } from 'react';
+import { AppState, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { retro } from '../src/design-system';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
+import { setSetting } from '../src/repositories/appSettingsRepository';
+import { syncDepsFor } from '../src/sync/appSync';
+import { subscribeLocalChange } from '../src/sync/changes';
+import { connectSync } from '../src/sync/connect';
+import { pushOnce } from '../src/sync/push';
+import { getSupabase } from '../src/sync/supabaseClient';
 
 /**
  * 네비게이터 헤더는 끈다. 화면마다 레트로 헤더(`ScreenHeader`, 홈의 브랜드 줄)를 직접 그리기
@@ -10,6 +17,29 @@ import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
  * 처리한다. 픽셀 폰트를 불러오기 전에는 대체 폰트로 그리지 않는다 (DESIGN-SYSTEM.md).
  */
 export default function RootLayout() {
+  // 로그인해 있는 동안만 백업을 올린다 (계정·백업 설계 ②). 서버 설정이 없으면 기기에서만 쓴다.
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    return connectSync({
+      onAuthChange: (fn) => {
+        void supabase.auth.getSession().then(({ data }) => fn(data.session?.user.id ?? null));
+        const { data } = supabase.auth.onAuthStateChange((_event, session) => fn(session?.user.id ?? null));
+        return () => data.subscription.unsubscribe();
+      },
+      onAppActive: (fn) => {
+        const sub = AppState.addEventListener('change', (state) => fn(state === 'active'));
+        return () => sub.remove();
+      },
+      onLocalChange: subscribeLocalChange,
+      makeRun: (userId) => async () => {
+        await pushOnce(await syncDepsFor(supabase, userId));
+        await setSetting('lastSyncedAt', String(Date.now()));
+      },
+      rememberUser: (userId) => setSetting('accountUserId', userId),
+    });
+  }, []);
+
   return (
     <SafeAreaProvider>
       <RetroFontProvider loading={<View style={{ flex: 1, backgroundColor: retro.color.screen }} />}>
@@ -29,6 +59,7 @@ export default function RootLayout() {
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />
+          <Stack.Screen name="dev/sync" />
         </Stack>
       </RetroFontProvider>
     </SafeAreaProvider>

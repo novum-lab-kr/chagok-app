@@ -157,6 +157,45 @@ xcrun simctl list devices available   # 기기 목록이 나오면 성공
 
 ---
 
+## 개발 서버 (백업·복원 개발)
+
+백업 서버는 Supabase 클라우드의 개발용 무료 프로젝트 `chagok-dev`(서울 리전)에 있다. 맥을 켜 두거나 Docker를 돌릴 필요가 없다.
+서버 설정(테이블·함수)은 이 저장소의 `supabase/`에 있고, 테스트 데이터만 둔다. 설계: [계정·백업 설계](superpowers/specs/2026-09-30-account-backup-design.md).
+
+**한 번만 하는 준비**
+
+```sh
+brew install supabase/tap/supabase
+supabase login                                   # 브라우저로 로그인
+supabase link --project-ref cmkmhrzvxbtuxbgixqoo
+```
+
+커밋하지 않는 파일 두 개를 만든다(`.env.example` 참고). 키는 대시보드 → Project Settings → API Keys.
+
+| 파일 | 내용 | 쓰는 곳 |
+| --- | --- | --- |
+| `.env.local` | 서버 주소, publishable(anon) 키, 개발 계정 이메일·비밀번호 | 앱 |
+| `.env.server.local` | 서버 주소, publishable 키, **secret(service_role) 키** | 서버 테스트·개발 계정 만들기 |
+
+secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는다.
+
+**명령**
+
+```sh
+supabase db push                                   # supabase/migrations의 새 파일을 서버에 올린다
+supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
+npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
+npm run server:dev-user                            # 개발용 계정 만들기
+```
+
+이미 올린 마이그레이션 파일은 고치지 않는다. 고칠 것이 있으면 새 파일을 더한다.
+
+**앱에서 확인** — `.env.local`을 바꿨으면 `npx expo start`를 다시 시작한다. 앱 설정 → 개발 → 서버 동기화 (개발)에서
+개발 계정으로 로그인하고 올리기·복원을 한다. 로그인해 있으면 기록이 바뀐 뒤 2초쯤 지나 자동으로 올라간다.
+올라간 행과 사진은 대시보드의 Table Editor·Storage(`record-photos`)에서 본다. 이 화면은 개발 빌드(`__DEV__`)에서만 보인다.
+
+무료 프로젝트는 일주일 동안 요청이 없으면 멈춘다. 대시보드에서 다시 켜면 된다.
+
 ## 실행 후 확인할 것
 
 지금 코드에서 **실기기 검증이 안 된 항목**이다.

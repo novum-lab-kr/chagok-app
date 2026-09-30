@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { PixelPanel, PixelText, RetroScreen, ScreenHeader, SettingRow } from '../src/design-system';
 import { goBackOrHome } from '../src/app-data/goBack';
+import { getSupabase } from '../src/sync/supabaseClient';
 
 /** 계정 연결 전에도 앱 설정과 로컬 저장 상태에 들어갈 수 있는 기본 화면. */
 export default function AppSettings() {
@@ -16,6 +17,11 @@ export default function AppSettings() {
       <PixelPanel title="정보">
         <SettingRow label="약관과 라이선스" onPress={() => router.push('/policies')} />
       </PixelPanel>
+      {__DEV__ && getSupabase() && (
+        <PixelPanel title="개발">
+          <SettingRow label="서버 동기화 (개발)" onPress={() => router.push('/dev/sync')} />
+        </PixelPanel>
+      )}
     </RetroScreen>
   );
 }
