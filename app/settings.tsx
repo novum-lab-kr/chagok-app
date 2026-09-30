@@ -11,6 +11,9 @@ export default function AppSettings() {
       <PixelPanel title="이 기기의 기록">
         <PixelText>지금은 이 기기에만 저장하고 있어요.</PixelText>
       </PixelPanel>
+      <PixelPanel title="도움말">
+        <SettingRow label="사용법 다시 보기" onPress={() => router.push('/tutorial')} />
+      </PixelPanel>
       <PixelPanel title="정보">
         <SettingRow label="약관과 라이선스" onPress={() => router.push('/policies')} />
       </PixelPanel>

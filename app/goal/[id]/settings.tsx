@@ -76,7 +76,7 @@ export default function GoalSettings() {
   async function complete() {
     if (!(await confirm({
       title: '이 판을 완성할까요?',
-      description: '완성하면 되돌릴 수 없고, 스티커를 붙이거나 기록을 고칠 수 없어요.',
+      description: '완성하면 스티커를 붙이거나 기록을 고칠 수 없어요. 계속하기로 다시 이어 쓸 수 있어요.',
       secondaryLabel: '취소',
       primaryLabel: '완성하기',
     }))) return;

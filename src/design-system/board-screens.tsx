@@ -106,7 +106,7 @@ export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,pe
     <PixelInput label="목표 이름" value={name} onChangeText={onChangeName}/>
     <StickerField value={sticker} onChange={onChangeSticker}/>
     {period&&<PeriodField {...period}/>}
-    {onComplete&&<View style={{gap:8}}><Small>종료일이 없는 달력판은 여기서 완성해요. 완성하면 되돌릴 수 없어요.</Small><PixelButton label="이 판 완성하기" variant="secondary" icon={<ActionSymbol name="check" size={16}/>} onPress={onComplete}/></View>}
+    {onComplete&&<View style={{gap:8}}><Small>종료일이 없는 달력판은 여기서 완성해요. 완성해도 계속하기로 다시 이어 쓸 수 있어요.</Small><PixelButton label="이 판 완성하기" variant="secondary" icon={<ActionSymbol name="check" size={16}/>} onPress={onComplete}/></View>}
     <PixelButton label="저장하기" disabled={saveDisabled} onPress={onSave}/>
     <DeleteSection onDelete={onDelete}/>
   </RetroScreen>;
