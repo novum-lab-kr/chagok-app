@@ -1,0 +1,199 @@
+# 계정·백업·복원 설계
+
+2026-09-30 · 하위 프로젝트 2/3 · 관련: [PRD 4.8·7·8](../../PRD.md), [약관 설계](2026-09-30-policy-terms-design.md)
+
+## 목표
+
+PRD 4.8 전체를 구현한다. Apple·Google 로그인, 변경마다 자동 백업, 새 기기·재설치 복원, 복원 충돌 선택,
+로그아웃, 앱 안 계정 삭제가 대상이다. 1차는 **한 기기 백업**이다. 다만 나중의 패드 지원(같은 계정을 여러 기기에서 동시 사용)을 위해
+서버 구조와 변경 기록은 **행 단위 병합으로 넓힐 수 있게** 잡는다.
+
+## 결정 (2026-09-30)
+
+| 항목 | 결정 |
+| --- | --- |
+| 범위 | PRD 4.8 전체 |
+| 여러 기기 | 1차 미지원. 스키마·RPC는 확장 가능하게 (패드 계획) |
+| 동기화 방식 | **직접 구현**: 기기 outbox + 서버 RPC 행 단위 반영. 동기화 엔진(PowerSync 등)·스냅샷 백업은 택하지 않았다 |
+| 첫 실행 | **로그인 권유 먼저.** 백업이 있으면 복원 후 튜토리얼 건너뜀 |
+| 계정 삭제 뒤 기기 기록 | 삭제 확인 화면에서 사용자가 선택. 기본은 남기기 |
+| 사진 규격 | 긴 변 1600px · JPEG 80% |
+| 로그아웃 보류 항목 | 보류 항목만 남으면 경고 후 [그래도 로그아웃] 허용 (PRD 보완) |
+| 서버 DB 백업 보관 | 30일 (처리방침에 명시) |
+| Apple 이름 | 요청하지 않는다. 이메일만 |
+
+**동기화 방식을 고른 이유.** 스냅샷 백업은 가장 단순하지만 두 기기의 사본을 합칠 수 없어 패드 지원 때 다시 만들어야 한다.
+동기화 엔진은 여러 기기 병합을 대신해 주지만 1차에서 쓰지 않는 장점이다. 반면 `src/db/` 드라이버 교체, 국내 리전에 서버 구성요소 추가,
+의존성 위험은 지금 치러야 한다. 테이블이 4개이고 사용자 간 데이터가 얽히지 않으니 직접 구현으로 충분하다.
+서버가 같은 Supabase Postgres라 이후 엔진으로 옮길 길은 열려 있다.
+
+## ① 사용자 흐름
+
+**첫 실행**
+
+```
+시작 화면 (앱 소개 · [계정 연결하기] · [나중에])
+ ├─ 계정 연결하기 → 동의 화면 → [Apple로 계속] / [Google로 계속] → OS 로그인 → server_state()
+ │     ├─ 백업 있음 → 복원 진행 → 목록 (튜토리얼 완료 처리)
+ │     └─ 백업 없음 → 튜토리얼 → 목록
+ └─ 나중에 → 튜토리얼 → 목록
+```
+
+- 시작 화면은 신규다(시안 `계정-첫-실행-로그인-권유` 바탕). Android는 Google 버튼만.
+- 로그인 버튼은 디자인 시스템의 예외다. 각 회사 공식 버튼을 쓰고 주변 레이아웃만 맞춘다 (HANDOFF).
+
+**앱 설정에서 연결** — 동의 → 로그인 → `server_state()`와 기기 상태로 분기
+
+| 기기 | 서버 | 동작 |
+| --- | --- | --- |
+| 있음 | 비어 있음 | 첫 백업: 모든 행을 outbox에 넣고 평소 전송으로 비운다(진행 표시) |
+| 비어 있음 | 있음 | 복원 |
+| 있음 | 있음 | 복원 충돌 선택 화면 (시안 `복원-두-기록-선택`) |
+| 비어 있음 | 비어 있음 | 연결만 |
+
+**평소** — 백업은 조용히 올라간다. 앱 설정에 "마지막 백업 시각", "올리지 못한 변경 n개". 기록 동작은 백업을 기다리지 않는다.
+
+**로그아웃** — outbox 전송 → 성공하면 기기 DB·사진 삭제 → 시작 화면. 실패하면 중단하고 이유를 알린다.
+보류 항목만 남았으면 "올리지 못한 변경 n개는 사라져요" 경고 뒤 [그래도 로그아웃]을 허용한다.
+
+**계정 삭제** — 삭제 내용 확인("이 기기의 기록도 지우기" 선택, 기본 해제) → 최종 확인 → `delete-account` → 완료.
+남기기를 골랐으면 계정 관련 설정(`accountUserId`, `lastSyncedAt`)과 outbox를 비우고 로그인하지 않은 상태로 계속 쓴다.
+네트워크 실패면 아무것도 지우지 않고 알린다(시안 `계정-삭제-네트워크-실패`).
+
+**재동의** — 약관 설계 참고.
+
+**세션 만료** — 갱신이 실패하면(Apple 연결 해제, 다른 경로의 계정 삭제 등) 동기화를 멈춘다. 기록은 계속 쓸 수 있고 outbox는 유지된다.
+앱 설정과 한 번의 짧은 알림으로 재로그인을 안내한다. 같은 사용자로 돌아오면 outbox를 이어 보내고,
+다른 사용자로 로그인하면 새 연결로 보고 위 분기표를 따른다.
+
+## ② 기기 데이터
+
+**스키마 v5**
+
+- `goals`·`stickers`·`records`에 `updated_at INTEGER NOT NULL`. 기존 행은 `created_at`/`placed_at`으로 채운다.
+  PRD 5절의 "`records` 수정 시각 없음" 델타를 해소한다.
+- `records.photo_remote_path TEXT` — 서버 사진 경로.
+- `outbox(entity TEXT, row_id TEXT, queued_at INTEGER, attempts INTEGER DEFAULT 0, last_error TEXT,
+  PRIMARY KEY(entity,row_id))`. entity는 `goal` · `sticker` · `record` · `photo`. **대상 하나당 한 줄.**
+- `app_settings` 키 추가: `deviceId`(설치 시 한 번 생성), `accountUserId`, `lastSyncedAt`.
+
+**삭제** — 기기에서는 지금처럼 실제로 지운다(CASCADE 포함). outbox에 "지웠음"만 남기고 **삭제 표식은 서버에만** 둔다.
+기기 조회에 `deleted_at` 조건을 붙이지 않아도 된다. 목표 삭제는 목표 한 줄만 outbox에 넣고, 딸린 행은 서버가 연쇄 표식한다.
+
+**기록 지점** — `src/repositories/`의 모든 쓰기 함수가 같은 트랜잭션에서 outbox를 upsert하고 `updated_at`을 갱신한다.
+로그인 여부와 무관하게 항상 기록한다. 대상당 한 줄이라 행 수 이상으로 커지지 않고, 연결 순간에 빠지는 변경이 생기지 않는다.
+같은 지점에서 위젯 갱신 신호를 보낸다 ([위젯 설계](2026-09-30-home-widget-design.md)).
+
+**전송기** `src/sync/push.ts`
+
+- outbox를 `queued_at` 순으로 최대 200건 꺼내, **그 순간의 행 상태**를 읽는다. 행이 있으면 upsert, 없으면 delete → `push_changes`.
+- 성공하면 **보낸 시점 이전의 `queued_at`인 줄만** 지운다. 전송 중에 다시 수정된 대상은 남아 다음에 올라간다.
+- `photo` 항목: 기기 원본을 1600px·JPEG 80%로 줄여(`expo-image-manipulator`) Storage에 올리고, 성공 뒤 `records.photo_remote_path`를
+  기록한다. 이 기록 자체가 `record` 항목을 outbox에 남긴다. 원본이 사라졌으면(사진 유실) 항목을 버린다. 사진 실패는 행 백업을 막지 않는다.
+- 트리거: 쓰기 후 2초 모아서, 앱이 앞으로 올 때, 재시도 타이머. 네트워크 변화 감지는 Expo 57 `expo-network` 지원을 확인해서 결정한다.
+- 한 번에 하나만 실행한다(`singleFlight` 재사용).
+- 재시도 간격 5초 → 30초 → 2분 → 10분 → 최대 30분. 성공하거나 앱이 앞으로 오거나 새로 기록하면 초기화한다.
+- 백그라운드 실패로 팝업을 띄우지 않는다.
+
+**복원** `src/sync/restore.ts`
+
+- `pull_changes(0)`을 페이지 단위로 모두 받은 뒤 **한 트랜잭션으로** 기기 DB를 채운다. 중간에 실패하면 기기는 그대로다.
+- 사진은 DB 커밋 뒤 `record-photos/`에 받고 `record-photo:` 형식으로 저장한다. 실패한 사진은 목록에 남겨 앱이 앞으로 올 때 재시도하고,
+  그동안은 기존 "사진 유실" 모습으로 보인다.
+- "서버 백업으로 바꾸기": 새 DB를 한 트랜잭션으로 교체한 **뒤에** 기기의 옛 사진을 지운다.
+- "이 기기 기록 유지": `replace_all`로 서버 행을 원자적으로 교체한 뒤, 사진은 outbox로 올린다.
+
+**세션** — Supabase가 Expo용으로 권하는 `expo-sqlite` 기반 저장소를 쓴다(57 문서로 확인).
+
+**동기화하지 않는 것** — `app_settings`. 복원하면 튜토리얼을 완료로 두는 규칙으로 충분하다.
+
+## ③ 서버
+
+**위치** — 이 저장소의 `supabase/`(마이그레이션 SQL, Edge Functions, `config.toml`). 개발은 `supabase start`(로컬 Docker).
+운영은 국내 리전 자체 호스팅이다. 클라우드 선택은 배포 단계에서 한다.
+
+**테이블**
+
+- `goals`·`stickers`·`records`: 기기 컬럼 + `user_id uuid`, `updated_at`, `deleted_at`, `device_id`. PK는 기기가 만든 `id`.
+- `accounts(user_id PK, provider, terms_version, privacy_version, agreed_at, age_confirmed_at, created_at)`.
+- `private.apple_tokens(user_id PK, refresh_token)` — API로 노출하지 않는 스키마.
+
+**RLS** — 모든 테이블은 `user_id = auth.uid()`인 행만 SELECT한다. **테이블 직접 쓰기는 막고 RPC로만 쓴다.**
+
+**RPC**
+
+| 함수 | 역할 |
+| --- | --- |
+| `push_changes(batch)` | 한 트랜잭션으로 반영. `updated_at`이 더 최근인 쪽이 이긴다(1차에는 작동할 일이 없지만 패드 지원 때 서버를 고치지 않기 위해). 목표 delete는 딸린 행까지 표식. 같은 입력을 다시 받아도 결과가 같다(멱등) |
+| `pull_changes(since)` | `since` 이후 바뀐 행(표식 포함). 복원은 0부터, 표식 제외 |
+| `server_state()` | 목표 수, 마지막 수정 시각 — 연결 분기용 |
+| `replace_all(rows)` | 기존 행 전부 표식 + 새 행 삽입을 한 트랜잭션으로 ("이 기기 기록 유지") |
+| `record_consent(terms_version, privacy_version)` | 동의 이력 |
+
+**Storage** — 비공개 버킷 `record-photos`, 경로 `{user_id}/{record_id}.jpg`. 본인 폴더만 읽고 쓴다.
+기록·사진을 지우면 앱이 delete를 보낼 때 해당 파일도 지운다.
+
+**Edge Functions**
+
+- `apple-link`: Apple 로그인 직후 `authorizationCode`를 받아 Apple에서 refresh token으로 바꿔 `private.apple_tokens`에 저장한다.
+  client secret은 .p8 키로 요청마다 서명하므로 6개월 수동 갱신이 없다. 네이티브 ID 토큰 로그인 자체에는 Supabase Auth에 번들 ID만 설정한다.
+- `delete-account`: **Apple 토큰 폐기 → 사진 폴더 삭제 → 데이터 행 삭제 → 인증 계정 삭제** 순서다. 실패하면 멈추고, 다시 시도하면
+  남은 단계부터 이어서 한다(멱등). 폐기를 먼저 하는 이유는 데이터를 지운 뒤 폐기가 실패하면 되돌릴 수 없어서다.
+
+**Google Play 웹 삭제 경로** — `chagok-app-policy/delete-account/`에 앱 안 삭제 방법과 이메일 요청을 안내한다. 1차는 수동으로 처리한다.
+
+**운영** — 삭제 표식은 1차에서 계속 보관한다. DB는 매일 백업하고 30일 보관하며, 이를 처리방침에 명시한다. 모니터링·복구 절차는 배포 단계에서 정한다.
+
+## ④ 실패 처리
+
+원칙은 세 가지다.
+1. 기록 저장과 outbox는 같은 트랜잭션이다. 동기화 실패와 무관하게 기기 기록은 안전하다.
+2. outbox는 서버의 성공 응답 뒤에만 지운다.
+3. 모든 전송은 멱등이다. 보냈는지 모르면 다시 보낸다.
+
+| 상황 | 처리 |
+| --- | --- |
+| 보내기 전 끊김 | outbox 유지 → 재시도 |
+| 서버 반영 후 응답 유실 | 다시 보냄. 멱등이라 결과 동일 |
+| 전송 중 같은 대상 재수정 | `queued_at`이 새로 바뀌어 성공 처리에서 제외 → 다음 전송 |
+| 대량(첫 연결, 긴 오프라인) | 200건씩. 묶음마다 서버 트랜잭션이라 끊겨도 보낸 묶음까지 확정 |
+| 앱 강제 종료 | outbox가 SQLite에 있어 다음 실행 때 이어서 |
+| 서버가 항목 거부(형식 오류, 버그) | 묶음을 한 건씩 나눠 문제 항목만 보류(`attempts`, `last_error`), 나머지 진행. 앱 설정에 표시 |
+| 사진 업로드 실패 | 사진 항목만 재시도. 행 백업은 진행. 파일 성공 뒤에만 경로 기록 |
+| 복원 중 끊김 | 기기 DB에 쓰기 전이라 기기 불변 → 복원 실패 화면 [다시 시도] |
+| 복원 후 사진 일부 실패 | 복원 완료. 사진 유실 모습 + 나중 재시도 |
+| 서버 덮어쓰기 중 실패 | `replace_all` 한 트랜잭션이라 반쪽 상태 없음 |
+| 세션 갱신 실패 | 동기화 중지, 기록 계속, 재로그인 안내 |
+| 계정 삭제 중간 실패 | 멈춤. 재시도 시 남은 단계부터 |
+
+## 테스트
+
+| 층 | 도구 | 확인할 것 |
+| --- | --- | --- |
+| 마이그레이션 v5 | jest + node:sqlite | v4 데이터에 `updated_at`이 채워지는지, 멱등 |
+| 저장소 → outbox | jest | 모든 쓰기 함수가 outbox를 남기는지, 쓰기가 실패하면 outbox도 되돌려지는지 |
+| 전송기·복원 | jest + 가짜 서버(push/pull 계약을 메모리로 구현) | ④ 표의 모든 행 |
+| 서버 RPC·RLS | 로컬 Supabase + SQL 테스트 | 타인 행 접근 불가, 최근 `updated_at` 우선, 연쇄 표식, `replace_all` 원자성, 삭제 멱등 |
+| 계약 일치 | 같은 시나리오를 가짜 서버와 로컬 Supabase에 모두 실행 | |
+| 화면 | vitest + Storybook | 시작·동의·앱 설정 상태·복원·로그아웃·삭제 (시안 캡처를 스토리로 재작성) |
+| 실기기 | 개발 빌드 | Apple/Google 실제 로그인, 오프라인 → 복귀, 재설치 복원 |
+
+## 개발 환경과 선행 조건
+
+- **Expo Go를 더 이상 쓸 수 없다.** 로컬 개발 빌드(`npx expo run:ios` / `run:android`)가 기본이다. `ios/`·`android/`는 prebuild로 생성하고
+  커밋하지 않는다. EAS Build는 스토어 제출 단계에서 쓴다. `docs/DEV-SETUP.md`를 고친다.
+- 선행 조건(2026-09-30 기준 없음): **Docker Desktop**, **Apple Developer Program(유료)**, Google Cloud OAuth 클라이언트 ID(iOS·Android·웹)와
+  Android 서명 SHA-1.
+- 구현 순서: Docker → 서버·동기화 코어 → Google 로그인(Android) → Apple 계정 승인 뒤 Apple 로그인·`apple-link`·iOS 실기기.
+
+## 의존성
+
+`@supabase/supabase-js`, `expo-apple-authentication`, Google 로그인 라이브러리
+(`react-native-nitro-google-signin` 또는 `@react-native-google-signin/google-signin`, 계획 단계에서 Expo 57 호환성으로 결정),
+`expo-image-manipulator`. 각각 `package.json`·`package-lock.json`을 백업하고, `npm ls react-dom --all`이 `19.2.3` 하나인지 확인한다.
+
+## 범위 밖
+
+- 여러 기기 동시 사용(주기적 받아오기, 병합 UI) — 패드 지원 하위 프로젝트.
+- 아동 법정대리인 동의.
+- 운영 클라우드 선택, 모니터링 수치.
