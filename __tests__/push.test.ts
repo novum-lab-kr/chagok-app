@@ -149,3 +149,15 @@ describe('사진 실패 격리 (리뷰 #1)', () => {
     expect(await pendingCount()).toEqual({ pending: 0, held: 1 });
   });
 });
+
+describe('사진과 기록이 한 묶음일 때 (리뷰 #4)', () => {
+  it('사진 경로를 기록한 뒤 행을 한 번만 보낸다', async () => {
+    const deps = setup();
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    await upsertRecord(s.id, { photoUri: 'record-photo:a.jpg', memo: null });
+    const result = await pushOnce(deps);
+    expect(deps.server.pushes).toBe(1);
+    expect(result.sent).toBe(3); // 목표·스티커·기록
+  });
+});

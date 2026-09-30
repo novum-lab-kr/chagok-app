@@ -89,7 +89,8 @@ export async function pushOnce(deps: PushDeps): Promise<{ sent: number; held: nu
       return { sent, held };
     }
     const now = clock();
-    for (const e of batch.filter((x) => x.entity === 'photo')) {
+    const photoEntries = batch.filter((x) => x.entity === 'photo');
+    for (const e of photoEntries) {
       if (photoError !== null) break;
       try {
         await pushPhoto(e, deps.photos, now);
@@ -103,6 +104,8 @@ export async function pushOnce(deps: PushDeps): Promise<{ sent: number; held: nu
         }
       }
     }
+    // 사진 경로를 기록하면 같은 묶음의 기록 항목이 새 queued_at으로 바뀐다. 행은 묶음을 다시 꺼내 한 번만 보낸다.
+    if (photoEntries.length) continue;
     const rows = batch.filter((x) => x.entity !== 'photo');
     if (rows.length) {
       const h = await pushRows(rows, deps, now);
