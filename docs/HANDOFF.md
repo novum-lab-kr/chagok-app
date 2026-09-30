@@ -6,25 +6,25 @@
 
 ## 0. 다음 세션 시작점 (2026-09-29)
 
-**상태.** 기획(PRD 4.1–4.7)과 시각 기준(Storybook 확정)이 끝나 화면 개발을 시작할 수 있다. 앱은 아직 기존 홈 구조(목표 칩 + 판)다. 할 일은 2026-09-29 결정을 앱에 옮기는 것이다(9절).
+**상태 (2026-09-30).** 2026-09-29 결정을 앱에 옮겼다: 목표 목록 / 판 상세 / 목표 설정 / 칸·종료일 늘리기 / 완성 흐름 / 5단계 튜토리얼, 스키마 v4. 구현 기록·미확인 항목·확인할 결정은 [DEV-DESIGN-home-structure.md](DEV-DESIGN-home-structure.md) 10절이 단일 출처다. **커밋하지 않았다** — 사용자가 화면 개발 뒤 한꺼번에 커밋하기로 했다(2026-09-30). 아래 0절의 순서는 완료 이력이다.
 
 **코드를 쓰기 전에 이 순서로 한다.**
 
-1. **개발 설계 문서를 먼저 만들고 사용자 확인을 받는다.** 사용자가 따로 검토하겠다고 했다. 담을 것:
+1. ~~개발 설계 문서를 먼저 만들고 사용자 확인을 받는다.~~ **완료 (2026-09-30):** [DEV-DESIGN-home-structure.md](DEV-DESIGN-home-structure.md). 결정은 그 문서 9절. 원래 담을 것:
    - 데이터: 달력판 종료일(선택), 완성 시각, 마지막으로 붙인 시각의 컬럼과 `PRAGMA user_version` 마이그레이션. PRD 5절 스키마 표는 "필요"까지만 적혀 있다.
    - 라우트: 목록 `/`와 판 상세의 경로, 목표 설정·새 목표·기록·종료일 늘리기와의 연결.
    - 규칙 함수: 진행률(%)·목록 정렬·완성 판정·readonly·기간 밖 날짜. 시안의 `progressOf`·`orderGoals`·`percentLabel`(`stories/HomeStructure.stories.tsx`)은 참고 구현이고 명세는 PRD다. 도메인 테스트부터 쓴다.
    - 작업 순서와 검증 계획.
-2. **커밋하지 않은 앱 변경을 "앱 기반 작업" 커밋 하나로 묶는다.** 폐기하지 않고 이어서 고친다(9절 끝). 사용자가 커밋 시점을 정하게 하고, 묶기 전에 `npm test`·`test:components`·`typecheck`·`lint`·iOS export를 다시 돌린다.
+2. ~~커밋하지 않은 앱 변경을 "앱 기반 작업" 커밋 하나로 묶는다.~~ **따로 묶지 않는다 (2026-09-30).** 화면이 많이 바뀌므로 화면 개발이 끝난 뒤 함께 커밋한다. 폐기하지 않고 이어서 고친다(9절 끝).
 3. 그다음 설계 순서대로 구현한다. 화면은 확정된 Storybook(`Screens / Home structure · proposals`, `Components / Goal list & board`)과 대조한다.
 
 **개발 중에 만나면 사용자에게 묻는 것 (아직 열린 결정).**
 
-- 목표가 하나도 없을 때의 새 목록 화면 시안 (PRD 4.1, 11절).
-- 튜토리얼 다시 보기 진입 위치 (PRD 4.6, 4.9).
+- ~~목표가 하나도 없을 때의 새 목록 화면 시안~~ → 2026-09-30 A안(안내 상자만, `Screens / Empty goal list`) 확정.
+- 튜토리얼 다시 보기 진입 위치 (PRD 4.6, 4.9). **TODO로만 남긴다 (2026-09-30).**
 - 목표 설정에서 칸 수·판 종류 변경은 미확정이다. 확정 Storybook의 목표 설정에 없으므로 넣지 않는다.
 
-**이번 세션에서 정한 값 (다시 묻지 않는다).** 완성 모션은 [완성] 스티커 붙이기 모션 하나, 칸 수 1–100(칸 늘리기 공통), 기간 없는 달력판은 미래 달 이동 가능, 삭제·떼기 확인은 기존 `basic` 다이얼로그, 판 조작은 한 번 = 붙이기·떼기 / 두 번·꾹 = 기록 열기.
+**이번 세션에서 정한 값 (다시 묻지 않는다).** 완성 모션은 [완성] 스티커 붙이기 모션 하나, 칸 수 상한 없음(2026-09-30, 칸 늘리기 기본값은 처음 칸 수만큼 더하기), 기간 없는 달력판은 미래 달 이동 가능, 삭제·떼기 확인은 기존 `basic` 다이얼로그, 판 조작은 한 번 = 붙이기·떼기 / 두 번·꾹 = 기록 열기.
 
 ## 1. 현재 유효한 사용자 지시
 
@@ -83,10 +83,14 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 | `src/design-system/gestures.ts` | 한 번 누르기와 두 번 누르기 구분(250ms). 공개 export 아님 |
 | `src/design-system/calendar.tsx` | 월 이동, 날짜 그리드. 선택 prop `isDateEnabled`·`canGoPrev`·`canGoNext` (기간 밖 날짜) |
 | `src/design-system/tutorial.tsx` | 타깃 실측 스포트라이트. 선택 prop `content`로 1–3단계 밖 문구를 넘긴다 |
-| `src/design-system/screen-compositions.tsx` | 기존 홈(칩+판), 목표 작성/설정, 기록, 튜토리얼 조합. **앱이 아직 이 홈을 쓴다** |
+| `src/design-system/screen-compositions.tsx` | 판 칸(`GoalStickerCell`), 기록 화면(`RecordScreen`), 예시 데이터(`exampleGoals`) |
+| `src/design-system/board-screens.tsx` | 목록·판 상세·목표 설정·완성한 판 설정·새 목표·칸/종료일 늘리기 화면 조합 (앱과 Storybook 공용) |
+| `src/design-system/first-run-tutorial.tsx` | 5단계 첫 실행 튜토리얼과 예시 화면 |
+| `src/domain/board.ts`, `dates.ts` | 판 규칙(진행률·정렬·완성·붙이기/떼기·기간)과 로컬 날짜 |
 | `src/design-system/sticker-glyphs.tsx` | 스티커 라이브러리 어댑터, 액션 아이콘 |
-| `src/app-data/` | 도메인↔화면 어댑터(`pocketAdapter.ts`), 연속 탭 방지(`singleFlight.ts`), 사진 보관(`recordPhotos.ts`), 뒤로가기(`goBack.ts`, `useUnsavedBack.ts`) |
-| `stories/HomeStructure.stories.tsx` | 2026-09-29 홈 구조 시안 29개 장면 (디자인 시스템 컴포넌트로 조립) |
+| `src/app-data/` | 도메인↔화면 어댑터·문구(`pocketAdapter.ts`), 판 읽기(`boardData.ts`), 확인·알림 다이얼로그(`useDialog.ts`), 연속 탭 방지(`singleFlight.ts`), 사진 보관(`recordPhotos.ts`), 뒤로가기(`goBack.ts`, `useUnsavedBack.ts`) |
+| `stories/HomeStructure.stories.tsx` | 홈 구조 30개 장면. `board-screens.tsx`로 그린다 |
+| `stories/EmptyGoalList.stories.tsx` | 목표 없음 화면 (2026-09-30 A안) |
 | `stories/GoalListBoard.stories.tsx` | 위 시안에서 추출한 공통 컴포넌트 개별 상태 17개 |
 
 ## 5. 스티커 라이브러리
@@ -143,12 +147,14 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 
 ## 8. 현재 앱 상태
 
+> **2026-09-30 갱신.** 아래 표는 전환 전 상태다. 지금 라우트: `/` 목록(탭·`+`·첫 실행 튜토리얼), `/goal/new`, `/goal/[id]` 판 상세, `/goal/[id]/settings`, `/goal/[id]/extend`, `/sticker/[id]`(완성한 판이면 읽기 전용), `/settings`. 스키마 v4. 화면 조합은 `src/design-system/board-screens.tsx`·`first-run-tutorial.tsx`, 규칙은 `src/domain/board.ts`·`dates.ts`, 판 읽기는 `src/app-data/boardData.ts`, 확인·실패 알림은 `src/app-data/useDialog.ts`(OS `Alert` 없음). 자세한 것은 DEV-DESIGN 10절.
+
 Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다. **앱은 아직 기존 홈 구조(목표 칩 + 판)다.**
 
 | 라우트 | 동작 |
 | --- | --- |
 | `index` | 목표 칩 전환, 적립판 어느 빈칸에든 붙이기, 달력판 오늘 칸 붙이기와 오늘 포커스, 기록 표식(B안), 스와이프·버튼 월 이동, 첫 실행 튜토리얼(3단계), 목표 없음 화면 |
-| `goal/new` | 이름·판 종류·칸 수(1–100)·기본 스티커로 생성 후 그 목표를 선택해 홈으로 |
+| `goal/new` | 이름·판 종류·칸 수(1–100, 새 결정으로 상한 제거 예정)·기본 스티커로 생성 후 그 목표를 선택해 홈으로 |
 | `goal/[id]` | 이름과 기본 스티커만 변경. 저장 안 한 입력 확인 |
 | `sticker/[id]` | 사진(앱 문서 디렉터리에 복사, 유실 안내), 메모, 기록 있을 때만 떼기 확인 |
 | `settings` | 로컬 기록 상태만 표시 |
@@ -162,7 +168,7 @@ Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다
 - 홈을 목표 목록(탭 `내 목표 / 완성한 판`, 헤더 `+`)과 판 상세 라우트로 나눈다.
 - 스키마에 종료일, 완성 시각, 마지막으로 붙인 시각을 더한다. 진행률(%)·정렬·완성 판정·readonly 규칙을 도메인 테스트부터 쓴다.
 - 판 조작을 바꾼다. 지금은 붙인 칸을 한 번 누르면 기록이 열린다 → 한 번 = 떼기, 두 번·꾹 = 기록 열기, 스크린리더용 '기록 열기' 접근성 동작.
-- 완성 확인 → [완성] 스티커 붙이기 모션 → `닫기 / 계속하기` 흐름, 칸 늘리기(상한 100)와 종료일 늘리기, 완성한 판 readonly(기록 읽기 전용, 설정은 삭제만).
+- 완성 확인 → [완성] 스티커 붙이기 모션 → `닫기 / 계속하기` 흐름, 칸 늘리기(상한 없음, 기본은 처음 칸 수만큼)와 종료일 늘리기, 완성한 판 readonly(기록 읽기 전용, 설정은 삭제만).
 - 기간 없는 달력판은 미래 달로 이동할 수 있다. 붙이기는 여전히 오늘 칸만.
 - 목표 설정 구성(이름 → 기본 스티커 → 기간 → 저장 → [삭제하기])과 **목표 삭제**. `deleteGoal`은 있지만 앱 화면과 기기 사진 파일 정리가 없다.
 - 첫 실행 튜토리얼을 5단계로 바꾼다.
@@ -175,15 +181,14 @@ Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다
 - 계정·백업·복원, 앱 설정 항목, 약관·라이선스 화면은 시안만 있고 연결 전이다 (PRD 4.8·4.9·8.1). **로그인 버튼은 디자인 시스템의 예외**다. Apple·Google 브랜드 가이드라인 때문에 픽셀 프레임으로 다시 그리지 않고 주변 레이아웃만 맞춘다.
 - 튜토리얼 스포트라이트는 스크롤 중 좌표가 어긋난다. `onLayout`에서만 다시 잰다. 첫 실행은 스크롤 0이라 문제없지만 다시 보기 진입을 만들 때 고쳐야 한다.
 
-**커밋하지 않은 앱 변경 (2026-09-28–29)은 폐기하지 않고 이어서 고친다.** 루트 폰트·배경, 사진 문서 폴더 보존과 유실 안내(`recordPhotos.ts`, `expo-file-system`), 사진 권한 문구(`app.json`), `goBackOrHome`·`useUnsavedBack`, `canPlaceAtSlot`, 기록 표식 대상 수정, 기록 화면 저장·떼기 확인, 앱 설정 자리 화면은 새 구조에서도 그대로 쓴다. 교체 대상은 `app/index.tsx`의 칩 + 판 구조(약 60줄)뿐이고, 붙이기·기록 표식 로직은 판 상세 라우트로 옮긴다. 선택 목표를 URL 파라미터(`selectedGoalId`)로 유지하던 방식은 상세 라우트로 대체한다. 실기기 확인은 하지 않았다. 앱 전환을 시작하기 전에 이 변경을 "앱 기반 작업" 커밋 하나로 묶어 두면 전환 diff가 깔끔하다.
+**커밋하지 않은 앱 변경 (2026-09-28–29)은 폐기하지 않고 이어서 고친다.** 루트 폰트·배경, 사진 문서 폴더 보존과 유실 안내(`recordPhotos.ts`, `expo-file-system`), 사진 권한 문구(`app.json`), `goBackOrHome`·`useUnsavedBack`, `canPlaceAtSlot`, 기록 표식 대상 수정, 기록 화면 저장·떼기 확인, 앱 설정 자리 화면은 새 구조에서도 그대로 쓴다. 교체 대상은 `app/index.tsx`의 칩 + 판 구조(약 60줄)뿐이고, 붙이기·기록 표식 로직은 판 상세 라우트로 옮긴다. 선택 목표를 URL 파라미터(`selectedGoalId`)로 유지하던 방식은 상세 라우트로 대체한다. 실기기 확인은 하지 않았다. 따로 커밋하지 않고 화면 개발이 끝난 뒤 함께 커밋한다(2026-09-30 사용자 결정).
 
 **나중에 따로 고칠 것 (Storybook 확정 뒤 정리)**
 
-- `Screens / PRD additions · proposals`와 `Screens / Review Set 02` Docs는 열 때 스크롤이 한 번 아래로 간다. 기존 `TutorialScreen`이 첫 버튼에 포커스를 주기 때문이다. `TutorialScreen`에도 `autoFocus`를 넘기면 된다.
 - 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
-- 새 구조에서 안 쓰게 되는 것: `GoalChip`, `HomeScreen`, `GoalStickerLink`/`DefaultStickerLink`, 그리고 옛 결정(판 흐림 + 큰 도장, 3개 선택지)을 그린 `PRD additions` 장면. 앱 전환이 끝난 뒤 지운다.
+- ~~새 구조에서 안 쓰게 되는 것~~ **2026-09-30 정리함.** 옛 컴포넌트(`GoalChip`, `HomeScreen`, `GoalEditorScreen`, 3단계 `TutorialScreen`, `GoalStickerLink`/`DefaultStickerLink`)와 스토리(`Review Set 02`, `PRD additions · proposals`, `Goal chip`, `Setting row`, `Reference Match`), 그 검수 스크립트를 지웠다. 계정·복원·앱 설정 시안은 `docs/design/retro-pocket-v1/prd-additions-review/` 캡처와 git 기록에 남아 있다. 구현할 때 스토리로 다시 만든다.
 
-**PRD 미확정인데 코드에 값이 들어간 것:** 튜토리얼 상태를 DB(사용자 범위)에 저장, `app.json`의 `userInterfaceStyle: "automatic"`. (칸 수 1–100은 2026-09-29 확정.)
+**PRD 미확정인데 코드에 값이 들어간 것:** 튜토리얼 상태를 DB(사용자 범위)에 저장, `app.json`의 `userInterfaceStyle: "automatic"`. (칸 수 상한은 2026-09-30 제거로 확정.)
 
 ## 10. 다음 작업 시 주의
 

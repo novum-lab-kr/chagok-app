@@ -13,7 +13,7 @@ npm run storybook
 
 [공통 컴포넌트 한눈에 보기](http://localhost:6006/?path=/story/design-system-overview--component-board)
 
-왼쪽 목록의 Foundations에서 컬러·글씨·프레임·새싹을 비교하고, Components에서 개별 상태를 확인한다. Text의 Controls에서 한글 문구와 글씨 역할을 바꿀 수 있다. 버튼은 누르거나 Tab으로 포커스하고, 입력창은 직접 입력하며, 필터와 목표 칩은 선택을 바꿀 수 있다. 붙이기 데모는 칸을 눌러 상태를 전환한다. 데모 상태는 저장하지 않는다.
+왼쪽 목록의 Foundations에서 컬러·글씨·프레임·새싹을 비교하고, Components에서 개별 상태를 확인한다. Text의 Controls에서 한글 문구와 글씨 역할을 바꿀 수 있다. 버튼은 누르거나 Tab으로 포커스하고, 입력창은 직접 입력하며, 필터는 선택을 바꿀 수 있다. 붙이기 데모는 칸을 눌러 상태를 전환한다. 데모 상태는 저장하지 않는다.
 
 `Components / Dialog`에서 튜토리얼용 스토리 3개와 [일반 화면용 기본형 시안](design/retro-pocket-v1/basic-dialog-review/README.md) 1개를 확인할 수 있다. Docs는 별도로 자동 생성된다. 브라우저 외곽 Storybook 메뉴는 도구 UI이며 앱 폰트 규칙 적용 대상이 아니다.
 
@@ -23,7 +23,7 @@ npm run storybook
 
 ## 시안 형태 비교
 
-`Design System / Reference Match`에 390px 홈 구성과 시안 나란히 비교를 추가했다. 폰트와 팔레트는 유지하고, 프레임·버튼·새싹·선택 칸·아이콘을 보정했다. 홈은 공통 컴포넌트 검토용이며 목표 설정/추가 버튼은 프레임 확인 팝업을 연다. 제품 화면이나 설정 흐름 구현 완료를 의미하지 않는다.
+~~`Design System / Reference Match`~~ — 옛 v6 홈(칩 + 판) 시안과의 비교 페이지였다. 홈 구조가 바뀌어 2026-09-30에 지웠다. 기준 이미지는 `docs/design/`에 남아 있다.
 
 ## 색상: 사용자 지정값
 
@@ -62,12 +62,10 @@ npm run storybook
 | PixelButton | primary/secondary, 눌림, 포커스, disabled, loading. loading은 원래 글자를 투명하게 남겨 폭을 유지하고 그 위에 움직이는 로딩 점을 겹친다. 접근성 이름은 `저장 중` |
 | PixelInput | Neo둥근모 입력·메모, 라벨, 포커스 |
 | ProgressBar | 진행 비율과 접근성 값 |
-| GoalChip | 이름+진행 막대, 선택 상태 |
 | StickerFilters | 전체/친구/모양/사물, 외곽·개별 border 0, 세로 구분선 |
 | SproutSticker | 스티커 라이브러리의 56×56 새싹 경로, 투명 얼굴 |
-| DefaultStickerLink | 새싹+기본 스티커+화살표 |
 | StickerSlot | 빈칸/붙일 수 있음/붙임 |
-| PixelDialog | `tutorial`은 단계 숫자·구분선과 왼쪽 정렬 텍스트를, `basic`은 숫자·구분선 없는 중앙 정렬 텍스트를 사용. 제목·설명·버튼 스타일은 동일 |
+| PixelDialog | `tutorial`은 단계 숫자·구분선과 왼쪽 정렬 텍스트를, `basic`은 숫자·구분선 없는 중앙 정렬 텍스트를 사용. 제목·설명·버튼 스타일은 동일. `single`이면 버튼 하나(primary)가 다이얼로그 너비를 채운다 — 저장 실패 같은 알림용 (2026-09-30) |
 | GoalStickerCell | 붙인 칸의 사진·메모 기록 표식 B안. 비어 있거나 기록이 없으면 표식 없음 |
 | PhotoAttachment | 사진 프레임 안 추가 버튼과 첨부 사진 오른쪽 위 삭제 버튼 (`actionsInFrame`) |
 | SettingRow | 앱 설정·약관의 이동 행, 값 표시, 비활성 상태 |
@@ -145,7 +143,7 @@ npm run check:storybook
 
 `retro.focus`가 단일 기준이다: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3 (모두 논리 px). 크기가 늘어나도 모서리와 선은 늘리지 않고 직선 구간만 확장한다. 표면색을 덮지 않는 투명한 표시이며 터치를 가로채지 않는다. 호스트가 활성 상태, 키보드 포커스와 접근성 의미를 관리한다. `StickerSlot`의 available 상태가 이 컴포넌트를 사용한다.
 
-검토는 `Reference Match / Focus Details`와 `Controls Actual Size`의 **100% 표시를 먼저** 사용한다. 3배 화면은 모서리 구조 확인용이다. 기존 폰트의 획 굵기 차이는 별도 미해결 사항이다.
+검토는 **100% 표시를 먼저** 사용한다(옛 `Reference Match` 페이지는 2026-09-30에 지웠다). 3배 화면은 모서리 구조 확인용이다. 기존 폰트의 획 굵기 차이는 별도 미해결 사항이다.
 
 
 타이틀 하단 선은 `retro.shape.panelTitleBorder = 3`, 적립판 모든 칸 테두리는 `retro.shape.cellBorder = 3`으로 관리한다. 포커스의 가는 연결선도 `retro.focus.lineWidth = 3`으로 맞췄다. 홀수 굵기 SVG 선의 중심을 반 픽셀에 놓아 실제 가장자리는 정수 픽셀에 맞춘다.
@@ -179,5 +177,5 @@ npm run check:storybook
 | `ShortNotice` | `emphasis` (제목을 크게, 화면 맨 위 안내) |
 | `TutorialSpotlight` | `content` (첫 실행 1–3단계 밖 문구) |
 
-**아직 디자인 시스템에 넣지 않은 것.** 화면 조합(목록 화면, 판 상세 화면, 완성한 판 설정, 종료일 늘리기)과 `GoalEditorScreen`의 새 배치(이름 → 기본 스티커 → 기간 → [삭제하기]), 5단계 `TutorialScreen`은 앱 화면을 옮길 때 함께 바꾼다. 지금 앱이 기존 `HomeScreen`·`GoalEditorScreen`·`TutorialScreen`을 그대로 쓰기 때문이다. `GoalChip`, `HomeScreen`, `DefaultStickerLink`는 새 구조에서 쓰지 않게 되지만 앱을 옮기기 전까지 남긴다.
+**화면 조합 (2026-09-30).** 목록·판 상세·목표 설정·완성한 판 설정·새 목표·칸/종료일 늘리기는 `board-screens.tsx`, 5단계 첫 실행 튜토리얼은 `first-run-tutorial.tsx`에 있고 Storybook과 앱이 같은 소스를 쓴다. 옛 `HomeScreen`·`GoalEditorScreen`·3단계 `TutorialScreen`·`GoalChip`·`GoalStickerLink`/`DefaultStickerLink`는 지웠다. 모션은 `StickMotion`(붙이기, 모션 감소 설정이면 생략). `SettingRow`는 앱 설정 구현 때 쓸 컴포넌트로 남겼고 스토리는 지웠다.
 
