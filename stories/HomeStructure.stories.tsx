@@ -180,7 +180,8 @@ export const HomeActive: Story = {name: '목록 · 내 목표', render: () => <H
 export const HomeCompleted: Story = {name: '목록 · 완성한 판', render: () => <Home list={goals} initialTab="completed"/>};
 export const HomeEmptyCompleted: Story = {name: '목록 · 완성한 판 없음', render: () => <Home list={noneCompleted} initialTab="completed"/>};
 export const DetailTally: Story = {name: '상세 · 적립판 진행중', render: () => <Detail goal={byId('reading')}/>};
-export const DetailPeriod: Story = {name: '상세 · 달력판 기간 진행중', render: () => <Detail goal={byId('water')}/>};
+export const DetailTallyLong: Story = {name: '상세 · 적립판 100칸 (빈칸으로 스크롤)', render: () => <Detail goal={{...byId('reading'), total: 100, filled: range(33)}}/>};
+export const DetailPeriod: Story ={name: '상세 · 달력판 기간 진행중', render: () => <Detail goal={byId('water')}/>};
 export const DetailOpenEnded: Story = {name: '상세 · 달력판 종료일 없음', render: () => <Detail goal={byId('walk')}/>};
 export const RemoveWithRecord: Story = {name: '상세 · 기록 있는 스티커 떼기 확인', render: () => <Detail goal={byId('reading')} recorded={new Set([2, 5])} overlay={<Overlay title="스티커를 뗄까요?" description="이 칸의 사진·메모도 함께 사라져요." secondaryLabel="취소" primaryLabel="떼기"/>}/>};
 export const FlowConfirmLast: Story = {name: '완성 흐름 1 · 마지막 칸 확인', render: () => <Detail goal={almostDone} overlay={confirmLast}/>};

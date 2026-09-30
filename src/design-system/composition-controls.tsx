@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState, type ReactNode} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
 import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
@@ -126,6 +126,17 @@ export function PixelLoadingIndicator({label='진행 중'}:{label?:string}) {
   </View>;
 }
 const NO_INSETS={top:0,right:0,bottom:0,left:0};
+/** 대상의 세로 가운데를 보이는 영역 가운데에 두는 스크롤 위치. 내용 위아래 끝은 넘지 않는다. */
+export function centeredScrollOffset({targetY,targetHeight,viewportHeight,contentHeight}:{targetY:number;targetHeight:number;viewportHeight:number;contentHeight:number}) {
+  const max=Math.max(0,contentHeight-viewportHeight);
+  return Math.min(max,Math.max(0,Math.round(targetY+targetHeight/2-viewportHeight/2)));
+}
+/** 스크롤 안의 View를 가운데로 옮긴다. 옮기지 못해도(재기 실패, RetroScreen 밖) 끝난 것으로 돌려준다. */
+export type ScrollToCenter=(target:View,animated:boolean)=>Promise<void>;
+const ScrollToCenterContext=createContext<ScrollToCenter>(()=>Promise.resolve());
+export function useScrollToCenter() {
+  return useContext(ScrollToCenterContext);
+}
 /**
  * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
  *
@@ -140,6 +151,17 @@ export function RetroScreen({children,style,avoidKeyboard=false,header}:{childre
   // 헤더와 본문 사이는 화면이 준 gap을 그대로 쓴다. 헤더를 밖으로 빼도 스크롤 전 첫 화면이 같아야 한다.
   const gap=(StyleSheet.flatten(style)?.gap as number|undefined)??20;
   const scroll=useRef<ScrollView>(null),offset=useRef(0);
+  const content=useRef<View>(null),viewportHeight=useRef(0),contentHeight=useRef(0);
+  const scrollToCenter=useCallback<ScrollToCenter>((target,animated)=>new Promise(resolve=>{
+    const container=content.current;
+    if(!container){resolve();return;}
+    target.measureLayout(container,(_x,y,_width,height)=>{
+      const next=centeredScrollOffset({targetY:y,targetHeight:height,viewportHeight:viewportHeight.current,contentHeight:contentHeight.current});
+      scroll.current?.scrollTo({y:next,animated});
+      offset.current=next;
+      resolve();
+    },()=>resolve());
+  }),[]);
   // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
   // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
   useEffect(()=>{
@@ -160,13 +182,17 @@ export function RetroScreen({children,style,avoidKeyboard=false,header}:{childre
     testID="retro-scroll"
     ref={scroll}
     onScroll={e=>{offset.current=e.nativeEvent.contentOffset.y;}}
+    onLayout={e=>{viewportHeight.current=e.nativeEvent.layout.height;}}
+    onContentSizeChange={(_width,height)=>{contentHeight.current=height;}}
     scrollEventThrottle={16}
     style={{flex:1}}
     contentContainerStyle={{flexGrow:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
-    <Pressable accessible={false} onPress={()=>Keyboard.dismiss()}
-      style={[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20},style,header?{paddingTop:0}:null]}>{children}</Pressable>
+    <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()}
+      style={[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20},style,header?{paddingTop:0}:null]}>
+      <ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider>
+    </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
   return <View style={{flex:1,backgroundColor:retro.color.screen,paddingTop:insets.top}}>

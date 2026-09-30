@@ -1,9 +1,9 @@
-import React,{useCallback,useMemo,useState,type ReactNode} from 'react';
+import React,{useCallback,useMemo,useRef,useState,type ReactNode} from 'react';
 import {PanResponder,Pressable,View} from 'react-native';
 import {retro} from './tokens';
 import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,StickerGrid} from './components';
 import {ActionSymbol,stickerLabel,type PocketStickerId} from './sticker-glyphs';
-import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerPicker,StickerSummary,type BoardKind,type GoalListTab} from './composition-controls';
+import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerPicker,StickerSummary,useScrollToCenter,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 
@@ -47,15 +47,21 @@ export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방�
  * 완성한 판은 readonly라 기록 열기만 남는다 (4.7).
  */
 export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false}:{/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:PocketStickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
+  // 판은 칸 크기를 재고 다음 빈칸으로 스크롤한 뒤에 보인다. 재기 전 프레임은 픽셀 테두리가 빠져 있어,
+  // 칸이 많은 판을 열 때 화면이 넘어오는 동안 그대로 보였다 (2026-09-30 실기기 녹화).
+  const [ready,setReady]=useState(false);
+  const reveal=useCallback(()=>setReady(true),[]);
   return <RetroScreen style={{gap:12}} header={<ScreenHeader title={completed?'완성한 판':'내 목표'} onBack={onBack}/>}>
+    <View testID="board-panel" style={{opacity:ready?1:0}} onLayout={board.kind==='calendar'?reveal:undefined}>
     <PixelPanel title={name} action={<Pressable accessibilityRole="button" accessibilityLabel="목표 설정" onPress={onSettings} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
       {board.kind==='calendar'
         ?<CalendarSwipe board={board}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
           isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} readonly={completed} poppedDate={board.justPlaced}/></CalendarSwipe>
-        :<TallyGrid board={board} sticker={sticker} completed={completed}/>}
+        :<TallyGrid board={board} sticker={sticker} completed={completed} onSettled={reveal}/>}
     </PixelPanel>
+    </View>
   </RetroScreen>;
 }
 /** 달력판은 좌우 스와이프로도 달을 옮긴다 (PRD 4.3). 화살표를 숨긴 방향으로는 가지 않는다. */
@@ -72,19 +78,45 @@ function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactN
   }),[shift]);
   return <View {...swipe.panHandlers}>{children}</View>;
 }
-function TallyGrid({board,sticker,completed}:{board:TallyBoardView;sticker:PocketStickerId;completed:boolean}) {
+function assignRef<T>(ref:React.Ref<T>|undefined,value:T|null) {
+  if(typeof ref==='function') ref(value);
+  else if(ref) (ref as React.RefObject<T|null>).current=value;
+}
+/**
+ * 적립판 칸. 다음 빈칸을 화면 가운데로 스크롤한다 — 판을 열 때, 그리고 칸 수가 바뀌었을 때(칸 늘리기)만.
+ * 붙일 때마다 옮기면 누르는 중에 판이 움직인다 (2026-09-30).
+ * 옮긴 뒤(빈칸이 없으면 그리고 나서) onSettled를 부른다.
+ */
+function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sticker:PocketStickerId;completed:boolean;onSettled:()=>void}) {
   const numbers=Array.from({length:board.total},(_,i)=>i+1);
   const next=completed?undefined:numbers.find(n=>!board.filled[n]);
   const lastFilled=Math.max(0,...Object.keys(board.filled).map(Number));
-  return <StickerGrid>{numbers.map(n=>{
+  const scrollToCenter=useScrollToCenter();
+  const nextNode=useRef<View|null>(null);
+  /** 마지막으로 가운데로 옮긴 때의 칸 수 */
+  const centeredTotal=useRef<number|null>(null);
+  /** 판이 이미 보이면 부드럽게 옮긴다. 처음 열 때는 가린 채로 바로 옮긴다 */
+  const settled=useRef(false);
+  const {nextSlotRef}=board;
+  const setNextNode=useCallback((node:View|null)=>{nextNode.current=node;assignRef(nextSlotRef,node);},[nextSlotRef]);
+  const settle=()=>{settled.current=true;onSettled();};
+  function centerNext() {
+    const node=nextNode.current;
+    if(!node||centeredTotal.current===board.total) return;
+    centeredTotal.current=board.total;
+    const animated=settled.current;
+    // 스크롤 영역과 내용 높이가 같은 레이아웃에서 들어오도록 한 프레임 미룬다.
+    requestAnimationFrame(()=>{void scrollToCenter(node,animated).then(settle);});
+  }
+  return <View onLayout={next===undefined?settle:undefined}><StickerGrid>{numbers.map(n=>{
     const filled=board.filled[n];
     const cell=<GoalStickerCell key={n} number={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'} enabled={Boolean(filled)||!completed} readonly={completed}
       hasRecord={board.recorded?.has(n)} popIn={n===board.justPlaced} onPress={()=>board.onPress(n)} onOpenRecord={filled?()=>board.onOpenRecord(n):undefined}/>;
     // 튜토리얼 대상 칸은 감싸서 잰다. 감싸는 View는 칸을 그대로 채운다.
-    if(n===next) return <View key={n} ref={board.nextSlotRef} style={{width:'100%',height:'100%'}}>{cell}</View>;
+    if(n===next) return <View key={n} ref={setNextNode} onLayout={centerNext} style={{width:'100%',height:'100%'}}>{cell}</View>;
     if(filled&&n===lastFilled) return <View key={n} ref={board.recordSlotRef} style={{width:'100%',height:'100%'}}>{cell}</View>;
     return cell;
-  })}</StickerGrid>;
+  })}</StickerGrid></View>;
 }
 
 // ── 기본 스티커 선택 ────────────────────────────────────────────────

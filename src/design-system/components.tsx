@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleSheet, Platform, Modal, AccessibilityInfo, Animated, useWindowDimensions,
   type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue,
@@ -109,10 +109,15 @@ export function PixelButton({ label, variant = 'primary', disabled = false, load
   </Pressable>;
 }
 
+/** 판 테두리 안쪽 여백(한쪽). */
+const PANEL_CONTENT_INSET = retro.shape.panelInnerInset + 4 + retro.layout.panelPadding;
+/** 화면 콘텐츠 폭에서 바깥 판들이 이미 차지한 가로 여백. 측정 전 첫 프레임 추정에 쓴다. */
+const ContentInsetContext = createContext(0);
 export function PixelPanel({ children, title, action, style }: {children: ReactNode; title?: string; action?: ReactNode; style?: StyleProp<ViewStyle>}) {
-  return <PixelFrame style={style} contentStyle={{padding: retro.shape.panelInnerInset + 4 + retro.layout.panelPadding}}>
+  const inset = useContext(ContentInsetContext) + 2 * PANEL_CONTENT_INSET;
+  return <PixelFrame style={style} contentStyle={{padding: PANEL_CONTENT_INSET}}>
     {title && <View style={{borderBottomWidth: retro.shape.panelTitleBorder,borderColor:c.ink,paddingBottom:8,marginBottom:0,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><PixelText variant="title" style={{fontSize:32,lineHeight:40,flexShrink:1}}>{title}</PixelText>{action}</View>}
-    {children}
+    <ContentInsetContext.Provider value={inset}>{children}</ContentInsetContext.Provider>
   </PixelFrame>;
 }
 
@@ -194,10 +199,14 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
  */
 export const SCREEN_MAX_WIDTH=390;
 export const SCREEN_PADDING=20;
-/** onLayout 이전 첫 프레임에 쓸 콘텐츠 폭. 실제 측정값과 같아 깜빡이지 않는다. */
+/**
+ * onLayout 이전 첫 프레임에 쓸 콘텐츠 폭. 실제 측정값과 같아 깜빡이지 않는다.
+ * 판(PixelPanel) 안에서는 판 안쪽 여백을 뺀다. 빼지 않으면 첫 프레임에 칸이 넘쳐 2열로 그려진다 (2026-09-30).
+ */
 export function useContentWidth(measured:number|null) {
   const {width}=useWindowDimensions();
-  return measured??Math.max(0,Math.min(SCREEN_MAX_WIDTH,width)-2*SCREEN_PADDING);
+  const inset=useContext(ContentInsetContext);
+  return measured??Math.max(0,Math.min(SCREEN_MAX_WIDTH,width)-2*SCREEN_PADDING-inset);
 }
 
 /** Shared three-column board spacing. Slots inside use width/height 100%. */
