@@ -109,8 +109,17 @@ PRD 4.8 전체를 구현한다. Apple·Google 로그인, 변경마다 자동 백
 
 ## ③ 서버
 
-**위치** — 이 저장소의 `supabase/`(마이그레이션 SQL, Edge Functions, `config.toml`). 개발은 `supabase start`(로컬 Docker).
-운영은 국내 리전 자체 호스팅이다. 클라우드 선택은 배포 단계에서 한다.
+**위치** — 이 저장소의 `supabase/`(마이그레이션 SQL, Edge Functions, `config.toml`). 개발은 Supabase 클라우드 무료 프로젝트 `chagok-dev`(서울 리전)다(2026-09-30 — 맥을 켜 두지 않아도 되고 Docker가 필요 없다). 테스트 데이터만 둔다. 실행법은 `docs/DEV-SETUP.md` 「개발 서버」.
+**운영 서버는 출시 전에 정한다.** 1순위는 Supabase 클라우드 서울 리전의 별도 프로젝트(같은 마이그레이션·함수를 올린다)다. 무료 요금제로 시작하면 자동 백업이 없으므로 **매일 DB를 내보내는 작업을 출시 전에 만든다**; 사진이 1GB에 가까워지면 Pro로 올리거나 사진만 다른 저장소로 옮긴다.
+대안은 VPS 셀프 호스팅(Hostinger KVM 4, 말레이시아)이다 — 비용은 없지만 방화벽·HTTPS·매일 백업·복구 시험을 직접 맡고, 처리방침에 국외 이전을 적는다.
+
+**이식성 원칙** — 동기화 규칙은 SQL 함수에만 둔다. 앱은 `SyncServer`·`PhotoStore` 인터페이스로만 서버를 안다.
+Supabase 전용 기능은 Auth·Storage·Edge Functions까지만 쓴다. 비용·운영 문제로 옮길 때 DB는 `pg_dump`, 사진은 S3 호환 저장소 복사,
+앱은 두 인터페이스 구현만 바꾼다.
+
+**구현 메모 (2026-09-30)** — PK는 `(user_id, id)`다(다른 사용자와 id가 겹쳐도 서로 건드리지 않는다). `pull_changes`의 커서는 행이 바뀔 때마다 받는 시퀀스 번호(`seq`)다.
+두 트랜잭션이 동시에 커밋하면 늦게 커밋한 낮은 번호를 놓칠 수 있는데, 한 기기 백업에서는 복원이 0부터 전부 받으므로 문제없다 — 패드 지원 때 커밋 순서 기반으로 바꾼다.
+앱은 서버 오류 중 형식(22xxx)·무결성(23xxx)만 보류하고 나머지(인증·네트워크)는 다시 시도한다. Storage 오류는 HTTP status가 늘 400이라 `statusCode`(413·415)로 구분한다.
 
 **테이블**
 
@@ -139,6 +148,8 @@ PRD 4.8 전체를 구현한다. Apple·Google 로그인, 변경마다 자동 백
   client secret은 .p8 키로 요청마다 서명하므로 6개월 수동 갱신이 없다. 네이티브 ID 토큰 로그인 자체에는 Supabase Auth에 번들 ID만 설정한다.
 - `delete-account`: **Apple 토큰 폐기 → 사진 폴더 삭제 → 데이터 행 삭제 → 인증 계정 삭제** 순서다. 실패하면 멈추고, 다시 시도하면
   남은 단계부터 이어서 한다(멱등). 폐기를 먼저 하는 이유는 데이터를 지운 뒤 폐기가 실패하면 되돌릴 수 없어서다.
+  Apple 토큰 폐기 단계는 `apple-link`와 함께 구현한다. 그전에는 토큰이 있으면 삭제를 멈춘다(2026-09-30).
+  함수는 토큰의 `sub`를 믿고 지우므로(인증 계정이 지워진 뒤의 재시도를 받기 위해) 게이트웨이의 서명 검증(`verify_jwt`)을 끄면 안 된다. 위조 토큰 서버 테스트가 이를 지킨다.
 
 **Google Play 웹 삭제 경로** — `chagok-app-policy/delete-account/`에 앱 안 삭제 방법과 이메일 요청을 안내한다. 1차는 수동으로 처리한다.
 
@@ -182,6 +193,7 @@ PRD 4.8 전체를 구현한다. Apple·Google 로그인, 변경마다 자동 백
 
 - **Expo Go를 더 이상 쓸 수 없다.** 로컬 개발 빌드(`npx expo run:ios` / `run:android`)가 기본이다. `ios/`·`android/`는 prebuild로 생성하고
   커밋하지 않는다. EAS Build는 스토어 제출 단계에서 쓴다. `docs/DEV-SETUP.md`를 고친다.
+  다만 서버·동기화 코어는 개발용 이메일 로그인으로 Expo Go에서 확인한다(2026-09-30). 개발 빌드는 Apple·Google 로그인과 위젯부터 필요하다.
 - 선행 조건(2026-09-30 기준 없음): **Docker Desktop**, **Apple Developer Program(유료)**, Google Cloud OAuth 클라이언트 ID(iOS·Android·웹)와
   Android 서명 SHA-1.
 - 구현 순서: Docker → 서버·동기화 코어 → Google 로그인(Android) → Apple 계정 승인 뒤 Apple 로그인·`apple-link`·iOS 실기기.
