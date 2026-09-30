@@ -28,6 +28,10 @@
 - 그래서 앱의 약관 링크(`/terms/`, `/privacy/`)와 `versions.json`은 게시 전까지 404다. 앱은 이미 이 주소를 본다(`src/policy/urls.ts`).
 - Visitor access: Private + "Previews only" — 운영 주소만 공개, 미리보기는 잠금.
 - 무료 요금제는 월 300크레딧 고정 한도다(배포 1회 15, 전송 1GB 20, 요청 1만 건 2). 앱이 실행마다 `versions.json`을 받으므로 사용자가 늘면 Team → Usage를 확인한다. 한도가 문제되면 Cloudflare Pages(조회 무제한)로 옮기고 주소 한 줄을 바꾼다.
+- **나중에 처리할 것 (2026-09-30 기록)**
+  - **스토어 제출 전에 약관을 실제로 게시한다.** 심사에서 처리방침·계정 삭제 안내 링크를 연다. 그 전에 클라우드 사업자와 판 날짜를 채운다.
+  - **Google 로그인 OAuth 동의 화면**: 홈페이지·처리방침 링크의 도메인을 승인된 도메인으로 등록해야 한다. `netlify.app`은 공개 접미사 목록에 있어 `chagok-app-terms.netlify.app`을 등록할 수 있을 것으로 보지만 확인 전이다. 앱 이름·로고를 띄우는 브랜드 인증은 Search Console 도메인 소유 확인을 요구할 수 있다(사이트에 확인 파일·메타 태그를 올려 처리). 막히면 도메인을 사서 연결한다. 서버·로그인 단계에서 확인한다.
+  - 스토어 계정(개인 계정)·Apple 로그인·처리방침·지원·계정 삭제 URL은 Netlify 주소로 문제없다.
 - 게시할 때: 빈칸을 채우고 검토 → 초안을 `publish`에 반영(또는 Netlify 운영 브랜치를 `main`으로) → 주소 4개(`/`, `/terms/`, `/privacy/`, `/delete-account/`)와 `versions.json` 확인.
 
 ## 정책 저장소 `chagok-app-policy`
