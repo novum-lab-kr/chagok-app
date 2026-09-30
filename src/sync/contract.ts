@@ -26,6 +26,9 @@ export type PulledRow =
 /** 서버가 내용 때문에 거부했다(형식 오류 등). 네트워크 오류와 구분한다 — 이것만 보류 대상이다. */
 export class SyncRejected extends Error {}
 
+/** 사진 자체가 문제다(디코딩 실패, 크기 거부 등). 다시 보내도 같으므로 그 사진만 보류한다. */
+export class PhotoRejected extends Error {}
+
 export interface SyncServer {
   /** 한 트랜잭션으로 반영. 더 최근 updated_at 우선, 목표·스티커 삭제는 딸린 행까지 표식, 멱등. */
   push(deviceId: string, changes: Change[]): Promise<void>;

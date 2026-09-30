@@ -71,3 +71,15 @@ describe('outbox', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('부모 먼저 (리뷰 #3)', () => {
+  it('queued_at과 상관없이 목표 → 스티커 → 기록 → 사진 순으로 꺼낸다', async () => {
+    const db = await getDb();
+    await enqueue(db, 'photo', 'p', 50);
+    await enqueue(db, 'record', 'r', 100);
+    await enqueue(db, 'sticker', 's', 150);
+    await enqueue(db, 'goal', 'g', 200); // 스티커를 붙인 뒤 목표 이름을 고친 경우
+    expect((await takeBatch(10)).map((e) => e.entity)).toEqual(['goal', 'sticker', 'record', 'photo']);
+    expect((await takeBatch(1)).map((e) => e.rowId)).toEqual(['g']);
+  });
+});

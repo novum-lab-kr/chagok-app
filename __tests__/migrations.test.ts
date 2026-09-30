@@ -143,3 +143,25 @@ describe('v5 — 백업 (계정·백업 설계 ②)', () => {
     expect(outbox).toEqual(['entity', 'row_id', 'queued_at', 'attempts', 'last_error']);
   });
 });
+
+describe('마이그레이션 원자성 (리뷰 #7)', () => {
+  it('버전 중간에 실패하면 그 버전은 통째로 되돌려지고, 다음 실행에서 다시 적용된다', async () => {
+    const base = await driverAtV4();
+    let failOnce = true;
+    const flaky: DbDriver = {
+      ...base,
+      async exec(sql) {
+        if (failOnce && sql.includes('photo_remote_path')) { failOnce = false; throw new Error('앱 종료'); }
+        return base.exec(sql);
+      },
+    };
+    setDriverFactory(async () => flaky);
+    await expect(getDb()).rejects.toThrow('앱 종료');
+    const cols = (await base.all<{ name: string }>('PRAGMA table_info(goals)')).map((c) => c.name);
+    expect(cols).not.toContain('updated_at');
+    expect((await base.first<{ user_version: number }>('PRAGMA user_version'))?.user_version).toBe(4);
+    setDriverFactory(async () => flaky);
+    await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+  });
+});

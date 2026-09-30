@@ -93,7 +93,9 @@ export class FakePhotos implements PhotoStore {
   remote = new Map<string, string>();
   missingLocal = new Set<string>();
   failDownload = new Set<string>();
+  failUpload: Error | null = null;
   async upload(recordId: string, storedUri: string) {
+    if (this.failUpload) throw this.failUpload;
     if (this.missingLocal.has(storedUri)) return null;
     const path = `u/${recordId}.jpg`;
     this.remote.set(path, storedUri);

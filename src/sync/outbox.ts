@@ -31,11 +31,18 @@ export async function enqueue(tx: DbDriver, entity: OutboxEntity, rowId: string,
   notifyLocalChange();
 }
 
-/** 보류하지 않은 항목을 오래된 순서로. */
-export async function takeBatch(limit: number): Promise<OutboxEntry[]> {
+/**
+ * 보류하지 않은 항목을 부모부터(목표 → 스티커 → 기록 → 사진), 같은 종류 안에서는 오래된 순서로.
+ * 묶음이 나뉘어도 자식이 부모보다 먼저 서버에 가지 않게 한다 — 서버에 외래키가 있으면 자식이 영구 보류된다.
+ * excludePhotos: 사진 전송이 네트워크로 실패한 회차에서 행만 계속 보낼 때.
+ */
+export async function takeBatch(limit: number, options: { excludePhotos?: boolean } = {}): Promise<OutboxEntry[]> {
   const db = await getDb();
   const rows = await db.all<Row>(
-    'SELECT * FROM outbox WHERE last_error IS NULL ORDER BY queued_at ASC LIMIT ?', limit,
+    `SELECT * FROM outbox WHERE last_error IS NULL ${options.excludePhotos ? "AND entity != 'photo'" : ''}
+      ORDER BY CASE entity WHEN 'goal' THEN 0 WHEN 'sticker' THEN 1 WHEN 'record' THEN 2 ELSE 3 END, queued_at ASC
+      LIMIT ?`,
+    limit,
   );
   return rows.map(toEntry);
 }

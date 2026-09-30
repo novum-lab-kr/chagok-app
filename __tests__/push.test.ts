@@ -3,6 +3,7 @@ import { placeSticker, removeSticker } from '../src/repositories/stickerReposito
 import { upsertRecord } from '../src/repositories/recordRepository';
 import { pendingCount, takeBatch } from '../src/sync/outbox';
 import { pushOnce } from '../src/sync/push';
+import { PhotoRejected } from '../src/sync/contract';
 import { FakePhotos, FakeServer } from './support/fakeServer';
 import { withFreshDb } from './support/setup';
 
@@ -117,5 +118,34 @@ describe('pushOnce', () => {
     await pushOnce(deps);
     expect((deps.server.rows.get(`goal:${g.id}`)!.row as { name: string }).name).toBe('걷기');
     expect(await takeBatch(10)).toEqual([]);
+  });
+});
+
+describe('사진 실패 격리 (리뷰 #1)', () => {
+  it('사진 업로드가 네트워크 오류여도 행은 올라가고, 사진은 남아 다시 시도한다', async () => {
+    const deps = setup();
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    const r = await upsertRecord(s.id, { photoUri: 'record-photo:a.jpg', memo: '메모' });
+    deps.photos.failUpload = new Error('network');
+    await expect(pushOnce(deps)).rejects.toThrow('network');
+    expect([deps.server.live('goal'), deps.server.live('sticker'), deps.server.live('record')]).toEqual([[g.id], [s.id], [r.id]]);
+    expect(await pendingCount()).toEqual({ pending: 1, held: 0 });
+    deps.photos.failUpload = null;
+    await pushOnce(deps);
+    expect(deps.photos.remote.has(`u/${r.id}.jpg`)).toBe(true);
+    expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+  });
+
+  it('사진이 내용 때문에 거부되면 그 사진만 보류한다', async () => {
+    const deps = setup();
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    await upsertRecord(s.id, { photoUri: 'record-photo:broken.jpg', memo: null });
+    deps.photos.failUpload = new PhotoRejected('decode failed');
+    const result = await pushOnce(deps);
+    expect(result.held).toBe(1);
+    expect(deps.server.live('sticker')).toEqual([s.id]);
+    expect(await pendingCount()).toEqual({ pending: 0, held: 1 });
   });
 });

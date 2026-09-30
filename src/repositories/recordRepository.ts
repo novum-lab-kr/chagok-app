@@ -79,13 +79,14 @@ export async function listRecordedStickerIds(goalId: string): Promise<Set<string
 export async function deleteRecord(stickerId: string): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    const row = await tx.first<{ id: string; photo_uri: string | null }>(
-      'SELECT id, photo_uri FROM records WHERE sticker_id = ?', stickerId,
+    const row = await tx.first<{ id: string; photo_uri: string | null; photo_remote_path: string | null }>(
+      'SELECT id, photo_uri, photo_remote_path FROM records WHERE sticker_id = ?', stickerId,
     );
     if (!row) return;
     await tx.run('DELETE FROM records WHERE sticker_id = ?', stickerId);
     const now = Date.now();
     await enqueue(tx, 'record', row.id, now);
-    if (row.photo_uri) await enqueue(tx, 'photo', row.id, now);
+    // 복원 뒤 사진을 아직 못 받은 기록은 기기 경로 없이 서버 경로만 있다. 서버 사진도 지운다.
+    if (row.photo_uri || row.photo_remote_path) await enqueue(tx, 'photo', row.id, now);
   });
 }

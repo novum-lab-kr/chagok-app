@@ -28,10 +28,19 @@ async function migrate(driver: DbDriver): Promise<void> {
   if (version >= SCHEMA_VERSION) return;
 
   for (let i = version; i < MIGRATIONS.length; i++) {
-    for (const sql of MIGRATIONS[i]) await driver.exec(sql);
+    // 버전 하나를 통째로 적용한다. 중간에 앱이 끝나면 ALTER 일부만 남아 다음 실행이
+    // "duplicate column"으로 멈추므로, 같은 연결에서 BEGIN/COMMIT으로 묶는다.
+    await driver.exec('BEGIN');
+    try {
+      for (const sql of MIGRATIONS[i]) await driver.exec(sql);
+      // PRAGMA는 바인딩을 받지 않아 값을 직접 넣는다. version은 내부 계산값이다.
+      await driver.exec(`PRAGMA user_version = ${i + 1}`);
+      await driver.exec('COMMIT');
+    } catch (error) {
+      await driver.exec('ROLLBACK');
+      throw error;
+    }
     version = i + 1;
-    // PRAGMA는 바인딩을 받지 않아 값을 직접 넣는다. version은 내부 계산값이다.
-    await driver.exec(`PRAGMA user_version = ${version}`);
   }
 }
 

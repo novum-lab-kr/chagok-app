@@ -180,9 +180,10 @@ export async function countGoalContents(id: string): Promise<{ stickers: number;
 export async function deleteGoal(id: string): Promise<string[]> {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const photos = await tx.all<{ id: string; photo_uri: string }>(
+    // 복원 뒤 사진을 아직 못 받은 기록(서버 경로만 있음)도 서버 사진을 지워야 한다.
+    const photos = await tx.all<{ id: string; photo_uri: string | null }>(
       `SELECT r.id, r.photo_uri FROM records r JOIN stickers s ON s.id = r.sticker_id
-        WHERE s.goal_id = ? AND r.photo_uri IS NOT NULL`,
+        WHERE s.goal_id = ? AND (r.photo_uri IS NOT NULL OR r.photo_remote_path IS NOT NULL)`,
       id,
     );
     await tx.run('DELETE FROM records WHERE sticker_id IN (SELECT id FROM stickers WHERE goal_id = ?)', id);
@@ -192,7 +193,7 @@ export async function deleteGoal(id: string): Promise<string[]> {
     const now = Date.now();
     await enqueue(tx, 'goal', id, now);
     for (const p of photos) await enqueue(tx, 'photo', p.id, now);
-    return photos.map((p) => p.photo_uri);
+    return photos.flatMap((p) => (p.photo_uri ? [p.photo_uri] : []));
   });
 }
 

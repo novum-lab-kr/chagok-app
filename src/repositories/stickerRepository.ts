@@ -93,8 +93,8 @@ export async function getSticker(id: string): Promise<Sticker | null> {
 export async function removeSticker(id: string): Promise<string | null> {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const row = await tx.first<{ completed_at: number | null; photo_uri: string | null; record_id: string | null }>(
-      `SELECT g.completed_at, r.photo_uri, r.id AS record_id FROM stickers s
+    const row = await tx.first<{ completed_at: number | null; photo_uri: string | null; photo_remote_path: string | null; record_id: string | null }>(
+      `SELECT g.completed_at, r.photo_uri, r.photo_remote_path, r.id AS record_id FROM stickers s
          JOIN goals g ON g.id = s.goal_id
          LEFT JOIN records r ON r.sticker_id = s.id
         WHERE s.id = ?`,
@@ -107,7 +107,7 @@ export async function removeSticker(id: string): Promise<string | null> {
     // 기록은 서버가 스티커와 함께 표식한다. 사진 파일은 기록 id로 따로 지운다.
     const now = Date.now();
     await enqueue(tx, 'sticker', id, now);
-    if (row.record_id && row.photo_uri) await enqueue(tx, 'photo', row.record_id, now);
+    if (row.record_id && (row.photo_uri || row.photo_remote_path)) await enqueue(tx, 'photo', row.record_id, now);
     return row.photo_uri;
   });
 }

@@ -97,3 +97,30 @@ describe('저장소 → outbox', () => {
     expect(await keys()).toEqual([]);
   });
 });
+
+describe('복원 뒤 사진을 아직 못 받은 기록 (리뷰 #2)', () => {
+  async function restoredRecord() {
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    const r = await upsertRecord(s.id, { photoUri: null, memo: '메모' });
+    const db = await getDb();
+    await db.run('UPDATE records SET photo_remote_path = ? WHERE id = ?', `u/${r.id}.jpg`, r.id);
+    await clear();
+    return { g, s, r };
+  }
+  it('스티커를 떼면 서버 사진을 지우도록 photo를 남긴다', async () => {
+    const { s, r } = await restoredRecord();
+    await removeSticker(s.id);
+    expect(await keys()).toContain(`photo:${r.id}`);
+  });
+  it('기록을 지우면 photo를 남긴다', async () => {
+    const { s, r } = await restoredRecord();
+    await deleteRecord(s.id);
+    expect(await keys()).toContain(`photo:${r.id}`);
+  });
+  it('목표를 지우면 photo를 남긴다', async () => {
+    const { g, r } = await restoredRecord();
+    await deleteGoal(g.id);
+    expect(await keys()).toContain(`photo:${r.id}`);
+  });
+});

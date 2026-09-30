@@ -1,7 +1,7 @@
 import { getDb } from '../db/client';
 import { ack, enqueue, hold, takeBatch } from './outbox';
 import type { OutboxEntry } from './outbox';
-import { SyncRejected } from './contract';
+import { PhotoRejected, SyncRejected } from './contract';
 import type { Change, GoalRow, PhotoStore, RecordRow, RowEntity, StickerRow, SyncServer } from './contract';
 
 const TABLE: Record<RowEntity, string> = { goal: 'goals', sticker: 'stickers', record: 'records' };
@@ -73,20 +73,35 @@ async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Pr
 
 /**
  * outbox가 빌 때까지(보류 제외) 보낸다 (계정·백업 설계 ②·④).
- * 사진을 먼저 처리한다 — 경로를 기록하면 record 항목이 생겨 다음 반복에서 올라간다.
+ * 사진 실패는 행 백업을 막지 않는다: 사진 자체의 문제면 그 사진만 보류하고,
+ * 네트워크 문제면 이번 회차에는 사진을 빼고 행만 끝까지 보낸 뒤 오류를 던져 스케줄러가 다시 시도하게 한다.
  */
 export async function pushOnce(deps: PushDeps): Promise<{ sent: number; held: number }> {
   const size = deps.batchSize ?? 200;
   const clock = deps.now ?? Date.now;
   let sent = 0;
   let held = 0;
+  let photoError: unknown = null;
   for (;;) {
-    const batch = await takeBatch(size);
-    if (batch.length === 0) return { sent, held };
+    const batch = await takeBatch(size, { excludePhotos: photoError !== null });
+    if (batch.length === 0) {
+      if (photoError !== null) throw photoError;
+      return { sent, held };
+    }
     const now = clock();
     for (const e of batch.filter((x) => x.entity === 'photo')) {
-      await pushPhoto(e, deps.photos, now);
-      await ack([e]);
+      if (photoError !== null) break;
+      try {
+        await pushPhoto(e, deps.photos, now);
+        await ack([e]);
+      } catch (error) {
+        if (error instanceof PhotoRejected) {
+          await hold(e, error.message);
+          held += 1;
+        } else {
+          photoError = error;
+        }
+      }
     }
     const rows = batch.filter((x) => x.entity !== 'photo');
     if (rows.length) {
