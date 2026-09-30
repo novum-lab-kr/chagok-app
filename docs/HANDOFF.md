@@ -123,6 +123,7 @@ node scripts/trace-pocket-stickers.mjs /private/tmp/chagok-preview-tools/node_mo
 npm run storybook        # http://localhost:6006
 npm test                 # 도메인·저장소
 npm run test:components
+npm run test:server      # 실제 개발 서버(Supabase chagok-dev)에 대고. docs/DEV-SETUP.md 「개발 서버」
 npm run typecheck
 npm run lint
 npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
@@ -164,6 +165,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 | `/sticker/[id]` | 사진·메모. 완성한 판이면 읽기 전용 |
 | `/settings` | 이 기기 기록 안내, 약관과 라이선스 |
 | `/policies`, `/policies/[license]` | 이용약관·처리방침은 웹 시트(오프라인·실패 알림), 오픈소스 라이선스는 앱 내장 |
+| `/dev/sync` | **개발 전용(`__DEV__`).** 개발 계정 로그인, 올리기·전부 올리기·서버에서 복원. 실제 계정 화면이 붙으면 없앤다 |
 
 **화면에 연결되지 않은 것 (코드만 있음).**
 
@@ -185,8 +187,8 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 **준비물이 필요한 것** (Docker Desktop, Apple Developer Program, Google Cloud OAuth — 2026-09-30 기준 없음)
 
 - 개발 빌드 전환(`npx expo run:ios`/`run:android`, prebuild 폴더는 커밋하지 않음)과 `docs/DEV-SETUP.md` 갱신. 로그인·위젯 모두 Expo Go로는 안 된다.
-- 서버: 로컬 Supabase에 테이블·RLS·RPC(`push_changes`·`pull_changes`·`server_state`·`replace_all`·`record_consent`), Edge Functions(`delete-account`, `apple-link`). 가짜 서버와 같은 시나리오를 실제 서버에도 돌린다. 테이블 순서는 부모 먼저로 보낸다(외래키 전제).
-- 앱 연결: `SyncServer`·`PhotoStore` 실구현, 스케줄러를 AppState·`subscribeLocalChange`에 연결, 앱 설정의 백업 상태.
+- ~~서버~~ 2026-09-30 완료(`feat/server-local`): 개발 서버는 Supabase 클라우드 무료 프로젝트 `chagok-dev`(서울, Docker 불필요). 테이블·RLS·RPC 5개·`record-photos` 버킷·`delete-account`를 올렸고, 가짜 서버와 같은 계약 테스트를 실제 서버에도 돌린다(`npm run test:server`). 남은 것: **운영 서버 결정**(Supabase 클라우드 서울 별도 프로젝트 1순위 — 무료면 매일 DB 백업 작업 필수 / VPS 셀프 호스팅은 국외 이전 기재), `apple-link`와 **Apple 토큰 폐기**(그전에는 토큰이 있으면 계정 삭제가 멈춘다).
+- ~~앱 연결~~ 2026-09-30 완료: `SupabaseSyncServer`·`SupabasePhotoStore`(1600px·JPEG 80%), 로그인해 있는 동안 자동 전송(`connectSync`, 기록 2초 뒤·앱이 앞으로 올 때). 개발용 이메일 로그인과 `/dev/sync` 화면으로 Expo Go에서 확인한다. 남은 것: 앱 설정의 백업 상태, 계정 화면·실제 로그아웃·계정 삭제 흐름 연결, 복원 충돌 선택.
 - 로그인: Google(Android) 먼저, Apple은 계정 승인 뒤. 시작·동의·복원 분기·로그아웃·계정 삭제·재동의.
 - 위젯: spike(글꼴·PNG 스티커·딥링크·목표 선택) → iOS `expo-widgets`, Android `react-native-android-widget`.
 

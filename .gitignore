@@ -14,3 +14,7 @@ storybook-static/
 
 expo-env.d.ts
 # @end expo-cli
+# 서버 키·환경 변수 (커밋하지 않는다)
+.env*.local
+# 관리자 키. 이름을 .env로 시작하지 않는다 — Expo 개발 서버가 .env.* 파일을 앱 번들로 읽으려 한다.
+.secrets/

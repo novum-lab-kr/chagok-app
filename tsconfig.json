@@ -8,7 +8,8 @@
     "android",
     "ios",
     "storybook-static",
-    "dist"
+    "dist",
+    "supabase/functions"
   ],
   "compilerOptions": {
     "strict": true,
