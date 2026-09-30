@@ -96,6 +96,30 @@ export const MIGRATIONS: readonly (readonly string[])[] = [
       WHERE board_type = 'tally' AND total_slots IS NOT NULL
         AND (SELECT COUNT(*) FROM stickers WHERE stickers.goal_id = goals.id) >= total_slots;`,
   ],
+  // v5 — 백업 (docs/superpowers/specs/2026-09-30-account-backup-design.md ②)
+  //
+  // updated_at: 행 단위 병합(패드 지원)의 기준. 기존 행은 만든/붙인 시각으로 채운다.
+  // photo_remote_path: 서버 Storage 경로. 기기 경로(photo_uri)는 서버로 보내지 않는다.
+  // outbox: 올릴 대상 하나당 한 줄. 내용은 담지 않고 보낼 때 행을 읽는다.
+  //   attempts/last_error: 서버가 거부한 항목을 보류한다. 대상이 다시 바뀌면 풀린다.
+  // 삭제 표식은 서버에만 둔다. 기기는 지금처럼 실제로 지운다.
+  [
+    `ALTER TABLE goals ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;`,
+    `ALTER TABLE stickers ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;`,
+    `ALTER TABLE records ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;`,
+    `ALTER TABLE records ADD COLUMN photo_remote_path TEXT;`,
+    `UPDATE goals SET updated_at = created_at;`,
+    `UPDATE stickers SET updated_at = placed_at;`,
+    `UPDATE records SET updated_at = created_at;`,
+    `CREATE TABLE IF NOT EXISTS outbox (
+       entity TEXT NOT NULL CHECK (entity IN ('goal','sticker','record','photo')),
+       row_id TEXT NOT NULL,
+       queued_at INTEGER NOT NULL,
+       attempts INTEGER NOT NULL DEFAULT 0,
+       last_error TEXT,
+       PRIMARY KEY (entity, row_id)
+     );`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

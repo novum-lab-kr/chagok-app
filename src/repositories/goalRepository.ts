@@ -4,6 +4,7 @@ import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { Goal, BoardType } from '../domain/types';
 import { localDateKey } from '../domain/dates';
 import { periodEndAt, progressBasis } from '../domain/board';
+import { enqueue } from '../sync/outbox';
 
 type GoalRow = {
   id: string;
@@ -58,12 +59,15 @@ export async function createGoal(input: {
     lastPlacedAt: null,
     initialSlots: tally ? input.totalSlots : null,
   };
-  await db.run(
-    `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, initial_slots)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    goal.id, goal.name, goal.boardType, goal.totalSlots,
-    goal.defaultStickerId, goal.createdAt, goal.endDate, goal.initialSlots,
-  );
+  await db.transaction(async (tx) => {
+    await tx.run(
+      `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, initial_slots, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      goal.id, goal.name, goal.boardType, goal.totalSlots,
+      goal.defaultStickerId, goal.createdAt, goal.endDate, goal.initialSlots, goal.createdAt,
+    );
+    await enqueue(tx, 'goal', goal.id, goal.createdAt);
+  });
   return goal;
 }
 
@@ -84,9 +88,17 @@ export async function updateGoal(
   }
   if (patch.endDate !== undefined) { sets.push('end_date = ?'); values.push(patch.endDate); }
   if (sets.length === 0) return;
+  await writeGoal(id, sets.join(', '), ...values);
+}
 
+/** 목표 한 행을 고치고 updated_at·outbox를 같은 트랜잭션에서 남긴다 (계정·백업 설계 ②). */
+async function writeGoal(id: string, sql: string, ...params: (string | number | null)[]): Promise<void> {
   const db = await getDb();
-  await db.run(`UPDATE goals SET ${sets.join(', ')} WHERE id = ?`, ...values, id);
+  const now = Date.now();
+  await db.transaction(async (tx) => {
+    await tx.run(`UPDATE goals SET ${sql}, updated_at = ? WHERE id = ?`, ...params, now, id);
+    await enqueue(tx, 'goal', id, now);
+  });
 }
 
 export async function listGoals(): Promise<Goal[]> {
@@ -103,35 +115,32 @@ export async function getGoal(id: string): Promise<Goal | null> {
 
 /** 완성한다. 완성 흐름(닫기/계속하기)을 아직 보여주지 않은 상태가 된다 (PRD 4.7). */
 export async function completeGoal(id: string, at: number): Promise<void> {
-  const db = await getDb();
-  await db.run('UPDATE goals SET completed_at = ?, completion_seen = 0 WHERE id = ?', at, id);
+  await writeGoal(id, 'completed_at = ?, completion_seen = 0', at);
 }
 
 /** 완성 다이얼로그에서 닫기를 골랐다. 다시 묻지 않는다. */
 export async function markCompletionSeen(id: string): Promise<void> {
-  const db = await getDb();
-  await db.run('UPDATE goals SET completion_seen = 1 WHERE id = ?', id);
+  await writeGoal(id, 'completion_seen = 1');
 }
 
 const REOPEN = 'completed_at = NULL, completion_seen = 0';
 
 /** 기간 없는 달력판의 계속하기: 완성을 푼다. */
 export async function reopenGoal(id: string): Promise<void> {
-  const db = await getDb();
-  await db.run(`UPDATE goals SET ${REOPEN} WHERE id = ?`, id);
+  await writeGoal(id, REOPEN);
 }
 
 /** 적립판의 계속하기: 칸을 더하고 진행 중으로 돌아간다. 상한은 없다 (2026-09-30). */
 export async function extendSlots(id: string, add: number): Promise<void> {
   if (!Number.isInteger(add) || add < 1) throw new Error('더할 칸 수는 1 이상이어야 합니다.');
-  const db = await getDb();
-  await db.run(`UPDATE goals SET total_slots = total_slots + ?, ${REOPEN} WHERE id = ? AND board_type = 'tally'`, add, id);
+  const goal = await getGoal(id);
+  if (!goal || goal.boardType !== 'tally') return; // 적립판만 칸을 늘린다
+  await writeGoal(id, `total_slots = total_slots + ?, ${REOPEN}`, add);
 }
 
 /** 기간 달력판의 계속하기: 종료일을 바꾸고 진행 중으로 돌아간다. */
 export async function extendEndDate(id: string, endDate: string): Promise<void> {
-  const db = await getDb();
-  await db.run(`UPDATE goals SET end_date = ?, ${REOPEN} WHERE id = ?`, endDate, id);
+  await writeGoal(id, `end_date = ?, ${REOPEN}`, endDate);
 }
 
 /**
@@ -171,15 +180,20 @@ export async function countGoalContents(id: string): Promise<{ stickers: number;
 export async function deleteGoal(id: string): Promise<string[]> {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const photos = await tx.all<{ photo_uri: string }>(
-      `SELECT r.photo_uri FROM records r JOIN stickers s ON s.id = r.sticker_id
-        WHERE s.goal_id = ? AND r.photo_uri IS NOT NULL`,
+    // 복원 뒤 사진을 아직 못 받은 기록(서버 경로만 있음)도 서버 사진을 지워야 한다.
+    const photos = await tx.all<{ id: string; photo_uri: string | null }>(
+      `SELECT r.id, r.photo_uri FROM records r JOIN stickers s ON s.id = r.sticker_id
+        WHERE s.goal_id = ? AND (r.photo_uri IS NOT NULL OR r.photo_remote_path IS NOT NULL)`,
       id,
     );
     await tx.run('DELETE FROM records WHERE sticker_id IN (SELECT id FROM stickers WHERE goal_id = ?)', id);
     await tx.run('DELETE FROM stickers WHERE goal_id = ?', id);
     await tx.run('DELETE FROM goals WHERE id = ?', id);
-    return photos.map((p) => p.photo_uri);
+    // 딸린 스티커·기록은 서버가 연쇄 표식한다. 사진 파일은 기록 id로 따로 지운다.
+    const now = Date.now();
+    await enqueue(tx, 'goal', id, now);
+    for (const p of photos) await enqueue(tx, 'photo', p.id, now);
+    return photos.flatMap((p) => (p.photo_uri ? [p.photo_uri] : []));
   });
 }
 
