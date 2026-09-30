@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useRef, useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
 import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
@@ -131,8 +131,10 @@ const NO_INSETS={top:0,right:0,bottom:0,left:0};
  * `avoidKeyboard`는 하단에 입력창이 있는 화면(기록)만 켠다. 홈처럼 입력이 없는 화면에서 켜면
  * 안드로이드에서 불필요한 리사이즈가 생긴다.
  */
-export function RetroScreen({children,style,avoidKeyboard=false}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean}) {
+export function RetroScreen({children,style,avoidKeyboard=false,header}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
+  // 헤더와 본문 사이는 화면이 준 gap을 그대로 쓴다. 헤더를 밖으로 빼도 스크롤 전 첫 화면이 같아야 한다.
+  const gap=(StyleSheet.flatten(style)?.gap as number|undefined)??20;
   const scroll=useRef<ScrollView>(null),offset=useRef(0);
   // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
   // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
@@ -151,17 +153,22 @@ export function RetroScreen({children,style,avoidKeyboard=false}:{children:React
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
   const body=<ScrollView
+    testID="retro-scroll"
     ref={scroll}
     onScroll={e=>{offset.current=e.nativeEvent.contentOffset.y;}}
     scrollEventThrottle={16}
     style={{flex:1}}
-    contentContainerStyle={{flexGrow:1,alignItems:'center',paddingTop:insets.top,paddingBottom:insets.bottom+SCREEN_PADDING}}
+    contentContainerStyle={{flexGrow:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
     <Pressable accessible={false} onPress={()=>Keyboard.dismiss()}
-      style={[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20},style]}>{children}</Pressable>
+      style={[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20},style,header?{paddingTop:0}:null]}>{children}</Pressable>
   </ScrollView>;
-  return <View style={{flex:1,backgroundColor:retro.color.screen}}>
+  // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
+  return <View style={{flex:1,backgroundColor:retro.color.screen,paddingTop:insets.top}}>
+    {header&&<View testID="retro-header" style={{alignItems:'center',paddingHorizontal:SCREEN_PADDING,paddingTop:SCREEN_PADDING,paddingBottom:gap}}>
+      <View style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>{header}</View>
+    </View>}
     {avoidKeyboard
       ? <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>{body}</KeyboardAvoidingView>
       : body}

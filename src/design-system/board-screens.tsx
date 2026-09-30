@@ -30,9 +30,11 @@ export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettin
     :completed.length===0
       ?<EmptyState title="아직 목표가 없어요" description="오른쪽 위 ＋를 눌러 첫 목표를 만들어요."/>
       :<EmptyState title="진행 중인 목표가 없어요" description="오른쪽 위 ＋를 눌러 새 목표를 만들어요."/>;
-  return <RetroScreen style={{gap:16}}>
+  // 앱 헤더와 탭·+ 줄을 함께 고정한다. 목표가 많아도 새 목표와 탭 전환에 바로 닿는다 (2026-09-30).
+  return <RetroScreen style={{gap:16}} header={<View style={{gap:16}}>
     <AppHeader onSettings={onSettings}/>
     <GoalListHeader tab={tab} onTab={onTab} onAdd={onAdd} addTargetRef={addTargetRef} counts={{active:active.length,completed:completed.length}}/>
+  </View>}>
     {shown.length?<View style={{gap:12}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>:empty}
   </RetroScreen>;
 }
@@ -45,8 +47,7 @@ export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방�
  * 완성한 판은 readonly라 기록 열기만 남는다 (4.7).
  */
 export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false}:{/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:PocketStickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
-  return <RetroScreen style={{gap:12}}>
-    <ScreenHeader title={completed?'완성한 판':'내 목표'} onBack={onBack}/>
+  return <RetroScreen style={{gap:12}} header={<ScreenHeader title={completed?'완성한 판':'내 목표'} onBack={onBack}/>}>
     <PixelPanel title={name} action={<Pressable accessibilityRole="button" accessibilityLabel="목표 설정" onPress={onSettings} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
@@ -101,8 +102,7 @@ export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:st
  * 판 종류·칸 수 변경은 미확정이라 두지 않는다.
  */
 export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,period,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;sticker:PocketStickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 달력판만 */period?:PeriodFieldView;/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
-  return <RetroScreen style={{gap:16}} avoidKeyboard>
-    <ScreenHeader title="목표 설정" onBack={onBack}/>
+  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
     <PixelInput label="목표 이름" value={name} onChangeText={onChangeName}/>
     <StickerField value={sticker} onChange={onChangeSticker}/>
     {period&&<PeriodField {...period}/>}
@@ -114,8 +114,7 @@ export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,pe
 /** 완성한 판의 설정. 읽기 전용이고 삭제만 할 수 있다 (PRD 4.4, 4.7). */
 export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel,completedLabel,onDelete,onBack}:{name:string;sticker:PocketStickerId;/** 예: '적립판 · 20칸', '달력판' */boardLabel:string;/** 달력판만. 예: '9월 1일 – 9월 23일', '9월 1일부터' */periodLabel?:string;/** 예: '9월 24일' */completedLabel:string;onDelete:()=>void;onBack:()=>void}) {
   const row=(label:string,value:string)=><View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:44,borderBottomWidth:retro.shape.cellBorder,borderColor:retro.color.ink}}><PixelText style={{width:108}}>{label}</PixelText><PixelText style={{flex:1}}>{value}</PixelText></View>;
-  return <RetroScreen style={{gap:16}}>
-    <ScreenHeader title="목표 설정" onBack={onBack}/>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
     <ShortNotice emphasis title="완성한 판은 고칠 수 없어요" detail={`${completedLabel}에 완성했어요. 기록은 볼 수 있고, 목표는 삭제만 할 수 있어요.`}/>
     <View>
       {/* 정보 블록 오른쪽에 스티커를 붙이듯 비스듬히 올린다. 값 글자와 겹치지 않도록 짧은 값이 오는 줄 위에 둔다. */}
@@ -133,8 +132,7 @@ export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel
 export type EndDateMode='none'|'pick';
 /** 새 목표: 이름 → 판 종류(적립판이면 칸 수) → 기본 스티커 → 종료일(달력판, 선택) (PRD 4.4). */
 export function NewGoalScreen({name,onChangeName,kind,onChangeKind,count,onChangeCount,sticker,onChangeSticker,endMode,onChangeEndMode,endDate,onChangeEndDate,today,todayLabel,error,onSubmit,submitDisabled=false,onBack,stickerTargetRef}:{name:string;onChangeName:(name:string)=>void;kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;sticker:PocketStickerId;onChangeSticker:(value:PocketStickerId)=>void;endMode:EndDateMode;onChangeEndMode:(mode:EndDateMode)=>void;endDate?:string;onChangeEndDate:(date:string)=>void;/** 오늘 날짜 키. 종료일은 오늘부터 고른다 */today:string;/** 예: '9월 29일' */todayLabel:string;error?:string;onSubmit:()=>void;submitDisabled?:boolean;onBack:()=>void;stickerTargetRef?:React.Ref<View>}) {
-  return <RetroScreen style={{gap:16}} avoidKeyboard>
-    <ScreenHeader title="새 목표" onBack={onBack}/>
+  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="새 목표" onBack={onBack}/>}>
     <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} placeholder="목표 이름"/>
     <BoardTypePicker value={kind} onChange={onChangeKind}/>
     {kind==='tally'&&<SlotCountPicker value={count} onChange={onChangeCount}/>}
@@ -159,8 +157,7 @@ function ExtendSummary({name,detail}:{name:string;detail:string}) {
 }
 /** 기간 달력판의 계속하기: 종료일을 늘린다. 지난 날은 붙일 수 없으므로 오늘부터 고른다 (PRD 4.7). */
 export function ExtendEndDateScreen({name,periodLabel,firstAllowed,selected,onSelect,onSubmit,onBack}:{name:string;/** 예: '9월 1일 – 9월 23일' */periodLabel:string;firstAllowed:string;selected?:string;onSelect:(date:string)=>void;onSubmit:()=>void;onBack:()=>void}) {
-  return <RetroScreen style={{gap:16}}>
-    <ScreenHeader title="종료일 늘리기" onBack={onBack}/>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="종료일 늘리기" onBack={onBack}/>}>
     <ExtendSummary name={name} detail={`${periodLabel} · 붙인 스티커와 기록은 그대로예요.`}/>
     <EndDatePicker firstAllowed={firstAllowed} selected={selected} onSelect={onSelect} hint="새 종료일을 골라 주세요. 지난 날은 붙일 수 없어서 오늘부터 고를 수 있어요."/>
     <PixelButton label="종료일 늘리기" disabled={!selected} onPress={onSubmit}/>
@@ -169,8 +166,7 @@ export function ExtendEndDateScreen({name,periodLabel,firstAllowed,selected,onSe
 /** 적립판의 계속하기: 칸을 더한다. 기본은 처음 만든 칸 수만큼이고 상한은 없다 (2026-09-30). */
 export function ExtendSlotsScreen({name,total,add,onChangeAdd,onSubmit,onBack}:{name:string;/** 지금 칸 수 */total:number;/** 더할 칸 수 입력값 */add:string;onChangeAdd:(value:string)=>void;onSubmit:()=>void;onBack:()=>void}) {
   const valid=/^\d+$/.test(add)&&Number(add)>0;
-  return <RetroScreen style={{gap:16}} avoidKeyboard>
-    <ScreenHeader title="칸 늘리기" onBack={onBack}/>
+  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="칸 늘리기" onBack={onBack}/>}>
     <ExtendSummary name={name} detail={`지금 ${total}칸 · 붙인 스티커와 기록은 그대로예요.`}/>
     <SlotCountPicker label="더할 칸 수" value={add} onChange={onChangeAdd}/>
     <PixelText accessibilityRole={valid?undefined:'alert'}>{valid?`늘린 뒤 ${total+Number(add)}칸`:'더할 칸 수를 1 이상으로 입력해주세요.'}</PixelText>

@@ -20,8 +20,7 @@ export function PixelCheckbox({label,checked,onChange}:{label:string;checked:boo
  */
 export function ConsentScreen({ageChecked,termsChecked,onToggleAge,onToggleTerms,onViewTerms,onViewPrivacy,onUnder14,onBack,loginButtons}:{ageChecked:boolean;termsChecked:boolean;onToggleAge:()=>void;onToggleTerms:()=>void;onViewTerms:()=>void;onViewPrivacy:()=>void;onUnder14:()=>void;onBack:()=>void;loginButtons:ReactNode}) {
   const enabled=ageChecked&&termsChecked;
-  return <RetroScreen style={{gap:16}}>
-    <ScreenHeader title="계정 연결" onBack={onBack}/>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="계정 연결" onBack={onBack}/>}>
     <PixelPanel>
       <PixelText>계정을 연결하면 기록이 자동으로 백업되고, 새 기기에서 로그인하면 복원돼요.</PixelText>
     </PixelPanel>
