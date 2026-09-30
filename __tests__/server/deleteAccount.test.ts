@@ -1,3 +1,4 @@
+import { generateKeyPairSync, sign } from 'node:crypto';
 import { SupabaseSyncServer } from '../../src/sync/supabaseServer';
 import { deleteAccountOnServer } from '../../src/sync/account';
 import { goal } from '../support/syncServerContract';
@@ -30,14 +31,22 @@ describeIfServer('delete-account', () => {
     await expect(deleteAccountOnServer(anonClient())).rejects.toThrow();
   });
 
-  // 함수는 토큰의 sub를 믿는다. 서명 검증은 게이트웨이(verify_jwt)가 하므로, 그 보호가 꺼지면 이 테스트가 잡는다.
+  // 함수가 직접 서명을 검증한다(게이트웨이 설정에 기대지 않는다). 남의 id를 넣은 가짜 토큰은 모두 거부돼야 한다.
   it('서명이 틀린 토큰으로는 남의 계정을 지울 수 없다', async () => {
     const victim = await newUser();
     const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
     const exp = Math.floor(Date.now() / 1000) + 3600;
+    const claims = { sub: victim.userId, role: 'authenticated', aud: 'authenticated', iss: `${process.env.SUPABASE_TEST_URL}/auth/v1`, exp };
+    // 진짜 토큰과 같은 머리(알고리즘·키 id)에, 공격자가 만든 다른 키로 서명한다.
+    const real = (await victim.client.auth.getSession()).data.session!.access_token;
+    const header = real.split('.')[0];
+    const signingInput = `${header}.${b64(claims)}`;
+    const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    const otherKey = sign('sha256', Buffer.from(signingInput), { key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url');
     const tokens = [
-      `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: victim.userId, role: 'authenticated', exp })}.${Buffer.from('forged').toString('base64url')}`,
-      `${b64({ alg: 'none', typ: 'JWT' })}.${b64({ sub: victim.userId, role: 'authenticated', exp })}.`,
+      `${signingInput}.${otherKey}`,
+      `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64(claims)}.${Buffer.from('forged').toString('base64url')}`,
+      `${b64({ alg: 'none', typ: 'JWT' })}.${b64(claims)}.`,
     ];
     for (const token of tokens) {
       const res = await fetch(`${process.env.SUPABASE_TEST_URL}/functions/v1/delete-account`, {
