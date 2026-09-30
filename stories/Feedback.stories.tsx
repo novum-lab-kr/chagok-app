@@ -12,6 +12,5 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NoticeSaved: Story = {name: '짧은 알림 · 저장 완료', render: () => <ShortNotice title="기록을 저장했어요"/>};
-export const NoticePending: Story = {name: '짧은 알림 · 백업 대기', render: () => <ShortNotice title="이 기기에 기록했어요" detail="연결되면 자동으로 백업해요."/>};
 export const NoticeFailed: Story = {name: '짧은 알림 · 저장 실패', render: () => <ShortNotice title="저장하지 못했어요" detail="입력한 내용은 그대로 있어요."/>};
 export const Loading: Story = {name: '로딩 표시 · 복원 중', render: () => <PixelLoadingIndicator label="기록 복원 중"/>};

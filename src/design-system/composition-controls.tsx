@@ -1,4 +1,4 @@
-import React, {useContext, useState, type ReactNode} from 'react';
+import React, {useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
 import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
@@ -57,12 +57,12 @@ export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(valu
     </Pressable>)}
   </View></View>;
 }
-export function SlotCountPicker({value,onChange}:{value:string;onChange:(value:string)=>void}) {
+export function SlotCountPicker({value,onChange,label='칸 수'}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string}) {
   const [custom,setCustom]=useState(!['15','20','30'].includes(value));
-  return <View style={{gap:8}}><PixelText>칸 수</PixelText><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+  return <View style={{gap:8}}><PixelText>{label}</PixelText><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
     {['15','20','30'].map(n=><PixelButton key={n} label={n} variant={!custom&&value===n?'primary':'secondary'} onPress={()=>{setCustom(false);onChange(n)}} style={{flex:1}}/>)}
     <PixelButton label="직접 입력" variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
-  </View>{custom&&<PixelInput label="칸 수 직접 입력" value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={3}/>}</View>;
+  </View>{custom&&<PixelInput label={`${label} 직접 입력`} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={3}/>}</View>;
 }
 export function StickerSummary({value,onChange}:{value:PocketStickerId;onChange?:()=>void}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',gap:12,alignItems:'center'}}>
@@ -133,10 +133,27 @@ const NO_INSETS={top:0,right:0,bottom:0,left:0};
  */
 export function RetroScreen({children,style,avoidKeyboard=false}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
+  const scroll=useRef<ScrollView>(null),offset=useRef(0);
+  // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
+  // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
+  useEffect(()=>{
+    const subscription=Keyboard.addListener('keyboardDidShow',event=>{
+      const input=TextInput.State.currentlyFocusedInput?.();
+      if(!input) return;
+      input.measureInWindow((_x,y,_width,height)=>{
+        const overlap=y+height+SCREEN_PADDING-event.endCoordinates.screenY;
+        if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
+      });
+    });
+    return ()=>subscription.remove();
+  },[]);
   // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
   const body=<ScrollView
+    ref={scroll}
+    onScroll={e=>{offset.current=e.nativeEvent.contentOffset.y;}}
+    scrollEventThrottle={16}
     style={{flex:1}}
     contentContainerStyle={{flexGrow:1,alignItems:'center',paddingTop:insets.top,paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
@@ -189,10 +206,10 @@ export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name
   </Pressable>;
 }
 /** 판 상세 상단 한 줄: `n / nn [여백] m% 달성중`. 완성하면 오른쪽이 완성 스티커로 바뀐다. */
-export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:PocketStickerId;completionTargetRef?:React.Ref<View>}) {
+export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:PocketStickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
   return <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:48}}>
     <PixelText variant="number">{value} / {total}</PixelText>
-    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 달성중</PixelText>}
+    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 달성중</PixelText>}
   </View>;
 }
 /** 목록이 비었을 때의 안내 상자. */

@@ -2,9 +2,10 @@ import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
-import {GoalEditorScreen,GoalStickerCell,exampleGoals} from './screen-compositions';
+import {GoalStickerCell,exampleGoals} from './screen-compositions';
+import {ExtendSlotsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,StickerPicker} from './composition-controls';
-import {PixelText} from './components';
+import {PixelDialog,PixelText} from './components';
 afterEach(cleanup);
 describe('화면 구성 컴포넌트',()=>{
   it('월별 시작 요일, 윤년과 마지막 주 빈칸을 계산한다',()=>{
@@ -21,23 +22,32 @@ describe('화면 구성 컴포넌트',()=>{
     rerender(<MonthNavigation year={2026} month={12} onChange={change}/>);
     fireEvent.click(screen.getByRole('button',{name:'다음 달'}));expect(change).toHaveBeenLastCalledWith(2027,1);
   });
-  it('목표 이름과 직접 입력 칸 수를 검증하고 선택값을 제출한다',()=>{
-    const submit=vi.fn();render(<GoalEditorScreen mode="create" onBack={()=>{}} onSubmit={submit}/>);
+  it('새 목표: 적립판은 칸 수, 달력판은 종료일 선택을 보여주고 입력을 전달한다',()=>{
+    const props={name:'',onChangeName:vi.fn(),onChangeKind:vi.fn(),count:'15',onChangeCount:vi.fn(),sticker:'sprout' as const,onChangeSticker:vi.fn(),
+      endMode:'none' as const,onChangeEndMode:vi.fn(),onChangeEndDate:vi.fn(),today:'2026-09-30',todayLabel:'9월 30일',onSubmit:vi.fn(),onBack:()=>{}};
+    const {rerender}=render(<NewGoalScreen {...props} kind="tally" submitDisabled/>);
     expect(screen.getByRole('button',{name:'만들기'}).getAttribute('aria-disabled')).toBe('true');
-    fireEvent.change(screen.getByRole('textbox',{name:'목표 이름'}),{target:{value:'매일 독서'}});
+    fireEvent.change(screen.getByRole('textbox',{name:'목표 이름'}),{target:{value:'매일 독서'}});expect(props.onChangeName).toHaveBeenCalledWith('매일 독서');
     fireEvent.click(screen.getByRole('button',{name:'직접 입력'}));
-    fireEvent.change(screen.getByRole('textbox',{name:'칸 수 직접 입력'}),{target:{value:'0'}});
-    expect(screen.getByRole('button',{name:'만들기'}).getAttribute('aria-disabled')).toBe('true');
-    fireEvent.change(screen.getByRole('textbox',{name:'칸 수 직접 입력'}),{target:{value:'18'}});
-    fireEvent.click(screen.getByRole('button',{name:'만들기'}));
-    expect(submit).toHaveBeenCalledWith({name:'매일 독서',kind:'tally',total:18,sticker:'sprout'});
+    fireEvent.change(screen.getByRole('textbox',{name:'칸 수 직접 입력'}),{target:{value:'180'}});expect(props.onChangeCount).toHaveBeenCalledWith('180');
+    expect(screen.queryByRole('button',{name:'날짜 고르기'})).toBeNull();
+    rerender(<NewGoalScreen {...props} kind="calendar"/>);
+    expect(screen.queryByText('칸 수')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'날짜 고르기'}));expect(props.onChangeEndMode).toHaveBeenCalledWith('pick');
   });
-  it('설정에서 기존 판 종류와 칸 수를 보존하면서 이름·스티커를 바꾼다',()=>{
-    const submit=vi.fn();render(<GoalEditorScreen mode="settings" initialGoal={exampleGoals[0]} onBack={()=>{}} onSubmit={submit}/>);
-    expect(screen.queryByRole('radiogroup')).toBeNull();
-    fireEvent.change(screen.getByRole('textbox',{name:'목표 이름'}),{target:{value:'독서 기록'}});
-    fireEvent.click(screen.getByRole('radio',{name:'별'}));fireEvent.click(screen.getByRole('button',{name:'저장하기'}));
-    expect(submit).toHaveBeenCalledWith({name:'독서 기록',kind:'tally',total:15,sticker:'star'});
+  it('칸 늘리기: 1 이상만 받고 늘린 뒤 칸 수를 보여준다. 상한은 없다',()=>{
+    const submit=vi.fn();
+    const {rerender}=render(<ExtendSlotsScreen name="책 읽기" total={100} add="0" onChangeAdd={()=>{}} onSubmit={submit} onBack={()=>{}}/>);
+    expect(screen.getByRole('button',{name:'칸 늘리기'}).getAttribute('aria-disabled')).toBe('true');
+    rerender(<ExtendSlotsScreen name="책 읽기" total={100} add="250" onChangeAdd={()=>{}} onSubmit={submit} onBack={()=>{}}/>);
+    expect(screen.getByText('늘린 뒤 350칸')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'칸 늘리기'}));expect(submit).toHaveBeenCalledTimes(1);
+  });
+  it('버튼 하나짜리 다이얼로그는 보조 버튼을 그리지 않는다',()=>{
+    const ok=vi.fn();
+    render(<PixelDialog variant="basic" single title="저장하지 못했어요" description="잠시 후 다시 시도해주세요." primaryLabel="확인" onPrimary={ok}/>);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button',{name:'확인'}));expect(ok).toHaveBeenCalledTimes(1);
   });
   it('스티커 필터는 해당 그룹만 노출하고 선택값을 전달한다',()=>{
     const change=vi.fn();render(<StickerPicker value="sprout" onChange={change}/>);

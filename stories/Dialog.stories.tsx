@@ -34,3 +34,9 @@ export const BasicModal: Story = {
   parameters: {layout: 'fullscreen', edgeToEdge: true},
   render: ({variant: _variant, step: _step, ...args}) => <PixelDialogModal visible onRequestClose={() => {}} {...args}/>,
 };
+export const BasicSingle: Story = {
+  name: '일반 화면 · 버튼 하나',
+  args: {variant: 'basic', single: true, title: '저장하지 못했어요', description: '잠시 후 다시 시도해주세요. 입력한 내용은 그대로 있어요.', primaryLabel: '확인'},
+  parameters: {layout: 'fullscreen', edgeToEdge: true},
+  render: args => <CenteredPreview {...args}/>,
+};
