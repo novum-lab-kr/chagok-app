@@ -6,8 +6,7 @@ import { goBackOrHome } from '../src/app-data/goBack';
 export default function AppSettings() {
   const router = useRouter();
   return (
-    <RetroScreen style={{ gap: 16 }}>
-      <ScreenHeader title="앱 설정" onBack={goBackOrHome} />
+    <RetroScreen style={{ gap: 16 }} header={<ScreenHeader title="앱 설정" onBack={goBackOrHome} />}>
       <PixelPanel title="이 기기의 기록">
         <PixelText>지금은 이 기기에만 저장하고 있어요.</PixelText>
       </PixelPanel>
