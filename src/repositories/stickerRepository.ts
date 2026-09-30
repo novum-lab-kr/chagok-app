@@ -2,6 +2,7 @@ import { getDb } from '../db/client';
 import { newId } from './ids';
 import { STICKER_TYPE_DEFAULT } from '../domain/types';
 import type { Sticker, StickerType } from '../domain/types';
+import { enqueue } from '../sync/outbox';
 
 type StickerRow = {
   id: string;
@@ -47,13 +48,15 @@ export async function placeSticker(
     if (!goal) throw new Error('목표가 없습니다.');
     if (goal.completed_at !== null) throw new Error(COMPLETED);
     await tx.run(
-      'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type) VALUES (?, ?, ?, ?, ?)',
-      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType,
+      'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType, sticker.placedAt,
     );
-    await tx.run('UPDATE goals SET last_placed_at = ? WHERE id = ?', sticker.placedAt, goalId);
+    await tx.run('UPDATE goals SET last_placed_at = ?, updated_at = ? WHERE id = ?', sticker.placedAt, sticker.placedAt, goalId);
     if (options.complete) {
       await tx.run('UPDATE goals SET completed_at = ?, completion_seen = 0 WHERE id = ?', sticker.placedAt, goalId);
     }
+    await enqueue(tx, 'sticker', sticker.id, sticker.placedAt);
+    await enqueue(tx, 'goal', goalId, sticker.placedAt);
   });
   return sticker;
 }
@@ -90,8 +93,8 @@ export async function getSticker(id: string): Promise<Sticker | null> {
 export async function removeSticker(id: string): Promise<string | null> {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const row = await tx.first<{ completed_at: number | null; photo_uri: string | null }>(
-      `SELECT g.completed_at, r.photo_uri FROM stickers s
+    const row = await tx.first<{ completed_at: number | null; photo_uri: string | null; record_id: string | null }>(
+      `SELECT g.completed_at, r.photo_uri, r.id AS record_id FROM stickers s
          JOIN goals g ON g.id = s.goal_id
          LEFT JOIN records r ON r.sticker_id = s.id
         WHERE s.id = ?`,
@@ -101,6 +104,10 @@ export async function removeSticker(id: string): Promise<string | null> {
     if (row.completed_at !== null) throw new Error(COMPLETED);
     await tx.run('DELETE FROM records WHERE sticker_id = ?', id);
     await tx.run('DELETE FROM stickers WHERE id = ?', id);
+    // 기록은 서버가 스티커와 함께 표식한다. 사진 파일은 기록 id로 따로 지운다.
+    const now = Date.now();
+    await enqueue(tx, 'sticker', id, now);
+    if (row.record_id && row.photo_uri) await enqueue(tx, 'photo', row.record_id, now);
     return row.photo_uri;
   });
 }
