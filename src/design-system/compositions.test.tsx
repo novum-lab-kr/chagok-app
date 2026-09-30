@@ -3,7 +3,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {GoalStickerCell,exampleGoals} from './screen-compositions';
-import {ExtendSlotsScreen,NewGoalScreen} from './board-screens';
+import {ExtendSlotsScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 afterEach(cleanup);
@@ -146,5 +146,10 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     expect(screen.queryByRole('button',{name:'스티커 떼기'})).toBeNull();
     expect(screen.queryByRole('button',{name:/사진/})).toBeNull();
     expect((screen.getByRole('textbox',{name:'메모'}) as HTMLTextAreaElement).readOnly).toBe(true);
+  });
+  it('기간 없는 달력판 완성 안내는 계속하기로 다시 이어 쓸 수 있다고 알린다 (2026-09-30)',()=>{
+    render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChangeSticker={()=>{}} onComplete={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(screen.getByText(/계속하기로 다시 이어 쓸 수 있어요/)).toBeTruthy();
+    expect(screen.queryByText(/되돌릴 수 없어요/)).toBeNull();
   });
 });
