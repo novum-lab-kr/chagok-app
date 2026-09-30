@@ -1,4 +1,5 @@
 import { getDb } from '../db/client';
+import type { DbDriver } from '../db/driver';
 import { newId } from './ids';
 import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { Goal, BoardType } from '../domain/types';
@@ -72,12 +73,14 @@ export async function createGoal(input: {
 }
 
 /**
- * 목표 설정에서 이름·기본 스티커·종료일을 바꾼다 (PRD 4.4).
+ * 목표 설정에서 이름·기본 스티커·종료일·칸 수를 바꾼다 (PRD 4.4).
  * 이미 붙어 있는 스티커의 종류는 건드리지 않는다. endDate: null은 종료일 지우기다.
+ * totalSlots는 진행 중인 적립판에서 늘리기만 된다 (2026-09-30). 줄이면 어느 칸에든 붙인 스티커가
+ * 판 밖으로 밀려날 수 있다. 처음 만든 칸 수(initial_slots, 칸 늘리기 기본값)는 바꾸지 않는다.
  */
 export async function updateGoal(
   id: string,
-  patch: { name?: string; defaultStickerId?: string; endDate?: string | null },
+  patch: { name?: string; defaultStickerId?: string; endDate?: string | null; totalSlots?: number },
 ): Promise<void> {
   const sets: string[] = [];
   const values: (string | number | null)[] = [];
@@ -87,15 +90,34 @@ export async function updateGoal(
     values.push(patch.defaultStickerId);
   }
   if (patch.endDate !== undefined) { sets.push('end_date = ?'); values.push(patch.endDate); }
+  const slots = patch.totalSlots;
+  if (slots !== undefined) {
+    if (!Number.isInteger(slots) || slots < 1) throw new Error('칸 수는 1 이상의 정수여야 합니다.');
+    sets.push('total_slots = ?');
+    values.push(slots);
+  }
   if (sets.length === 0) return;
-  await writeGoal(id, sets.join(', '), ...values);
+  // 칸 수는 저장하는 순간의 값으로 검사한다. 화면을 연 뒤 판이 완성되거나 칸이 늘었을 수 있다.
+  const check = slots === undefined ? undefined : async (tx: DbDriver) => {
+    const row = await tx.first<{ board_type: BoardType; total_slots: number | null; completed_at: number | null }>(
+      'SELECT board_type, total_slots, completed_at FROM goals WHERE id = ?', id,
+    );
+    if (!row) throw new Error('목표가 없습니다.');
+    if (row.board_type !== 'tally') throw new Error('칸 수는 적립판만 바꿀 수 있습니다.');
+    if (row.completed_at !== null) throw new Error('완성한 판은 고칠 수 없습니다.');
+    if (slots < (row.total_slots ?? 0)) throw new Error('칸 수는 줄일 수 없습니다.');
+  };
+  await writeGoal(id, sets.join(', '), values, check);
 }
 
-/** 목표 한 행을 고치고 updated_at·outbox를 같은 트랜잭션에서 남긴다 (계정·백업 설계 ②). */
-async function writeGoal(id: string, sql: string, ...params: (string | number | null)[]): Promise<void> {
+/** 목표 한 행을 고치고 updated_at·outbox를 같은 트랜잭션에서 남긴다 (계정·백업 설계 ②). check가 던지면 아무것도 바꾸지 않는다. */
+async function writeGoal(
+  id: string, sql: string, params: (string | number | null)[] = [], check?: (tx: DbDriver) => Promise<void>,
+): Promise<void> {
   const db = await getDb();
   const now = Date.now();
   await db.transaction(async (tx) => {
+    if (check) await check(tx);
     await tx.run(`UPDATE goals SET ${sql}, updated_at = ? WHERE id = ?`, ...params, now, id);
     await enqueue(tx, 'goal', id, now);
   });
@@ -115,7 +137,7 @@ export async function getGoal(id: string): Promise<Goal | null> {
 
 /** 완성한다. 완성 흐름(닫기/계속하기)을 아직 보여주지 않은 상태가 된다 (PRD 4.7). */
 export async function completeGoal(id: string, at: number): Promise<void> {
-  await writeGoal(id, 'completed_at = ?, completion_seen = 0', at);
+  await writeGoal(id, 'completed_at = ?, completion_seen = 0', [at]);
 }
 
 /** 완성 다이얼로그에서 닫기를 골랐다. 다시 묻지 않는다. */
@@ -135,12 +157,12 @@ export async function extendSlots(id: string, add: number): Promise<void> {
   if (!Number.isInteger(add) || add < 1) throw new Error('더할 칸 수는 1 이상이어야 합니다.');
   const goal = await getGoal(id);
   if (!goal || goal.boardType !== 'tally') return; // 적립판만 칸을 늘린다
-  await writeGoal(id, `total_slots = total_slots + ?, ${REOPEN}`, add);
+  await writeGoal(id, `total_slots = total_slots + ?, ${REOPEN}`, [add]);
 }
 
 /** 기간 달력판의 계속하기: 종료일을 바꾸고 진행 중으로 돌아간다. */
 export async function extendEndDate(id: string, endDate: string): Promise<void> {
-  await writeGoal(id, `end_date = ?, ${REOPEN}`, endDate);
+  await writeGoal(id, `end_date = ?, ${REOPEN}`, [endDate]);
 }
 
 /**
