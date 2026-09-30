@@ -4,7 +4,7 @@ import {
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
   canPlace, completesBoard, canRemove, needsRemoveConfirm, isDateEnabled, monthNav,
-  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, pendingCompletion,
+  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, pendingCompletion, parseSlotCount,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
 
@@ -216,5 +216,22 @@ describe('목록 정렬 (PRD 4.1)', () => {
     const { active, completed } = orderGoals(goals);
     expect(active.map((g) => g.id)).toEqual(['recent', 'new-empty', 'old-placed']);
     expect(completed.map((g) => g.id)).toEqual(['done-late', 'done-early']);
+  });
+});
+
+describe('목표 설정 칸 수 입력 (2026-09-30)', () => {
+  it('지금 칸 수 이상의 정수만 받는다', () => {
+    expect(parseSlotCount('45', 30)).toEqual({ ok: true, value: 45 });
+    expect(parseSlotCount('30', 30)).toEqual({ ok: true, value: 30 });
+    expect(parseSlotCount('030', 30)).toEqual({ ok: true, value: 30 });
+  });
+  it('줄이는 값은 이유와 함께 거부한다', () => {
+    expect(parseSlotCount('15', 30)).toEqual({ ok: false, reason: '지금 30칸보다 줄일 수 없어요.' });
+  });
+  it('빈칸·숫자가 아닌 값·0은 거부한다', () => {
+    expect(parseSlotCount('', 30)).toEqual({ ok: false, reason: '칸 수를 입력해 주세요.' });
+    expect(parseSlotCount('3.5', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
+    expect(parseSlotCount('abc', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
+    expect(parseSlotCount('0', 0)).toEqual({ ok: false, reason: '1칸 이상이어야 해요.' });
   });
 });

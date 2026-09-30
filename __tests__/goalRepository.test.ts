@@ -213,3 +213,41 @@ describe('외래키가 꺼진 연결에서도 (expo 트랜잭션 연결)', () =>
     expect(await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM records')).toEqual({ n: 0 });
   });
 });
+
+describe('목표 설정에서 칸 늘리기 (2026-09-30)', () => {
+  it('적립판 칸 수를 늘리고, 처음 만든 칸 수는 그대로 둔다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 30 });
+    await updateGoal(g.id, { name: '책 읽기', totalSlots: 45 });
+    const after = await getGoal(g.id);
+    expect(after).toMatchObject({ name: '책 읽기', totalSlots: 45, initialSlots: 30 });
+  });
+
+  it('줄이는 값은 거부하고 아무것도 바꾸지 않는다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 30 });
+    await expect(updateGoal(g.id, { name: '바뀌면 안 됨', totalSlots: 15 })).rejects.toThrow('칸 수는 줄일 수 없습니다.');
+    expect(await getGoal(g.id)).toMatchObject({ name: '독서', totalSlots: 30 });
+  });
+
+  it('지금과 같은 값은 허용한다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 30 });
+    await updateGoal(g.id, { totalSlots: 30 });
+    expect((await getGoal(g.id))?.totalSlots).toBe(30);
+  });
+
+  it('정수가 아니거나 1보다 작으면 거부한다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 30 });
+    await expect(updateGoal(g.id, { totalSlots: 31.5 })).rejects.toThrow();
+    await expect(updateGoal(g.id, { totalSlots: 0 })).rejects.toThrow();
+  });
+
+  it('달력판에는 칸 수를 줄 수 없다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
+    await expect(updateGoal(g.id, { totalSlots: 40 })).rejects.toThrow('적립판만');
+  });
+
+  it('완성한 판은 칸 수를 바꿀 수 없다 (계속하기로 늘린다)', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 1 });
+    await completeGoal(g.id, Date.now());
+    await expect(updateGoal(g.id, { totalSlots: 5 })).rejects.toThrow('완성한 판');
+  });
+});
