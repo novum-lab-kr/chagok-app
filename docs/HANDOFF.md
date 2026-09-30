@@ -186,6 +186,7 @@ Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다
 **나중에 따로 고칠 것 (Storybook 확정 뒤 정리)**
 
 - 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
+- **(낮음, 재현 대기) 기록 화면 첫 진입 시 스타일이 빠진 채 그려짐 (2026-09-30 사용자 보고).** 앱을 연 뒤 처음 기록 화면에 들어가면 스타일 없이 렌더되고, 뒤로 갔다 다시 열면 정상이라고 했다. 시뮬레이터 콜드 스타트 첫 진입과 09:34 녹화에서는 재현되지 않았다. 후보: ① 같은 시각 `composition-controls.tsx`를 고치던 중의 Fast Refresh 잔상(콜드 스타트에서 안 생기면 이것), ② `PixelFrame`이 `onLayout`으로 크기를 받은 뒤에만 테두리·채움을 그림(전환 중 늦게 받으면 잠깐 테두리 없이 보임), ③ 폰트 대체(루트에서 미리 불러와 가능성 낮음). 사용자가 재현하면 스크린샷으로 어느 쪽인지 가린다. ②로 확인되면 크기 전에도 배경을 먼저 칠한다.
 - ~~새 구조에서 안 쓰게 되는 것~~ **2026-09-30 정리함.** 옛 컴포넌트(`GoalChip`, `HomeScreen`, `GoalEditorScreen`, 3단계 `TutorialScreen`, `GoalStickerLink`/`DefaultStickerLink`)와 스토리(`Review Set 02`, `PRD additions · proposals`, `Goal chip`, `Setting row`, `Reference Match`), 그 검수 스크립트를 지웠다. 계정·복원·앱 설정 시안은 `docs/design/retro-pocket-v1/prd-additions-review/` 캡처와 git 기록에 남아 있다. 구현할 때 스토리로 다시 만든다.
 
 **PRD 미확정인데 코드에 값이 들어간 것:** 튜토리얼 상태를 DB(사용자 범위)에 저장, `app.json`의 `userInterfaceStyle: "automatic"`. (칸 수 상한은 2026-09-30 제거로 확정.)
