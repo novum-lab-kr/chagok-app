@@ -26,6 +26,8 @@ export default function RootLayout() {
           <Stack.Screen name="goal/[id]/extend" />
           <Stack.Screen name="sticker/[id]" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="policies/index" />
+          <Stack.Screen name="policies/[license]" />
         </Stack>
       </RetroFontProvider>
     </SafeAreaProvider>
