@@ -1,7 +1,7 @@
-import React,{useCallback,useRef,useState,type ReactNode} from 'react';
+import React,{useCallback,useMemo,useRef,useState,type ReactNode} from 'react';
 import {View,Pressable,PanResponder,type LayoutRectangle,type ImageSourcePropType} from 'react-native';
 import {retro} from './tokens';
-import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,GoalChip,DefaultStickerLink,StickerSlot,StickerGrid} from './components';
+import {PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,GoalChip,DefaultStickerLink,StickerSlot,StickerGrid} from './components';
 import {ActionSymbol,StickerGlyph,stickerLabel,type PocketStickerId} from './sticker-glyphs';
 import {RetroScreen,ScreenHeader,BoardTypePicker,SlotCountPicker,StickerSummary,StickerPicker,RecordSummary,PhotoAttachment,MemoEditor,TextAction,type BoardKind} from './composition-controls';
 import {CalendarBoard} from './calendar';
@@ -34,12 +34,16 @@ export function HomeScreen({goals,selectedId,onSelectGoal,onAdd,onSettings,onSlo
   const total=goal.kind==='calendar'?new Date(year,month,0).getDate():goal.total;
   const next=Array.from({length:goal.total},(_,i)=>i+1).find(n=>!goal.filled.includes(n));
   // 달력판에서만 좌우 스와이프로 월을 넘긴다 (PRD 4.3). 적립판은 월 개념이 없다.
-  const shiftMonth=(delta:number)=>{const d=new Date(year,month-1+delta,1);onMonthChange(d.getFullYear(),d.getMonth()+1)};
-  const swipe=useRef(PanResponder.create({
+  // useRef(...).current로 만들면 첫 렌더의 year/month를 가둬서 두 번째 스와이프부터
+  // 같은 달로만 이동한다. 값이 바뀌면 다시 만들어야 하므로 useMemo를 쓴다.
+  const shiftMonth=useCallback((delta:number)=>{
+    const d=new Date(year,month-1+delta,1);onMonthChange(d.getFullYear(),d.getMonth()+1);
+  },[year,month,onMonthChange]);
+  const swipe=useMemo(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48)shiftMonth(1);else if(g.dx>=48)shiftMonth(-1)},
-  })).current;
-  return <View ref={root} onLayout={capture}><RetroScreen style={{gap:12}}>
+  }),[shiftMonth]);
+  return <View ref={root} onLayout={capture} style={{flex:1}}><RetroScreen style={{gap:12}}>
     <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}><PixelIcon name="flower" size={44}/><PixelText variant="brand">차곡차곡</PixelText><PixelText variant="title" style={{marginLeft:'auto'}}>{month}월</PixelText></View>
     <View style={{flexDirection:'row',alignItems:'stretch',gap:8,flexWrap:'wrap'}}>{goals.map(item=><GoalChip key={item.id} label={item.name} value={item.kind==='tally'?item.filled.length:Object.keys(item.calendarRecords).length} total={item.total} selected={goal.id===item.id} onPress={()=>onSelectGoal(item.id)} style={{flexGrow:1,flexBasis:100,width:undefined}}/>)}<View ref={add} onLayout={capture}><PixelButton label="" accessibilityLabel="목표 추가" variant="secondary" minHeight={56} icon={<PixelIcon name="plus" size={20}/>} onPress={onAdd} style={{width:52}}/></View></View>
     <PixelPanel title={goal.name} action={<Pressable accessibilityRole="button" accessibilityLabel="목표 설정" onPress={onSettings} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
@@ -60,7 +64,7 @@ export function GoalEditorScreen({mode,initialGoal,onBack,onSubmit,onTarget}:{mo
   const root=useRef<View>(null),selected=useRef<View>(null);
   const capture=()=>measureTarget(root.current,selected.current,'sticker',onTarget);
   const valid=name.trim().length>0&&(kind==='calendar'||(/^\d+$/.test(count)&&Number(count)>0&&Number(count)<=100));
-  return <View ref={root} onLayout={capture}><RetroScreen>
+  return <View ref={root} onLayout={capture} style={{flex:1}}><RetroScreen avoidKeyboard>
     <ScreenHeader title={mode==='create'?'새 목표':'목표 설정'} onBack={onBack}/>
     {mode==='settings'?<PixelFrame variant="input" fill={retro.color.screen} contentStyle={{padding:12,gap:12}}><PixelInput label="목표 이름" value={name} onChangeText={setName}/><View style={{flexDirection:'row',justifyContent:'space-between',borderTopWidth:retro.shape.panelTitleBorder,borderColor:retro.color.ink,paddingTop:12}}><PixelText>{kind==='tally'?'적립판':'달력판'}</PixelText><PixelText>{kind==='tally'?`${count}칸`:'월별'}</PixelText></View></PixelFrame>:<><PixelInput label="목표 이름" value={name} onChangeText={setName} placeholder="목표 이름"/><BoardTypePicker value={kind} onChange={setKind}/>{kind==='tally'&&<SlotCountPicker value={count} onChange={setCount}/>}</>}
     {choosing?<PixelPanel title="기본 스티커"><StickerPicker value={sticker} onChange={setSticker} selectedTargetRef={selected} onSelectedLayout={capture}/>{mode==='create'&&<PixelButton label="선택 완료" variant="secondary" onPress={()=>setChoosing(false)}/>}</PixelPanel>:<View style={{gap:8}}><PixelText>기본 스티커</PixelText><StickerSummary value={sticker} onChange={()=>setChoosing(true)}/></View>}
@@ -70,7 +74,7 @@ export function GoalEditorScreen({mode,initialGoal,onBack,onSubmit,onTarget}:{mo
 }
 export function RecordScreen({goal,date,initialMemo='',photo,photoPreview,onChoosePhoto,onRemovePhoto,onBack,onSave,onRemoveSticker}:{goal:PocketGoal;date:string;initialMemo?:string;photo?:ImageSourcePropType;photoPreview?:ReactNode;onChoosePhoto:()=>void;onRemovePhoto:()=>void;onBack:()=>void;onSave:(memo:string)=>void;onRemoveSticker:()=>void}) {
   const [memo,setMemo]=useState(initialMemo);
-  return <RetroScreen style={{gap:16}}><ScreenHeader title="기록" onBack={onBack} action={<PixelButton label="저장" onPress={()=>onSave(memo)}/>}/><RecordSummary goalName={goal.name} date={date} sticker={goal.sticker}/><PhotoAttachment source={photo} preview={photoPreview} onChoose={onChoosePhoto} onRemove={onRemovePhoto}/><MemoEditor value={memo} onChange={setMemo}/><TextAction label="스티커 떼기" icon={<ActionSymbol name="minus" size={20}/>} onPress={onRemoveSticker}/></RetroScreen>;
+  return <RetroScreen style={{gap:16}} avoidKeyboard><ScreenHeader title="기록" onBack={onBack} action={<PixelButton label="저장" onPress={()=>onSave(memo)}/>}/><RecordSummary goalName={goal.name} date={date} sticker={goal.sticker}/><PhotoAttachment source={photo} preview={photoPreview} onChoose={onChoosePhoto} onRemove={onRemovePhoto}/><MemoEditor value={memo} onChange={setMemo}/><TextAction label="스티커 떼기" icon={<ActionSymbol name="minus" size={20}/>} onPress={onRemoveSticker}/></RetroScreen>;
 }
 export function TutorialScreen({initialStep=1,onFinish}:{initialStep?:TutorialStep;onFinish?:()=>void}) {
   const [step,setStep]=useState<TutorialStep>(initialStep),[done,setDone]=useState(false);
@@ -80,8 +84,8 @@ export function TutorialScreen({initialStep=1,onFinish}:{initialStep?:TutorialSt
   const finish=useCallback(()=>{setDone(true);onFinish?.()},[onFinish]);
   const target=targets[step===1?'add':step===2?'sticker':'slot'];
   const home=<HomeScreen goals={exampleGoals} selectedId="reading" onSelectGoal={()=>{}} onAdd={()=>{}} onSettings={()=>{}} onSlotPress={()=>{}} year={2026} month={9} onMonthChange={()=>{}} onDateSelect={()=>{}} onTarget={capture}/>;
-  return <View onLayout={e=>setSize({width:e.nativeEvent.layout.width,height:e.nativeEvent.layout.height})} style={{width:390,maxWidth:'100%',minHeight:760}}>
-    <View pointerEvents={done?'auto':'none'} accessibilityElementsHidden={!done} {...(!done?{'aria-hidden':true}:{})}>{step===2&&!done?<GoalEditorScreen mode="settings" initialGoal={exampleGoals[0]} onBack={()=>{}} onSubmit={()=>{}} onTarget={capture}/>:home}</View>
+  return <View onLayout={e=>setSize({width:e.nativeEvent.layout.width,height:e.nativeEvent.layout.height})} style={{flex:1}}>
+    <View style={{flex:1}} pointerEvents={done?'auto':'none'} accessibilityElementsHidden={!done} {...(!done?{'aria-hidden':true}:{})}>{step===2&&!done?<GoalEditorScreen mode="settings" initialGoal={exampleGoals[0]} onBack={()=>{}} onSubmit={()=>{}} onTarget={capture}/>:home}</View>
     {!done&&target&&<TutorialSpotlight highlightFrame={step===1} step={step} target={target} width={size.width} height={size.height} onSkip={finish} onNext={()=>step===3?finish():setStep(previous=>(previous+1) as TutorialStep)}/>}
     {done&&<View style={{padding:20}}><PixelText accessibilityRole="alert">튜토리얼을 마쳤어요</PixelText><PixelButton label="다시 보기" variant="secondary" onPress={()=>{setStep(1);setDone(false)}}/></View>}
   </View>;

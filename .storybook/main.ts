@@ -16,6 +16,9 @@ const config: StorybookConfig = {
         alias: [
           { find: /^react-native$/, replacement: 'react-native-web' },
           { find: /^react-native-svg$/, replacement: path.resolve('node_modules/react-native-svg/lib/module/ReactNativeSVG.web.js') },
+          // 기본 진입점(lib/module)을 타면 네이티브 변형이 잡혀 RN 원본의 Flow 문법에서 죽는다.
+          // src를 가리켜야 위 extensions 순서대로 .web.tsx 변형이 선택된다.
+          { find: /^react-native-safe-area-context$/, replacement: path.resolve('node_modules/react-native-safe-area-context/src/index.tsx') },
         ],
         extensions: ['.web.tsx', '.web.ts', '.web.jsx', '.web.js', '.tsx', '.ts', '.jsx', '.js', '.json'],
       },

@@ -1,7 +1,7 @@
 import { getFlag, setFlag } from '../src/repositories/appSettingsRepository';
-import { useFreshDb } from './support/setup';
+import { withFreshDb } from './support/setup';
 
-useFreshDb();
+withFreshDb();
 
 describe('appSettings', () => {
   it('정해둔 적 없는 값은 false다', async () => {

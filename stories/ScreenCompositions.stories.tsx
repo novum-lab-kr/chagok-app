@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {View,Image} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
-import {HomeScreen,GoalEditorScreen,RecordScreen,TutorialScreen,exampleGoals,PixelText,PixelButton,type PocketGoal,type GoalDraft,type TutorialStep} from '../src/design-system';
+import {HomeScreen,GoalEditorScreen,RecordScreen,TutorialScreen,exampleGoals,PixelText,type PocketGoal,type GoalDraft} from '../src/design-system';
 
 const meta={title:'Screens/Review Set 02',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'review-set-02의 구성 요소를 기존 디자인 시스템으로 조합합니다. 데모 상태는 메모리에만 유지하며 기존 앱/DB와 연결되지 않습니다.'}}}} satisfies Meta;
 export default meta;type Story=StoryObj<typeof meta>;

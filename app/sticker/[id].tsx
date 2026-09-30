@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { RecordScreen, RetroScreen, PixelText } from '../../src/design-system';
 import type { PocketGoal } from '../../src/design-system';
-import { getSticker, removeSticker } from '../../src/repositories/stickerRepository';
+import { getSticker, listStickers, removeSticker } from '../../src/repositories/stickerRepository';
 import { getGoal } from '../../src/repositories/goalRepository';
-import { listStickers } from '../../src/repositories/stickerRepository';
 import { getRecord, upsertRecord } from '../../src/repositories/recordRepository';
 import { toPocketGoal, localDateKey } from '../../src/app-data/pocketAdapter';
 
@@ -18,20 +17,27 @@ export default function StickerRecord() {
   const [memo, setMemo] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (!id) return;
-    const s = await getSticker(id);
-    if (!s) { router.back(); return; }
-    const g = await getGoal(s.goalId);
-    if (!g) { router.back(); return; }
-    setGoal(toPocketGoal(g, await listStickers(g.id)));
-    setDate(localDateKey(s.placedAt));
-    const r = await getRecord(id);
-    setMemo(r?.memo ?? '');
-    setPhotoUri(r?.photoUri ?? null);
+    // 화면을 떠난 뒤 도착한 응답으로 setState하거나 뒤로가기를 부르지 않는다.
+    let alive = true;
+    void (async () => {
+      const sticker = await getSticker(id);
+      if (!alive) return;
+      if (!sticker) { router.back(); return; }
+      const g = await getGoal(sticker.goalId);
+      if (!alive) return;
+      if (!g) { router.back(); return; }
+      const siblings = await listStickers(g.id);
+      const record = await getRecord(id);
+      if (!alive) return;
+      setGoal(toPocketGoal(g, siblings));
+      setDate(localDateKey(sticker.placedAt));
+      setMemo(record?.memo ?? '');
+      setPhotoUri(record?.photoUri ?? null);
+    })();
+    return () => { alive = false; };
   }, [id, router]);
-
-  useEffect(() => { void load(); }, [load]);
 
   if (!goal) return (
     <RetroScreen>
