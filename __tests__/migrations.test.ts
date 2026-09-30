@@ -114,3 +114,32 @@ describe('트랜잭션', () => {
     expect(await db.first<{ id: string }>('SELECT id FROM goals')).toEqual({ id: 'g' });
   });
 });
+
+/** v4까지만 적용한 DB. */
+async function driverAtV4(): Promise<DbDriver> {
+  const driver = createNodeDriver();
+  for (const sql of MIGRATIONS.slice(0, 4).flat()) await driver.exec(sql);
+  await driver.exec('PRAGMA user_version = 4');
+  return driver;
+}
+
+describe('v5 — 백업 (계정·백업 설계 ②)', () => {
+  it('v4 데이터에 updated_at을 채우고 outbox를 만든다', async () => {
+    const driver = await driverAtV4();
+    await driver.exec(`
+      INSERT INTO goals (id, name, board_type, total_slots, created_at) VALUES ('g', '목표', 'tally', 3, 100);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index) VALUES ('s', 'g', 200, 0);
+      INSERT INTO records (id, sticker_id, memo, created_at) VALUES ('r', 's', '메모', 300);
+    `);
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+    expect((await db.first<{ updated_at: number }>('SELECT updated_at FROM goals'))?.updated_at).toBe(100);
+    expect((await db.first<{ updated_at: number }>('SELECT updated_at FROM stickers'))?.updated_at).toBe(200);
+    expect((await db.first<{ updated_at: number }>('SELECT updated_at FROM records'))?.updated_at).toBe(300);
+    const cols = (await db.all<{ name: string }>('PRAGMA table_info(records)')).map((c) => c.name);
+    expect(cols).toContain('photo_remote_path');
+    const outbox = (await db.all<{ name: string }>('PRAGMA table_info(outbox)')).map((c) => c.name);
+    expect(outbox).toEqual(['entity', 'row_id', 'queued_at', 'attempts', 'last_error']);
+  });
+});
