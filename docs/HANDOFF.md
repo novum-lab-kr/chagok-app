@@ -1,30 +1,31 @@
 # 차곡차곡 디자인 시스템 인계
 
-갱신: 2026-09-29 · 프로젝트: `/Users/eunjukim/Desktop/workspace/chagok-app`
+갱신: 2026-09-30 · 프로젝트: `/Users/eunjukim/Desktop/workspace/chagok-app`
 
 구현 현황과 시각 기준의 단일 출처다. 제품 요구사항은 [PRD.md](PRD.md), 작업 방식은 [WORKING-AGREEMENT.md](WORKING-AGREEMENT.md)를 따른다. 이미 끝난 수정 이력은 git 기록과 [보관본](archive/HANDOFF-design-system-history-2026-09-23.md)에 있다.
 
-## 0. 다음 세션 시작점 (2026-09-29)
+## 0. 다음 세션 시작점 (2026-09-30)
 
-**상태 (2026-09-30).** 2026-09-29 결정을 앱에 옮겼다: 목표 목록 / 판 상세 / 목표 설정 / 칸·종료일 늘리기 / 완성 흐름 / 5단계 튜토리얼, 스키마 v4. 구현 기록·미확인 항목·확인할 결정은 [DEV-DESIGN-home-structure.md](DEV-DESIGN-home-structure.md) 10절이 단일 출처다. **커밋하지 않았다** — 사용자가 화면 개발 뒤 한꺼번에 커밋하기로 했다(2026-09-30). 아래 0절의 순서는 완료 이력이다.
+**상태.** 홈 구조 전환(목록 / 판 상세 / 목표 설정 / 완성 흐름 / 5단계 튜토리얼, 스키마 v4)과 Expo Go 단계(약관 화면, 백업 기기 쪽, 위젯 스냅샷, 스키마 v5)가 main에 들어갔다. 홈 구조의 구현 기록·미확인 항목은 [DEV-DESIGN-home-structure.md](DEV-DESIGN-home-structure.md) 10절, Expo Go 단계의 범위와 결정은 [계획](superpowers/plans/2026-09-30-expo-go-phase.md)과 설계 문서 3개([약관](superpowers/specs/2026-09-30-policy-terms-design.md) · [계정·백업](superpowers/specs/2026-09-30-account-backup-design.md) · [위젯](superpowers/specs/2026-09-30-home-widget-design.md))가 단일 출처다.
 
-**코드를 쓰기 전에 이 순서로 한다.**
+**작업 방식 (2026-09-30 사용자 지시).**
 
-1. ~~개발 설계 문서를 먼저 만들고 사용자 확인을 받는다.~~ **완료 (2026-09-30):** [DEV-DESIGN-home-structure.md](DEV-DESIGN-home-structure.md). 결정은 그 문서 9절. 원래 담을 것:
-   - 데이터: 달력판 종료일(선택), 완성 시각, 마지막으로 붙인 시각의 컬럼과 `PRAGMA user_version` 마이그레이션. PRD 5절 스키마 표는 "필요"까지만 적혀 있다.
-   - 라우트: 목록 `/`와 판 상세의 경로, 목표 설정·새 목표·기록·종료일 늘리기와의 연결.
-   - 규칙 함수: 진행률(%)·목록 정렬·완성 판정·readonly·기간 밖 날짜. 시안의 `progressOf`·`orderGoals`·`percentLabel`(`stories/HomeStructure.stories.tsx`)은 참고 구현이고 명세는 PRD다. 도메인 테스트부터 쓴다.
-   - 작업 순서와 검증 계획.
-2. ~~커밋하지 않은 앱 변경을 "앱 기반 작업" 커밋 하나로 묶는다.~~ **따로 묶지 않는다 (2026-09-30).** 화면이 많이 바뀌므로 화면 개발이 끝난 뒤 함께 커밋한다. 폐기하지 않고 이어서 고친다(9절 끝).
-3. 그다음 설계 순서대로 구현한다. 화면은 확정된 Storybook(`Screens / Home structure · proposals`, `Components / Goal list & board`)과 대조한다.
+- 작업 단위마다 main에서 브랜치를 딴다. 브랜치 이름과 맞지 않는 작업을 한 브랜치에 섞지 않는다.
+- 계획·설계·코드는 사용자가 확인·승인하기 전에 커밋하지 않는다. 앱 저장소는 로컬 커밋까지만 하고 push는 사용자가 요청할 때 한다.
+
+**다음에 할 일** (9절에 자세히).
+
+1. 사용자 확인: 약관 화면과 v5 이후 기존 흐름을 Expo Go로, 동의 화면·위젯 미리보기를 Storybook으로.
+2. 계정 화면 Storybook 구성, 튜토리얼 다시 보기 시안 3개.
+3. 준비물(Docker, Apple Developer Program, Google OAuth)이 갖춰지면 개발 빌드 전환 → 서버 → 로그인 → 위젯 네이티브.
 
 **개발 중에 만나면 사용자에게 묻는 것 (아직 열린 결정).**
 
-- ~~목표가 하나도 없을 때의 새 목록 화면 시안~~ → 2026-09-30 A안(안내 상자만, `Screens / Empty goal list`) 확정.
-- 튜토리얼 다시 보기 진입 위치 (PRD 4.6, 4.9). **TODO로만 남긴다 (2026-09-30).**
+- 튜토리얼 다시 보기 진입 위치 (PRD 4.6, 4.9). 시안 3개를 보여주고 정한다(2026-09-30 사용자 요청).
+- 수동 완성 확인 문구 "완성하면 되돌릴 수 없고"가 기간 없는 달력판의 계속하기와 어긋난다 (DEV-DESIGN 10절 3번).
 - 목표 설정에서 칸 수·판 종류 변경은 미확정이다. 확정 Storybook의 목표 설정에 없으므로 넣지 않는다.
 
-**이번 세션에서 정한 값 (다시 묻지 않는다).** 완성 모션은 [완성] 스티커 붙이기 모션 하나, 칸 수 상한 없음(2026-09-30, 칸 늘리기 기본값은 처음 칸 수만큼 더하기), 기간 없는 달력판은 미래 달 이동 가능, 삭제·떼기 확인은 기존 `basic` 다이얼로그, 판 조작은 한 번 = 붙이기·떼기 / 두 번·꾹 = 기록 열기.
+**정한 값 (다시 묻지 않는다).** 완성 모션은 [완성] 스티커 붙이기 모션 하나, 칸 수 상한 없음(칸 늘리기 기본값은 처음 칸 수만큼 더하기), 기간 없는 달력판은 미래 달 이동 가능, 삭제·떼기 확인은 기존 `basic` 다이얼로그, 판 조작은 한 번 = 붙이기·떼기 / 두 번·꾹 = 기록 열기. 로그인·약관·위젯·백업의 결정은 PRD 확정 이력 2026-09-30 행들.
 
 ## 1. 현재 유효한 사용자 지시
 
@@ -147,53 +148,61 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 
 ## 8. 현재 앱 상태
 
-> **2026-09-30 갱신.** 아래 표는 전환 전 상태다. 지금 라우트: `/` 목록(탭·`+`·첫 실행 튜토리얼), `/goal/new`, `/goal/[id]` 판 상세, `/goal/[id]/settings`, `/goal/[id]/extend`, `/sticker/[id]`(완성한 판이면 읽기 전용), `/settings`. 스키마 v4. 화면 조합은 `src/design-system/board-screens.tsx`·`first-run-tutorial.tsx`, 규칙은 `src/domain/board.ts`·`dates.ts`, 판 읽기는 `src/app-data/boardData.ts`, 확인·실패 알림은 `src/app-data/useDialog.ts`(OS `Alert` 없음). 자세한 것은 DEV-DESIGN 10절.
-
-Expo Router 5개 라우트가 SQLite 저장소(스키마 v3)에 연결돼 있다. **앱은 아직 기존 홈 구조(목표 칩 + 판)다.**
+Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Expo Go로 실행한다(개발 빌드 전환 전).
 
 | 라우트 | 동작 |
 | --- | --- |
-| `index` | 목표 칩 전환, 적립판 어느 빈칸에든 붙이기, 달력판 오늘 칸 붙이기와 오늘 포커스, 기록 표식(B안), 스와이프·버튼 월 이동, 첫 실행 튜토리얼(3단계), 목표 없음 화면 |
-| `goal/new` | 이름·판 종류·칸 수(1–100, 새 결정으로 상한 제거 예정)·기본 스티커로 생성 후 그 목표를 선택해 홈으로 |
-| `goal/[id]` | 이름과 기본 스티커만 변경. 저장 안 한 입력 확인 |
-| `sticker/[id]` | 사진(앱 문서 디렉터리에 복사, 유실 안내), 메모, 기록 있을 때만 떼기 확인 |
-| `settings` | 로컬 기록 상태만 표시 |
+| `/` | 목표 목록(`내 목표 / 완성한 판` 탭, `+`), 목표 없음 안내, 첫 실행 튜토리얼 5단계 |
+| `/goal/new` | 이름·판 종류·칸 수(상한 없음)·기본 스티커·종료일로 만들고 그 판 상세로 |
+| `/goal/[id]` | 판 상세. 붙이기·떼기(한 번), 기록 열기(두 번·꾹), 완성 확인·모션·`닫기 / 계속하기` |
+| `/goal/[id]/settings` | 이름 → 기본 스티커 → 기간, [삭제하기]. 완성한 판은 삭제만 |
+| `/goal/[id]/extend` | 칸 늘리기 |
+| `/sticker/[id]` | 사진·메모. 완성한 판이면 읽기 전용 |
+| `/settings` | 이 기기 기록 안내, 약관과 라이선스 |
+| `/policies`, `/policies/[license]` | 이용약관·처리방침은 웹 시트(오프라인·실패 알림), 오픈소스 라이선스는 앱 내장 |
 
-폰트(`RetroFontProvider`)와 화면 배경은 앱 루트에 연결돼 있다. 저장 안 한 입력 확인은 `PixelDialogModal`이다. iPhone 16 Pro 시뮬레이터와 `Chagok_Pixel_7`에서 주요 화면 진입을 확인했다. **실기기 검수는 하지 않았다.**
+**화면에 연결되지 않은 것 (코드만 있음).**
+
+- 백업: `src/sync/` — outbox(모든 저장 함수가 같은 트랜잭션에서 기록), 전송기 `pushOnce`, 복원 `restoreAll`, 스케줄러. 서버 계약 `SyncServer`/`PhotoStore`의 실구현은 없고 메모리 가짜 서버(`__tests__/support/fakeServer.ts`)로만 검증했다.
+- 위젯: `src/widgets/` 스냅샷 생성과 DB 읽기, `src/design-system/widget-preview.tsx` 미리보기(Storybook `Widgets / Preview`).
+- 동의 화면: `ConsentScreen`(Storybook `Screens / Account consent`). 로그인 단계에서 연결한다.
+- 약관 재동의 판단 `needsReconsent`. 정책 사이트(`~/Desktop/workspace/chagok-app-policy`)는 로컬 커밋만 했고 게시 전이라 앱의 약관 링크는 지금 404다.
+
+화면 조합은 `src/design-system/board-screens.tsx`·`first-run-tutorial.tsx`·`policy-screens.tsx`·`account-screens.tsx`, 규칙은 `src/domain/board.ts`·`dates.ts`, 확인·실패 알림은 `src/app-data/useDialog.ts`(OS `Alert` 없음). **실기기 검수는 하지 않았다.**
 
 ## 9. 남은 구현 과제
 
-**2026-09-29 결정을 앱에 옮기는 일 (시안: `Screens / Home structure · proposals`, PRD 4.1–4.7)**
+**Expo Go로 할 수 있는 것**
 
-- 홈을 목표 목록(탭 `내 목표 / 완성한 판`, 헤더 `+`)과 판 상세 라우트로 나눈다.
-- 스키마에 종료일, 완성 시각, 마지막으로 붙인 시각을 더한다. 진행률(%)·정렬·완성 판정·readonly 규칙을 도메인 테스트부터 쓴다.
-- 판 조작을 바꾼다. 지금은 붙인 칸을 한 번 누르면 기록이 열린다 → 한 번 = 떼기, 두 번·꾹 = 기록 열기, 스크린리더용 '기록 열기' 접근성 동작.
-- 완성 확인 → [완성] 스티커 붙이기 모션 → `닫기 / 계속하기` 흐름, 칸 늘리기(상한 없음, 기본은 처음 칸 수만큼)와 종료일 늘리기, 완성한 판 readonly(기록 읽기 전용, 설정은 삭제만).
-- 기간 없는 달력판은 미래 달로 이동할 수 있다. 붙이기는 여전히 오늘 칸만.
-- 목표 설정 구성(이름 → 기본 스티커 → 기간 → 저장 → [삭제하기])과 **목표 삭제**. `deleteGoal`은 있지만 앱 화면과 기기 사진 파일 정리가 없다.
-- 첫 실행 튜토리얼을 5단계로 바꾼다.
+- 계정 관련 화면 Storybook 구성: 시작 화면(로그인 권유), 앱 설정 계정·백업 상태, 복원 충돌·진행·실패, 로그아웃, 계정 삭제 3단계. 시안은 `docs/design/retro-pocket-v1/prd-additions-review/` 캡처.
+- 사진 줄이기(긴 변 1600px, JPEG 80%, `expo-image-manipulator`). 올리기는 서버 단계.
+- 튜토리얼 다시 보기(진입 위치 결정 필요)와 스포트라이트 스크롤 좌표 수정 — `onLayout`에서만 다시 재서 스크롤 중 어긋난다.
 
-**그 밖에**
+**준비물이 필요한 것** (Docker Desktop, Apple Developer Program, Google Cloud OAuth — 2026-09-30 기준 없음)
 
-- OS `Alert` 7곳(저장·붙이기·떼기·생성 실패 5곳, 사진 권한 안내 1곳, 기록 있는 스티커 떼기 확인 1곳)이 남아 있다. 확정된 `basic` 다이얼로그로 바꾼다.
-- 배치 시 시각 피드백이 없다. 지금은 햅틱뿐이다 (PRD 4.5·6.1). 로딩 점(`PixelLoadingDots`)은 모션 감소 설정을 따른다.
-- `useGoals`가 모든 목표의 스티커를 전부 읽는다. PRD 6.3은 표시 중인 범위로 한정하라고 한다.
-- 계정·백업·복원, 앱 설정 항목, 약관·라이선스 화면은 시안만 있고 연결 전이다 (PRD 4.8·4.9·8.1). **로그인 버튼은 디자인 시스템의 예외**다. Apple·Google 브랜드 가이드라인 때문에 픽셀 프레임으로 다시 그리지 않고 주변 레이아웃만 맞춘다.
-- 튜토리얼 스포트라이트는 스크롤 중 좌표가 어긋난다. `onLayout`에서만 다시 잰다. 첫 실행은 스크롤 0이라 문제없지만 다시 보기 진입을 만들 때 고쳐야 한다.
+- 개발 빌드 전환(`npx expo run:ios`/`run:android`, prebuild 폴더는 커밋하지 않음)과 `docs/DEV-SETUP.md` 갱신. 로그인·위젯 모두 Expo Go로는 안 된다.
+- 서버: 로컬 Supabase에 테이블·RLS·RPC(`push_changes`·`pull_changes`·`server_state`·`replace_all`·`record_consent`), Edge Functions(`delete-account`, `apple-link`). 가짜 서버와 같은 시나리오를 실제 서버에도 돌린다. 테이블 순서는 부모 먼저로 보낸다(외래키 전제).
+- 앱 연결: `SyncServer`·`PhotoStore` 실구현, 스케줄러를 AppState·`subscribeLocalChange`에 연결, 앱 설정의 백업 상태.
+- 로그인: Google(Android) 먼저, Apple은 계정 승인 뒤. 시작·동의·복원 분기·로그아웃·계정 삭제·재동의.
+- 위젯: spike(글꼴·PNG 스티커·딥링크·목표 선택) → iOS `expo-widgets`, Android `react-native-android-widget`.
 
-**커밋하지 않은 앱 변경 (2026-09-28–29)은 폐기하지 않고 이어서 고친다.** 루트 폰트·배경, 사진 문서 폴더 보존과 유실 안내(`recordPhotos.ts`, `expo-file-system`), 사진 권한 문구(`app.json`), `goBackOrHome`·`useUnsavedBack`, `canPlaceAtSlot`, 기록 표식 대상 수정, 기록 화면 저장·떼기 확인, 앱 설정 자리 화면은 새 구조에서도 그대로 쓴다. 교체 대상은 `app/index.tsx`의 칩 + 판 구조(약 60줄)뿐이고, 붙이기·기록 표식 로직은 판 상세 라우트로 옮긴다. 선택 목표를 URL 파라미터(`selectedGoalId`)로 유지하던 방식은 상세 라우트로 대체한다. 실기기 확인은 하지 않았다. 따로 커밋하지 않고 화면 개발이 끝난 뒤 함께 커밋한다(2026-09-30 사용자 결정).
+**확인하지 못한 것**
 
-**나중에 따로 고칠 것 (Storybook 확정 뒤 정리)**
+- 탭 조작 전부(붙이기·떼기·두 번·꾹·스와이프), 모션·햅틱 느낌, 모션 줄이기, Android, 실기기, 320px 네이티브 폭.
+- 스키마 v5 마이그레이션을 실제 기기 DB에서 올리는 것. 버전마다 BEGIN/COMMIT으로 묶었다(`src/db/client.ts`).
+- 백업 전송을 백그라운드로 돌릴 때 트랜잭션 연결끼리 `SQLITE_BUSY`가 나는지(expo 트랜잭션은 별도 연결이고 외래키가 꺼져 있을 수 있다).
+
+**나중에 따로 고칠 것**
 
 - 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
-- **(낮음, 재현 대기) 기록 화면 첫 진입 시 스타일이 빠진 채 그려짐 (2026-09-30 사용자 보고).** 앱을 연 뒤 처음 기록 화면에 들어가면 스타일 없이 렌더되고, 뒤로 갔다 다시 열면 정상이라고 했다. 시뮬레이터 콜드 스타트 첫 진입과 09:34 녹화에서는 재현되지 않았다. 후보: ① 같은 시각 `composition-controls.tsx`를 고치던 중의 Fast Refresh 잔상(콜드 스타트에서 안 생기면 이것), ② `PixelFrame`이 `onLayout`으로 크기를 받은 뒤에만 테두리·채움을 그림(전환 중 늦게 받으면 잠깐 테두리 없이 보임), ③ 폰트 대체(루트에서 미리 불러와 가능성 낮음). 사용자가 재현하면 스크린샷으로 어느 쪽인지 가린다. ②로 확인되면 크기 전에도 배경을 먼저 칠한다.
-- ~~새 구조에서 안 쓰게 되는 것~~ **2026-09-30 정리함.** 옛 컴포넌트(`GoalChip`, `HomeScreen`, `GoalEditorScreen`, 3단계 `TutorialScreen`, `GoalStickerLink`/`DefaultStickerLink`)와 스토리(`Review Set 02`, `PRD additions · proposals`, `Goal chip`, `Setting row`, `Reference Match`), 그 검수 스크립트를 지웠다. 계정·복원·앱 설정 시안은 `docs/design/retro-pocket-v1/prd-additions-review/` 캡처와 git 기록에 남아 있다. 구현할 때 스토리로 다시 만든다.
+- **(낮음, 재현 대기) 기록 화면 첫 진입 시 스타일이 빠진 채 그려짐 (2026-09-30 사용자 보고).** 시뮬레이터 콜드 스타트와 09:34 녹화에서는 재현되지 않았다. 후보: ① Fast Refresh 잔상, ② `PixelFrame`이 `onLayout`으로 크기를 받은 뒤에만 테두리·채움을 그림, ③ 폰트 대체. 재현되면 스크린샷으로 가린다. ②면 크기 전에도 배경을 먼저 칠한다.
+- 복원 뒤 아직 받지 못한 사진(기기 경로 없음, 서버 경로만 있음)에 photo 항목이 생기면 서버의 하나뿐인 사본이 지워진다. 지금은 그런 경로가 없다. "사진 유실" 화면에 사진 지우기·바꾸기를 붙일 때 `src/sync/push.ts`의 `pushPhoto` 주석을 다시 본다.
 
-**PRD 미확정인데 코드에 값이 들어간 것:** 튜토리얼 상태를 DB(사용자 범위)에 저장, `app.json`의 `userInterfaceStyle: "automatic"`. (칸 수 상한은 2026-09-30 제거로 확정.)
+**PRD 미확정인데 코드에 값이 들어간 것:** 튜토리얼 상태를 DB(사용자 범위)에 저장, `app.json`의 `userInterfaceStyle: "automatic"`.
 
 ## 10. 다음 작업 시 주의
 
 - 코드 작성 전 [Expo 57 문서](https://docs.expo.dev/versions/v57.0.0/)를 읽는다. 현재 Expo ~57.0.24 / RN 0.86.3 / React·React DOM 19.2.3, React DOM override 유지.
 - 의존성을 추가할 때는 `package.json`·`package-lock.json`을 백업하고, 설치 후 `npm ls react-dom --all`이 `19.2.3` 하나인지 확인한다.
-- 작업 브랜치는 `chore/lint-and-app-hardening`이고 원격에 올라가 있다(PR 없음). 디자인 시스템(`8456e72`)과 문서(`2df26ba`)는 커밋했고, **커밋하지 않은 것은 앱 코드 변경뿐이다**(9절). 일괄 reset/복원/삭제 금지. 관련 없는 `.omc`, 앱 설정, 기존 계획을 건드리지 않는다.
+- 작업 단위마다 main에서 브랜치를 따고(0절), main 기록은 브랜치 단위 `--no-ff` 병합으로 남긴다(2026-09-30에 이전 기록도 이 형태로 다시 정리했다. 정리 전 main은 태그 `backup/main-before-split`). 일괄 reset/복원/삭제 금지. 관련 없는 `.omc`, 앱 설정, 기존 계획을 건드리지 않는다.
 - Storybook은 확정했지만 원본 이미지 시안(`review-set-02` 등)과 픽셀 단위로 일치한다는 뜻은 아니다. 폰트·프레임 치수·focus·단색 asset에서 오는 차이는 남아 있다.
