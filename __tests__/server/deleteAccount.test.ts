@@ -1,0 +1,50 @@
+import { SupabaseSyncServer } from '../../src/sync/supabaseServer';
+import { deleteAccountOnServer } from '../../src/sync/account';
+import { goal } from '../support/syncServerContract';
+import { adminClient, anonClient, describeIfServer, newUser } from './support';
+
+const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+
+describeIfServer('delete-account', () => {
+  it('사진·행·인증 계정을 모두 지운다', async () => {
+    const a = await newUser();
+    await new SupabaseSyncServer({ rpc: (fn, args) => a.client.rpc(fn, args) })
+      .push('d1', [{ entity: 'goal', op: 'upsert', row: goal('g1') }]);
+    await a.client.storage.from('record-photos').upload(`${a.userId}/r1.jpg`, jpeg, { contentType: 'image/jpeg' });
+
+    await deleteAccountOnServer(a.client);
+
+    const admin = adminClient();
+    expect((await admin.from('goals').select('id').eq('user_id', a.userId)).data).toEqual([]);
+    expect((await admin.storage.from('record-photos').list(a.userId)).data).toEqual([]);
+    expect((await admin.auth.admin.getUserById(a.userId)).data.user).toBeNull();
+  });
+
+  it('두 번 불러도 성공한다 (중간 실패 뒤 다시 누름)', async () => {
+    const a = await newUser();
+    await deleteAccountOnServer(a.client);
+    await expect(deleteAccountOnServer(a.client)).resolves.toBeUndefined();
+  });
+
+  it('로그인 없이는 부를 수 없다', async () => {
+    await expect(deleteAccountOnServer(anonClient())).rejects.toThrow();
+  });
+
+  // 함수는 토큰의 sub를 믿는다. 서명 검증은 게이트웨이(verify_jwt)가 하므로, 그 보호가 꺼지면 이 테스트가 잡는다.
+  it('서명이 틀린 토큰으로는 남의 계정을 지울 수 없다', async () => {
+    const victim = await newUser();
+    const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+    const exp = Math.floor(Date.now() / 1000) + 3600;
+    const tokens = [
+      `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: victim.userId, role: 'authenticated', exp })}.${Buffer.from('forged').toString('base64url')}`,
+      `${b64({ alg: 'none', typ: 'JWT' })}.${b64({ sub: victim.userId, role: 'authenticated', exp })}.`,
+    ];
+    for (const token of tokens) {
+      const res = await fetch(`${process.env.SUPABASE_TEST_URL}/functions/v1/delete-account`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, apikey: process.env.SUPABASE_TEST_ANON_KEY! },
+      });
+      expect(res.status).toBe(401);
+    }
+    expect((await adminClient().auth.admin.getUserById(victim.userId)).data.user?.id).toBe(victim.userId);
+  });
+});

@@ -20,6 +20,8 @@ module.exports = [
       'storybook-static/**',
       '.expo/**',
       '.omc/**',
+      // Supabase Edge Function은 Deno에서 돈다. 앱 규칙으로 보지 않는다.
+      'supabase/functions/**',
     ],
   },
 ];
