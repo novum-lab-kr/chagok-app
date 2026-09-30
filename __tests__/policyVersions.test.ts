@@ -31,7 +31,7 @@ describe('재동의 판단', () => {
 
 describe('정책 URL', () => {
   it('종류별 최신본 주소', () => {
-    expect(policyUrl('terms')).toBe('https://eunjukkkkim.github.io/chagok-app-policy/terms/');
-    expect(policyUrl('privacy')).toBe('https://eunjukkkkim.github.io/chagok-app-policy/privacy/');
+    expect(policyUrl('terms')).toBe('https://chagok-app-terms.netlify.app/terms/');
+    expect(policyUrl('privacy')).toBe('https://chagok-app-terms.netlify.app/privacy/');
   });
 });

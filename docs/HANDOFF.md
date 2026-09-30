@@ -168,7 +168,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 - 백업: `src/sync/` — outbox(모든 저장 함수가 같은 트랜잭션에서 기록), 전송기 `pushOnce`, 복원 `restoreAll`, 스케줄러. 서버 계약 `SyncServer`/`PhotoStore`의 실구현은 없고 메모리 가짜 서버(`__tests__/support/fakeServer.ts`)로만 검증했다.
 - 위젯: `src/widgets/` 스냅샷 생성과 DB 읽기, `src/design-system/widget-preview.tsx` 미리보기(Storybook `Widgets / Preview`).
 - 동의 화면: `ConsentScreen`(Storybook `Screens / Account consent`). 로그인 단계에서 연결한다.
-- 약관 재동의 판단 `needsReconsent`. 정책 사이트(`~/Desktop/workspace/chagok-app-policy`)는 로컬 커밋만 했고 게시 전이라 앱의 약관 링크는 지금 404다.
+- 약관 재동의 판단 `needsReconsent`. 정책 사이트(`~/Desktop/workspace/chagok-app-policy`)는 Netlify `https://chagok-app-terms.netlify.app`에 연결했고(2026-09-30) 앱도 그 주소를 본다. 지금은 첫 화면 "준비 중"만 배포했고 약관 초안은 로컬에만 있어, 앱의 약관 링크는 게시 전까지 404다. 게시 절차는 [약관 설계](superpowers/specs/2026-09-30-policy-terms-design.md) 「게시 상태」.
 
 화면 조합은 `src/design-system/board-screens.tsx`·`first-run-tutorial.tsx`·`policy-screens.tsx`·`account-screens.tsx`, 규칙은 `src/domain/board.ts`·`dates.ts`, 확인·실패 알림은 `src/app-data/useDialog.ts`(OS `Alert` 없음). **실기기 검수는 하지 않았다.**
 

@@ -14,12 +14,21 @@
 | --- | --- |
 | 본문 위치 | 웹 URL 한 벌. 앱은 `expo-web-browser` 시트(iOS SFSafariViewController, Android Custom Tabs)로 연다 |
 | 오픈소스 라이선스 | 앱 내장 화면 (오프라인 열람, 시안 `라이선스-상세`) |
-| 호스팅 | 별도 공개 저장소 **`chagok-app-policy`** + GitHub Pages. 앱 저장소는 공개하지 않는다 |
+| 호스팅 | 별도 저장소 **`chagok-app-policy`**(비공개) + **Netlify** `https://chagok-app-terms.netlify.app`. 앱 저장소는 공개하지 않는다. 2026-09-30 GitHub Pages에서 바꿨다 — 주소에 GitHub 아이디가 보여서. 게시 상태는 아래 「게시 상태」 |
 | 문안 | 에이전트가 PRD 8.1 항목으로 초안 작성, 최종은 법률 검토 |
 | 동의 화면 | 계정 연결 직전 한 화면: [필수] 만 14세 이상 · [필수] 이용약관 동의(보기) · 처리방침 안내(보기) |
 | 처리방침 | 동의가 아니라 안내. 2023-09 개정 개인정보 보호법에서 계약 이행 필수 항목은 처리방침 고지로 처리한다 |
 | 로그인 안 한 사용자 | 동의를 받지 않는다. 앱 설정에서 열람만 |
 | 재동의 | 앱이 `versions.json`을 읽어, 시행 중인 판이 동의한 판보다 높고 `requiresConsent`이면 동의 화면 |
+
+## 게시 상태 (2026-09-30)
+
+- Netlify 프로젝트 `chagok-app-terms`(팀 `chagok-policy`)가 저장소의 **`publish` 브랜치**를 배포한다. 빌드 없음, 게시 폴더 `.`.
+- `publish`에는 지금 "준비 중" 페이지(`noindex`) 하나만 있다. 약관 초안은 정책 저장소 로컬 `main`에만 있고 push하지 않았다. 빈칸: 문의 이메일, 클라우드 사업자, 판 날짜.
+- 그래서 앱의 약관 링크(`/terms/`, `/privacy/`)와 `versions.json`은 게시 전까지 404다. 앱은 이미 이 주소를 본다(`src/policy/urls.ts`).
+- Visitor access: Private + "Previews only" — 운영 주소만 공개, 미리보기는 잠금.
+- 무료 요금제는 월 300크레딧 고정 한도다(배포 1회 15, 전송 1GB 20, 요청 1만 건 2). 앱이 실행마다 `versions.json`을 받으므로 사용자가 늘면 Team → Usage를 확인한다. 한도가 문제되면 Cloudflare Pages(조회 무제한)로 옮기고 주소 한 줄을 바꾼다.
+- 게시할 때: 빈칸을 채우고 검토 → 초안을 `publish`에 반영(또는 Netlify 운영 브랜치를 `main`으로) → 주소 4개(`/`, `/terms/`, `/privacy/`, `/delete-account/`)와 `versions.json` 확인.
 
 ## 정책 저장소 `chagok-app-policy`
 
