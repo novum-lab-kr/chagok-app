@@ -313,7 +313,10 @@ create policy goals_own on public.goals for select to authenticated using (user_
 create policy stickers_own on public.stickers for select to authenticated using (user_id = (select auth.uid()));
 create policy records_own on public.records for select to authenticated using (user_id = (select auth.uid()));
 create policy accounts_own on public.accounts for select to authenticated using (user_id = (select auth.uid()));
-revoke insert, update, delete on public.goals, public.stickers, public.records, public.accounts from anon, authenticated;
+-- 권한을 직접 준다(프로젝트의 "새 테이블 자동 공개"를 꺼 둔다). 로그인한 사용자는 읽기만, 쓰기는 RPC로만.
+revoke all on public.goals, public.stickers, public.records, public.accounts from anon, authenticated;
+grant select on public.goals, public.stickers, public.records, public.accounts to authenticated;
+grant select, insert, update, delete on public.goals, public.stickers, public.records, public.accounts to service_role;
 ```
 
 Run: `supabase db push`

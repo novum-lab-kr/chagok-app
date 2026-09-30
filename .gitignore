@@ -14,3 +14,5 @@ storybook-static/
 
 expo-env.d.ts
 # @end expo-cli
+# 서버 키·환경 변수 (커밋하지 않는다)
+.env*.local
