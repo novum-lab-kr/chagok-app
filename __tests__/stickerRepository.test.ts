@@ -82,3 +82,50 @@ describe('누적 총계 (PRD 4.3)', () => {
     expect(await countStickers(b.id)).toBe(0);
   });
 });
+
+describe('붙이기·떼기와 목표 상태 (DEV-DESIGN 3절)', () => {
+  it('붙이면 목표의 마지막으로 붙인 시각이 바뀌고, 떼도 그대로다', async () => {
+    const { getGoal } = await import('../src/repositories/goalRepository');
+    const g = await goal();
+    const s = await placeSticker(g.id, 0);
+    expect((await getGoal(g.id))?.lastPlacedAt).toBe(s.placedAt);
+    await removeSticker(s.id);
+    expect((await getGoal(g.id))?.lastPlacedAt).toBe(s.placedAt);
+  });
+
+  it('complete로 붙이면 같은 시각에 완성하고 완성 흐름을 기다린다', async () => {
+    const { getGoal } = await import('../src/repositories/goalRepository');
+    const g = await createGoal({ name: '한 칸', boardType: 'tally', totalSlots: 1 });
+    const s = await placeSticker(g.id, 0, 'sprout', { complete: true });
+    expect(await getGoal(g.id)).toMatchObject({ completedAt: s.placedAt, completionSeen: false });
+  });
+
+  it('완성한 판에는 붙이지 않고, 뗄 수도 없다', async () => {
+    const { completeGoal } = await import('../src/repositories/goalRepository');
+    const g = await goal();
+    const s = await placeSticker(g.id, 0);
+    await completeGoal(g.id, 1);
+    await expect(placeSticker(g.id, 1)).rejects.toThrow();
+    await expect(removeSticker(s.id)).rejects.toThrow();
+    expect(await listStickers(g.id)).toHaveLength(1);
+  });
+
+  it('떼면 그 기록의 사진 경로를 돌려준다', async () => {
+    const { upsertRecord, getRecord } = await import('../src/repositories/recordRepository');
+    const g = await goal();
+    const s = await placeSticker(g.id, 0);
+    await upsertRecord(s.id, { photoUri: 'record-photo:a.jpg', memo: null });
+    expect(await removeSticker(s.id)).toBe('record-photo:a.jpg');
+    expect(await getRecord(s.id)).toBeNull();
+    const t = await placeSticker(g.id, 1);
+    expect(await removeSticker(t.id)).toBeNull();
+  });
+
+  it('기간으로 읽으면 그 사이에 붙인 스티커만 준다', async () => {
+    const { listStickersInRange } = await import('../src/repositories/stickerRepository');
+    const g = await goal();
+    const s = await placeSticker(g.id, 0);
+    expect(await listStickersInRange(g.id, s.placedAt, s.placedAt + 1)).toHaveLength(1);
+    expect(await listStickersInRange(g.id, s.placedAt + 1, s.placedAt + 100)).toHaveLength(0);
+  });
+});

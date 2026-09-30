@@ -74,6 +74,28 @@ export const MIGRATIONS: readonly (readonly string[])[] = [
        value TEXT NOT NULL
      );`,
   ],
+
+  // v4 — 목록·판 상세 구조 (PRD 4.1, 4.3, 4.7 · docs/DEV-DESIGN-home-structure.md 1절)
+  //
+  // end_date: 달력판 종료일. 'YYYY-MM-DD' 로컬 날짜라 시간대 변환 없이 localDateKey와 비교한다.
+  // completed_at: 완성한 시각. NULL이면 진행 중이다.
+  // completion_seen: 완성 뒤 닫기/계속하기를 골랐는가. 0인 완성한 판은 열 때 완성 흐름을 보여준다.
+  // last_placed_at: 마지막으로 붙인 시각. 떼도 바꾸지 않으므로 stickers에서 계산할 수 없다.
+  // initial_slots: 적립판을 만들 때의 칸 수. 칸 늘리기의 기본값이다.
+  [
+    `ALTER TABLE goals ADD COLUMN end_date TEXT;`,
+    `ALTER TABLE goals ADD COLUMN completed_at INTEGER;`,
+    `ALTER TABLE goals ADD COLUMN completion_seen INTEGER NOT NULL DEFAULT 0;`,
+    `ALTER TABLE goals ADD COLUMN last_placed_at INTEGER;`,
+    `ALTER TABLE goals ADD COLUMN initial_slots INTEGER;`,
+    `UPDATE goals SET last_placed_at =
+       (SELECT MAX(placed_at) FROM stickers WHERE stickers.goal_id = goals.id);`,
+    `UPDATE goals SET initial_slots = total_slots WHERE board_type = 'tally';`,
+    // 옛 규칙에는 완성이 없었다. 이미 다 찬 적립판은 완성으로 옮기고 완성 흐름을 한 번 보여준다.
+    `UPDATE goals SET completed_at = last_placed_at, completion_seen = 0
+      WHERE board_type = 'tally' AND total_slots IS NOT NULL
+        AND (SELECT COUNT(*) FROM stickers WHERE stickers.goal_id = goals.id) >= total_slots;`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

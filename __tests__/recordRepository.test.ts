@@ -47,6 +47,18 @@ describe('recordRepository', () => {
     expect(ids.has(bare.id)).toBe(false);
   });
 
+  it('사진이나 내용 있는 메모만 표식 대상으로 삼는다', async () => {
+    const { goal, sticker } = await stickerOnGoal();
+    const empty = await placeSticker(goal.id, 1);
+    const whitespace = await placeSticker(goal.id, 2);
+    const photo = await placeSticker(goal.id, 3);
+    await upsertRecord(sticker.id, { photoUri: null, memo: '기록' });
+    await upsertRecord(empty.id, { photoUri: null, memo: null });
+    await upsertRecord(whitespace.id, { photoUri: '', memo: '   ' });
+    await upsertRecord(photo.id, { photoUri: 'file:///p.jpg', memo: null });
+    expect(await listRecordedStickerIds(goal.id)).toEqual(new Set([sticker.id, photo.id]));
+  });
+
   it('스티커를 떼면 기록도 같이 사라진다', async () => {
     const { sticker } = await stickerOnGoal();
     await upsertRecord(sticker.id, { photoUri: null, memo: 'ok' });
@@ -59,5 +71,17 @@ describe('recordRepository', () => {
     await upsertRecord(sticker.id, { photoUri: null, memo: 'ok' });
     await deleteRecord(sticker.id);
     expect(await getRecord(sticker.id)).toBeNull();
+  });
+});
+
+describe('완성한 판 (PRD 4.7)', () => {
+  it('기록을 고칠 수 없다', async () => {
+    const { completeGoal } = await import('../src/repositories/goalRepository');
+    const g = await createGoal({ name: '판', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    await upsertRecord(s.id, { photoUri: null, memo: '처음' });
+    await completeGoal(g.id, 1);
+    await expect(upsertRecord(s.id, { photoUri: null, memo: '고침' })).rejects.toThrow();
+    expect((await getRecord(s.id))?.memo).toBe('처음');
   });
 });
