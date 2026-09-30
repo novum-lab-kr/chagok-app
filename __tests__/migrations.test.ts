@@ -1,5 +1,5 @@
 import { setDriverFactory, getDb, currentSchemaVersion } from '../src/db/client';
-import { SCHEMA_VERSION } from '../src/db/schema';
+import { MIGRATIONS, SCHEMA_VERSION } from '../src/db/schema';
 import { createNodeDriver } from './support/nodeDriver';
 import type { DbDriver } from '../src/db/driver';
 
@@ -50,5 +50,67 @@ describe('스키마 마이그레이션', () => {
     const db = await getDb();
     const r = await db.first<{ foreign_keys: number }>('PRAGMA foreign_keys');
     expect(r?.foreign_keys).toBe(1);
+  });
+});
+
+/** v3까지만 적용한 DB. 옛 버전 앱이 남긴 데이터를 흉내 낸다. */
+async function driverAtV3(): Promise<DbDriver> {
+  const driver = createNodeDriver();
+  for (const sql of MIGRATIONS.slice(0, 3).flat()) await driver.exec(sql);
+  await driver.exec('PRAGMA user_version = 3');
+  return driver;
+}
+
+describe('v4 — 기간·완성·정렬 (DEV-DESIGN 1절)', () => {
+  it('v3 데이터를 올리면 last_placed_at·initial_slots를 채우고 다 찬 적립판을 완성으로 옮긴다', async () => {
+    const driver = await driverAtV3();
+    await driver.exec(`
+      INSERT INTO goals (id, name, board_type, total_slots, created_at) VALUES
+        ('full', '다 찬 적립판', 'tally', 2, 100),
+        ('half', '반 찬 적립판', 'tally', 3, 100),
+        ('cal',  '달력판', 'calendar', NULL, 100),
+        ('none', '빈 적립판', 'tally', 5, 100);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index) VALUES
+        ('a', 'full', 200, 0), ('b', 'full', 300, 1),
+        ('c', 'half', 250, 0),
+        ('d', 'cal', 400, 0);
+    `);
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+
+    const rows = await db.all<{
+      id: string; end_date: string | null; completed_at: number | null;
+      completion_seen: number; last_placed_at: number | null; initial_slots: number | null;
+    }>('SELECT id, end_date, completed_at, completion_seen, last_placed_at, initial_slots FROM goals ORDER BY id');
+    expect(rows).toEqual([
+      { id: 'cal', end_date: null, completed_at: null, completion_seen: 0, last_placed_at: 400, initial_slots: null },
+      { id: 'full', end_date: null, completed_at: 300, completion_seen: 0, last_placed_at: 300, initial_slots: 2 },
+      { id: 'half', end_date: null, completed_at: null, completion_seen: 0, last_placed_at: 250, initial_slots: 3 },
+      { id: 'none', end_date: null, completed_at: null, completion_seen: 0, last_placed_at: null, initial_slots: 5 },
+    ]);
+  });
+});
+
+describe('트랜잭션', () => {
+  it('중간에 실패하면 앞선 쓰기도 되돌린다', async () => {
+    setDriverFactory(async () => createNodeDriver());
+    const db = await getDb();
+    await expect(db.transaction(async (tx) => {
+      await tx.run(`INSERT INTO goals (id, name, board_type, total_slots, created_at) VALUES ('g', 'x', 'tally', 1, 1)`);
+      throw new Error('boom');
+    })).rejects.toThrow('boom');
+    expect(await db.first('SELECT id FROM goals')).toBeNull();
+  });
+
+  it('성공하면 함수의 반환값을 돌려주고 쓰기를 남긴다', async () => {
+    setDriverFactory(async () => createNodeDriver());
+    const db = await getDb();
+    const value = await db.transaction(async (tx) => {
+      await tx.run(`INSERT INTO goals (id, name, board_type, total_slots, created_at) VALUES ('g', 'x', 'tally', 1, 1)`);
+      return 7;
+    });
+    expect(value).toBe(7);
+    expect(await db.first<{ id: string }>('SELECT id FROM goals')).toEqual({ id: 'g' });
   });
 });

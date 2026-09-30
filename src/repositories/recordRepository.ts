@@ -33,6 +33,10 @@ export async function upsertRecord(
   data: { photoUri: string | null; memo: string | null },
 ): Promise<RecordNote> {
   const db = await getDb();
+  const goal = await db.first<{ completed_at: number | null }>(
+    'SELECT g.completed_at FROM stickers s JOIN goals g ON g.id = s.goal_id WHERE s.id = ?', stickerId,
+  );
+  if (goal && goal.completed_at !== null) throw new Error('완성한 판은 고칠 수 없습니다.');
   const existing = await getRecord(stickerId);
   if (existing) {
     await db.run(
@@ -60,7 +64,8 @@ export async function listRecordedStickerIds(goalId: string): Promise<Set<string
   const rows = await db.all<{ sticker_id: string }>(
     `SELECT r.sticker_id FROM records r
      JOIN stickers s ON s.id = r.sticker_id
-     WHERE s.goal_id = ?`,
+     WHERE s.goal_id = ?
+       AND (NULLIF(TRIM(r.memo), '') IS NOT NULL OR NULLIF(TRIM(r.photo_uri), '') IS NOT NULL)`,
     goalId,
   );
   return new Set(rows.map((r) => r.sticker_id));

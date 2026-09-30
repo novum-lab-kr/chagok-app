@@ -21,10 +21,18 @@ function toSticker(r: StickerRow): Sticker {
   };
 }
 
+const COMPLETED = '완성한 판은 고칠 수 없습니다.';
+
+/**
+ * 붙인다. 목표의 마지막으로 붙인 시각도 함께 바꾼다 (PRD 4.1).
+ * complete면 같은 트랜잭션에서 완성한다. 마지막 칸 확인을 받은 뒤에만 쓴다 (PRD 4.7).
+ * 완성한 판이면 거부한다. 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt으로 정한다.
+ */
 export async function placeSticker(
   goalId: string,
   slotIndex: number,
   stickerType: StickerType = STICKER_TYPE_DEFAULT,
+  options: { complete?: boolean } = {},
 ): Promise<Sticker> {
   const db = await getDb();
   const sticker: Sticker = {
@@ -34,10 +42,19 @@ export async function placeSticker(
     slotIndex,
     stickerType,
   };
-  await db.run(
-    'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type) VALUES (?, ?, ?, ?, ?)',
-    sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType,
-  );
+  await db.transaction(async (tx) => {
+    const goal = await tx.first<{ completed_at: number | null }>('SELECT completed_at FROM goals WHERE id = ?', goalId);
+    if (!goal) throw new Error('목표가 없습니다.');
+    if (goal.completed_at !== null) throw new Error(COMPLETED);
+    await tx.run(
+      'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type) VALUES (?, ?, ?, ?, ?)',
+      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType,
+    );
+    await tx.run('UPDATE goals SET last_placed_at = ? WHERE id = ?', sticker.placedAt, goalId);
+    if (options.complete) {
+      await tx.run('UPDATE goals SET completed_at = ?, completion_seen = 0 WHERE id = ?', sticker.placedAt, goalId);
+    }
+  });
   return sticker;
 }
 
@@ -50,22 +67,45 @@ export async function listStickers(goalId: string): Promise<Sticker[]> {
   return rows.map(toSticker);
 }
 
+/** 달력판 상세는 보고 있는 달만 읽는다 (PRD 6.3). from 이상, to 미만. */
+export async function listStickersInRange(goalId: string, from: number, to: number): Promise<Sticker[]> {
+  const db = await getDb();
+  const rows = await db.all<StickerRow>(
+    'SELECT * FROM stickers WHERE goal_id = ? AND placed_at >= ? AND placed_at < ? ORDER BY placed_at ASC',
+    goalId, from, to,
+  );
+  return rows.map(toSticker);
+}
+
 export async function getSticker(id: string): Promise<Sticker | null> {
   const db = await getDb();
   const row = await db.first<StickerRow>('SELECT * FROM stickers WHERE id = ?', id);
   return row ? toSticker(row) : null;
 }
 
-export async function removeSticker(id: string): Promise<void> {
+/**
+ * 스티커와 그 기록을 뗀다. 트랜잭션 연결에서는 CASCADE가 꺼져 있을 수 있어 기록도 직접 지운다. 지운 기록의 사진 경로를 돌려준다. 파일은 호출자가 정리한다.
+ * 완성한 판이면 거부한다 (PRD 4.7). 마지막으로 붙인 시각은 바꾸지 않는다.
+ */
+export async function removeSticker(id: string): Promise<string | null> {
   const db = await getDb();
-  await db.run('DELETE FROM stickers WHERE id = ?', id);
+  return db.transaction(async (tx) => {
+    const row = await tx.first<{ completed_at: number | null; photo_uri: string | null }>(
+      `SELECT g.completed_at, r.photo_uri FROM stickers s
+         JOIN goals g ON g.id = s.goal_id
+         LEFT JOIN records r ON r.sticker_id = s.id
+        WHERE s.id = ?`,
+      id,
+    );
+    if (!row) return null;
+    if (row.completed_at !== null) throw new Error(COMPLETED);
+    await tx.run('DELETE FROM records WHERE sticker_id = ?', id);
+    await tx.run('DELETE FROM stickers WHERE id = ?', id);
+    return row.photo_uri;
+  });
 }
 
-/**
- * 누적 총계 (PRD 4.3). 그 목표에 **현재 붙어 있는** 스티커 수다.
- * 뗀 스티커는 행이 지워지므로 자동으로 빠진다.
- * 달력판의 월별 진행과는 다른 값이며, 같은 자리에 섞어 표시하지 않는다.
- */
+/** 그 목표에 **현재 붙어 있는** 스티커 수. 뗀 스티커는 행이 지워지므로 빠진다. */
 export async function countStickers(goalId: string): Promise<number> {
   const db = await getDb();
   const row = await db.first<{ n: number }>(

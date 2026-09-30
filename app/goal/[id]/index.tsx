@@ -1,0 +1,220 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { View } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { BoardDetailScreen, PixelLoadingIndicator, RetroScreen } from '../../../src/design-system';
+import type { PocketStickerId } from '../../../src/design-system';
+import { loadBoard } from '../../../src/app-data/boardData';
+import type { BoardData } from '../../../src/app-data/boardData';
+import { percentLabel, safeStickerId } from '../../../src/app-data/pocketAdapter';
+import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
+import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
+import { createSingleFlight } from '../../../src/app-data/singleFlight';
+import { goBackOrHome } from '../../../src/app-data/goBack';
+import {
+  canPlace, canRemove, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, pendingCompletion,
+  progressOf, stickerDate,
+} from '../../../src/domain/board';
+import { localDateKey } from '../../../src/domain/dates';
+import type { Sticker } from '../../../src/domain/types';
+import { placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
+import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
+
+/** [완성] 스티커 붙이기 모션이 끝나고 다이얼로그를 띄우기까지 */
+const COMPLETION_DIALOG_DELAY_MS = 700;
+
+/**
+ * 판 상세 (PRD 4.1–4.7). 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 떼기, 두 번·꾹 = 기록 열기.
+ * 완성했고 아직 닫기/계속하기를 고르지 않은 판은 열 때 완성 흐름을 보여준다
+ * (마지막 칸, 종료일 지남, 수동 완성이 모두 같은 규칙 · DEV-DESIGN 5절).
+ */
+export default function Board() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const today = new Date();
+  const [shown, setShown] = useState({ year: today.getFullYear(), month: today.getMonth() + 1 });
+  const [data, setData] = useState<BoardData | null>(null);
+  const [justPlaced, setJustPlaced] = useState<{ slot?: number; date?: string }>({});
+  const [actOnce] = useState(createSingleFlight);
+  const { ask, confirm, dialog } = useDialog();
+  /** 완성 다이얼로그가 떠 있는 동안 다시 띄우지 않는다 */
+  const completionOpen = useRef(false);
+
+  const reload = useCallback(async () => {
+    const next = await loadBoard(id, shown.year, shown.month, new Date());
+    if (!next) { goBackOrHome(); return; }
+    setData(next);
+  }, [id, shown.year, shown.month]);
+
+  useFocusEffect(useCallback(() => {
+    let alive = true;
+    void (async () => {
+      const next = await loadBoard(id, shown.year, shown.month, new Date());
+      if (!alive) return;
+      if (!next) { goBackOrHome(); return; }
+      setData(next);
+    })();
+    return () => { alive = false; };
+  }, [id, shown.year, shown.month]));
+
+  const goal = data?.goal;
+  const pending = goal ? pendingCompletion(goal) : false;
+
+  /** 닫기 / 계속하기 (PRD 4.7). 고르지 않고 닫으면 다음에 열 때 다시 묻는다. */
+  async function askCompletion() {
+    if (!goal) return;
+    const how = goal.boardType === 'tally' ? '칸을 늘려' : goal.endDate ? '종료일을 늘려' : '완성을 풀고';
+    const choice = await ask({
+      title: goal.boardType === 'calendar' && goal.endDate ? '기간을 마쳤어요!' : '판을 완성했어요!',
+      description: `${how} 이 판에 계속 붙일 수 있어요. 닫으면 완성한 판으로 보관되고 더 고칠 수 없어요.`,
+      secondaryLabel: '닫기',
+      primaryLabel: '계속하기',
+    });
+    if (choice === 'dismiss') return;
+    if (choice === 'secondary') {
+      if (await saveOrNotify(ask, '저장하지 못했어요', () => markCompletionSeen(goal.id))) await reload();
+      return;
+    }
+    if (goal.boardType === 'calendar' && !goal.endDate) {
+      if (await saveOrNotify(ask, '저장하지 못했어요', () => reopenGoal(goal.id))) await reload();
+      return;
+    }
+    router.push({ pathname: '/goal/[id]/extend', params: { id: goal.id } });
+  }
+
+
+  /**
+   * 완성 흐름: [완성] 스티커는 완성 흐름을 기다리는 판에서 붙이기 모션으로 나타난다(BoardDetailScreen animateCompletion).
+   * 모션이 끝나면 닫기 / 계속하기를 묻는다.
+   */
+  useEffect(() => {
+    if (!goal || !pending || completionOpen.current) return;
+    completionOpen.current = true;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    const timer = setTimeout(() => { void askCompletion(); }, COMPLETION_DIALOG_DELAY_MS);
+    return () => { clearTimeout(timer); completionOpen.current = false; };
+    // 다시 읽어 goal이 바뀔 때만 다시 판단한다. askCompletion은 매 렌더 새로 만들어지므로 넣지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goal, pending]);
+
+  if (!data || !goal) {
+    return (
+      <RetroScreen>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <PixelLoadingIndicator label="불러오는 중" />
+        </View>
+      </RetroScreen>
+    );
+  }
+  const { stickers, placedAll, placedInBasis, recordedIds } = data;
+  const done = isCompleted(goal);
+  const sticker = safeStickerId(goal.defaultStickerId);
+  const now = new Date();
+  const progress = progressOf(goal, placedInBasis, now);
+
+  /** 붙인다. 마지막 칸이면 먼저 완성을 확인받는다. 저장이 끝난 뒤에만 모션·햅틱·갱신 (PRD 4.5, 4.7, 7절). */
+  async function place(slotIndex: number, at: { slot?: number; date?: string }) {
+    if (!goal) return;
+    const complete = completesBoard(goal, placedAll);
+    if (complete && !(await confirm({
+      title: '이 판을 완성할까요?',
+      description: goal.boardType === 'tally'
+        ? '마지막 칸이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요.'
+        : '기간의 마지막 빈 날이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요.',
+      secondaryLabel: '취소',
+      primaryLabel: '완성하기',
+    }))) return;
+    const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
+      await placeSticker(goal.id, slotIndex, sticker, { complete });
+    });
+    if (!ok) return;
+    setJustPlaced(at);
+    if (!complete) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    await reload();
+  }
+
+  /** 뗀다. 기록이 있거나 달력판의 지난 날이면 먼저 확인한다 (PRD 4.5, 2026-09-30). */
+  async function remove(target: Sticker) {
+    if (!goal || !canRemove(goal)) return;
+    const hasRecord = recordedIds.has(target.id);
+    if (needsRemoveConfirm(goal, target, hasRecord, new Date())) {
+      const past = goal.boardType === 'calendar' && stickerDate(target) < localDateKey(Date.now());
+      const description = hasRecord && past ? '지난 날은 다시 붙일 수 없고, 이 칸의 사진·메모도 함께 사라져요.'
+        : hasRecord ? '이 칸의 사진·메모도 함께 사라져요.'
+        : '지난 날은 다시 붙일 수 없어요.';
+      if (!(await confirm({ title: '스티커를 뗄까요?', description, secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
+    }
+    let photo: string | null = null;
+    const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(target.id); });
+    if (!ok) return;
+    try { removeManagedRecordPhoto(photo); } catch { /* 고아 파일로 남는다. 기록은 이미 지워졌다 */ }
+    setJustPlaced({});
+    await reload();
+  }
+
+  function openRecord(target: Sticker | undefined) {
+    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id } });
+  }
+
+  const bySlot = (n: number) => stickers.find((s) => s.slotIndex === n - 1);
+  const byDate = (date: string) => stickers.find((s) => stickerDate(s) === date);
+
+  function onSlotPress(n: number) {
+    void actOnce(async () => {
+      const placed = bySlot(n);
+      if (placed) { await remove(placed); return; }
+      if (goal && canPlace(goal, stickers, { slot: n - 1 }, new Date())) await place(n - 1, { slot: n });
+    });
+  }
+
+  /** 달력판: 오늘 칸만 붙는다 (PRD 4.3). 붙인 날을 한 번 누르면 뗀다. */
+  function onDateSelect(date: string) {
+    void actOnce(async () => {
+      const placed = byDate(date);
+      if (placed) { await remove(placed); return; }
+      if (goal && canPlace(goal, stickers, { date }, new Date())) await place(new Date().getDate() - 1, { date });
+    });
+  }
+
+  const filled: Record<number, PocketStickerId> = {};
+  const records: Record<string, PocketStickerId> = {};
+  const recordedSlots = new Set<number>();
+  const recordedDates = new Set<string>();
+  for (const s of stickers) {
+    const type = safeStickerId(s.stickerType);
+    if (goal.boardType === 'tally') {
+      filled[s.slotIndex + 1] = type;
+      if (recordedIds.has(s.id)) recordedSlots.add(s.slotIndex + 1);
+    } else {
+      records[stickerDate(s)] = type;
+      if (recordedIds.has(s.id)) recordedDates.add(stickerDate(s));
+    }
+  }
+  const nav = monthNav(goal, shown.year, shown.month);
+
+  return (
+    <>
+      <BoardDetailScreen
+        name={goal.name}
+        sticker={sticker}
+        completed={done}
+        animateCompletion={pending}
+        progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
+        onBack={goBackOrHome}
+        onSettings={() => router.push({ pathname: '/goal/[id]/settings', params: { id: goal.id } })}
+        board={goal.boardType === 'tally'
+          ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: (n) => openRecord(bySlot(n)) }
+          : {
+            kind: 'calendar', year: shown.year, month: shown.month, records, recordedDates, justPlaced: justPlaced.date,
+            selectedDate: done ? undefined : localDateKey(now.getTime()),
+            isDateEnabled: (date) => isDateEnabled(goal, date, Boolean(records[date])),
+            canGoPrev: nav.canGoPrev, canGoNext: nav.canGoNext,
+            onSelect: onDateSelect,
+            onMonthChange: (year, month) => { setJustPlaced({}); setShown({ year, month }); },
+            onOpenRecord: (date) => openRecord(byDate(date)),
+          }}
+      />
+      {dialog}
+    </>
+  );
+}

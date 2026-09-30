@@ -10,4 +10,9 @@ export interface DbDriver {
   run(sql: string, ...params: SqlValue[]): Promise<void>;
   all<T>(sql: string, ...params: SqlValue[]): Promise<T[]>;
   first<T>(sql: string, ...params: SqlValue[]): Promise<T | null>;
+  /**
+   * fn 안의 쓰기를 한 덩어리로 처리한다. fn이 던지면 모두 되돌리고 그 오류를 다시 던진다.
+   * fn 안에서는 받은 tx로만 쿼리한다. 바깥 드라이버로 쿼리하면 트랜잭션 밖에서 실행된다.
+   */
+  transaction<T>(fn: (tx: DbDriver) => Promise<T>): Promise<T>;
 }
