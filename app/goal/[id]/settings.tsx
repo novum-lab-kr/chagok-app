@@ -12,12 +12,12 @@ import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { useUnsavedBack } from '../../../src/app-data/useUnsavedBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
-import { isCompleted, startDate } from '../../../src/domain/board';
+import { isCompleted, parseSlotCount, startDate } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Goal } from '../../../src/domain/types';
 
 /**
- * 목표 설정 (PRD 4.4). 진행 중: 이름 → 기본 스티커 → 기간(달력판) → [이 판 완성하기] → 저장 → [삭제하기].
+ * 목표 설정 (PRD 4.4). 진행 중: 이름 → 기본 스티커 → 기간(달력판) 또는 칸 수(적립판, 늘리기만) → [이 판 완성하기] → 저장 → [삭제하기].
  * 완성한 판: 읽기 전용 + 삭제만 (4.7).
  */
 export default function GoalSettings() {
@@ -27,6 +27,8 @@ export default function GoalSettings() {
   const [name, setName] = useState('');
   const [sticker, setSticker] = useState<PocketStickerId>('sprout');
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
+  /** 적립판 칸 수 입력. 문자열로 들고 저장할 때 parseSlotCount로 검사한다 (2026-09-30). */
+  const [slotsText, setSlotsText] = useState('');
   const [picking, setPicking] = useState(false);
   const [actOnce] = useState(createSingleFlight);
   const { ask, confirm, dialog: confirmDialog } = useDialog();
@@ -42,12 +44,16 @@ export default function GoalSettings() {
       setName(g.name);
       setSticker(safeStickerId(g.defaultStickerId));
       setEndDate(g.endDate ?? undefined);
+      setSlotsText(String(g.totalSlots ?? ''));
     })();
     return () => { alive = false; };
   }, [id]);
 
+  const slots = goal?.boardType === 'tally' ? parseSlotCount(slotsText, goal.totalSlots ?? 0) : null;
+  // 칸 수는 숫자로 비교한다("030"과 30은 같다). 잘못된 입력도 저장하지 않은 입력으로 친다.
+  const slotsChanged = slots !== null && (!slots.ok || slots.value !== goal?.totalSlots);
   const dirty = goal !== null && !isCompleted(goal)
-    && (name !== goal.name || sticker !== safeStickerId(goal.defaultStickerId) || (endDate ?? null) !== goal.endDate);
+    && (name !== goal.name || sticker !== safeStickerId(goal.defaultStickerId) || (endDate ?? null) !== goal.endDate || slotsChanged);
   const { goBack, dialog } = useUnsavedBack(dirty);
 
   if (!goal) {
@@ -61,11 +67,12 @@ export default function GoalSettings() {
   }
   const current = goal;
 
-  /** 저장 안 한 입력(이름·스티커·종료일)도 함께 저장한다. */
+  /** 저장 안 한 입력(이름·스티커·종료일·칸 수)도 함께 저장한다. 칸 수는 늘었을 때만 보낸다. */
   const saveEdits = () => updateGoal(current.id, {
     name: name.trim(),
     defaultStickerId: sticker,
     ...(current.boardType === 'calendar' ? { endDate: endDate ?? null } : {}),
+    ...(slots?.ok && slots.value !== current.totalSlots ? { totalSlots: slots.value } : {}),
   });
 
   async function save() {
@@ -139,8 +146,14 @@ export default function GoalSettings() {
           onChange: (date) => { setEndDate(date); setPicking(false); },
           onClear: () => { setEndDate(undefined); setPicking(false); },
         } : undefined}
+        slots={slots ? {
+          current: current.totalSlots ?? 0,
+          value: slotsText,
+          onChange: setSlotsText,
+          error: slots.ok ? undefined : slots.reason,
+        } : undefined}
         onComplete={calendar && !endDate ? () => { void actOnce(complete); } : undefined}
-        saveDisabled={name.trim().length === 0}
+        saveDisabled={name.trim().length === 0 || (slots !== null && !slots.ok)}
         onSave={() => { void actOnce(save); }}
         onDelete={() => { void actOnce(remove); }}
         onBack={goBack}

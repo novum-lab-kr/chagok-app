@@ -7,6 +7,7 @@ import {
   FirstRunTutorialFrame, TutorialListExample, TutorialNewGoalExample, TutorialBoardExample, TutorialCompletedExample,
 } from '../src/design-system';
 import {ActionSymbol} from '../src/design-system/sticker-glyphs';
+import {parseSlotCount} from '../src/domain/board';
 
 /** 목록·판 상세·달력판 기간 규칙 시안. 화면 조합은 src/design-system/board-screens.tsx이고 앱과 같은 소스다. */
 const meta = {
@@ -150,7 +151,12 @@ function ExtendSlots() {
 // ── 목표 설정 · 새 목표: 달력판 기간 ─────────────────────────────────
 function GoalSettings({goal, picking: initialPicking = false, overlay}: {goal: ListedGoal; picking?: boolean; overlay?: ReactNode}) {
   const [end, setEnd] = useState(goal.endDate), [picking, setPicking] = useState(initialPicking);
+  // 적립판 칸 수는 늘리기만 된다 (2026-09-30). 앱과 같은 검사 함수로 오류 문구를 보여준다.
+  const [slotsText, setSlotsText] = useState(String(goal.total));
+  const slots = goal.kind === 'tally' ? parseSlotCount(slotsText, goal.total) : null;
   return <Stage><GoalSettingsScreen name={goal.name} onChangeName={noop} sticker={goal.sticker} onChangeSticker={noop} onSave={noop} onDelete={noop} onBack={noop}
+    slots={slots ? {current: goal.total, value: slotsText, onChange: setSlotsText, error: slots.ok ? undefined : slots.reason} : undefined}
+    saveDisabled={slots !== null && !slots.ok}
     period={goal.kind === 'calendar' ? {startDate: dateOf(goal.createdAt), endDate: end, lastPlacedDate: goal.lastPlacedAt ? dateOf(goal.lastPlacedAt) : undefined, picking,
       onPick: () => setPicking(open => !open), onChange: date => {setEnd(date); setPicking(false);}, onClear: () => setEnd(undefined)} : undefined}
     onComplete={goal.kind === 'calendar' && !end ? noop : undefined}/>{overlay}</Stage>;
@@ -199,6 +205,8 @@ const deleteConfirm = (stickers: number, notes: number) => <Overlay title="목�
 export const DeleteConfirmActive: Story = {name: '삭제 확인 · 진행 중인 목표', render: () => <GoalSettings goal={byId('reading')} overlay={deleteConfirm(6, 2)}/>};
 export const DeleteConfirmCompleted: Story = {name: '삭제 확인 · 완성한 판', render: () => <CompletedSettings goal={byId('vitamin')} overlay={deleteConfirm(18, 4)}/>};
 export const SettingsTally: Story = {name: '목표 설정 · 적립판', render: () => <GoalSettings goal={byId('reading')}/>};
+/** 30칸으로 만든 판: 15·20은 비활성, 직접 입력은 30 이상만 받는다 (2026-09-30). */
+export const SettingsTally30: Story = {name: '목표 설정 · 적립판 30칸 (늘리기만)', render: () => <GoalSettings goal={{...byId('reading'), total: 30}}/>};
 export const SettingsPeriod: Story = {name: '목표 설정 · 종료일 바꾸기', render: () => <GoalSettings goal={byId('water')} picking/>};
 export const SettingsOpenEnded: Story = {name: '목표 설정 · 종료일 없음과 완성', render: () => <GoalSettings goal={byId('walk')}/>};
 export const SettingsManualConfirm: Story = {name: '목표 설정 · 수동 완성 확인', render: () => <GoalSettings goal={byId('walk')} overlay={<Overlay title="이 판을 완성할까요?" description="완성하면 되돌릴 수 없고, 스티커를 붙이거나 기록을 고칠 수 없어요." secondaryLabel="취소" primaryLabel="완성하기"/>}/>};

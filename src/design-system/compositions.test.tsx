@@ -4,7 +4,7 @@ import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {GoalStickerCell,exampleGoals} from './screen-compositions';
 import {ExtendSlotsScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
-import {PhotoAttachment,StickerPicker} from './composition-controls';
+import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 afterEach(cleanup);
 describe('화면 구성 컴포넌트',()=>{
@@ -151,5 +151,26 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChangeSticker={()=>{}} onComplete={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
     expect(screen.getByText(/계속하기로 다시 이어 쓸 수 있어요/)).toBeTruthy();
     expect(screen.queryByText(/되돌릴 수 없어요/)).toBeNull();
+  });
+  it('칸 수 선택: min보다 작은 버튼은 비활성이고, 버튼에 없는 값이면 직접 입력으로 연다 (2026-09-30)',()=>{
+    const change=vi.fn();
+    const {rerender}=render(<SlotCountPicker value="30" onChange={change} min={30}/>);
+    expect(screen.getByRole('button',{name:'15'}).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button',{name:'20'}).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button',{name:'30'}).getAttribute('aria-disabled')).not.toBe('true');
+    fireEvent.click(screen.getByRole('button',{name:'15'}));expect(change).not.toHaveBeenCalled();
+    cleanup();
+    render(<SlotCountPicker value="25" onChange={change} min={25}/>);
+    expect((screen.getByRole('textbox',{name:'칸 수 직접 입력'}) as HTMLInputElement).value).toBe('25');
+    cleanup();
+    render(<SlotCountPicker value="1200" onChange={change} min={1200}/>);
+    expect((screen.getByRole('textbox',{name:'칸 수 직접 입력'}) as HTMLInputElement).value).toBe('1200');
+    void rerender;
+  });
+  it('목표 설정: 적립판 칸 수는 늘리기만 된다고 알리고, 오류가 있으면 보여준다 (2026-09-30)',()=>{
+    const slots={current:30,value:'15',onChange:vi.fn(),error:'지금 30칸보다 줄일 수 없어요.'};
+    render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChangeSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(screen.getByText('지금 30칸 · 늘리기만 할 수 있어요')).toBeTruthy();
+    expect(screen.getByText('지금 30칸보다 줄일 수 없어요.')).toBeTruthy();
   });
 });

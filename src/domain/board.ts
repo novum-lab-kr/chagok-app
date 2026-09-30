@@ -143,4 +143,18 @@ export function orderGoals<G extends Goal>(goals: readonly G[]): { active: G[]; 
   };
 }
 
+/**
+ * 목표 설정의 적립판 칸 수 입력 (2026-09-30). 늘리기만 된다 — 지금 칸 수 이상의 정수만 받는다.
+ * 앞의 0은 무시한다("030" → 30). reason은 입력칸 아래에 그대로 보여준다.
+ */
+export function parseSlotCount(input: string, current: number): { ok: true; value: number } | { ok: false; reason: string } {
+  const text = input.trim();
+  if (text === '') return { ok: false, reason: '칸 수를 입력해 주세요.' };
+  if (!/^\d+$/.test(text)) return { ok: false, reason: '숫자만 입력할 수 있어요.' };
+  const value = Number(text);
+  if (value < 1) return { ok: false, reason: '1칸 이상이어야 해요.' };
+  if (value < current) return { ok: false, reason: `지금 ${current}칸보다 줄일 수 없어요.` };
+  return { ok: true, value };
+}
+
 export { dateKeyOf };

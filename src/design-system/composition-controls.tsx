@@ -57,12 +57,16 @@ export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(valu
     </Pressable>)}
   </View></View>;
 }
-export function SlotCountPicker({value,onChange,label='칸 수'}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string}) {
+/**
+ * 칸 수 고르기. min을 주면 그보다 작은 버튼은 비활성이다 — 목표 설정의 적립판 칸 수는 늘리기만 된다 (2026-09-30).
+ * 직접 입력 자릿수는 min이 담기도록 늘린다. 칸 늘리기로 999칸을 넘긴 판도 지금 값을 보여줄 수 있어야 한다.
+ */
+export function SlotCountPicker({value,onChange,label='칸 수',min=0}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number}) {
   const [custom,setCustom]=useState(!['15','20','30'].includes(value));
   return <View style={{gap:8}}><PixelText>{label}</PixelText><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-    {['15','20','30'].map(n=><PixelButton key={n} label={n} variant={!custom&&value===n?'primary':'secondary'} onPress={()=>{setCustom(false);onChange(n)}} style={{flex:1}}/>)}
+    {['15','20','30'].map(n=><PixelButton key={n} label={n} disabled={Number(n)<min} variant={!custom&&value===n?'primary':'secondary'} onPress={()=>{setCustom(false);onChange(n)}} style={{flex:1}}/>)}
     <PixelButton label="직접 입력" variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
-  </View>{custom&&<PixelInput label={`${label} 직접 입력`} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={3}/>}</View>;
+  </View>{custom&&<PixelInput label={`${label} 직접 입력`} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1)}/>}</View>;
 }
 export function StickerSummary({value,onChange}:{value:PocketStickerId;onChange?:()=>void}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',gap:12,alignItems:'center'}}>

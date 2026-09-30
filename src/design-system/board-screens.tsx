@@ -101,11 +101,16 @@ export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:st
  * 진행 중인 목표의 설정: 이름 → 기본 스티커 → 기간(달력판) → [이 판 완성하기](종료일 없는 달력판) → 저장 → [삭제하기] (PRD 4.4).
  * 판 종류·칸 수 변경은 미확정이라 두지 않는다.
  */
-export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,period,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;sticker:PocketStickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 달력판만 */period?:PeriodFieldView;/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
+export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;sticker:PocketStickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
     <PixelInput label="목표 이름" value={name} onChangeText={onChangeName}/>
     <StickerField value={sticker} onChange={onChangeSticker}/>
     {period&&<PeriodField {...period}/>}
+    {slots&&<View style={{gap:8}}>
+      <SlotCountPicker value={slots.value} onChange={slots.onChange} min={slots.current}/>
+      <Small>{`지금 ${slots.current}칸 · 늘리기만 할 수 있어요`}</Small>
+      {slots.error&&<View accessible accessibilityRole="alert"><Small>{slots.error}</Small></View>}
+    </View>}
     {onComplete&&<View style={{gap:8}}><Small>종료일이 없는 달력판은 여기서 완성해요. 완성해도 계속하기로 다시 이어 쓸 수 있어요.</Small><PixelButton label="이 판 완성하기" variant="secondary" icon={<ActionSymbol name="check" size={16}/>} onPress={onComplete}/></View>}
     <PixelButton label="저장하기" disabled={saveDisabled} onPress={onSave}/>
     <DeleteSection onDelete={onDelete}/>
