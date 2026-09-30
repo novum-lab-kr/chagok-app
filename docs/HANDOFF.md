@@ -25,6 +25,8 @@
 - ~~수동 완성 확인 문구~~ → 2026-09-30 확정: "완성해도 계속하기로 다시 이어 쓸 수 있어요".
 - 앱 이름: "차곡차곡" 유지, 스토어 이름에 설명을 붙인다(2026-09-30). 스토어 문구와 상표 확인은 출시 때.
 - ~~목표 설정에서 칸 수 변경~~ → 2026-09-30 확정: 진행 중인 적립판은 늘리기만(`feat/tally-slot-edit`). 판 종류 변경은 여전히 미확정이라 넣지 않는다.
+- 약관 게시와 Google 로그인 도메인: 스토어 제출 전 약관 게시, OAuth 승인 도메인·브랜드 인증에서 `netlify.app` 주소가 통하는지 확인(나중에 처리, [약관 설계](superpowers/specs/2026-09-30-policy-terms-design.md) 「게시 상태」).
+- 수익화(광고·인앱 결제): 미확정 — 들어갈 수 있으니 없다고 확정하지 않는다(2026-09-30). 스토어 계정은 남편 명의(노붐(NOVUM) · 대표 성민창, 개인사업자). Apple은 개인사업자라 개인 계정(판매자 = 실명)만 된다. Google Play도 **개인 계정**을 추천했다 — 개인사업자 조직 계정은 판매 대금용 결제 프로필을 만들 수 없다고 알려져 있어(국내 도움말·경험담, 공식 확인 전) 인앱 결제를 넣으면 계정을 옮겨야 할 수 있다. 대신 개인 계정은 출시 전 테스터 12명·14일 비공개 테스트가 필요하다. 광고(AdMob) 수익은 Play 결제 프로필과 별개다.
 - 푸시 알림: 나중에 개발한다(2026-09-30 사용자 요청, 기록만). 범위·종류가 모두 미확정이라 설계 전에 묻는다. 메모는 9절 「나중에 개발할 것」.
 
 **정한 값 (다시 묻지 않는다).** 완성 모션은 [완성] 스티커 붙이기 모션 하나, 칸 수 상한 없음(칸 늘리기 기본값은 처음 칸 수만큼 더하기), 기간 없는 달력판은 미래 달 이동 가능, 삭제·떼기 확인은 기존 `basic` 다이얼로그, 판 조작은 한 번 = 붙이기·떼기 / 두 번·꾹 = 기록 열기. 로그인·약관·위젯·백업의 결정은 PRD 확정 이력 2026-09-30 행들.
@@ -168,7 +170,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 - 백업: `src/sync/` — outbox(모든 저장 함수가 같은 트랜잭션에서 기록), 전송기 `pushOnce`, 복원 `restoreAll`, 스케줄러. 서버 계약 `SyncServer`/`PhotoStore`의 실구현은 없고 메모리 가짜 서버(`__tests__/support/fakeServer.ts`)로만 검증했다.
 - 위젯: `src/widgets/` 스냅샷 생성과 DB 읽기, `src/design-system/widget-preview.tsx` 미리보기(Storybook `Widgets / Preview`).
 - 동의 화면: `ConsentScreen`(Storybook `Screens / Account consent`). 로그인 단계에서 연결한다.
-- 약관 재동의 판단 `needsReconsent`. 정책 사이트(`~/Desktop/workspace/chagok-app-policy`)는 로컬 커밋만 했고 게시 전이라 앱의 약관 링크는 지금 404다.
+- 약관 재동의 판단 `needsReconsent`. 정책 사이트(`~/Desktop/workspace/chagok-app-policy`)는 Netlify `https://chagok-app-terms.netlify.app`에 연결했고(2026-09-30) 앱도 그 주소를 본다. 지금은 첫 화면 "준비 중"만 배포했고 약관 초안은 로컬에만 있어, 앱의 약관 링크는 게시 전까지 404다. 게시 절차는 [약관 설계](superpowers/specs/2026-09-30-policy-terms-design.md) 「게시 상태」.
 
 화면 조합은 `src/design-system/board-screens.tsx`·`first-run-tutorial.tsx`·`policy-screens.tsx`·`account-screens.tsx`, 규칙은 `src/domain/board.ts`·`dates.ts`, 확인·실패 알림은 `src/app-data/useDialog.ts`(OS `Alert` 없음). **실기기 검수는 하지 않았다.**
 
@@ -187,6 +189,12 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 - 앱 연결: `SyncServer`·`PhotoStore` 실구현, 스케줄러를 AppState·`subscribeLocalChange`에 연결, 앱 설정의 백업 상태.
 - 로그인: Google(Android) 먼저, Apple은 계정 승인 뒤. 시작·동의·복원 분기·로그아웃·계정 삭제·재동의.
 - 위젯: spike(글꼴·PNG 스티커·딥링크·목표 선택) → iOS `expo-widgets`, Android `react-native-android-widget`.
+
+**나중에 셋팅할 것 — 이용 분석·오류 추적(트래킹)** (2026-09-30 사용자 요청, 기록만. 도구·범위 미정)
+
+- 운영자가 보는 이용 분석(화면·기능 사용, 유지율)과 오류·크래시 추적이다. 이용자에게 보여주는 통계 대시보드(PRD 2절 제외 범위)와는 다르다.
+- 정할 것(사용자에게 묻는다): 무엇을 잴지(이벤트 목록), 도구(예: Firebase Analytics·Crashlytics, PostHog, Sentry), 로그인 안 한 사용자도 잴지, 목표 이름·메모 같은 기록 내용은 보내지 않는다는 원칙.
+- 따라오는 것: 개인정보처리방침 개정(지금 "현재 광고나 이용 분석 도구가 없다"고 적었다 — 도입 전 제2판 게시·사전 고지), 수집 항목·위탁(제3자) 표, 스토어 개인정보 라벨(App Privacy, Data safety). 다른 앱·웹과 엮는 추적이면 iOS 추적 동의(ATT)가 필요하다. 대부분의 도구는 네이티브 모듈이라 개발 빌드가 필요하다.
 
 **나중에 개발할 것 — 푸시 알림** (2026-09-30 사용자 요청, 기록만. 아직 설계하지 않았다)
 

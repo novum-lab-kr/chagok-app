@@ -17,7 +17,7 @@ describe('openPolicy', () => {
     open.mockResolvedValue({ type: 'dismiss' });
     const ask = jest.fn();
     await openPolicy('terms', ask);
-    expect(open).toHaveBeenCalledWith('https://eunjukkkkim.github.io/chagok-app-policy/terms/');
+    expect(open).toHaveBeenCalledWith('https://chagok-app-terms.netlify.app/terms/');
     expect(ask).not.toHaveBeenCalled();
   });
 
