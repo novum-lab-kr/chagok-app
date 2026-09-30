@@ -1232,7 +1232,7 @@ import { PhotoRejected } from '../src/sync/contract';
 import { SupabasePhotoStore } from '../src/sync/supabasePhotos';
 import type { PhotoIO, StorageBucket } from '../src/sync/supabasePhotos';
 
-function setup(opts: { uploadError?: { message: string; status?: number | string } } = {}) {
+function setup(opts: { uploadError?: { message: string; status?: number; statusCode?: string } } = {}) {
   const uploads: string[] = []; const removed: string[][] = []; const saved: string[] = [];
   const bucket: StorageBucket = {
     upload: async (path) => { uploads.push(path); return { error: opts.uploadError ?? null }; },
@@ -1260,13 +1260,15 @@ describe('SupabasePhotoStore', () => {
   });
 
   it('크기·형식 거부는 PhotoRejected, 그 밖은 일반 오류', async () => {
-    await expect(setup({ uploadError: { message: 'too large', status: 413 } }).store.upload('r1', 'record-photo:a.jpg'))
+    await expect(setup({ uploadError: { message: 'too large', status: 400, statusCode: '413' } }).store.upload('r1', 'record-photo:a.jpg'))
       .rejects.toBeInstanceOf(PhotoRejected);
-    await expect(setup({ uploadError: { message: 'bad type', status: '415' } }).store.upload('r1', 'record-photo:a.jpg'))
+    await expect(setup({ uploadError: { message: 'bad type', status: 400, statusCode: '415' } }).store.upload('r1', 'record-photo:a.jpg'))
       .rejects.toBeInstanceOf(PhotoRejected);
-    const network = await setup({ uploadError: { message: 'Network request failed' } }).store.upload('r1', 'record-photo:a.jpg').catch((e: unknown) => e);
-    expect(network).toBeInstanceOf(Error);
-    expect(network).not.toBeInstanceOf(PhotoRejected);
+    for (const uploadError of [{ message: 'rls', status: 400, statusCode: '403' }, { message: 'Network request failed' }]) {
+      const other = await setup({ uploadError }).store.upload('r1', 'record-photo:a.jpg').catch((e: unknown) => e);
+      expect(other).toBeInstanceOf(Error);
+      expect(other).not.toBeInstanceOf(PhotoRejected);
+    }
   });
 
   it('지우기와 받기는 기록 id의 경로를 쓴다', async () => {
@@ -1305,10 +1307,14 @@ export type PhotoIO = {
   save(url: string, recordId: string): Promise<string>;
 };
 
-/** 다시 보내도 같은 결과인 거부: 너무 큼(413), 형식(415), 잘못된 요청(400). */
+/**
+ * 다시 보내도 같은 결과인 거부: 너무 큼(413), 형식(415).
+ * Storage는 HTTP status를 늘 400으로 주고 실제 구분은 statusCode에 담는다(2026-09-30 개발 서버에서 확인).
+ * 그래서 status는 보지 않는다 — 권한(403)·네트워크 오류는 다시 시도한다.
+ */
 function isPhotoRejection(error: StorageError): boolean {
-  const code = String(error.statusCode ?? error.status ?? '');
-  return code === '413' || code === '415' || code === '400';
+  const code = String(error.statusCode ?? '');
+  return code === '413' || code === '415';
 }
 
 /** PhotoStore를 Supabase Storage로 (계정·백업 설계 ③). 경로는 {user_id}/{record_id}.jpg. */
