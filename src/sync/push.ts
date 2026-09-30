@@ -37,6 +37,10 @@ async function setRemotePath(recordId: string, path: string | null, now: number)
  * 사진 한 건. 파일을 먼저 올리고 성공한 뒤에만 기록에 서버 경로를 남긴다 — 경로만 있고 파일이 없는 상태를 막는다.
  * 경로 기록 자체가 record 항목을 outbox에 남겨 같은 pushOnce 안에서 올라간다.
  * 기록이 없거나 사진을 뺐으면 서버 파일을 지운다. 기기 원본이 사라졌으면(사진 유실) 서버에는 사진 없음으로 둔다.
+ *
+ * 주의: 복원 뒤 아직 받지 못한 사진은 photo_uri = NULL, photo_remote_path = 경로다. 이 기록에 photo 항목이
+ * 생기면 아래 첫 분기가 서버의 하나뿐인 사본을 지운다. 지금은 그런 경로가 없다(upsertRecord는 사진이
+ * 바뀔 때만 넣고, 삭제 경로는 지우는 게 맞다). "사진 유실" 화면에 사진 지우기·바꾸기를 붙일 때 다시 본다.
  */
 async function pushPhoto(e: OutboxEntry, photos: PhotoStore, now: number): Promise<void> {
   const db = await getDb();
@@ -89,7 +93,8 @@ export async function pushOnce(deps: PushDeps): Promise<{ sent: number; held: nu
       return { sent, held };
     }
     const now = clock();
-    for (const e of batch.filter((x) => x.entity === 'photo')) {
+    const photoEntries = batch.filter((x) => x.entity === 'photo');
+    for (const e of photoEntries) {
       if (photoError !== null) break;
       try {
         await pushPhoto(e, deps.photos, now);
@@ -103,6 +108,8 @@ export async function pushOnce(deps: PushDeps): Promise<{ sent: number; held: nu
         }
       }
     }
+    // 사진 경로를 기록하면 같은 묶음의 기록 항목이 새 queued_at으로 바뀐다. 행은 묶음을 다시 꺼내 한 번만 보낸다.
+    if (photoEntries.length) continue;
     const rows = batch.filter((x) => x.entity !== 'photo');
     if (rows.length) {
       const h = await pushRows(rows, deps, now);
