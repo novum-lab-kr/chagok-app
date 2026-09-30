@@ -1385,7 +1385,7 @@ export const expoPhotoIO: PhotoIO = {
       const original = await ImageManipulator.manipulate(source.uri).renderAsync();
       const context = ImageManipulator.manipulate(source.uri);
       if (Math.max(original.width, original.height) > LONG_SIDE) {
-        context.resize(original.width >= original.height ? { width: LONG_SIDE } : { height: LONG_SIDE });
+        context.resize(original.width >= original.height ? { width: LONG_SIDE, height: null } : { width: null, height: LONG_SIDE });
       }
       savedUri = (await (await context.renderAsync()).saveAsync({ compress: 0.8, format: SaveFormat.JPEG })).uri;
     } catch (error) {

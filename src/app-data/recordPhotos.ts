@@ -27,6 +27,12 @@ export async function preserveRecordPhoto(stickerId: string, sourceUri: string):
   return PREFIX + destination.name;
 }
 
+/** 앱 사진 폴더의 새 파일과 DB에 둘 저장용 URI. 복원한 사진을 받을 때 쓴다. */
+export function newManagedPhotoFile(name: string): { file: File; stored: string } {
+  folder.create({ idempotent: true, intermediates: true });
+  return { file: new File(folder, name), stored: PREFIX + name };
+}
+
 export function recordPhotoExists(uri: string): boolean {
   try { return new File(displayRecordPhotoUri(uri)).exists; } catch { return false; }
 }
