@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutRectangle, type StyleProp, type ViewStyle} from 'react-native';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutChangeEvent, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
 import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
@@ -137,21 +137,10 @@ const ScrollToCenterContext=createContext<ScrollToCenter>(()=>Promise.resolve())
 export function useScrollToCenter() {
   return useContext(ScrollToCenterContext);
 }
-/**
- * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
- *
- * `useSafeAreaInsets()`가 아니라 컨텍스트를 직접 읽는 이유: 그 훅은 `SafeAreaProvider`가 없으면
- * 예외를 던지는데, 컴포넌트 테스트와 Storybook은 Provider 없이 화면을 렌더한다. 값이 없으면 0이다.
- *
- * `avoidKeyboard`는 하단에 입력창이 있는 화면(기록)만 켠다. 홈처럼 입력이 없는 화면에서 켜면
- * 안드로이드에서 불필요한 리사이즈가 생긴다.
- */
-export function RetroScreen({children,style,avoidKeyboard=false,header}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode}) {
-  const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
-  // 헤더와 본문 사이는 화면이 준 gap을 그대로 쓴다. 헤더를 밖으로 빼도 스크롤 전 첫 화면이 같아야 한다.
-  const gap=(StyleSheet.flatten(style)?.gap as number|undefined)??20;
-  const scroll=useRef<ScrollView>(null),offset=useRef(0);
-  const content=useRef<View>(null),viewportHeight=useRef(0),contentHeight=useRef(0);
+/** 스크롤 영역의 높이·내용 높이·위치를 재어 두고, 안의 View를 가운데로 옮기는 함수를 만든다. */
+function useCenteringScroll() {
+  const scroll=useRef<ScrollView>(null),content=useRef<View>(null);
+  const offset=useRef(0),viewportHeight=useRef(0),contentHeight=useRef(0);
   const scrollToCenter=useCallback<ScrollToCenter>((target,animated)=>new Promise(resolve=>{
     const container=content.current;
     if(!container){resolve();return;}
@@ -162,6 +151,39 @@ export function RetroScreen({children,style,avoidKeyboard=false,header}:{childre
       resolve();
     },()=>resolve());
   }),[]);
+  const scrollProps={
+    ref:scroll,
+    scrollEventThrottle:16,
+    onScroll:(e:NativeSyntheticEvent<NativeScrollEvent>)=>{offset.current=e.nativeEvent.contentOffset.y;},
+    onLayout:(e:LayoutChangeEvent)=>{viewportHeight.current=e.nativeEvent.layout.height;},
+    onContentSizeChange:(_width:number,height:number)=>{contentHeight.current=height;},
+  };
+  return {scroll,content,offset,scrollProps,scrollToCenter};
+}
+/**
+ * 화면 일부만 스크롤하는 영역. 안에서 useScrollToCenter를 부르면 이 영역을 옮긴다.
+ * 판 상세는 제목·진행 줄을 고정하고 칸만 이 안에서 스크롤한다 (2026-09-30).
+ */
+export function CenteringScrollView({children,style,testID}:{children:ReactNode;style?:StyleProp<ViewStyle>;testID?:string}) {
+  const {content,scrollProps,scrollToCenter}=useCenteringScroll();
+  return <ScrollView testID={testID} {...scrollProps} style={style}>
+    <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider></View>
+  </ScrollView>;
+}
+/**
+ * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
+ *
+ * `useSafeAreaInsets()`가 아니라 컨텍스트를 직접 읽는 이유: 그 훅은 `SafeAreaProvider`가 없으면
+ * 예외를 던지는데, 컴포넌트 테스트와 Storybook은 Provider 없이 화면을 렌더한다. 값이 없으면 0이다.
+ *
+ * `avoidKeyboard`는 하단에 입력창이 있는 화면(기록)만 켠다. 홈처럼 입력이 없는 화면에서 켜면
+ * 안드로이드에서 불필요한 리사이즈가 생긴다.
+ */
+export function RetroScreen({children,style,avoidKeyboard=false,header,scrollable=true}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
+  const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
+  // 헤더와 본문 사이는 화면이 준 gap을 그대로 쓴다. 헤더를 밖으로 빼도 스크롤 전 첫 화면이 같아야 한다.
+  const gap=(StyleSheet.flatten(style)?.gap as number|undefined)??20;
+  const {scroll,content,offset,scrollProps,scrollToCenter}=useCenteringScroll();
   // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
   // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
   useEffect(()=>{
@@ -174,23 +196,22 @@ export function RetroScreen({children,style,avoidKeyboard=false,header}:{childre
       });
     });
     return ()=>subscription.remove();
-  },[]);
+  },[offset,scroll]);
   // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
-  const body=<ScrollView
+  const column=[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20} as const,style,header?{paddingTop:0}:null];
+  // 스크롤하지 않는 화면: 본문이 남은 높이 안에 들어가고, 넘치는 부분은 본문이 직접 스크롤한다(판 상세).
+  const body=!scrollable
+    ? <View style={{flex:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}><View style={[column,{flexShrink:1}]}>{children}</View></View>
+    : <ScrollView
     testID="retro-scroll"
-    ref={scroll}
-    onScroll={e=>{offset.current=e.nativeEvent.contentOffset.y;}}
-    onLayout={e=>{viewportHeight.current=e.nativeEvent.layout.height;}}
-    onContentSizeChange={(_width,height)=>{contentHeight.current=height;}}
-    scrollEventThrottle={16}
+    {...scrollProps}
     style={{flex:1}}
     contentContainerStyle={{flexGrow:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
-    <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()}
-      style={[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20},style,header?{paddingTop:0}:null]}>
+    <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()} style={column}>
       <ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider>
     </Pressable>
   </ScrollView>;

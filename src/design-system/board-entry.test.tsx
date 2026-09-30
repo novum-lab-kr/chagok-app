@@ -24,6 +24,26 @@ describe('판 상세 첫 프레임',()=>{
   });
 });
 
+// 빈칸으로 스크롤해도 목표 이름·진행 줄은 보여야 한다 (2026-09-30 사용자 결정: 판 윗부분 고정).
+describe('판 상세 고정 영역',()=>{
+  const detail=(board:React.ComponentProps<typeof BoardDetailScreen>['board'])=>render(<BoardDetailScreen name="10분 독서" sticker="sprout" completed={false}
+    progress={{value:33,total:100,percentLabel:'33%'}} board={board} onBack={()=>{}} onSettings={()=>{}}/>);
+  it('적립판은 칸만 판 안에서 스크롤하고 제목·진행 줄은 스크롤 밖에 둔다',()=>{
+    detail({kind:'tally',total:100,filled:{},onPress:()=>{},onOpenRecord:()=>{}});
+    const scroll=screen.getByTestId('board-scroll');
+    expect(scroll.textContent).toContain('34');
+    expect(scroll.textContent).not.toContain('10분 독서');
+    expect(scroll.textContent).not.toContain('33%');
+    expect(screen.queryByTestId('retro-scroll')).toBeNull();
+  });
+  it('달력판도 같은 구조다',()=>{
+    detail({kind:'calendar',year:2026,month:9,records:{},isDateEnabled:()=>true,canGoPrev:true,canGoNext:true,onSelect:()=>{},onMonthChange:()=>{},onOpenRecord:()=>{}});
+    const scroll=screen.getByTestId('board-scroll');
+    expect(scroll.textContent).toContain('2026년 9월');
+    expect(scroll.textContent).not.toContain('10분 독서');
+  });
+});
+
 describe('centeredScrollOffset',()=>{
   const viewport={viewportHeight:600,contentHeight:3000};
   it('대상의 가운데를 보이는 영역 가운데에 둔다',()=>{

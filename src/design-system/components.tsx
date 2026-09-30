@@ -113,9 +113,9 @@ export function PixelButton({ label, variant = 'primary', disabled = false, load
 const PANEL_CONTENT_INSET = retro.shape.panelInnerInset + 4 + retro.layout.panelPadding;
 /** 화면 콘텐츠 폭에서 바깥 판들이 이미 차지한 가로 여백. 측정 전 첫 프레임 추정에 쓴다. */
 const ContentInsetContext = createContext(0);
-export function PixelPanel({ children, title, action, style }: {children: ReactNode; title?: string; action?: ReactNode; style?: StyleProp<ViewStyle>}) {
+export function PixelPanel({ children, title, action, style, contentStyle }: {children: ReactNode; title?: string; action?: ReactNode; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle>}) {
   const inset = useContext(ContentInsetContext) + 2 * PANEL_CONTENT_INSET;
-  return <PixelFrame style={style} contentStyle={{padding: PANEL_CONTENT_INSET}}>
+  return <PixelFrame style={style} contentStyle={[{padding: PANEL_CONTENT_INSET}, contentStyle]}>
     {title && <View style={{borderBottomWidth: retro.shape.panelTitleBorder,borderColor:c.ink,paddingBottom:8,marginBottom:0,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><PixelText variant="title" style={{fontSize:32,lineHeight:40,flexShrink:1}}>{title}</PixelText>{action}</View>}
     <ContentInsetContext.Provider value={inset}>{children}</ContentInsetContext.Provider>
   </PixelFrame>;
