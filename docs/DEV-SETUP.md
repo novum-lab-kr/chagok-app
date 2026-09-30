@@ -175,9 +175,9 @@ supabase link --project-ref cmkmhrzvxbtuxbgixqoo
 | 파일 | 내용 | 쓰는 곳 |
 | --- | --- | --- |
 | `.env.local` | 서버 주소, publishable(anon) 키, 개발 계정 이메일·비밀번호 | 앱 |
-| `.env.server.local` | 서버 주소, publishable 키, **secret(service_role) 키** | 서버 테스트·개발 계정 만들기 |
+| `.secrets/server-test.env` | 서버 주소, publishable 키, **secret(service_role) 키** | 서버 테스트·개발 계정 만들기 |
 
-secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는다.
+secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는다. 이 파일 이름을 `.env`로 시작하게 두면 안 된다 — Expo 개발 서버가 `.env.*` 파일을 앱 번들에 넣으려다 빌드가 깨진다(2026-09-30).
 
 **명령**
 

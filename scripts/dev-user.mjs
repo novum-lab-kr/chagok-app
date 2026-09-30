@@ -1,9 +1,9 @@
-// 개발 프로젝트에 개발용 계정을 만든다(이미 있으면 그대로 둔다). .env.server.local의 service 키를 쓴다.
+// 개발 프로젝트에 개발용 계정을 만든다(이미 있으면 그대로 둔다). .secrets/server-test.env의 service 키를 쓴다.
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
 const env = Object.fromEntries(
-  ['.env.server.local', '.env.local'].flatMap((file) => {
+  ['.secrets/server-test.env', '.env.local'].flatMap((file) => {
     try { return readFileSync(file, 'utf8').split('\n'); } catch { return []; }
   }).filter((line) => line.includes('=') && !line.startsWith('#')).map((line) => {
     const i = line.indexOf('=');
@@ -12,7 +12,7 @@ const env = Object.fromEntries(
 );
 const { SUPABASE_TEST_URL: url, SUPABASE_TEST_SERVICE_KEY: key, EXPO_PUBLIC_DEV_EMAIL: email, EXPO_PUBLIC_DEV_PASSWORD: password } = env;
 if (!url || !key || !email || !password) {
-  console.error('.env.server.local(주소·service 키)과 .env.local(EXPO_PUBLIC_DEV_EMAIL/PASSWORD)이 필요합니다.');
+  console.error('.secrets/server-test.env(주소·service 키)과 .env.local(EXPO_PUBLIC_DEV_EMAIL/PASSWORD)이 필요합니다.');
   process.exit(1);
 }
 const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });

@@ -18,7 +18,7 @@
 - Supabase CLI는 Homebrew로 설치한다. 앱 의존성에 넣지 않는다.
 - **개발 서버는 Supabase 클라우드 무료 프로젝트**(서울 리전, 2026-09-30 사용자 결정 — 맥을 켜 두지 않아도 되고 Docker가 필요 없다). 운영은 같은 마이그레이션·함수를 별도 프로젝트(또는 VPS)에 올린다. 개발 프로젝트에는 테스트 데이터만 둔다.
 - 서버 설정은 `supabase db push`로 올린다. **이미 올린 마이그레이션 파일은 고치지 않고 새 파일을 더한다**(올린 뒤 고쳐야 하면 `supabase db reset --linked`로 개발 DB를 비우고 다시 올린다 — 개발 프로젝트에서만).
-- `service_role` 키와 DB 비밀번호는 커밋하지 않는다. 테스트용은 `.env.server.local`, 앱용은 `.env.local`(anon 키만). 둘 다 git-ignore.
+- `service_role` 키와 DB 비밀번호는 커밋하지 않는다. 테스트용은 `.secrets/server-test.env`, 앱용은 `.env.local`(anon 키만). 둘 다 git-ignore.
 - 서버 규칙(스펙 ③): 모든 테이블은 `user_id = auth.uid()`인 행만 SELECT, **테이블 직접 쓰기는 막고 RPC로만 쓴다.** `push_changes`는 더 최근 `updated_at` 우선, 목표 삭제는 딸린 행까지 표식, 멱등.
 - 사진: 비공개 버킷 `record-photos`, 경로 `{user_id}/{record_id}.jpg`, 긴 변 1600px · JPEG 80%.
 - `delete-account` 순서: Apple 토큰 폐기 → 사진 폴더 삭제 → 데이터 행 삭제 → 인증 계정 삭제. 실패하면 멈추고, 다시 부르면 남은 단계부터(멱등).
@@ -49,7 +49,7 @@
 | `supabase/migrations/20260930000003_photos.sql` | `record-photos` 버킷·정책 |
 | `supabase/migrations/20260930000004_account_admin.sql` | 계정 삭제용 관리 함수 |
 | `supabase/functions/delete-account/index.ts` | 계정 삭제 Edge Function |
-| `scripts/test-server.sh` | `.env.server.local`의 주소·키로 서버 테스트 실행 |
+| `scripts/test-server.sh` | `.secrets/server-test.env`의 주소·키로 서버 테스트 실행 |
 | `scripts/dev-user.mjs` | 개발 프로젝트에 개발용 계정을 만든다 |
 | `__tests__/support/syncServerContract.ts` | 가짜·실제 서버 공용 계약 테스트 |
 | `__tests__/fakeServerContract.test.ts` | 계약을 FakeServer에 (평소 `npm test`) |
@@ -94,7 +94,7 @@ Run: `supabase init` (VS Code 설정 질문은 N)
 Run: `supabase migration list`
 Expected: 오류 없이 빈 목록(Local·Remote 모두 없음). 연결이 안 됐으면 멈추고 사용자에게 알린다.
 
-`.env.server.local`을 만든다(커밋하지 않는다. 값은 사용자가 준 것으로 채운다):
+`.secrets/server-test.env`을 만든다(커밋하지 않는다. 값은 사용자가 준 것으로 채운다):
 ```
 SUPABASE_TEST_URL=https://<ref>.supabase.co
 SUPABASE_TEST_ANON_KEY=<anon 또는 publishable 키>
@@ -115,11 +115,11 @@ Expected: `react-dom@19.2.3`만 나온다. 다르면 백업으로 되돌리고 �
 `scripts/test-server.sh`:
 ```sh
 #!/bin/sh
-# 개발 프로젝트(.env.server.local)에 대고 __tests__/server를 돌린다. 평소 npm test에서는 이 테스트들이 건너뛰어진다.
+# 개발 프로젝트(.secrets/server-test.env)에 대고 __tests__/server를 돌린다. 평소 npm test에서는 이 테스트들이 건너뛰어진다.
 set -e
-[ -f .env.server.local ] || { echo ".env.server.local이 없습니다 (docs/DEV-SETUP.md 참고)"; exit 1; }
+[ -f .secrets/server-test.env ] || { echo ".secrets/server-test.env이 없습니다 (docs/DEV-SETUP.md 참고)"; exit 1; }
 set -a
-. ./.env.server.local
+. ./.secrets/server-test.env
 set +a
 npx jest __tests__/server --runInBand "$@"
 ```
@@ -1087,7 +1087,7 @@ export async function recordConsent(client: RpcClient, termsVersion: number, pri
 
 Run: `supabase db push` → `supabase functions deploy delete-account --use-api`
 (`--use-api`는 Docker 없이 서버에서 묶는다. CLI가 이 옵션을 모르면 `supabase functions deploy --help`로 Docker 없이 올리는 방법을 확인하고 ledger에 Ruling.)
-그다음 함수가 떠 있는지 확인: `. ./.env.server.local && curl -s -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_TEST_URL/functions/v1/delete-account"`
+그다음 함수가 떠 있는지 확인: `. ./.secrets/server-test.env && curl -s -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_TEST_URL/functions/v1/delete-account"`
 Expected: `401` (게이트웨이가 JWT 없음을 거부).
 
 - [ ] **Step 5: 통과 확인**
@@ -1615,12 +1615,12 @@ useEffect(() => {
 
 `scripts/dev-user.mjs` (`package.json` scripts에 `"server:dev-user": "node scripts/dev-user.mjs"`):
 ```js
-// 개발 프로젝트에 개발용 계정을 만든다(이미 있으면 그대로 둔다). .env.server.local의 service 키를 쓴다.
+// 개발 프로젝트에 개발용 계정을 만든다(이미 있으면 그대로 둔다). .secrets/server-test.env의 service 키를 쓴다.
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
 const env = Object.fromEntries(
-  ['.env.server.local', '.env.local'].flatMap((file) => {
+  ['.secrets/server-test.env', '.env.local'].flatMap((file) => {
     try { return readFileSync(file, 'utf8').split('\n'); } catch { return []; }
   }).filter((line) => line.includes('=') && !line.startsWith('#')).map((line) => {
     const i = line.indexOf('=');
@@ -1629,7 +1629,7 @@ const env = Object.fromEntries(
 );
 const { SUPABASE_TEST_URL: url, SUPABASE_TEST_SERVICE_KEY: key, EXPO_PUBLIC_DEV_EMAIL: email, EXPO_PUBLIC_DEV_PASSWORD: password } = env;
 if (!url || !key || !email || !password) {
-  console.error('.env.server.local(주소·service 키)과 .env.local(EXPO_PUBLIC_DEV_EMAIL/PASSWORD)이 필요합니다.');
+  console.error('.secrets/server-test.env(주소·service 키)과 .env.local(EXPO_PUBLIC_DEV_EMAIL/PASSWORD)이 필요합니다.');
   process.exit(1);
 }
 const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -1649,7 +1649,7 @@ EXPO_PUBLIC_DEV_PASSWORD=<직접 정한 비밀번호>
 ```
 `.env.local`을 같은 모양으로 만들고(커밋하지 않는다) `npm run server:dev-user`를 실행한다. Expected: `만들었습니다: dev@chagok.test`.
 
-`docs/DEV-SETUP.md`에 「개발 서버 (백업·복원 개발)」 절을 추가한다: Supabase 프로젝트 `chagok-dev`(서울), `supabase login`·`supabase link`, `.env.server.local`(테스트용, service 키)과 `.env.local`(앱용, anon 키·개발 계정) 만들기, 서버 설정 올리기 `supabase db push`·`supabase functions deploy delete-account --use-api`, 서버 테스트 `npm run test:server`, 개발 계정 `npm run server:dev-user`, `npx expo start`(환경 변수를 바꾸면 다시 시작) → 앱 설정 → 개발 → 서버 동기화. 무료 프로젝트는 일주일 동안 안 쓰면 멈추므로 대시보드에서 다시 켠다. DB·사진은 대시보드의 Table Editor·Storage에서 본다.
+`docs/DEV-SETUP.md`에 「개발 서버 (백업·복원 개발)」 절을 추가한다: Supabase 프로젝트 `chagok-dev`(서울), `supabase login`·`supabase link`, `.secrets/server-test.env`(테스트용, service 키)과 `.env.local`(앱용, anon 키·개발 계정) 만들기, 서버 설정 올리기 `supabase db push`·`supabase functions deploy delete-account --use-api`, 서버 테스트 `npm run test:server`, 개발 계정 `npm run server:dev-user`, `npx expo start`(환경 변수를 바꾸면 다시 시작) → 앱 설정 → 개발 → 서버 동기화. 무료 프로젝트는 일주일 동안 안 쓰면 멈추므로 대시보드에서 다시 켠다. DB·사진은 대시보드의 Table Editor·Storage에서 본다.
 
 - [ ] **Step 8: 전체 확인**
 
