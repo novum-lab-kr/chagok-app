@@ -1,33 +1,70 @@
-import { Alert } from 'react-native';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { GoalEditorScreen } from '../../src/design-system';
-import type { GoalDraft } from '../../src/design-system';
+import { NewGoalScreen } from '../../src/design-system';
+import type { BoardKind, EndDateMode, PocketStickerId } from '../../src/design-system';
 import { createGoal } from '../../src/repositories/goalRepository';
+import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
+import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
+import { createSingleFlight } from '../../src/app-data/singleFlight';
+import { longDate } from '../../src/app-data/pocketAdapter';
+import { localDateKey } from '../../src/domain/dates';
 
+const DEFAULT_COUNT = '15';
+
+/** 새 목표 (PRD 4.4). 만들면 그 판을 연다. 칸 수는 1 이상이고 상한이 없다 (2026-09-30). */
 export default function NewGoal() {
   const router = useRouter();
+  const [name, setName] = useState('');
+  const [kind, setKind] = useState<BoardKind>('tally');
+  const [count, setCount] = useState(DEFAULT_COUNT);
+  const [sticker, setSticker] = useState<PocketStickerId>('sprout');
+  const [endMode, setEndMode] = useState<EndDateMode>('none');
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
+  const [submitOnce] = useState(createSingleFlight);
+  const { ask, dialog: failure } = useDialog();
 
-  /** 저장이 끝난 뒤에 닫는다. 실패하면 화면을 그대로 두어 입력을 잃지 않는다 (PRD 7절). */
-  async function submit(draft: GoalDraft) {
-    try {
-      await createGoal({
-        name: draft.name.trim(),
-        boardType: draft.kind,
-        totalSlots: draft.kind === 'tally' ? draft.total : null,
-        defaultStickerId: draft.sticker,
+  const dirty = name !== '' || kind !== 'tally' || count !== DEFAULT_COUNT || sticker !== 'sprout' || endMode !== 'none';
+  const { goBack, dialog } = useUnsavedBack(dirty);
+
+  // 렌더 중에 시계를 읽지 않는다. 이 화면에 있는 동안의 오늘이다.
+  const [today] = useState(() => localDateKey(Date.now()));
+  const countValid = /^\d+$/.test(count) && Number(count) > 0;
+  const endValid = kind === 'tally' || endMode === 'none' || endDate !== undefined;
+  const valid = name.trim().length > 0 && (kind === 'calendar' || countValid) && endValid;
+
+  /** 저장이 끝난 뒤에 판을 연다. 실패하면 화면을 그대로 두어 입력을 잃지 않는다 (PRD 7절). */
+  async function submit() {
+    let createdId = '';
+    const ok = await saveOrNotify(ask, '목표를 만들지 못했어요', async () => {
+      const created = await createGoal({
+        name: name.trim(),
+        boardType: kind,
+        totalSlots: kind === 'tally' ? Number(count) : null,
+        defaultStickerId: sticker,
+        endDate: kind === 'calendar' && endMode === 'pick' ? endDate ?? null : null,
       });
-    } catch {
-      Alert.alert('목표를 만들지 못했어요', '잠시 후 다시 시도해주세요. 입력한 내용은 그대로 있어요.');
-      return;
-    }
-    router.back();
+      createdId = created.id;
+    });
+    if (ok) router.replace({ pathname: '/goal/[id]', params: { id: createdId } });
   }
 
   return (
-    <GoalEditorScreen
-      mode="create"
-      onBack={() => router.back()}
-      onSubmit={(d) => { void submit(d); }}
-    />
+    <>
+      <NewGoalScreen
+        name={name} onChangeName={setName}
+        kind={kind} onChangeKind={setKind}
+        count={count} onChangeCount={setCount}
+        sticker={sticker} onChangeSticker={setSticker}
+        endMode={endMode} onChangeEndMode={setEndMode}
+        endDate={endDate} onChangeEndDate={setEndDate}
+        today={today} todayLabel={longDate(today)}
+        error={kind === 'tally' && !countValid && name.trim().length > 0 ? '칸 수를 1 이상으로 입력해주세요.' : undefined}
+        submitDisabled={!valid}
+        onSubmit={() => { void submitOnce(submit); }}
+        onBack={goBack}
+      />
+      {dialog}
+      {failure}
+    </>
   );
 }
