@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import { router } from 'expo-router';
 import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDialogs } from '../../src/design-system';
@@ -19,6 +19,8 @@ type Step = 'review' | 'confirm' | 'busy' | 'failed' | 'done';
 export default function DeleteAccount() {
   const supabase = getSupabase();
   const [step, setStep] = useState<Step>('review');
+  /** 서버 삭제가 끝났다. 그 뒤 기기 정리만 실패했으면 [다시 시도]는 기기 정리만 한다 — 세션이 이미 없다. */
+  const serverDone = useRef(false);
 
   // 삭제 중·완료 뒤에는 Android 뒤로가기로 빠져나가지 않는다
   useEffect(() => {
@@ -33,13 +35,17 @@ export default function DeleteAccount() {
     setStep('busy');
     pauseSync();
     try {
-      await deleteAccountOnServer(supabase);
+      // 서버 삭제는 다시 불러도 남은 단계부터 이어서 한다(멱등). 기기 정리가 실패해도 [다시 시도]로 끝까지 간다.
+      if (!serverDone.current) {
+        await deleteAccountOnServer(supabase);
+        serverDone.current = true;
+        await supabase.auth.signOut({ scope: 'local' });
+      }
+      await wipeDevice(removeAllManagedPhotos);
     } catch {
       setStep('failed');
       return;
     }
-    await supabase.auth.signOut({ scope: 'local' });
-    await wipeDevice(removeAllManagedPhotos);
     resumeSync();
     setStep('done');
   };

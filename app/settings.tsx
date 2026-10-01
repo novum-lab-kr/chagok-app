@@ -37,8 +37,14 @@ export default function AppSettings() {
 
   /** 서버 쪽 일이 끝난 뒤에만 기기를 비운다 (계정·백업 설계 ①). */
   const finishLogout = async () => {
-    await supabase?.auth.signOut();
-    await wipeDevice(removeAllManagedPhotos);
+    try {
+      // 이 기기의 세션만 지운다. 전체 로그아웃은 네트워크가 끊기면 실패해 세션이 남는다.
+      await supabase?.auth.signOut({ scope: 'local' });
+      await wipeDevice(removeAllManagedPhotos);
+    } catch {
+      setLogout({ step: 'failed' });
+      return;
+    }
     resumeSync();
     setLogout(null);
     router.replace('/');
@@ -49,19 +55,20 @@ export default function AppSettings() {
     if (!supabase) return;
     setLogout({ step: 'busy' });
     pauseSync();
-    const { data } = await supabase.auth.getSession();
-    const user = data.session?.user;
     let left: number;
-    if (user) {
-      try {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (user) {
         await pushOnce(await syncDepsFor(supabase, user.id));
-      } catch {
-        setLogout({ step: 'failed' });
-        return;
+        left = (await pendingCount()).held;
+      } else {
+        left = await localOnlyCount();
       }
-      left = (await pendingCount()).held;
-    } else {
-      left = await localOnlyCount();
+    } catch {
+      // 실패 다이얼로그의 [닫기]가 잠금을 푼다 — 진행 중 다이얼로그에 갇히지 않게
+      setLogout({ step: 'failed' });
+      return;
     }
     if (left > 0) setLogout({ step: 'held', count: left });
     else await finishLogout();
