@@ -22,7 +22,9 @@ import {
   applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, summarizeDevice, summarizeSnapshot,
   type RecordSummary, type ServerSnapshot,
 } from '../../src/sync/restore';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabase } from '../../src/sync/supabaseClient';
+import { beginConnect, endConnect } from '../../src/sync/connectMarker';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
 
 const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
@@ -47,8 +49,12 @@ function toCard(s: RecordSummary): RecordSnapshot {
  * 연결이 끝날 때까지 자동 전송을 잠근다 — 복원 충돌을 고르기 전에 기기 기록이 올라가지 않게.
  */
 export default function ConnectAccount() {
-  const { from = 'settings' } = useLocalSearchParams<{ from?: From }>();
   const supabase = getSupabase();
+  return supabase ? <Connect supabase={supabase} /> : null;
+}
+
+function Connect({ supabase }: { supabase: SupabaseClient }) {
+  const { from = 'settings' } = useLocalSearchParams<{ from?: From }>();
   const { ask, dialog } = useDialog();
   const [age, setAge] = useState(false);
   const [terms, setTerms] = useState(false);
@@ -59,6 +65,10 @@ export default function ConnectAccount() {
   /** 이 기기에서 연결했던 계정. 연결을 취소하면 이 표시로 되돌린다. */
   const previous = useRef<string | null>(null);
   const session = useRef<{ userId: string; deps: PushDeps } | null>(null);
+  /** 연결을 끝냈거나 취소했다. 아니면 화면을 떠날 때 취소한다. */
+  const settled = useRef(true);
+  /** 뒤로가기·화면 떠남에서 부를 최신 cancel */
+  const cancelRef = useRef<() => Promise<void>>(async () => {});
 
   // 다시 로그인이면(이 기기에서 연결한 적 있음) 두 체크를 켠 채로 연다 (2026-10-01)
   useEffect(() => {
@@ -72,16 +82,22 @@ export default function ConnectAccount() {
     return () => { alive = false; };
   }, []);
 
-  // 복원 중에는 Android 뒤로가기로 빠져나가지 않는다
+  // 복원 중에는 Android 뒤로가기로 빠져나가지 않는다. 충돌 화면의 뒤로가기는 연결 취소다.
   useEffect(() => {
-    if (step.kind !== 'restoring') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    if (step.kind === 'consent') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step.kind === 'conflict') void cancelRef.current();
+      return true;
+    });
     return () => sub.remove();
   }, [step.kind]);
 
-  if (!supabase) return null;
+  // 연결 도중 화면을 떠나면(스와이프 등) 반쯤 연결된 채로 남기지 않는다
+  useEffect(() => () => { if (!settled.current) void cancelRef.current(); }, []);
 
   const finish = async (restored: boolean) => {
+    settled.current = true;
+    await endConnect();
     resumeSync();
     if (from === 'start') {
       await setFlag('startDone', true);
@@ -94,12 +110,18 @@ export default function ConnectAccount() {
 
   /** 반쯤 연결된 채로 남기지 않는다: 로그아웃하고 이전 계정 표시로 되돌린다. 체크 상태는 그대로. */
   const cancel = async () => {
-    await supabase.auth.signOut();
-    await setSetting('accountUserId', previous.current);
+    settled.current = true;
     session.current = null;
-    resumeSync();
-    setStep({ kind: 'consent' });
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+      await setSetting('accountUserId', previous.current);
+      await endConnect();
+    } finally {
+      resumeSync();
+      setStep({ kind: 'consent' });
+    }
   };
+  useEffect(() => { cancelRef.current = cancel; });
 
   const link = async (userId: string) => { await setSetting('accountUserId', userId); };
 
@@ -141,15 +163,14 @@ export default function ConnectAccount() {
         await ask(connectFailed);
         return;
       }
+      // 여기서부터 끝나거나 취소될 때까지 전송을 잠근다. 앱이 꺼져도 다음 실행에서 되돌린다 (connectMarker).
+      settled.current = false;
       pauseSync();
-      const { data, error } = await supabase.auth.signInWithPassword({ email: DEV_EMAIL, password: DEV_PASSWORD });
-      if (error || !data.user) {
-        resumeSync();
-        await ask(connectFailed);
-        return;
-      }
-      const user = data.user;
+      await beginConnect(previous.current);
       try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: DEV_EMAIL, password: DEV_PASSWORD });
+        if (error || !data.user) throw error ?? new Error('no user');
+        const user = data.user;
         await recordConsent(supabase, versions.terms, versions.privacy);
         await setSetting('accountProvider', providerFromAuth(user.app_metadata.provider));
         await setSetting('sessionPrompted', null);

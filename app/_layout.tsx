@@ -9,6 +9,7 @@ import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus'
 import { syncDepsFor } from '../src/sync/appSync';
 import { subscribeLocalChange } from '../src/sync/changes';
 import { connectSync } from '../src/sync/connect';
+import { recoverInterruptedConnect } from '../src/sync/connectMarker';
 import { pushOnce } from '../src/sync/push';
 import { getSupabase } from '../src/sync/supabaseClient';
 import { isSyncPaused, subscribeResume } from '../src/sync/syncGate';
@@ -23,30 +24,37 @@ export default function RootLayout() {
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
-    return connectSync({
-      onAuthChange: (fn) => {
-        void supabase.auth.getSession().then(({ data }) => fn(data.session?.user.id ?? null));
-        const { data } = supabase.auth.onAuthStateChange((_event, session) => fn(session?.user.id ?? null));
-        return () => data.subscription.unsubscribe();
-      },
-      onAppActive: (fn) => {
-        const sub = AppState.addEventListener('change', (state) => fn(state === 'active'));
-        return () => sub.remove();
-      },
-      onLocalChange: subscribeLocalChange,
-      makeRun: (userId) => async () => {
-        try {
-          await pushOnce(await syncDepsFor(supabase, userId));
-        } catch (error) {
-          await recordSyncFailure();
-          throw error; // 스케줄러가 다시 시도한다
-        }
-        await recordSyncSuccess();
-      },
-      rememberUser: (userId) => setSetting('accountUserId', userId),
-      isPaused: isSyncPaused,
-      onResume: subscribeResume,
+    let stop: (() => void) | null = null;
+    let alive = true;
+    // 연결 도중 꺼졌으면 그 연결을 먼저 되돌린다 — 전송을 켜기 전에 (connectMarker)
+    void recoverInterruptedConnect(async () => { await supabase.auth.signOut({ scope: 'local' }); }).finally(() => {
+      if (!alive) return;
+      stop = connectSync({
+        onAuthChange: (fn) => {
+          void supabase.auth.getSession().then(({ data }) => fn(data.session?.user.id ?? null));
+          const { data } = supabase.auth.onAuthStateChange((_event, session) => fn(session?.user.id ?? null));
+          return () => data.subscription.unsubscribe();
+        },
+        onAppActive: (fn) => {
+          const sub = AppState.addEventListener('change', (state) => fn(state === 'active'));
+          return () => sub.remove();
+        },
+        onLocalChange: subscribeLocalChange,
+        makeRun: (userId) => async () => {
+          try {
+            await pushOnce(await syncDepsFor(supabase, userId));
+          } catch (error) {
+            await recordSyncFailure();
+            throw error; // 스케줄러가 다시 시도한다
+          }
+          await recordSyncSuccess();
+        },
+        rememberUser: (userId) => setSetting('accountUserId', userId),
+        isPaused: isSyncPaused,
+        onResume: subscribeResume,
+      });
     });
+    return () => { alive = false; stop?.(); };
   }, []);
 
   return (

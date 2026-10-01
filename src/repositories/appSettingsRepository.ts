@@ -32,7 +32,9 @@ export type SettingKey =
   /** '1'이면 첫 백업을 올리는 중 */
   | 'firstBackup'
   /** 로그인 풀림 안내를 한 번 보여준 계정 id */
-  | 'sessionPrompted';
+  | 'sessionPrompted'
+  /** 연결 흐름 진행 중: {"previous": 이전 계정 id | null} (connectMarker) */
+  | 'connecting';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();
