@@ -76,7 +76,8 @@ export function AccountStartScreen({value,onChange,onContinue}:{value:AccountSta
   </RetroScreen>;
 }
 
-export type AccountProvider='Apple'|'Google';
+/** '개발'은 계정 준비 전 개발용 이메일 로그인 (2026-10-01). */
+export type AccountProvider='Apple'|'Google'|'개발';
 /**
  * 앱 설정의 「계정과 백업」 칸 (시안 2C). 계정 → 백업 상태 순, 배지 없이 문장으로.
  * - local: 계정 없음 · pending: 오프라인 등으로 못 올린 변경 · firstBackup: 첫 백업 중
