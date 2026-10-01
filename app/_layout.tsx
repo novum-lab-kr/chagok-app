@@ -5,11 +5,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { retro } from '../src/design-system';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { setSetting } from '../src/repositories/appSettingsRepository';
+import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
 import { subscribeLocalChange } from '../src/sync/changes';
 import { connectSync } from '../src/sync/connect';
 import { pushOnce } from '../src/sync/push';
 import { getSupabase } from '../src/sync/supabaseClient';
+import { isSyncPaused } from '../src/sync/syncGate';
 
 /**
  * 네비게이터 헤더는 끈다. 화면마다 레트로 헤더(`ScreenHeader`, 홈의 브랜드 줄)를 직접 그리기
@@ -33,10 +35,16 @@ export default function RootLayout() {
       },
       onLocalChange: subscribeLocalChange,
       makeRun: (userId) => async () => {
-        await pushOnce(await syncDepsFor(supabase, userId));
-        await setSetting('lastSyncedAt', String(Date.now()));
+        try {
+          await pushOnce(await syncDepsFor(supabase, userId));
+        } catch (error) {
+          await recordSyncFailure();
+          throw error; // 스케줄러가 다시 시도한다
+        }
+        await recordSyncSuccess();
       },
       rememberUser: (userId) => setSetting('accountUserId', userId),
+      isPaused: isSyncPaused,
     });
   }, []);
 
@@ -59,6 +67,8 @@ export default function RootLayout() {
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />
+          <Stack.Screen name="account/connect" />
+          <Stack.Screen name="account/delete" options={{ gestureEnabled: false }} />
           <Stack.Screen name="dev/sync" />
         </Stack>
       </RetroFontProvider>
