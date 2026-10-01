@@ -59,6 +59,14 @@ describe('공통 컴포넌트 동작',()=>{
     expect(screen.getByText('1 / 3')).toBeTruthy();
     expect(getComputedStyle(screen.getByText('목표 만들기')).textAlign).not.toBe('center');
   });
+  it('진행 중 다이얼로그는 주 버튼을 로딩으로, 보조 버튼을 비활성으로 둔다',()=>{
+    const confirm=vi.fn(),cancel=vi.fn();
+    render(<PixelDialog variant="basic" title="로그아웃할까요?" description="먼저 백업해요." primaryLabel="로그아웃" secondaryLabel="취소" onPrimary={confirm} onSecondary={cancel} loading/>);
+    fireEvent.click(screen.getByRole('button',{name:'진행 중'}));
+    fireEvent.click(screen.getByRole('button',{name:'취소'}));
+    expect(confirm).not.toHaveBeenCalled();expect(cancel).not.toHaveBeenCalled();
+    expect(screen.getByRole('button',{name:'진행 중'}).getAttribute('aria-busy')).toBe('true');
+  });
   it('설정 행은 값과 이동 동작을 제공하고 비활성 상태에서는 눌리지 않는다',()=>{
     const press=vi.fn();const {rerender}=render(<SettingRow label="계정 연결" value="Apple" onPress={press}/>);
     fireEvent.click(screen.getByRole('button',{name:'계정 연결, Apple'}));expect(press).toHaveBeenCalledTimes(1);

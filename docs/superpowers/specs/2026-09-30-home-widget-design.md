@@ -84,7 +84,7 @@
 ## 의존성과 선행 조건
 
 - `expo-widgets`(+`@expo/ui`), `react-native-android-widget`. `overrides` 절차를 따른다.
-- 개발 빌드 필요(Expo Go 불가). iOS 실기기와 App Group은 **Apple Developer Program(유료)** 이 필요하다. Android는 지금 가능하다.
+- 개발 빌드 필요(Expo Go 불가). ~~iOS 실기기와 App Group은 Apple Developer Program(유료)이 필요하다.~~ **2026-09-30 정정:** iOS 위젯은 시뮬레이터에서 계정 없이 개발할 수 있다. `expo-widgets`는 App Group을 `group.<번들 ID>`로 자동 설정한다. 실기기는 무료 Apple ID로 설치할 수 있을 것으로 보지만(7일마다 재설치, Apple 로그인 권한이 들어가면 빌드 불가) 직접 확인하지 않았다 — spike에서 먼저 확인한다. 유료 계정은 TestFlight·심사 제출 때 필요하다. Android는 지금 가능하다.
 - 패드: `expo-widgets`는 iPadOS에서도 같은 코드로 동작한다. 패드 지원(`supportsTablet`)을 켜면 함께 따라간다.
 
 ## 범위 밖
