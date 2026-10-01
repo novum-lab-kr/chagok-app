@@ -249,32 +249,51 @@ export function PixelIcon({name,size=24}: {name:'plus'|'chevron'|'gear'|'flower'
   return <Svg width={size} height={size} viewBox={name==='flower'?'0 0 18 26':name==='gear'?gearViewBox:'0 0 16 16'} {...decorativeSvg}><Path d={paths[name]} fill={c.ink} fillRule="evenodd"/>{name==='flower' && <><Path d="M7 2H11V4H12V7H15V6H16V10H12V12H11V14H7V12H6V10H2V6H5V7H6V4H7Z" fill={c.secondary}/><Path d="M7 6H11V7H12V10H11V11H7V10H6V7H7Z" fill={c.ink}/><Path d="M8 7H10V10H8Z" fill={c.lcd}/></>}</Svg>;
 }
 
-type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;single:boolean;onPrimary?:()=>void;onSecondary?:()=>void};
-function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,single,onPrimary,onSecondary}:DialogContentProps) {
+type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;single:boolean;loading:boolean;onPrimary?:()=>void;onSecondary?:()=>void};
+function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,single,loading,onPrimary,onSecondary}:DialogContentProps) {
   return <><PixelText variant="title" style={centerText?{textAlign:'center'}:undefined}>{title}</PixelText><PixelText style={centerText?{textAlign:'center'}:undefined}>{description}</PixelText>
     <View style={{flexDirection:'row',gap:12}}>
-      {!single&&<PixelButton label={secondaryLabel} variant="secondary" onPress={onSecondary} style={{flex:1}}/>}
-      <PixelButton label={primaryLabel} onPress={onPrimary} style={{flex:1}}/>
+      {!single&&<PixelButton label={secondaryLabel} variant="secondary" disabled={loading} onPress={onSecondary} style={{flex:1}}/>}
+      <PixelButton label={primaryLabel} loading={loading} accessibilityLabel={loading?'진행 중':undefined} onPress={onPrimary} style={{flex:1}}/>
     </View></>;
 }
 
 /** Shared dialog surface. The host positions tutorial near its target and basic at screen center. */
-export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false}:
-  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean}) {
+export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false}:
+  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean;/** 주 버튼을 누른 뒤 진행 중: 주 버튼은 로딩 점, 보조 버튼은 비활성 (로그아웃·계정 삭제) */loading?:boolean}) {
   return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:360}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
     {variant==='tutorial'&&<>{step&&<PixelText>{step}</PixelText>}<View style={{height:2,backgroundColor:c.ink}}/></>}
-    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'건너뛰기':'취소')} single={single} onPrimary={onPrimary} onSecondary={onSecondary}/>
+    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'건너뛰기':'취소')} single={single} loading={loading} onPrimary={onPrimary} onSecondary={onSecondary}/>
   </PixelFrame>;
 }
 
-/** 일반 화면용 확인 호스트. `basic` 다이얼로그를 화면 중앙에 두고 배경을 막는다. Android 뒤로가기는 onRequestClose로 닫는다. */
-export function PixelDialogModal({visible,onRequestClose,...dialog}:{visible:boolean;onRequestClose:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림) */single?:boolean}) {
+/** 버튼 없는 진행 다이얼로그: 제목, 로딩 점, 안내. 끝날 때까지 닫을 수 없다 (복원). */
+export function PixelBusyDialog({title,description}:{title:string;description:string}) {
+  return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:360}} contentStyle={{padding:retro.layout.dialogPadding,gap:16,alignItems:'center'}}>
+    <PixelText variant="title" style={{textAlign:'center'}}>{title}</PixelText>
+    <PixelLoadingDots/>
+    <PixelText style={{textAlign:'center'}}>{description}</PixelText>
+  </PixelFrame>;
+}
+
+function ModalHost({visible,onRequestClose,children}:{visible:boolean;onRequestClose:()=>void;children:ReactNode}) {
   return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} statusBarTranslucent>
     <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:SCREEN_PADDING}}>
       <View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.scrim}]}/>
-      <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH-2*SCREEN_PADDING,alignItems:'center'}}><PixelDialog variant="basic" {...dialog}/></View>
+      <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH-2*SCREEN_PADDING,alignItems:'center'}}>{children}</View>
     </View>
   </Modal>;
+}
+const ignoreClose=()=>{};
+
+/** 일반 화면용 확인 호스트. `basic` 다이얼로그를 화면 중앙에 두고 배경을 막는다. Android 뒤로가기는 onRequestClose로 닫는다 — loading 중에는 무시한다. */
+export function PixelDialogModal({visible,onRequestClose,...dialog}:{visible:boolean;onRequestClose:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림) */single?:boolean;/** 진행 중: 뒤로가기로도 닫히지 않는다 */loading?:boolean}) {
+  return <ModalHost visible={visible} onRequestClose={dialog.loading?ignoreClose:onRequestClose}><PixelDialog variant="basic" {...dialog}/></ModalHost>;
+}
+
+/** PixelBusyDialog 호스트. Android 뒤로가기를 무시한다. */
+export function PixelBusyModal({visible,title,description}:{visible:boolean;title:string;description:string}) {
+  return <ModalHost visible={visible} onRequestClose={ignoreClose}><PixelBusyDialog title={title} description={description}/></ModalHost>;
 }
 
 /** 배지 색 조합. 새 배지는 여기에 tone을 **추가**한다. 기존 조합은 바꾸지 않는다. */
