@@ -45,3 +45,8 @@ export function removeManagedRecordPhoto(uri: string | null | undefined): void {
   const file = new File(path);
   if (file.exists) file.delete();
 }
+
+/** 앱 사진 폴더를 통째로 지운다. 로그아웃·계정 삭제 뒤(wipeDevice)에만 쓴다. */
+export function removeAllManagedPhotos(): void {
+  if (folder.exists) folder.delete();
+}
