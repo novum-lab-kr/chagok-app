@@ -11,6 +11,8 @@ export type ConnectDeps = {
   rememberUser(userId: string): Promise<void>;
   /** 참이면 이번 회차를 건너뛴다(연결·로그아웃·삭제 중). 풀리면 다음 기록·앞으로 오기에 보낸다. */
   isPaused?: () => boolean;
+  /** 잠금이 풀렸다. 잠긴 동안 건너뛴 회차를 바로 보낸다. */
+  onResume?: (fn: () => void) => () => void;
   debounceMs?: number;
 };
 
@@ -36,6 +38,7 @@ export function connectSync(deps: ConnectDeps): () => void {
   });
   const offApp = deps.onAppActive((active) => { if (active) scheduler?.foreground(); });
   const offLocal = deps.onLocalChange(() => scheduler?.poke());
+  const offResume = deps.onResume?.(() => scheduler?.foreground()) ?? (() => {});
 
-  return () => { offAuth(); offApp(); offLocal(); scheduler?.stop(); };
+  return () => { offAuth(); offApp(); offLocal(); offResume(); scheduler?.stop(); };
 }

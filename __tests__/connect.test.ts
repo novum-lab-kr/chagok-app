@@ -1,6 +1,7 @@
 import { connectSync } from '../src/sync/connect';
 
 function harness(paused = { value: false }) {
+  let resumeFn: () => void = () => {};
   let authFn: (userId: string | null) => void = () => {};
   let appFn: (active: boolean) => void = () => {};
   let localFn: () => void = () => {};
@@ -13,9 +14,10 @@ function harness(paused = { value: false }) {
     makeRun: (userId) => async () => { runs.push(userId); },
     rememberUser: async (u) => { remembered.push(u); },
     isPaused: () => paused.value,
+    onResume: (fn) => { resumeFn = fn; return () => { resumeFn = () => {}; }; },
     debounceMs: 0,
   });
-  return { stop, runs, remembered, signIn: (u: string | null) => authFn(u), active: () => appFn(true), local: () => localFn() };
+  return { stop, runs, remembered, resume: () => resumeFn(), signIn: (u: string | null) => authFn(u), active: () => appFn(true), local: () => localFn() };
 }
 const flush = () => new Promise((r) => setTimeout(r, 5));
 
@@ -59,6 +61,17 @@ describe('connectSync', () => {
     const h = harness();
     h.signIn(null); h.signIn('u1'); h.signIn(null); await flush();
     expect(h.remembered).toEqual(['u1']);
+    h.stop();
+  });
+
+  it('잠금이 풀리면 미뤄 둔 전송을 바로 보낸다 (첫 백업이 기록을 기다리지 않게)', async () => {
+    const paused = { value: true };
+    const h = harness(paused);
+    h.signIn('u1'); await flush();
+    expect(h.runs).toEqual([]);
+    paused.value = false;
+    h.resume(); await flush();
+    expect(h.runs).toEqual(['u1']);
     h.stop();
   });
 });

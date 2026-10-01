@@ -1,4 +1,4 @@
-import { isSyncPaused, notifySyncStatus, pauseSync, resumeSync, subscribeSyncStatus } from '../src/sync/syncGate';
+import { isSyncPaused, notifySyncStatus, pauseSync, resumeSync, subscribeResume, subscribeSyncStatus } from '../src/sync/syncGate';
 
 describe('syncGate', () => {
   afterEach(() => resumeSync());
@@ -13,5 +13,14 @@ describe('syncGate', () => {
     off();
     notifySyncStatus();
     expect(seen).toHaveLength(1);
+  });
+
+  it('다시 열면 재개 구독자에게 알린다 (잠긴 동안 미룬 전송을 바로 보내게)', () => {
+    let resumed = 0;
+    const off = subscribeResume(() => { resumed += 1; });
+    pauseSync(); resumeSync();
+    expect(resumed).toBe(1);
+    off(); pauseSync(); resumeSync();
+    expect(resumed).toBe(1);
   });
 });

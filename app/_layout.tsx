@@ -11,7 +11,7 @@ import { subscribeLocalChange } from '../src/sync/changes';
 import { connectSync } from '../src/sync/connect';
 import { pushOnce } from '../src/sync/push';
 import { getSupabase } from '../src/sync/supabaseClient';
-import { isSyncPaused } from '../src/sync/syncGate';
+import { isSyncPaused, subscribeResume } from '../src/sync/syncGate';
 
 /**
  * 네비게이터 헤더는 끈다. 화면마다 레트로 헤더(`ScreenHeader`, 홈의 브랜드 줄)를 직접 그리기
@@ -45,6 +45,7 @@ export default function RootLayout() {
       },
       rememberUser: (userId) => setSetting('accountUserId', userId),
       isPaused: isSyncPaused,
+      onResume: subscribeResume,
     });
   }, []);
 

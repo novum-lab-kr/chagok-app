@@ -5,9 +5,19 @@
  */
 let paused = false;
 const listeners = new Set<() => void>();
+const resumeListeners = new Set<() => void>();
 
 export function pauseSync(): void { paused = true; }
-export function resumeSync(): void { paused = false; notifySyncStatus(); }
+/** 다시 연다. 잠긴 동안 건너뛴 전송(로그인 직후, 첫 백업)을 바로 보내도록 재개 구독자에게 알린다. */
+export function resumeSync(): void {
+  paused = false;
+  for (const fn of [...resumeListeners]) fn();
+  notifySyncStatus();
+}
+export function subscribeResume(fn: () => void): () => void {
+  resumeListeners.add(fn);
+  return () => { resumeListeners.delete(fn); };
+}
 export function isSyncPaused(): boolean { return paused; }
 export function subscribeSyncStatus(fn: () => void): () => void {
   listeners.add(fn);
