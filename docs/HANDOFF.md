@@ -16,7 +16,7 @@
 **다음에 할 일** (9절에 자세히).
 
 1. 사용자 확인: 약관 화면과 v5 이후 기존 흐름을 Expo Go로, 동의 화면·위젯 미리보기를 Storybook으로.
-2. 계정 화면 Storybook 구성, 튜토리얼 다시 보기 시안 3개.
+2. ~~계정 화면 Storybook 구성~~ 2026-10-01 완료(아래 「화면에 연결되지 않은 것」), 튜토리얼 다시 보기 시안 3개.
 3. 준비물(Docker, Apple Developer Program, Google OAuth)이 갖춰지면 개발 빌드 전환 → 서버 → 로그인 → 위젯 네이티브.
 
 **개발 중에 만나면 사용자에게 묻는 것 (아직 열린 결정).**
@@ -171,7 +171,8 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 
 - 백업: `src/sync/` — outbox(모든 저장 함수가 같은 트랜잭션에서 기록), 전송기 `pushOnce`, 복원 `restoreAll`, 스케줄러. 서버 계약 `SyncServer`/`PhotoStore`의 실구현은 없고 메모리 가짜 서버(`__tests__/support/fakeServer.ts`)로만 검증했다.
 - 위젯: `src/widgets/` 스냅샷 생성과 DB 읽기, `src/design-system/widget-preview.tsx` 미리보기(Storybook `Widgets / Preview`).
-- 동의 화면: `ConsentScreen`(Storybook `Screens / Account consent`). 로그인 단계에서 연결한다.
+- 동의 화면: `ConsentScreen`(Storybook `Screens / Account consent`). 2026-10-01 시안 2안 배치(판 없는 동의 목록 + 바로 아래 버튼, [약관 설계](superpowers/specs/2026-09-30-policy-terms-design.md) 「동의 화면」). 로그인 단계에서 연결한다.
+- 계정·백업 화면 (2026-10-01 확정 시안, Storybook `Screens / Account backup`): `AccountStartScreen`(시작), `AccountBackupPanel`(앱 설정 칸, 상태 6가지), `RestoreConflictScreen`(복원 충돌), `DeleteAccountScreen`·`AccountDeletedScreen`, 다이얼로그 문구 `accountDialogs`. 진행 중 표시는 `PixelDialog`·`PixelDialogModal`의 `loading`(주 버튼 로딩·보조 비활성·뒤로가기 무시)과 `PixelBusyDialog`·`PixelBusyModal`(버튼 없음, 뒤로가기 무시). 로그인 단계에서 연결한다.
 - 약관 재동의 판단 `needsReconsent`. 정책 사이트(`~/Desktop/workspace/chagok-app-policy`)는 Netlify `https://chagok-app-terms.netlify.app`에 연결했고(2026-09-30) 앱도 그 주소를 본다. 초안을 검색 차단(noindex) 상태로 공개해 두어 앱의 약관 링크가 열린다(2026-09-30). 공식 게시 전 남은 것은 클라우드 사업자·판 날짜·`_headers` 제거. 게시 절차는 [약관 설계](superpowers/specs/2026-09-30-policy-terms-design.md) 「게시 상태」.
 
 화면 조합은 `src/design-system/board-screens.tsx`·`first-run-tutorial.tsx`·`policy-screens.tsx`·`account-screens.tsx`, 규칙은 `src/domain/board.ts`·`dates.ts`, 확인·실패 알림은 `src/app-data/useDialog.ts`(OS `Alert` 없음). **실기기는 iPhone 15 Pro 한 대뿐이고, 사용자가 이 기기로만 확인했다(2026-09-30). 다른 기기와 Android 실기기는 확인하지 못했다.**
