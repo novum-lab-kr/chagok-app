@@ -5,7 +5,7 @@ import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
 import { getSetting } from '../src/repositories/appSettingsRepository';
 import { pendingCount, takeBatch } from '../src/sync/outbox';
 import { pushOnce } from '../src/sync/push';
-import { downloadRestoredPhotos, hasLocalData, replaceServerWithDevice, restoreAll } from '../src/sync/restore';
+import { applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, restoreAll, summarizeDevice, summarizeSnapshot } from '../src/sync/restore';
 import { FakePhotos, FakeServer } from './support/fakeServer';
 import { withFreshDb } from './support/setup';
 
@@ -83,5 +83,26 @@ describe('복원', () => {
     expect(await hasLocalData()).toBe(false);
     await createGoal({ name: 'x', boardType: 'tally', totalSlots: 1 });
     expect(await hasLocalData()).toBe(true);
+  });
+
+  it('받기만 하면 기기를 바꾸지 않고, 요약은 목표 이름·수·최근 수정 시각을 담는다', async () => {
+    const { server } = await seedServer();
+    const mine = await createGoal({ name: '물 마시기', boardType: 'tally', totalSlots: 5 });
+    const snap = await pullAll(server, 2);
+    expect((await listGoals()).map((x) => x.id)).toEqual([mine.id]); // 기기 그대로
+    const s = summarizeSnapshot(snap);
+    expect(s).toMatchObject({ goals: 1, stickers: 1, goalNames: ['산책'] });
+    expect(s.updatedAt).toBe(Math.max(...[...snap.goals, ...snap.stickers, ...snap.records].map((r) => r.updated_at)));
+    expect(await summarizeDevice()).toMatchObject({ goals: 1, stickers: 0, goalNames: ['물 마시기'] });
+    expect(summarizeSnapshot({ goals: [], stickers: [], records: [], cursor: 0 })).toEqual({ goals: 0, stickers: 0, goalNames: [], updatedAt: null });
+  });
+
+  it('적용하면 바꾸기 전 기기 사진 경로를 돌려준다', async () => {
+    const { server } = await seedServer();
+    const mine = await createGoal({ name: '물 마시기', boardType: 'tally', totalSlots: 5 });
+    const st = await placeSticker(mine.id, 0);
+    await upsertRecord(st.id, { photoUri: 'record-photo:old.jpg', memo: null });
+    const { oldPhotoUris } = await applyRestore(await pullAll(server));
+    expect(oldPhotoUris).toEqual(['record-photo:old.jpg']);
   });
 });

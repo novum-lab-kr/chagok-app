@@ -10,12 +10,14 @@ export async function hasLocalData(): Promise<boolean> {
   return ((await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM goals'))?.n ?? 0) > 0;
 }
 
+export type ServerSnapshot = { goals: GoalRow[]; stickers: StickerRow[]; records: RecordRow[]; cursor: number };
+export type RecordSummary = { goals: number; stickers: number; goalNames: string[]; updatedAt: number | null };
+
 /**
- * 서버 백업으로 기기를 채운다 (계정·백업 설계 ② 복원).
- * 모두 받은 뒤 한 트랜잭션으로 바꾼다 — 받는 중 실패하면 기기는 손대지 않는다.
- * 기존 기기 사진 파일 정리는 호출자가 이 함수 성공 뒤에 한다. 복원은 outbox를 만들지 않는다.
+ * 서버 백업을 모두 받는다 (계정·백업 설계 ② 복원). 기기는 건드리지 않는다 —
+ * 복원 충돌에서 고르기 전에 보여줄 요약도 이것으로 만들고, 고른 뒤 다시 받지 않는다.
  */
-export async function restoreAll(server: SyncServer, pageSize = 500): Promise<{ photos: PhotoToFetch[] }> {
+export async function pullAll(server: SyncServer, pageSize = 500): Promise<ServerSnapshot> {
   const goals = new Map<string, GoalRow>();
   const stickers = new Map<string, StickerRow>();
   const records = new Map<string, RecordRow>();
@@ -33,11 +35,20 @@ export async function restoreAll(server: SyncServer, pageSize = 500): Promise<{ 
   // 부모가 없는 행은 버린다 (표식이 부모에만 있을 때를 대비)
   for (const [id, s] of stickers) if (!goals.has(s.goal_id)) stickers.delete(id);
   for (const [id, r] of records) if (!stickers.has(r.sticker_id)) records.delete(id);
+  return { goals: [...goals.values()], stickers: [...stickers.values()], records: [...records.values()], cursor };
+}
 
+/**
+ * 받은 백업으로 기기를 한 트랜잭션에 바꾼다. 복원은 outbox를 만들지 않는다.
+ * 바꾸기 전 기기 사진 경로를 돌려준다 — 호출자가 이 함수 성공 뒤 그 파일들을 지운다.
+ */
+export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: PhotoToFetch[]; oldPhotoUris: string[] }> {
   const db = await getDb();
+  const oldPhotoUris = (await db.all<{ photo_uri: string }>('SELECT photo_uri FROM records WHERE photo_uri IS NOT NULL'))
+    .map((r) => r.photo_uri);
   await db.transaction(async (tx) => {
     await tx.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox;');
-    for (const g of goals.values()) {
+    for (const g of snap.goals) {
       await tx.run(
         `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at,
            completion_seen, last_placed_at, initial_slots, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -45,26 +56,55 @@ export async function restoreAll(server: SyncServer, pageSize = 500): Promise<{ 
         g.completion_seen, g.last_placed_at, g.initial_slots, g.updated_at,
       );
     }
-    for (const s of stickers.values()) {
+    for (const s of snap.stickers) {
       await tx.run(
         'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
         s.id, s.goal_id, s.placed_at, s.slot_index, s.sticker_type, s.updated_at,
       );
     }
-    for (const r of records.values()) {
+    for (const r of snap.records) {
       await tx.run(
         'INSERT INTO records (id, sticker_id, photo_uri, memo, created_at, updated_at, photo_remote_path) VALUES (?, ?, NULL, ?, ?, ?, ?)',
         r.id, r.sticker_id, r.memo, r.created_at, r.updated_at, r.photo_remote_path,
       );
     }
   });
-  await setSetting('syncCursor', String(cursor));
+  await setSetting('syncCursor', String(snap.cursor));
   await setSetting('lastSyncedAt', String(Date.now()));
 
-  const photos = [...records.values()]
+  const photos = snap.records
     .filter((r) => r.photo_remote_path)
     .map((r) => ({ recordId: r.id, remotePath: r.photo_remote_path! }));
+  return { photos, oldPhotoUris };
+}
+
+/**
+ * 서버 백업으로 기기를 채운다. 모두 받은 뒤 한 트랜잭션으로 바꾼다 — 받는 중 실패하면 기기는 손대지 않는다.
+ * 기존 기기 사진 파일 정리는 호출자가 이 함수 성공 뒤에 한다.
+ */
+export async function restoreAll(server: SyncServer, pageSize = 500): Promise<{ photos: PhotoToFetch[] }> {
+  const { photos } = await applyRestore(await pullAll(server, pageSize));
   return { photos };
+}
+
+const latest = (rows: { updated_at: number }[]) =>
+  rows.reduce<number | null>((m, r) => (m === null || r.updated_at > m ? r.updated_at : m), null);
+
+/** 복원 충돌 카드: 서버 백업 쪽 (시안 3B). */
+export function summarizeSnapshot(s: ServerSnapshot): RecordSummary {
+  return {
+    goals: s.goals.length, stickers: s.stickers.length, goalNames: s.goals.map((g) => g.name),
+    updatedAt: latest([...s.goals, ...s.stickers, ...s.records]),
+  };
+}
+
+/** 복원 충돌 카드: 이 기기 쪽. */
+export async function summarizeDevice(): Promise<RecordSummary> {
+  const db = await getDb();
+  const goals = await db.all<{ name: string; updated_at: number }>('SELECT name, updated_at FROM goals ORDER BY created_at');
+  const stickers = await db.all<{ updated_at: number }>('SELECT updated_at FROM stickers');
+  const records = await db.all<{ updated_at: number }>('SELECT updated_at FROM records');
+  return { goals: goals.length, stickers: stickers.length, goalNames: goals.map((g) => g.name), updatedAt: latest([...goals, ...stickers, ...records]) };
 }
 
 /**

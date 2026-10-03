@@ -7,7 +7,12 @@ export type ConnectDeps = {
   onLocalChange(fn: () => void): () => void;
   /** 이 사용자로 보내는 한 번(pushOnce)을 만든다. */
   makeRun(userId: string): () => Promise<void>;
-  rememberUser(userId: string | null): Promise<void>;
+  /** 로그인한 사용자 id를 기억한다. 세션이 없을 때는 부르지 않는다. */
+  rememberUser(userId: string): Promise<void>;
+  /** 참이면 이번 회차를 건너뛴다(연결·로그아웃·삭제 중). 풀리면 다음 기록·앞으로 오기에 보낸다. */
+  isPaused?: () => boolean;
+  /** 잠금이 풀렸다. 잠긴 동안 건너뛴 회차를 바로 보낸다. */
+  onResume?: (fn: () => void) => () => void;
   debounceMs?: number;
 };
 
@@ -24,13 +29,16 @@ export function connectSync(deps: ConnectDeps): () => void {
     scheduler?.stop();
     scheduler = null;
     current = userId;
-    void deps.rememberUser(userId);
+    // 세션이 없어도 accountUserId는 남긴다 — 로그인이 풀렸는지 판단하는 근거다 (2026-10-01)
     if (!userId) return;
-    scheduler = createSyncScheduler(deps.makeRun(userId), { debounceMs: deps.debounceMs });
+    void deps.rememberUser(userId);
+    const run = deps.makeRun(userId);
+    scheduler = createSyncScheduler(async () => { if (!deps.isPaused?.()) await run(); }, { debounceMs: deps.debounceMs });
     scheduler.foreground();
   });
   const offApp = deps.onAppActive((active) => { if (active) scheduler?.foreground(); });
   const offLocal = deps.onLocalChange(() => scheduler?.poke());
+  const offResume = deps.onResume?.(() => scheduler?.foreground()) ?? (() => {});
 
-  return () => { offAuth(); offApp(); offLocal(); scheduler?.stop(); };
+  return () => { offAuth(); offApp(); offLocal(); offResume(); scheduler?.stop(); };
 }
