@@ -6,13 +6,15 @@ import {
 } from '../src/design-system';
 import { goBackOrHome } from '../src/app-data/goBack';
 import { removeAllManagedPhotos } from '../src/app-data/recordPhotos';
+import { signOutLocal } from '../src/sync/account';
 import { formatBackedUpAt, localOnlyCount, readAccountState } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
 import { pendingCount } from '../src/sync/outbox';
 import { pushOnce } from '../src/sync/push';
-import { getSupabase } from '../src/sync/supabaseClient';
+import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { pauseSync, resumeSync, subscribeSyncStatus } from '../src/sync/syncGate';
 import { wipeDevice } from '../src/sync/wipe';
+import { getSetting } from '../src/repositories/appSettingsRepository';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
 
@@ -25,10 +27,12 @@ export default function AppSettings() {
 
   const load = useCallback(async () => {
     if (!supabase) return;
-    const { data } = await supabase.auth.getSession();
-    const s = await readAccountState(data.session?.user.id ?? null);
+    const { data, error } = await supabase.auth.getSession();
+    // 오프라인에서 토큰을 갱신하지 못한 것은 로그인이 풀린 게 아니다 — 연결한 계정 그대로 보여준다
+    const sessionUser = error ? await getSetting('accountUserId') : data.session?.user.id ?? null;
+    const s = await readAccountState(sessionUser);
     setStatus(s.state === 'synced'
-      ? { state: 'synced', provider: s.provider, backedUpAt: s.lastSyncedAt ? formatBackedUpAt(s.lastSyncedAt, new Date()) : '방금' }
+      ? { state: 'synced', provider: s.provider, backedUpAt: formatBackedUpAt(s.lastSyncedAt, new Date()) }
       : s);
   }, [supabase]);
 
@@ -38,8 +42,8 @@ export default function AppSettings() {
   /** 서버 쪽 일이 끝난 뒤에만 기기를 비운다 (계정·백업 설계 ①). */
   const finishLogout = async () => {
     try {
-      // 이 기기의 세션만 지운다. 전체 로그아웃은 네트워크가 끊기면 실패해 세션이 남는다.
-      await supabase?.auth.signOut({ scope: 'local' });
+      // 이 기기의 세션만 지우고, 로그아웃이 실패해도 저장된 세션을 지운다 (signOutLocal)
+      if (supabase) await signOutLocal(supabase, clearStoredSession);
       await wipeDevice(removeAllManagedPhotos);
     } catch {
       setLogout({ step: 'failed' });
@@ -57,7 +61,9 @@ export default function AppSettings() {
     pauseSync();
     let left: number;
     try {
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      // 오프라인이라 확인하지 못했으면 실패로 알린다 — 남은 기록을 전부 지운다고 잘못 경고하지 않게
+      if (error) throw error;
       const user = data.session?.user;
       if (user) {
         await pushOnce(await syncDepsFor(supabase, user.id));

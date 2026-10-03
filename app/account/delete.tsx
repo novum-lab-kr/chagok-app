@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDialogs } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
-import { deleteAccountOnServer } from '../../src/sync/account';
-import { getSupabase } from '../../src/sync/supabaseClient';
+import { deleteAccountOnServer, signOutLocal } from '../../src/sync/account';
+import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
 import { wipeDevice } from '../../src/sync/wipe';
 
@@ -39,8 +39,9 @@ export default function DeleteAccount() {
       if (!serverDone.current) {
         await deleteAccountOnServer(supabase);
         serverDone.current = true;
-        await supabase.auth.signOut({ scope: 'local' });
       }
+      // 지운 계정의 토큰은 갱신되지 않아 로그아웃이 오류를 돌려줄 수 있다 — 저장된 세션을 직접 지운다
+      await signOutLocal(supabase, clearStoredSession);
       await wipeDevice(removeAllManagedPhotos);
     } catch {
       setStep('failed');

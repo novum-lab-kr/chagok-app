@@ -4,15 +4,15 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { retro } from '../src/design-system';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
-import { setSetting } from '../src/repositories/appSettingsRepository';
+import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
 import { subscribeLocalChange } from '../src/sync/changes';
 import { connectSync } from '../src/sync/connect';
-import { recoverInterruptedConnect } from '../src/sync/connectMarker';
+import { recoverInterruptedConnect, rememberAccount } from '../src/sync/connectMarker';
 import { pushOnce } from '../src/sync/push';
-import { getSupabase } from '../src/sync/supabaseClient';
-import { isSyncPaused, subscribeResume } from '../src/sync/syncGate';
+import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
+import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
 
 /**
  * 네비게이터 헤더는 끈다. 화면마다 레트로 헤더(`ScreenHeader`, 홈의 브랜드 줄)를 직접 그리기
@@ -26,8 +26,21 @@ export default function RootLayout() {
     if (!supabase) return;
     let stop: (() => void) | null = null;
     let alive = true;
+    /** 끝나지 않은 연결을 되돌리지 못했다(저장소 오류). 되돌릴 때까지 전송을 따로 잠근다 — 다른 흐름의 resumeSync로 풀리지 않게. */
+    let recoveryFailed = false;
     // 연결 도중 꺼졌으면 그 연결을 먼저 되돌린다 — 전송을 켜기 전에 (connectMarker)
-    void recoverInterruptedConnect(async () => { await supabase.auth.signOut({ scope: 'local' }); }).finally(() => {
+    const recover = () => recoverInterruptedConnect(() => signOutLocal(supabase, clearStoredSession))
+      .then(() => {
+        const wasFailed = recoveryFailed;
+        recoveryFailed = false;
+        if (wasFailed) kickSync(); // 잠긴 동안 미룬 전송을 보낸다
+      })
+      .catch(() => { recoveryFailed = true; });
+    // 되돌리지 못했으면 앱이 앞으로 올 때 다시 되돌려 본다. 사용자가 연결하는 중이면(잠금) 그 연결을 건드리지 않는다.
+    const retry = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && recoveryFailed && !isSyncPaused()) void recover();
+    });
+    void recover().finally(() => {
       if (!alive) return;
       stop = connectSync({
         onAuthChange: (fn) => {
@@ -42,6 +55,11 @@ export default function RootLayout() {
         onLocalChange: subscribeLocalChange,
         makeRun: (userId) => async () => {
           try {
+            // 토큰을 갱신하지 못했으면(오프라인) 실패로 남겨 스케줄러가 다시 시도하게 한다
+            const { data, error } = await supabase.auth.getSession();
+            if (error) throw error;
+            // 로그아웃이 실패해 세션 정리만 했으면 이 스케줄러는 지난 사용자 것이다 — 보내지 않는다
+            if (data.session?.user.id !== userId) return;
             await pushOnce(await syncDepsFor(supabase, userId));
           } catch (error) {
             await recordSyncFailure();
@@ -49,12 +67,12 @@ export default function RootLayout() {
           }
           await recordSyncSuccess();
         },
-        rememberUser: (userId) => setSetting('accountUserId', userId),
-        isPaused: isSyncPaused,
+        rememberUser: rememberAccount,
+        isPaused: () => isSyncPaused() || recoveryFailed,
         onResume: subscribeResume,
       });
     });
-    return () => { alive = false; stop?.(); };
+    return () => { alive = false; retry.remove(); stop?.(); };
   }, []);
 
   return (

@@ -45,7 +45,9 @@ export default function GoalList() {
     if (!supabase) return;
     let alive = true;
     void (async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      // 오프라인에서 토큰을 갱신하지 못한 것은 로그인이 풀린 게 아니다 — 한 번뿐인 안내를 쓰지 않는다
+      if (error) return;
       const state = await readAccountState(data.session?.user.id ?? null);
       const userId = await getSetting('accountUserId');
       if (!alive || state.state !== 'needsLogin' || !userId || (await getSetting('sessionPrompted')) === userId) return;
