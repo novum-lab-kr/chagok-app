@@ -1,4 +1,4 @@
-import { isSyncPaused, notifySyncStatus, pauseSync, resumeSync, subscribeResume, subscribeSyncStatus } from '../src/sync/syncGate';
+import { isSyncPaused, kickSync, notifySyncStatus, pauseSync, resumeSync, subscribeResume, subscribeSyncStatus } from '../src/sync/syncGate';
 
 describe('syncGate', () => {
   afterEach(() => resumeSync());
@@ -22,5 +22,15 @@ describe('syncGate', () => {
     expect(resumed).toBe(1);
     off(); pauseSync(); resumeSync();
     expect(resumed).toBe(1);
+  });
+
+  it('잠금은 그대로 두고 재개 구독자만 깨운다 (다른 흐름의 잠금을 풀지 않게)', () => {
+    let kicked = 0;
+    const off = subscribeResume(() => { kicked += 1; });
+    pauseSync();
+    kickSync();
+    expect(kicked).toBe(1);
+    expect(isSyncPaused()).toBe(true);
+    off();
   });
 });

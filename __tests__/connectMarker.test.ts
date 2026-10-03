@@ -1,5 +1,5 @@
 import { getSetting, setSetting } from '../src/repositories/appSettingsRepository';
-import { beginConnect, endConnect, recoverInterruptedConnect } from '../src/sync/connectMarker';
+import { beginConnect, endConnect, hasInterruptedConnect, markRestored, recoverInterruptedConnect, rememberAccount } from '../src/sync/connectMarker';
 import { withFreshDb } from './support/setup';
 
 withFreshDb();
@@ -27,6 +27,32 @@ describe('연결 중 표시', () => {
     await setSetting('accountUserId', 'new');
     await endConnect();
     expect(await recoverInterruptedConnect(async () => {})).toBe(false);
+    expect(await getSetting('accountUserId')).toBe('new');
+  });
+
+  it('로그아웃이 실패하면 표시와 이전 계정 기록을 그대로 두고 던진다 — 다음에 다시 되돌린다', async () => {
+    await beginConnect('old');
+    await setSetting('accountUserId', 'new');
+    await expect(recoverInterruptedConnect(async () => { throw new Error('offline'); })).rejects.toThrow('offline');
+    expect(await getSetting('connecting')).not.toBeNull();
+    expect(await hasInterruptedConnect()).toBe(true);
+  });
+
+  it('복원을 적용한 뒤 꺼졌으면 복원한 계정으로 되돌린다 — 기기에 있는 기록의 주인', async () => {
+    await beginConnect('old');
+    await setSetting('accountUserId', 'new');
+    await markRestored('new');
+    await recoverInterruptedConnect(async () => {});
+    expect(await getSetting('accountUserId')).toBe('new');
+  });
+
+  it('연결 흐름 중에는 로그인 이벤트가 연결 계정을 먼저 기록하지 않는다 — 고르기 전에 연결된 것으로 보이지 않게', async () => {
+    await setSetting('accountUserId', 'old');
+    await beginConnect('old');
+    await rememberAccount('new');
+    expect(await getSetting('accountUserId')).toBe('old');
+    await endConnect();
+    await rememberAccount('new');
     expect(await getSetting('accountUserId')).toBe('new');
   });
 });

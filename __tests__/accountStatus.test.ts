@@ -47,4 +47,9 @@ describe('계정 상태', () => {
     expect(formatBackedUpAt(new Date(2026, 8, 30, 21, 40).getTime(), now)).toBe('어제 21:40');
     expect(formatBackedUpAt(new Date(2026, 8, 27, 8, 0).getTime(), now)).toBe('9월 27일');
   });
+
+  it('연결은 됐지만 아직 한 번도 백업하지 않았으면 첫 백업 중으로 보인다 ("방금에 모두 백업했어요"가 아니게)', async () => {
+    await setSetting('accountUserId', 'u1'); await setSetting('accountProvider', '개발');
+    expect((await readAccountState('u1')).state).toBe('firstBackup');
+  });
 });

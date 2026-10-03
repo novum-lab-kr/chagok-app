@@ -5,7 +5,7 @@ import { notifySyncStatus } from './syncGate';
 
 export type AccountState =
   | { state: 'local' }
-  | { state: 'synced'; provider: AccountProvider; lastSyncedAt: number | null }
+  | { state: 'synced'; provider: AccountProvider; lastSyncedAt: number }
   | { state: 'pending' | 'firstBackup' | 'needsLogin'; provider: AccountProvider };
 
 export function providerFromAuth(provider: string | undefined): AccountProvider {
@@ -23,7 +23,9 @@ export async function readAccountState(sessionUserId: string | null): Promise<Ac
   if (await getSetting('firstBackup')) return { state: 'firstBackup', provider };
   if (await getSetting('syncProblem')) return { state: 'pending', provider };
   const last = await getSetting('lastSyncedAt');
-  return { state: 'synced', provider, lastSyncedAt: last ? Number(last) : null };
+  // 연결 직후 아직 한 번도 보내지 않았으면 첫 백업 중이다 — "모두 백업했어요"라고 하지 않는다 (2026-10-02 테스트)
+  if (!last) return { state: 'firstBackup', provider };
+  return { state: 'synced', provider, lastSyncedAt: Number(last) };
 }
 
 /** 전송이 끝났다. 보류가 남으면 "백업하지 못한 기록"으로 두고 마지막 백업 시각은 바꾸지 않는다 (2026-10-01). */

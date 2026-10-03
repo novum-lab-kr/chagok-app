@@ -14,6 +14,10 @@ export function resumeSync(): void {
   for (const fn of [...resumeListeners]) fn();
   notifySyncStatus();
 }
+/** 잠금은 그대로 두고 지금 보낼 수 있으면 보내게 깨운다 (되돌리기를 다시 해서 성공했을 때). */
+export function kickSync(): void {
+  for (const fn of [...resumeListeners]) fn();
+}
 export function subscribeResume(fn: () => void): () => void {
   resumeListeners.add(fn);
   return () => { resumeListeners.delete(fn); };
