@@ -1,5 +1,8 @@
-/* eslint-disable */ // 문서용: 네 파일을 이어 붙여 한 번에 돌린다(../README.md 「다시 만들기」). 파일 하나로는 전역이 비어 보인다.
-// 이고지고 3차: 팔(arms)과 머리 위 물건(item)을 바꿔 그린다. chars2.js의 build·shape·range·sym·eyes, chars4.js의 FACES를 쓴다.
+// 캐릭터 그리기 3/3 — 팔·머리 위 물건 변형과 스플래시 층 분리. 표정은 faces.cjs.
+const {PAL2, shape, sym, build, range} = require('./base.cjs');
+const {FACES} = require('./faces.cjs');
+
+// 이고지고 3차: 팔(arms)과 머리 위 물건(item)을 바꿔 그린다.
 const mirror = (rows) => Object.fromEntries(Object.entries(rows).map(([y, [a, b]]) => [y, [23 - b, 23 - a]]));
 const ARM = {
   none: [],
@@ -88,3 +91,5 @@ function gridSvg(rows, size) {
   rows.forEach((r, y) => { for (let x = 0; x < 24; x++) { const c = r[x]; if (PAL2[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL2[c]}"/>`; } });
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
 }
+
+module.exports = {carry3, carryBody, carryItem, gridSvg};

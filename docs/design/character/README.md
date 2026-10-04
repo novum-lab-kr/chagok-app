@@ -64,11 +64,21 @@
 
 ## 다시 만들기
 
+저장소 루트에서:
+
 ```sh
-cd docs/design/character/source
-cat chars2.js chars4.js chars5.js export.js | node - ..
-# → ../character-data.json, ../character-sheet.html
-playwright screenshot --full-page --viewport-size "924,500" "file://$PWD/../character-sheet.html" ../character-sheet.png
+node docs/design/character/source/export.cjs
+# → docs/design/character/character-data.json, character-sheet.html
+playwright screenshot --full-page --viewport-size "924,500" "file://$PWD/docs/design/character/character-sheet.html" docs/design/character/character-sheet.png
 ```
 
-`source/`는 시안 페이지에서 쓴 그리기 코드 그대로다. 몸·판·표정 정의는 `chars4.js`(`carryFace`, `FACES`), 팔·판 종류·층 분리는 `chars5.js`에 있다. 앱에 넣을 때는 이 JSON을 원본으로 삼아 `src/design-system/`에 컴포넌트로 옮긴다. 시안이 모두 확정된 뒤에 Storybook에 반영한다.
+`source/`는 시안 페이지에서 쓴 그리기 코드를 CommonJS 모듈로 나눈 것이다(`npm run lint` 대상).
+
+| 파일 | 내용 |
+| --- | --- |
+| `base.cjs` | 픽셀 그리기 도구(`shape`, `build`, `range`, `sym`, `eyes`)와 팔레트. 2차 캐릭터 시안 5종(`CHARS2`)은 비교 기록 |
+| `faces.cjs` | 확정 캐릭터의 몸·책 모양 판·표정(`carryFace`, `FACES`, 판 0~3장 `FACE_ART`) |
+| `variants.cjs` | 팔·머리 위 물건 변형과 스플래시 층 분리(`carry3`, `carryBody`, `carryItem`)와 SVG 출력(`gridSvg`) |
+| `export.cjs` | 위 셋으로 `character-data.json`과 시트 HTML을 만든다 |
+
+시안 페이지 원본(`../proposals-2026-10/*.template.html`)에는 같은 코드가 한 `<script>` 안에 이어 붙어 들어 있다. 앱에 넣을 때는 이 JSON을 원본으로 삼아 `src/design-system/`에 컴포넌트로 옮긴다. 시안이 모두 확정된 뒤에 Storybook에 반영한다.
