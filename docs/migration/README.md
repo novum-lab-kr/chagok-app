@@ -21,11 +21,11 @@
 
 ## 2. 로컬에만 있는 작업
 
-2026-10-04 로컬 브랜치를 모두 원격에 올렸다(`feat/terms-change-notice`는 커밋이 없어 패치로만 남김). 아래는 그 전 상태와 패치 기록이다.
+2026-10-04 로컬 브랜치를 모두 원격에 올렸고 약관 변경 안내도 main에 합쳐, 로컬에만 있는 작업은 없다. 아래는 그 전 상태와 패치 기록이다.
 
 | 무엇 | 상태 | 패치 |
 | --- | --- | --- |
-| `feat/terms-change-notice` (작업 공간 `../chagok-wt-terms`) | **커밋 안 함 — 원격에 없는 유일한 작업.** 약관 변경 안내 다이얼로그 — jest·타입·린트·iOS 번들 통과, 기기 확인 전 | [`feat-terms-change-notice.patch`](feat-terms-change-notice.patch) |
+| `feat/terms-change-notice` | ~~커밋 안 함~~ **2026-10-04 커밋(4439f41)하고 main에 합침.** 패치는 기록용. 약관 변경 안내 다이얼로그 — jest·타입·린트·iOS 번들 통과, 기기 확인 전 | [`feat-terms-change-notice.patch`](feat-terms-change-notice.patch) |
 | `fix/light-mode-font-scale` (b4d9101) | 커밋 1개, main에 안 합침. 다크 모드 막기·글자 크기 고정. 실기기 확인 대기 | [`fix-light-mode-font-scale.patch`](fix-light-mode-font-scale.patch) |
 | `docs/scope-decisions` (b06564f) | 커밋 1개, main에 안 합침. 2026-10-04 내용을 PRD·HANDOFF에 옮겼으니 되살리지 않아도 된다(기록용) | [`docs-scope-decisions.patch`](docs-scope-decisions.patch) |
 | `integration/expo-go-phase` (작업 공간 `../chagok-app-backup`) | main에 없는 병합 커밋 4개 — 로컬 통합 확인용이라 버려도 된다(내용은 각 브랜치로 main에 들어감) | — |
@@ -39,7 +39,7 @@
 
 **저장소 밖에 있던 근거 문서:** PRD 12절이 가리키던 원 인터뷰(`~/.omc/specs/deep-interview-chamjal-sticker-app.md`)는 2026-10-04 [archive/](../archive/deep-interview-chamjal-sticker-app.md)로 옮겼다.
 
-**작업 공간(git worktree):** `../chagok-app-backup`(integration/expo-go-phase, 버려도 됨), `../chagok-wt-terms`(feat/terms-change-notice, 커밋 안 한 작업 — 패치 있음). 절대 경로로 묶여 있어 폴더를 옮기면 끊긴다. 옮긴 뒤 `git worktree repair <새 경로들>` 또는 필요 없으면 `git worktree prune`. GitHub에서만 옮기면 손댈 것 없다.
+**작업 공간(git worktree):** `../chagok-app-backup`(integration/expo-go-phase, 버려도 됨) 하나. `../chagok-wt-terms`는 2026-10-04 합친 뒤 지웠다. 절대 경로로 묶여 있어 폴더를 옮기면 끊긴다. 옮긴 뒤 `git worktree repair <새 경로들>` 또는 필요 없으면 `git worktree prune`. GitHub에서만 옮기면 손댈 것 없다.
 
 ## 3. 옮긴 뒤 이어서 작업하기
 
