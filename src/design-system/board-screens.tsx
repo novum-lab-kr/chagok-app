@@ -18,7 +18,7 @@ function Small({children}:{children:ReactNode}) {
 }
 
 // ── 목록 ──────────────────────────────────────────────────────────
-export type GoalCardItem={id:string;name:string;sticker:PocketStickerId;/** 배지: 적립판 / 달력판 */kind:string;percent:number;/** 예: ['40% 진행중'], ['100%', '9/29 완성'] */status:readonly string[]};
+export type GoalCardItem={id:string;name:string;sticker:PocketStickerId;/** 배지: 적립판 / 달력판 */kind:string;percent:number;/** 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[]};
 /**
  * 목표 목록. 목표가 하나도 없으면 탭 아래 안내 상자만 둔다(2026-09-30 A안). 만드는 동작은 `+`다.
  * 완성한 판만 있고 진행 중인 목표가 없을 때의 문구는 시안이 없어 목록 안내와 같은 결로 두었다.

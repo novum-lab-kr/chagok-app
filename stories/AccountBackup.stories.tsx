@@ -45,8 +45,8 @@ function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:
 function Home() {
   return <RetroScreen style={{gap:16}} header={<AppHeader onSettings={noop}/>}>
     <GoalListHeader tab="active" counts={{active:2,completed:1}} onTab={noop} onAdd={noop}/>
-    <GoalSummaryCard name="매일 산책하기" sticker="shoe" kind="달력판" percent={40} status={['이번 달 40% 진행중']} onPress={noop}/>
-    <GoalSummaryCard name="책 20권 읽기" sticker="book" kind="적립판" percent={35} status={['35% 진행중']} onPress={noop}/>
+    <GoalSummaryCard name="매일 산책하기" sticker="shoe" kind="달력판" percent={40} status={['이번 달 40% 채웠어요']} onPress={noop}/>
+    <GoalSummaryCard name="책 20권 읽기" sticker="book" kind="적립판" percent={35} status={['35% 채웠어요']} onPress={noop}/>
   </RetroScreen>;
 }
 function Conflict() {

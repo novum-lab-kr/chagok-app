@@ -76,14 +76,14 @@ describe('목록 카드와 진행 문구 (PRD 4.1)', () => {
     expect(kindLabel(cal)).toBe('달력판');
   });
 
-  it('적립판 진행 중: m% 진행중', () => {
+  it('적립판 진행 중: m% 채웠어요', () => {
     const card = goalCard({ goal: { ...tally, totalSlots: 15 }, placedAll: 6, placedInBasis: 6 }, NOW);
-    expect(card).toMatchObject({ id: 'g1', name: '러닝', sticker: 'shoe', kind: '적립판', percent: 40, status: ['40% 진행중'] });
+    expect(card).toMatchObject({ id: 'g1', name: '러닝', sticker: 'shoe', kind: '적립판', percent: 40, status: ['40% 채웠어요'] });
   });
 
   it('종료일 없는 달력판은 이번 달을 붙인다', () => {
     const card = goalCard({ goal: cal, placedAll: 20, placedInBasis: 9 }, NOW);
-    expect(card.status).toEqual(['이번 달 30% 진행중']);
+    expect(card.status).toEqual(['이번 달 30% 채웠어요']);
   });
 
   it('완성한 판: m%와 M/D 완성. 종료일 없는 달력판은 완성한 달을 붙인다', () => {

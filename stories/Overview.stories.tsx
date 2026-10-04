@@ -9,7 +9,7 @@ export const ComponentBoard:Story={name:'공통 컴포넌트 한눈에',render:(
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:32,alignItems:'flex-start'}}>
     <View style={{width:340,gap:20}}>
       <PixelText variant="title">목표와 적립판</PixelText>
-      <GoalSummaryCard name="책 읽기" sticker="sprout" kind="적립판" percent={40} status={['40% 진행중']}/>
+      <GoalSummaryCard name="책 읽기" sticker="sprout" kind="적립판" percent={40} status={['40% 채웠어요']}/>
       <PixelPanel title="책 읽기"><BoardProgressRow value={6} total={15} percentLabel="40%" sticker="sprout"/><View style={{height:retro.layout.progressGridGap}}/><StickerGrid>{Array.from({length:9},(_,i)=><StickerSlot key={i} width="100%" height="100%" number={i+1} state={i<6?'filled':i===6?'available':'empty'}/>)}</StickerGrid></PixelPanel>
     </View>
     <View style={{width:340,gap:20}}><PixelText variant="title">입력과 버튼</PixelText><PixelInput label="목표 이름" defaultValue="책 읽기"/><PixelButton label="저장하기"/><PixelButton label="바꾸기" variant="secondary"/><PixelButton label="저장하기" disabled/><PixelInput label="메모" defaultValue="오늘도 한 칸을 채웠다." multiline style={{minHeight:96}}/></View>

@@ -105,7 +105,7 @@ function FirstRunTutorial({index, children, autoFocus = true}: {index: number; c
 
 // ── 목록 ──────────────────────────────────────────────────────────
 const cardOf = (goal: ListedGoal) => ({id: goal.id, name: goal.name, sticker: goal.sticker, kind: kindLabel(goal), percent: progressOf(goal).percent,
-  status: isDone(goal) ? [percentLabel(goal), `${shortDate(goal.completedAt!)} 완성`] : [`${percentLabel(goal)} 진행중`]});
+  status: isDone(goal) ? [percentLabel(goal), `${shortDate(goal.completedAt!)} 완성`] : [`${percentLabel(goal)} 채웠어요`]});
 function Home({list, initialTab = 'active'}: {list: ListedGoal[]; initialTab?: GoalListTab}) {
   const [tab, setTab] = useState<GoalListTab>(initialTab);
   const {active, completed} = orderGoals(list);

@@ -248,7 +248,7 @@ export function GoalListHeader({tab,counts,onTab,onAdd,addTargetRef}:{tab:GoalLi
   </View>;
 }
 /** 목록 카드. 모든 판이 같은 모양: 스티커, 이름(최대 2줄), [판 종류 배지] 요약 글자, 진행 막대. */
-export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name:string;sticker:PocketStickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 진행중'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void}) {
+export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name:string;sticker:PocketStickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={`${name}, ${kind}, ${status.join(', ')}`} onPress={onPress}>
     {({pressed})=><PixelFrame variant="button" fill={retro.color.secondary} pressed={pressed} contentStyle={{padding:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:12}}>

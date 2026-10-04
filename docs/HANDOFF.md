@@ -23,8 +23,8 @@
 **가. 사용자 결정 — 계정을 만들기 전에**
 
 1. **시안 마무리** — 기록: [design/proposals-2026-10/](design/proposals-2026-10/README.md)(링크·원본·고른 안·메모). 확정한 것은 PRD 4.9·4.11, 캐릭터 데이터는 [design/character/](design/character/README.md).
-   - **확정**: 메인 캐릭터 「이고지고」(책 모양 판 세 장, 기본 팔 없음, 표정 10가지), 앱 아이콘 1안(민트 바탕 전신), 앱 설정에 [문의하기]·[앱 버전].
-   - **남음**: 앱 설정 배치(3안 프레임 없는 목록 + `PixelBadge` 머리글 유력, 배지 크기 12·14·18), 스플래시(후보 「2+」 쌓이는 애니메이션 약 2.4초), 캐릭터 이름, 표정 쓰임새(초안).
+   - **확정**: 메인 캐릭터 「이고지고」(책 모양 판 세 장, 기본 팔 없음, 표정 10가지), 앱 아이콘 1안(민트 바탕 전신) + Android 적응형 A1, 스플래시 S2-B(윤곽선 → 색 채우기 → 좌우로 판 받기 → 커서 글자, 약 2.7초 — 캐릭터 README), 홈 화면 위젯(링 + 달력, 2026-10-04 — PRD 4.10, Storybook 반영), 진행 문구 `n% 채웠어요`, 목표 없음 = 졸린 표정, 앱 설정에 [문의하기]·[앱 버전].
+   - **남음**: 앱 설정 배치(3안 프레임 없는 목록 + `PixelBadge` 머리글 유력, 배지 크기 12·14·18), 캐릭터 이름, 표정 쓰임새(초안).
    - 모두 확정되면 Storybook·앱에 반영한다(시안은 아티팩트로 먼저 — WORKING-AGREEMENT 11절).
 2. ~~**앱 식별자**~~ — 출시 준비 결정(확정·열린 항목)은 [RELEASE-DECISIONS.md](RELEASE-DECISIONS.md)에 모은다. **2026-10-04 확정: `com.novum.chagok`** (iOS 번들 ID·Android 패키지 이름 모두, `app.json` 반영). 스토어에 올리면 바꿀 수 없다. App Group은 `group.com.novum.chagok`(위젯 `expo-widgets`가 자동 설정), 워치 앱은 `com.novum.chagok.watchkitapp`처럼 아래에 붙는다. 커스텀 스킴 `chagok://`는 별개라 영향 없음. Google Play 계정 유형(개인/조직)은 따로 정한다(0절 아래 「수익화」 줄).
 3. **수익 모델** — A 스티커 팩 판매(추천) / B 무료+배너 광고, 광고 제거 판매 / C 구독. 모델이 정해지면 4번 「수익화 기반」을 한다.
@@ -206,7 +206,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 **화면에 연결되지 않은 것 (코드만 있음).**
 
 - 백업: `src/sync/` — outbox(모든 저장 함수가 같은 트랜잭션에서 기록), 전송기 `pushOnce`, 복원 `restoreAll`, 스케줄러. 서버 계약 `SyncServer`/`PhotoStore`의 실구현은 없고 메모리 가짜 서버(`__tests__/support/fakeServer.ts`)로만 검증했다.
-- 위젯: `src/widgets/` 스냅샷 생성과 DB 읽기, `src/design-system/widget-preview.tsx` 미리보기(Storybook `Widgets / Preview`).
+- 위젯: `src/widgets/` 스냅샷 생성과 DB 읽기, `src/design-system/widget-preview.tsx` 미리보기(Storybook `Widgets / Preview`). **미리보기는 9월 30일 모양(테두리 판, 읽기 전용)이라 낡았다.** 2026-10-04 확정 모양(링 위젯 + 달력 위젯, 꽉 채움, 바로 붙이기)은 PRD 4.10과 [위젯 시안](https://claude.ai/artifact/K5qfAcqRA2vyLZVxY2oqD3) — 원본 `docs/design/proposals-2026-10/widget.template.html`.
 - 동의 화면: `ConsentScreen`(Storybook `Screens / Account consent`). 2026-10-01 시안 2안 배치(판 없는 동의 목록 + 바로 아래 버튼, [약관 설계](superpowers/specs/2026-09-30-policy-terms-design.md) 「동의 화면」). 로그인 단계에서 연결한다.
 - 계정·백업 화면 (2026-10-01 확정 시안, Storybook `Screens / Account backup`): `AccountStartScreen`(시작), `AccountBackupPanel`(앱 설정 칸, 상태 6가지), `RestoreConflictScreen`(복원 충돌), `DeleteAccountScreen`·`AccountDeletedScreen`, 다이얼로그 문구 `accountDialogs`. 진행 중 표시는 `PixelDialog`·`PixelDialogModal`의 `loading`(주 버튼 로딩·보조 비활성·뒤로가기 무시)과 `PixelBusyDialog`·`PixelBusyModal`(버튼 없음, 뒤로가기 무시). **2026-10-01 앱에 연결했다(개발 로그인)**: 시작 화면(`app/index.tsx`), 연결(`app/account/connect.tsx` — 동의 → 로그인 → 연결만·첫 백업·복원·충돌), 앱 설정 계정 칸과 로그아웃(`app/settings.tsx`), 계정 삭제(`app/account/delete.tsx`), 로그인 풀림 안내 한 번. 로그인 자리는 `__DEV__`의 [개발 계정으로 계속]뿐이라, Apple·Google 버튼만 그 자리에 끼우면 된다.
   - **2026-10-02 기기 확인** (Android 에뮬레이터 `Chagok_Pixel_7` adb 조작, iPhone 16 Pro 시뮬레이터 Maestro 조작, 개발 서버 `chagok-dev`): 첫 실행·연결·충돌 취소(헤더 뒤로, Android 뒤로)·서버 백업으로 복원·로그아웃 뒤 시작 화면·복원 후 튜토리얼 생략·로그인 풀림 안내 한 번·체크된 동의 화면 — 두 플랫폼 통과. 오프라인 기록 → "백업하지 못한 기록" → 자동 복구는 Android만 통과.
@@ -231,7 +231,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 - ~~서버~~ 2026-09-30 완료(`feat/server-local`): 개발 서버는 Supabase 클라우드 무료 프로젝트 `chagok-dev`(서울, Docker 불필요). 테이블·RLS·RPC 5개·`record-photos` 버킷·`delete-account`를 올렸고, 가짜 서버와 같은 계약 테스트를 실제 서버에도 돌린다(`npm run test:server`). 남은 것: **운영 서버 결정**(Supabase 클라우드 서울 별도 프로젝트 1순위 — 무료면 매일 DB 백업 작업 필수 / VPS 셀프 호스팅은 국외 이전 기재), `apple-link`와 **Apple 토큰 폐기**(그전에는 토큰이 있으면 계정 삭제가 멈춘다).
 - ~~앱 연결~~ 2026-09-30 완료: `SupabaseSyncServer`·`SupabasePhotoStore`(1600px·JPEG 80%), 로그인해 있는 동안 자동 전송(`connectSync`, 기록 2초 뒤·앱이 앞으로 올 때). 개발용 이메일 로그인과 `/dev/sync` 화면으로 Expo Go에서 확인한다. ~~남은 것: 앱 설정의 백업 상태, 계정 화면·실제 로그아웃·계정 삭제 흐름 연결, 복원 충돌 선택.~~ 2026-10-02 완료(`feat/account-wiring`).
 - 로그인: Google(Android) 먼저, Apple은 계정 승인 뒤. 시작·동의·복원 분기·로그아웃·계정 삭제 화면은 2026-10-02 개발 로그인으로 연결해 두었다 — 연결 화면의 [개발 계정으로 계속] 자리에 Apple·Google 버튼을 끼운다. 재동의 화면은 두지 않는다(약관 변경 안내로 대신, 0절 우선순위 1).
-- 위젯: spike(글꼴·PNG 스티커·딥링크·목표 선택) → iOS `expo-widgets`, Android `react-native-android-widget`.
+- 위젯: spike(글꼴·PNG 스티커·딥링크·목표 선택 + **2026-10-04 추가:** 위젯 안 버튼으로 앱을 열지 않고 붙이기 — iOS App Intent·App Group 저장과 앱 DB 합치기, Android `widgetTaskHandler`에서 expo-sqlite 쓰기 가능 여부 / 링 중간 목표 세 개 고르기 / iOS 투명·틴트 모드에서 글자·스티커·캐릭터 표시(`widgetAccentedRenderingMode`) / 기본 모드에서 유리 바탕을 직접 고를 수 있는지) → iOS `expo-widgets`, Android `react-native-android-widget`. `expo-widgets` 버튼은 위젯 props만 바꾸고 앱 기록에는 쓰지 못한다(문서 확인 2026-10-04) — 붙이기는 Swift 쪽이 필요하다.
 - 스토어 빌드: EAS Build, 빌드 번호는 EAS 원격 자동 증가. 사용자 버전·태그·Wear OS 번호대는 [버전 규칙](RELEASE-VERSIONING.md)(2026-10-04).
 
 **나중에 셋팅할 것 — 이용 분석·오류 추적(트래킹)** (2026-09-30 사용자 요청, 기록만. 도구·범위 미정)

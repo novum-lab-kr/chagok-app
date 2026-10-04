@@ -82,7 +82,7 @@ export function percentLabel(goal: Goal, placedInBasis: number, now: Date): stri
   return basis.current ? `이번 달 ${percent}%` : `${basis.month}월 ${percent}%`;
 }
 
-/** 목록 카드: `[판 종류] m% 진행중` 또는 `[판 종류] m% M/D 완성` (PRD 4.1). */
+/** 목록 카드: `[판 종류] m% 채웠어요` 또는 `[판 종류] m% M/D 완성` (PRD 4.1). */
 export function goalCard({ goal, placedInBasis }: GoalSummary, now: Date): GoalCardItem {
   const label = percentLabel(goal, placedInBasis, now);
   return {
@@ -91,7 +91,7 @@ export function goalCard({ goal, placedInBasis }: GoalSummary, now: Date): GoalC
     sticker: safeStickerId(goal.defaultStickerId),
     kind: kindLabel(goal),
     percent: progressOf(goal, placedInBasis, now).percent,
-    status: isCompleted(goal) ? [label, `${shortDate(goal.completedAt!)} 완성`] : [`${label} 진행중`],
+    status: isCompleted(goal) ? [label, `${shortDate(goal.completedAt!)} 완성`] : [`${label} 채웠어요`],
   };
 }
 
