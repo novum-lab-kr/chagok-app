@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { AccountStartScreen, FirstRunTutorial, GoalListScreen, PixelLoadingIndicator, RetroScreen, accountDialogs } from '../src/design-system';
@@ -11,6 +11,10 @@ import { readAccountState } from '../src/sync/accountStatus';
 import { getSupabase } from '../src/sync/supabaseClient';
 import { orderGoals } from '../src/domain/board';
 import { goalCard } from '../src/app-data/pocketAdapter';
+import { localDateKey } from '../src/domain/dates';
+import { fetchPolicyManifest } from '../src/policy/manifest';
+import { openPolicy } from '../src/policy/openPolicy';
+import { monthDayLabel, upcomingChange } from '../src/policy/versions';
 
 /** 홈 = 목표 목록 (PRD 4.1). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
 export default function GoalList() {
@@ -24,6 +28,8 @@ export default function GoalList() {
   const [showStart, setShowStart] = useState<boolean | undefined>(undefined);
   const [startChoice, setStartChoice] = useState<AccountStartChoice>('account');
   const { ask, dialog } = useDialog();
+  /** 로그인 풀림 안내가 끝났는지. true면 연결 화면으로 떠났다. 약관 안내가 그 뒤에 이어 묻도록 기다린다. */
+  const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
 
   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
   useFocusEffect(useCallback(() => {
@@ -44,20 +50,45 @@ export default function GoalList() {
     const supabase = getSupabase();
     if (!supabase) return;
     let alive = true;
-    void (async () => {
+    sessionCheck.current = (async () => {
       const { data, error } = await supabase.auth.getSession();
       // 오프라인에서 토큰을 갱신하지 못한 것은 로그인이 풀린 게 아니다 — 한 번뿐인 안내를 쓰지 않는다
-      if (error) return;
+      if (error) return false;
       const state = await readAccountState(data.session?.user.id ?? null);
       const userId = await getSetting('accountUserId');
-      if (!alive || state.state !== 'needsLogin' || !userId || (await getSetting('sessionPrompted')) === userId) return;
+      if (!alive || state.state !== 'needsLogin' || !userId || (await getSetting('sessionPrompted')) === userId) return false;
       await setSetting('sessionPrompted', userId);
       if ((await ask(accountDialogs.session)) === 'primary') {
         router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
+        return true;
+      }
+      return false;
+    })().catch(() => false);
+    return () => { alive = false; };
+  }, [ask, router]);
+
+  // 약관이 바뀌기 전(게시일~시행일 전날)에 앱을 열면 한 번 알린다. 목록을 받지 못하면 건너뛴다 — 앱 사용을 막지 않는다.
+  // 시작 화면·튜토리얼 중에는 띄우지 않는다. 처음 쓰는 사람에게 「바뀌어요」는 맞지 않는다.
+  const firstRun = showStart !== false || showTutorial !== false;
+  useEffect(() => {
+    if (firstRun) return;
+    let alive = true;
+    void (async () => {
+      try {
+        if (await sessionCheck.current) return;
+        const today = localDateKey(Date.now());
+        const change = upcomingChange((await fetchPolicyManifest()).terms, today, Number(await getSetting('termsNoticeSeen') ?? 0));
+        if (!alive || !change) return;
+        await setSetting('termsNoticeSeen', String(change.version));
+        if ((await ask(accountDialogs.termsChanged(monthDayLabel(change.effectiveAt)))) === 'secondary') {
+          await openPolicy('terms', ask);
+        }
+      } catch {
+        // 오프라인·사이트 오류: 다음에 열 때 다시 본다
       }
     })();
     return () => { alive = false; };
-  }, [ask, router]);
+  }, [ask, firstRun]);
 
   // 판 상세·새 목표에서 돌아올 때마다 다시 읽는다. 떠난 뒤 도착한 응답은 버린다.
   useFocusEffect(useCallback(() => {
