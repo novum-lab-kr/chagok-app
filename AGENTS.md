@@ -31,6 +31,9 @@ npx expo start           # 앱 실행 — docs/DEV-SETUP.md 참고
 npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 ```
 
+화면을 추가·변경·삭제했거나 이동 경로가 바뀌었으면 같은 작업에서 **화면 흐름도**(Storybook `Flows/앱 전체`)도
+맞춘다. 방법과 확인 명령은 [stories/flows/README.md](stories/flows/README.md).
+
 ## 건드리면 안 되는 것
 
 - `package.json`의 `overrides: { "react-dom": "19.2.3" }` — 지우면 모든 설치가 ERESOLVE로 실패

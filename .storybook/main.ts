@@ -4,8 +4,13 @@ import path from 'node:path';
 
 const config: StorybookConfig = {
   framework: '@storybook/react-vite',
-  stories: ['../stories/**/*.stories.tsx'],
-  addons: ['@storybook/addon-docs'],
+  stories: ['../stories/**/*.mdx', '../stories/**/*.stories.tsx'],
+  addons: [
+    '@storybook/addon-docs',
+    // 화면 흐름도(stories/flows/AppFlow.mdx가 StoryFlowMap을 직접 쓴다). 자동 배치 문서는 간격이 고정이라
+    // 쓰지 않으므로 흐름 데이터는 *.flow.json이 아닌 이름으로 둔다. 기본 글롭은 node_modules까지 훑어서 좁혀 둔다.
+    {name: '@zigbang/storybook-addon-story-flow', options: {flowGlob: '../stories/**/*.flow.json'}},
+  ],
   staticDirs: [
     { from: '../src/design-system/assets', to: '/fonts' },
     { from: '../docs/design/retro-pocket-v1/revisions/v6/screens', to: '/reference' },
