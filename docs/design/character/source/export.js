@@ -1,3 +1,4 @@
+/* eslint-disable */ // 문서용: 네 파일을 이어 붙여 한 번에 돌린다(../README.md 「다시 만들기」). 파일 하나로는 전역이 비어 보인다.
 // 확정 캐릭터 데이터와 한 장짜리 시트를 다시 만든다.
 // 실행: (cd docs/design/character/source && cat chars2.js chars4.js chars5.js export.js | node - ..)
 // → ../character-data.json, ../character-sheet.html (시트 PNG는 이 HTML을 렌더해서 만든다)

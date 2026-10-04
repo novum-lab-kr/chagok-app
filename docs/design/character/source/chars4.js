@@ -1,3 +1,4 @@
+/* eslint-disable */ // 문서용: 네 파일을 이어 붙여 한 번에 돌린다(../README.md 「다시 만들기」). 파일 하나로는 전역이 비어 보인다.
 // 이고지고 표정 2차. carryFace(얼굴 점, 블록 수): 얼굴 점은 {색: [[x,y]...]}. 눈 기준 칸: 왼쪽 8~9, 오른쪽 14~15, 14~15줄. 입 11~12, 17줄.
 function carryFace(dots, blocks = 3) {
   const shapes = [shape({...(blocks === 0 ? {10: sym(4)} : {}), 11: sym(8), 12: sym(12), ...range(13, 14, () => sym(14)), ...range(15, 20, () => sym(16)), 21: sym(14)}, 'g')];

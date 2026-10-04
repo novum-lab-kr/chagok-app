@@ -1,3 +1,4 @@
+/* eslint-disable */ // 문서용: 네 파일을 이어 붙여 한 번에 돌린다(../README.md 「다시 만들기」). 파일 하나로는 전역이 비어 보인다.
 // 이고지고 3차: 팔(arms)과 머리 위 물건(item)을 바꿔 그린다. chars2.js의 build·shape·range·sym·eyes, chars4.js의 FACES를 쓴다.
 const mirror = (rows) => Object.fromEntries(Object.entries(rows).map(([y, [a, b]]) => [y, [23 - b, 23 - a]]));
 const ARM = {
