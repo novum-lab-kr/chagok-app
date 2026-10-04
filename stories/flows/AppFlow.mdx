@@ -1,0 +1,10 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { StoryFlowMap } from '@zigbang/storybook-addon-story-flow';
+import { appFlow } from './appFlow';
+
+<Meta title="Flows/앱 전체" />
+
+{/* 문서 페이지 기본 폭(1000px)을 풀어 흐름도를 화면 폭 전체로 쓴다. 이 페이지가 열려 있을 때만 적용된다. */}
+<style>{`.sbdocs-wrapper{padding:16px!important}.sbdocs-content{max-width:none!important}`}</style>
+
+<StoryFlowMap flow={appFlow} autoLayout={false} height="calc(100vh - 32px)" />

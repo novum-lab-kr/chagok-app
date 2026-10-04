@@ -1,0 +1,1150 @@
+{
+  "$schema": "https://zigbang.github.io/storybook-addon-story-flow/flow.schema.json",
+  "epic": "APP",
+  "title": "Flows/앱 전체",
+  "scenarios": [
+    {
+      "id": "first",
+      "label": "첫 사용"
+    },
+    {
+      "id": "daily",
+      "label": "일상 기록"
+    },
+    {
+      "id": "complete",
+      "label": "판 완료"
+    },
+    {
+      "id": "goal",
+      "label": "목표 관리"
+    },
+    {
+      "id": "account",
+      "label": "계정·백업"
+    },
+    {
+      "id": "info",
+      "label": "앱 설정·정보"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "splash",
+      "data": {
+        "label": "스플래시",
+        "tags": [
+          "PRD 4.11",
+          "미정"
+        ],
+        "scenarios": [
+          "first",
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "start",
+      "data": {
+        "label": "시작 · 계정 연결",
+        "tags": [
+          "PRD 4.8"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-backup--start-account",
+            "label": "계정 연결"
+          },
+          {
+            "id": "screens-account-backup--start-local",
+            "label": "이 기기에서만"
+          }
+        ],
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "consent",
+      "data": {
+        "label": "계정 연결 · 동의",
+        "tags": [
+          "PRD 4.8",
+          "PRD 8.1",
+          "app/account/connect"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-consent--ready-44",
+            "label": "iOS · 모두 체크"
+          },
+          {
+            "id": "screens-account-consent--empty",
+            "label": "iOS · 체크 전"
+          },
+          {
+            "id": "screens-account-consent--android",
+            "label": "Android · Google만"
+          },
+          {
+            "id": "screens-account-consent--ready-33",
+            "label": "버튼 높이 33 (시안)"
+          },
+          {
+            "id": "screens-account-consent--ready-38",
+            "label": "버튼 높이 38 (시안)"
+          },
+          {
+            "id": "screens-account-backup--under-14",
+            "label": "만 14세 미만 안내"
+          }
+        ],
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "restore",
+      "data": {
+        "label": "복원",
+        "tags": [
+          "PRD 4.8"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-backup--restore-first-run",
+            "label": "첫 실행에서"
+          },
+          {
+            "id": "screens-account-backup--restore-from-settings",
+            "label": "앱 설정에서"
+          },
+          {
+            "id": "screens-account-backup--restore-failed",
+            "label": "실패"
+          }
+        ],
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "conflict",
+      "data": {
+        "label": "복원 충돌 선택",
+        "tags": [
+          "PRD 4.8"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-backup--restore-conflict",
+            "label": "기기 기록 / 서버 백업"
+          }
+        ],
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "tutorial",
+      "data": {
+        "label": "첫 실행 튜토리얼",
+        "tags": [
+          "PRD 4.6",
+          "app/tutorial"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--tutorial-1",
+            "label": "1 목표 만들기"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--tutorial-2",
+            "label": "2 스티커 고르기"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--tutorial-3",
+            "label": "3 빈칸에 톡"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--tutorial-4",
+            "label": "4 기록 남기기"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--tutorial-5",
+            "label": "5 완성한 판"
+          }
+        ],
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "list",
+      "data": {
+        "label": "홈 · 목표 목록",
+        "tags": [
+          "PRD 4.1",
+          "app/index"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--home-active",
+            "label": "내 목표"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--home-completed",
+            "label": "완성한 판 탭"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--home-empty-completed",
+            "label": "완성한 판 없음"
+          },
+          {
+            "id": "screens-empty-goal-list--only-notice",
+            "label": "목표 없음"
+          },
+          {
+            "id": "screens-account-backup--session-expired",
+            "label": "다시 로그인 묻기"
+          },
+          {
+            "id": "screens-account-backup--terms-changed",
+            "label": "약관 변경 안내"
+          }
+        ],
+        "scenarios": [
+          "first",
+          "daily",
+          "complete",
+          "goal",
+          "account",
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "new",
+      "data": {
+        "label": "새 목표",
+        "tags": [
+          "PRD 4.4",
+          "app/goal/new"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--new-without-end",
+            "label": "달력판 종료일 없음"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--new-with-end",
+            "label": "달력판 종료일 고르기"
+          }
+        ],
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "detail",
+      "data": {
+        "label": "판 상세",
+        "tags": [
+          "PRD 4.1",
+          "PRD 4.2",
+          "PRD 4.3",
+          "app/goal/[id]"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--detail-tally",
+            "label": "적립판"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--detail-tally-long",
+            "label": "적립판 100칸"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--detail-period",
+            "label": "달력판 기간"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--detail-open-ended",
+            "label": "달력판 종료일 없음"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--remove-with-record",
+            "label": "기록 있는 스티커 떼기"
+          }
+        ],
+        "scenarios": [
+          "first",
+          "daily",
+          "complete",
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "record",
+      "data": {
+        "label": "기록 (사진·메모)",
+        "tags": [
+          "PRD 4.5",
+          "app/sticker/[id]",
+          "편집 상태 스토리 없음"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--record-readonly",
+            "label": "읽기 전용 · 완성한 판"
+          }
+        ],
+        "scenarios": [
+          "daily",
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "photos",
+      "data": {
+        "label": "사진 보관함",
+        "tags": [
+          "OS"
+        ],
+        "coverage": "external",
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "goal-settings",
+      "data": {
+        "label": "목표 설정",
+        "tags": [
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--settings-tally",
+            "label": "적립판"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--settings-tally-30",
+            "label": "적립판 30칸 (늘리기만)"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--settings-period",
+            "label": "종료일 바꾸기"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--settings-open-ended",
+            "label": "종료일 없음과 완성"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--settings-manual-confirm",
+            "label": "수동 완성 확인"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--settings-completed",
+            "label": "완성한 판 (삭제만)"
+          }
+        ],
+        "scenarios": [
+          "daily",
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "goal-delete",
+      "data": {
+        "label": "목표 삭제 확인",
+        "tags": [
+          "PRD 4.4"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--delete-confirm-active",
+            "label": "진행 중인 목표"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--delete-confirm-completed",
+            "label": "완성한 판"
+          }
+        ],
+        "scenarios": [
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "complete",
+      "data": {
+        "label": "완성 흐름",
+        "tags": [
+          "PRD 4.7"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--flow-confirm-last",
+            "label": "1 마지막 칸 확인"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--flow-continue-tally",
+            "label": "2 계속하기 · 적립판"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--flow-continue-period",
+            "label": "2 계속하기 · 종료일 지남"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--flow-continue-manual",
+            "label": "2 계속하기 · 수동 완성"
+          }
+        ],
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "extend",
+      "data": {
+        "label": "판 늘리기",
+        "tags": [
+          "PRD 4.7",
+          "app/goal/[id]/extend"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--flow-extend-slots",
+            "label": "적립판 칸 늘리기"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--flow-extend-end-date",
+            "label": "달력판 종료일 늘리기"
+          }
+        ],
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "completed-board",
+      "data": {
+        "label": "완성한 판",
+        "tags": [
+          "PRD 4.7"
+        ],
+        "stories": [
+          {
+            "id": "screens-home-structure-·-proposals--detail-tally-done",
+            "label": "적립판"
+          },
+          {
+            "id": "screens-home-structure-·-proposals--detail-period-ended",
+            "label": "달력판"
+          }
+        ],
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "app-settings",
+      "data": {
+        "label": "앱 설정",
+        "tags": [
+          "PRD 4.9",
+          "app/settings",
+          "배치 시안 중"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-backup--settings-synced",
+            "label": "계정 연결됨"
+          },
+          {
+            "id": "screens-account-backup--settings-states",
+            "label": "백업 상태별"
+          },
+          {
+            "id": "screens-account-backup--logout",
+            "label": "로그아웃 확인"
+          },
+          {
+            "id": "screens-account-backup--logout-busy",
+            "label": "로그아웃 · 백업 중"
+          },
+          {
+            "id": "screens-account-backup--logout-failed",
+            "label": "로그아웃 · 백업 실패"
+          },
+          {
+            "id": "screens-account-backup--logout-held",
+            "label": "로그아웃 · 백업할 수 없는 기록"
+          }
+        ],
+        "scenarios": [
+          "daily",
+          "account",
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "replay",
+      "data": {
+        "label": "사용법 다시 보기 (자리 시안)",
+        "tags": [
+          "PRD 4.9"
+        ],
+        "stories": [
+          {
+            "id": "screens-tutorial-replay-·-proposals--in-settings",
+            "label": "A 앱 설정 안의 행"
+          },
+          {
+            "id": "screens-tutorial-replay-·-proposals--in-header",
+            "label": "B 목록 헤더 ? 버튼"
+          },
+          {
+            "id": "screens-tutorial-replay-·-proposals--at-list-end",
+            "label": "C 목록 맨 아래 링크"
+          }
+        ],
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "policies",
+      "data": {
+        "label": "약관과 라이선스",
+        "tags": [
+          "PRD 4.9",
+          "PRD 8.1",
+          "app/policies"
+        ],
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "license",
+      "data": {
+        "label": "오픈소스 라이선스 상세",
+        "tags": [
+          "PRD 4.9",
+          "app/policies/[license]"
+        ],
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "policy-web",
+      "data": {
+        "label": "이용약관 · 처리방침 (웹)",
+        "tags": [
+          "chagok-app-terms.netlify.app"
+        ],
+        "coverage": "external",
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "mail",
+      "data": {
+        "label": "메일 앱 · 문의하기",
+        "tags": [
+          "PRD 4.9",
+          "OS",
+          "여는 방식 미정"
+        ],
+        "coverage": "external",
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "account-delete",
+      "data": {
+        "label": "계정 삭제",
+        "tags": [
+          "PRD 4.8",
+          "app/account/delete"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-backup--delete-confirm",
+            "label": "내용 확인"
+          },
+          {
+            "id": "screens-account-backup--delete-final",
+            "label": "최종 확인"
+          },
+          {
+            "id": "screens-account-backup--delete-busy",
+            "label": "삭제 중"
+          },
+          {
+            "id": "screens-account-backup--delete-failed",
+            "label": "실패"
+          }
+        ],
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "deleted",
+      "data": {
+        "label": "계정 삭제 완료",
+        "tags": [
+          "PRD 4.8"
+        ],
+        "stories": [
+          {
+            "id": "screens-account-backup--delete-done",
+            "label": "완료"
+          }
+        ],
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "widget",
+      "data": {
+        "label": "홈 화면 위젯",
+        "tags": [
+          "PRD 4.10",
+          "RN 미리보기"
+        ],
+        "stories": [
+          {
+            "id": "widgets-preview--tally",
+            "label": "적립판"
+          },
+          {
+            "id": "widgets-preview--big-tally",
+            "label": "적립판 100칸"
+          },
+          {
+            "id": "widgets-preview--period",
+            "label": "달력판 종료일 있음"
+          },
+          {
+            "id": "widgets-preview--calendar",
+            "label": "달력판 종료일 없음"
+          },
+          {
+            "id": "widgets-preview--empty",
+            "label": "목표 없음"
+          }
+        ],
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "watch",
+      "data": {
+        "label": "워치 · 빠른 붙이기",
+        "tags": [
+          "PRD 11 아이디어",
+          "구체화 전"
+        ],
+        "scenarios": [
+          "daily"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "splash-start",
+      "source": "splash",
+      "target": "start",
+      "label": "처음 실행",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "splash-list",
+      "source": "splash",
+      "target": "list",
+      "label": "다시 실행",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "start-consent",
+      "source": "start",
+      "target": "consent",
+      "label": "계정 연결",
+      "data": {
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "start-tutorial",
+      "source": "start",
+      "target": "tutorial",
+      "label": "이 기기에서만",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "consent-restore",
+      "source": "consent",
+      "target": "restore",
+      "label": "서버 백업 있음",
+      "data": {
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "consent-tutorial",
+      "source": "consent",
+      "target": "tutorial",
+      "label": "백업 없음",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "restore-list",
+      "source": "restore",
+      "target": "list",
+      "label": "복원 완료",
+      "data": {
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "restore-conflict",
+      "source": "restore",
+      "target": "conflict",
+      "label": "기기에도 기록 있음",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "conflict-list",
+      "source": "conflict",
+      "target": "list",
+      "label": "고른 기록으로",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "tutorial-list",
+      "source": "tutorial",
+      "target": "list",
+      "label": "끝내기·건너뛰기",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "list-new",
+      "source": "list",
+      "target": "new",
+      "label": "목표 만들기",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "new-detail",
+      "source": "new",
+      "target": "detail",
+      "label": "만들기",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "list-detail",
+      "source": "list",
+      "target": "detail",
+      "label": "목표 누르기",
+      "data": {
+        "scenarios": [
+          "daily",
+          "complete",
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "detail-list",
+      "source": "detail",
+      "target": "list",
+      "label": "뒤로",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "detail-record",
+      "source": "detail",
+      "target": "record",
+      "label": "스티커 두 번·꾹",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "record-photos",
+      "source": "record",
+      "target": "photos",
+      "label": "사진 추가",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "detail-goal-settings",
+      "source": "detail",
+      "target": "goal-settings",
+      "label": "톱니바퀴",
+      "data": {
+        "scenarios": [
+          "daily",
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "goal-settings-goal-delete",
+      "source": "goal-settings",
+      "target": "goal-delete",
+      "label": "삭제",
+      "data": {
+        "scenarios": [
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "goal-delete-list",
+      "source": "goal-delete",
+      "target": "list",
+      "label": "삭제됨",
+      "data": {
+        "scenarios": [
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "goal-settings-completed-board",
+      "source": "goal-settings",
+      "target": "completed-board",
+      "label": "기간 없는 달력판 완성",
+      "data": {
+        "scenarios": [
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "detail-complete",
+      "source": "detail",
+      "target": "complete",
+      "label": "마지막 칸·종료일 지남",
+      "data": {
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "complete-completed-board",
+      "source": "complete",
+      "target": "completed-board",
+      "label": "완성",
+      "data": {
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "complete-extend",
+      "source": "complete",
+      "target": "extend",
+      "label": "계속하기",
+      "data": {
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "extend-detail",
+      "source": "extend",
+      "target": "detail",
+      "label": "늘리기",
+      "data": {
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "completed-board-record",
+      "source": "completed-board",
+      "target": "record",
+      "label": "기록 보기",
+      "data": {
+        "scenarios": [
+          "complete"
+        ]
+      }
+    },
+    {
+      "id": "list-app-settings",
+      "source": "list",
+      "target": "app-settings",
+      "label": "톱니바퀴",
+      "data": {
+        "scenarios": [
+          "daily",
+          "account",
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-consent",
+      "source": "app-settings",
+      "target": "consent",
+      "label": "계정 연결",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-restore",
+      "source": "app-settings",
+      "target": "restore",
+      "label": "연결 후 복원",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-start",
+      "source": "app-settings",
+      "target": "start",
+      "label": "로그아웃",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-account-delete",
+      "source": "app-settings",
+      "target": "account-delete",
+      "label": "계정 삭제",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "account-delete-deleted",
+      "source": "account-delete",
+      "target": "deleted",
+      "label": "삭제 성공",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "deleted-start",
+      "source": "deleted",
+      "target": "start",
+      "label": "확인",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "list-consent",
+      "source": "list",
+      "target": "consent",
+      "label": "다시 로그인",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-replay",
+      "source": "app-settings",
+      "target": "replay",
+      "label": "사용법 다시 보기",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "replay-tutorial",
+      "source": "replay",
+      "target": "tutorial",
+      "label": "다시 보기",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-policies",
+      "source": "app-settings",
+      "target": "policies",
+      "label": "약관과 라이선스",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "policies-policy-web",
+      "source": "policies",
+      "target": "policy-web",
+      "label": "약관·처리방침",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "policies-license",
+      "source": "policies",
+      "target": "license",
+      "label": "오픈소스 라이선스",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-mail",
+      "source": "app-settings",
+      "target": "mail",
+      "label": "문의하기",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "widget-detail",
+      "source": "widget",
+      "target": "detail",
+      "label": "위젯 누르기",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "watch-list",
+      "source": "watch",
+      "target": "list",
+      "label": "붙이기 반영",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    }
+  ]
+}

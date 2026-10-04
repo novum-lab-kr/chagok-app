@@ -478,4 +478,5 @@ validation은 사용자의 요청에 따라 후속 보정으로 남긴다.
 - 과거 인계본: [작업 이력](archive/HANDOFF-design-system-history-2026-09-23.md), [종이 테마 원문](archive/HANDOFF-legacy-paper-theme.md). 두 문서의 지시는 현재 기준이 아니다.
 - 원 인터뷰: [deep-interview-chamjal-sticker-app.md](archive/deep-interview-chamjal-sticker-app.md)(2026-09-21, 원본은 `~/.omc/specs/`에 있던 것을 2026-10-04 저장소로 옮김)의 제품 목적과 데이터 보존 요구.
 - [디자인 시스템](DESIGN-SYSTEM.md): 실제 색·폰트·공통 컴포넌트와 검토 방법. PRD와 별개로 관리.
+- **화면 흐름도**: Storybook `Flows/앱 전체`(2026-10-04). 모든 화면과 이동을 한 판에 그리고 화면마다 이 PRD의 절 번호를 태그로 단다. 3절 흐름이나 4절 화면 요구가 바뀌면 흐름도도 맞춘다 — [stories/flows/README.md](../stories/flows/README.md).
 - 하위 프로젝트 설계(2026-09-30): [약관](superpowers/specs/2026-09-30-policy-terms-design.md), [계정·백업](superpowers/specs/2026-09-30-account-backup-design.md), [위젯](superpowers/specs/2026-09-30-home-widget-design.md).

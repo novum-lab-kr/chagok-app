@@ -131,6 +131,7 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 | `stories/HomeStructure.stories.tsx` | 홈 구조 30개 장면. `board-screens.tsx`로 그린다 |
 | `stories/EmptyGoalList.stories.tsx` | 목표 없음 화면 (2026-09-30 A안) |
 | `stories/GoalListBoard.stories.tsx` | 위 시안에서 추출한 공통 컴포넌트 개별 상태 17개 |
+| `stories/flows/` | 화면 흐름도 `Flows/앱 전체`(`app-flow.json` 화면·이동, `appFlow.ts` 배치, `AppFlow.mdx`). 화면을 바꾸면 같이 맞춘다 — [README](../stories/flows/README.md) |
 
 ## 5. 스티커 라이브러리
 
@@ -164,6 +165,7 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 ```
 
 - 실행 중인 Storybook·Metro를 임의로 종료하지 않는다. 포트와 프로세스는 세션마다 다시 확인한다.
+- 화면 스토리를 추가·변경·삭제했으면 `Flows/앱 전체`를 열어 보고, [stories/flows/README.md](../stories/flows/README.md) 「확인」의 스토리 ID 검사를 돌린다.
 - 시안 캡처는 `scripts/review-*.mjs` 패턴을 따른다(Storybook `index.json`에서 스토리를 찾아 390·320px로 찍고 렌더 오류·가로 넘침을 기록). 제목에 `·`가 든 스토리 ID는 URL 인코딩해서 연다.
 - Docs 페이지의 반복 렌더링은 3초 동안의 DOM 변경 수(MutationObserver)와 스크롤 위치로 확인한다. 정상이면 0, 0이다.
 - Playwright 모듈은 프로젝트 의존성이 아니라 임시 설치다. 경로를 확인한다. `MachPortRendezvousServer Permission denied`가 나오면 우회하지 말고 Chromium 실행 권한을 요청한다.
