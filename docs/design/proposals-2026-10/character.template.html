@@ -1,0 +1,750 @@
+<title>차곡차곡 캐릭터 시안</title>
+<style>
+/* 배치: 묶음(설정·아이콘·스플래시)마다 안을 한 띠씩. 왼쪽은 설명·고르기·메모, 오른쪽은 실제 크기 비율의 화면. 아래 고정 막대에 고른 안. */
+@font-face { font-family: "NeoDGM"; src: url(data:font/ttf;base64,__FONT__) format("truetype"); font-display: block; }
+:root {
+  --bg: #f3f6f2; --surface: #ffffff; --line: #d3ddd5; --fg: #0e2a20; --muted: #4f6559;
+  --accent: #c8532c; --pick: #0e2a20; --pick-fg: #f3f6f2; --ok: #2f6b4a; --stage: #e4ebe5;
+  --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --pixel: "NeoDGM", var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* 앱 팔레트 — 디자인 시스템 토큰 그대로. 화면 미리보기 안에서만 쓴다 */
+  --mint: #AFE1CB; --lcd: #C7DE94; --ink: #06261C; --btn-ink: #01241C; --apricot: #FD855F; --ivory: #FEF1D1;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --pick: #c7de94; --pick-fg: #0f1814; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --pick: #c7de94; --pick-fg: #0f1814; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 40px; }
+h1 { font-family: var(--pixel); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h2 { font-size: 19px; line-height: 1.3; margin: 0; text-wrap: balance; }
+h3 { font-size: 13px; line-height: 1.35; margin: 0; color: var(--muted); font-weight: 600; letter-spacing: 0.03em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 74ch; }
+header.top { display: flex; flex-direction: column; gap: 10px; }
+nav.jump { display: flex; flex-wrap: wrap; gap: 6px; }
+nav.jump a { color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 4px 10px; border-radius: 4px; font-size: 13px; }
+nav.jump a.done { border-color: var(--ok); color: var(--ok); }
+nav.jump a:hover, nav.jump a:focus-visible { border-color: var(--fg); outline: none; }
+
+.bundle { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 12px; }
+.bundle-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--fg); padding-bottom: 8px; }
+.bundle-head h2 { font-family: var(--pixel); font-weight: 400; font-size: 26px; }
+.bundle-head .picked { font-size: 13px; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 4px 12px; border: 0; background: var(--surface); color: var(--fg); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pick); color: var(--pick-fg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.bundle-note { font-size: 14px; color: var(--muted); max-width: 90ch; }
+
+section.group { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 18px; background: var(--surface); border: 1px solid var(--line); padding: 18px; scroll-margin-top: 12px; }
+section.group.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+section.group.ref { background: transparent; border-style: dashed; }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.like { font-size: 13px; color: var(--muted); }
+.flow { margin: 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+ul.pc { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+ul.pc li { padding-left: 10px; border-left: 2px solid var(--line); }
+ul.pc li.pro { border-color: var(--ok); }
+ul.pc li.con { border-color: var(--accent); }
+.review { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ok-btn { align-self: flex-start; font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--ok); background: transparent; color: var(--ok); border-radius: 4px; cursor: pointer; }
+section.group.ok .ok-btn { background: var(--ok); color: var(--surface); }
+.ok-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.review textarea { width: 100%; box-sizing: border-box; min-height: 72px; resize: vertical; font: inherit; font-size: 14px; line-height: 1.5; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.review textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.review textarea::placeholder { color: var(--muted); }
+.save-state { font-size: 12px; color: var(--muted); min-height: 18px; }
+.save-state.bad { color: var(--accent); }
+
+.shots { display: flex; gap: 16px; overflow-x: auto; min-width: 0; align-items: flex-start; background: var(--stage); padding: 14px; }
+figure { margin: 0; flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+figcaption { font-size: 12px; color: var(--muted); max-width: 240px; }
+
+/* ── 앱 화면 미리보기 (실제 px로 그린 뒤 축소) ── */
+.phone-box { overflow: hidden; outline: 1px solid var(--line); }
+.phone { background: var(--mint); color: var(--ink); font-family: var(--pixel); font-size: 16px; line-height: 24px; position: relative; overflow: hidden; }
+.phone * { box-sizing: border-box; }
+.sb { height: 47px; display: flex; align-items: center; padding: 0 30px; font: 600 15px/1 var(--sans); color: var(--ink); }
+.scr { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+.f { position: relative; }
+.f > svg.bg { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.fc { position: relative; }
+.hdr { display: flex; align-items: center; min-height: 48px; }
+.hdr .l, .hdr .r { width: 72px; display: flex; }
+.hdr .t { flex: 1; text-align: center; font-size: 24px; line-height: 32px; }
+.btn { display: block; padding: 0 1px 2px 0; }
+.btn .fc { min-height: 48px; padding: 12px 19px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--btn-ink); }
+.btn.icon .fc { padding: 12px 11px; }
+.ptitle { border-bottom: 3px solid var(--ink); padding-bottom: 8px; font-size: 32px; line-height: 40px; }
+.panel > .fc { padding: 28px; }
+.rule { border-top: 3px solid var(--ink); }
+.row { min-height: 56px; display: flex; align-items: center; gap: 8px; }
+.row .lb { flex: 1; }
+.row .val { font-size: 14px; line-height: 20px; }
+.cap { font-size: 14px; line-height: 20px; color: var(--btn-ink); }
+.pad12 { padding-block: 12px; }
+.sec { font-size: 14px; line-height: 20px; color: var(--btn-ink); padding-top: 14px; }
+.badge { align-self: flex-start; }
+.badge > .fc { padding: 1px 6px; color: var(--lcd); font-size: 12px; line-height: 18px; }
+.badge.b14 > .fc { padding: 2px 7px; font-size: 14px; line-height: 20px; }
+.badge.b18 > .fc { padding: 2px 8px; font-size: 18px; line-height: 24px; }
+.v3list { display: flex; flex-direction: column; }
+.v3list .row { border-bottom: 3px solid var(--ink); padding-inline: 4px; }
+.v3group { display: flex; flex-direction: column; gap: 6px; }
+.status { display: flex; flex-direction: column; gap: 4px; }
+.status .big { font-size: 20px; line-height: 28px; }
+.dlg { padding: 0 1px 2px 0; }
+.dlg > .fc { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.icons-row { display: flex; gap: 22px; align-items: flex-end; flex-wrap: wrap; }
+.icon-cell { display: flex; flex-direction: column; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.home-strip { display: flex; gap: 14px; padding: 14px 16px; background: #2d3b34; align-items: flex-start; }
+.home-app { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; font: 11px/1.2 var(--sans); color: #ffffff; }
+.home-app .ph { width: 60px; height: 60px; border-radius: 13.4px; background: #51635a; }
+
+.notes { display: flex; flex-direction: column; gap: 8px; }
+.notes ul { margin: 0; padding-left: 20px; max-width: 86ch; }
+.notes li { margin-block: 4px; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bar-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.bar-label { font-size: 13px; color: var(--muted); }
+#summary { font-family: var(--mono); font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.bar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+.bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 800px) {
+  section.group { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 24px; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>차곡차곡 캐릭터 시안</h1>
+    <p class="lede">2차: 1차의 4안 몽글이 스타일에 2안 차곡이의 쌓인 느낌을 섞은 다섯 개입니다(맨 위). 1차는 아래에 그대로 두었습니다. 묶음마다 따로 고를 수 있고, 안마다 메모를 남겨 주세요. 이름은 모두 가칭입니다.</p>
+    <nav class="jump" id="jump" aria-label="묶음으로 이동"></nav>
+  </header>
+
+  <div id="bundles" style="display:flex;flex-direction:column;gap:48px"></div>
+
+  <section class="notes">
+    <h2>공통</h2>
+    <ul>
+      <li><b>고른 기준</b>: 스스로 정한 목표에 스티커를 붙이고, 쌓인 판을 다시 본다(PRD 1절). 평가·판정하지 않는다(2절). 레트로 휴대용 기기 느낌(디자인 방향).</li>
+      <li><b>워치 키우기</b>: 각 안의 "워치로 이으면"은 아이디어 수준입니다. 키우기는 PRD 2절 제외 범위("캐릭터 돌보기 게임이 아니다")와 부딪치므로, 구체화할 때 원칙부터 정합니다.</li>
+      <li>캐릭터를 고르면 그다음에 표정·동작 몇 가지, 앱 아이콘, 스플래시를 그 캐릭터로 만듭니다. 새싹이는 기본 스티커로 그대로 둡니다.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="bar" role="region" aria-label="고른 안">
+  <div class="bar-in">
+    <span class="bar-label">고른 안</span>
+    <span id="summary">아직 안 골랐어요</span>
+    <button type="button" id="copy">메모까지 복사</button>
+    <span class="bar-label" id="store-state">저장소 연결 중…</span>
+  </div>
+</div>
+
+<script>
+const A = __ASSETS__;
+// 캐릭터 비트맵 (24×24). . 투명  # 잉크  w 아이보리  g LCD  m 민트  o 살구
+const CHARS = {
+  kan: [ // 칸칸이 — 스티커판이 몸
+    '........................',
+    '........................',
+    '....################....',
+    '....#wwwwwwwwwwwwww#....',
+    '....#wwwwwwwwwwwwww#....',
+    '....#www##wwww##www#....',
+    '....#www##wwww##www#....',
+    '....#wwwwwww#wwwwww#....',
+    '....#wwwwww###wwwww#....',
+    '....#wwwwwwwwwwwwww#....',
+    '....################....',
+    '....#oooo#gggg#gggg#....',
+    '....#oooo#gggg#gggg#....',
+    '....#oooo#gggg#gggg#....',
+    '....################....',
+    '....#oooo#oooo#gggg#....',
+    '....#oooo#oooo#gggg#....',
+    '....#oooo#oooo#gggg#....',
+    '....################....',
+    '.......##......##.......',
+    '.......##......##.......',
+    '......###.....###.......',
+    '........................',
+    '........................',
+  ],
+  block: [ // 차곡이 — 쌓인 블록, 맨 위가 얼굴
+    '........................',
+    '........................',
+    '.....##############.....',
+    '.....#wwwwwwwwwwww#.....',
+    '.....#ww##wwww##ww#.....',
+    '.....#ww##wwww##ww#.....',
+    '.....#wwwww##wwwww#.....',
+    '.....#wwwwwwwwwwww#.....',
+    '.....##############.....',
+    '....##############......',
+    '....#gggggggggggg#......',
+    '....#gggggggggggg#......',
+    '....#gggggggggggg#......',
+    '....##############......',
+    '......##############....',
+    '......#oooooooooooo#....',
+    '......#oooooooooooo#....',
+    '......#oooooooooooo#....',
+    '......##############....',
+    '.....##############.....',
+    '.....#mmmmmmmmmmmm#.....',
+    '.....#mmmmmmmmmmmm#.....',
+    '.....##############.....',
+    '........................',
+  ],
+  hamster: [ // 볼볼이 — 볼주머니에 모으는 햄스터
+    '........................',
+    '........................',
+    '.....###........###.....',
+    '....#ooo#......#ooo#....',
+    '....#o#o########o#o#....',
+    '....#oooooooooooooo#....',
+    '...#oooooooooooooooo#...',
+    '...#oooo##oooo##oooo#...',
+    '...#oooo##oooo##oooo#...',
+    '..#oooooooo##oooooooo#..',
+    '..#owwwwooooooooowwwwo#.',
+    '..#wwwwwwoo#oo#owwwwww#.',
+    '..#wwwwwwooo##oowwwwww#.',
+    '..#wwwwwwoooooooowwwww#.',
+    '...#wwwwwwwwwwwwwwwww#..',
+    '...#wwwwwwwwwwwwwwwww#..',
+    '....#wwwwwwwwwwwwwww#...',
+    '....#wwww##wwww##www#...',
+    '.....#####..####..###...',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+  ],
+  blob: [ // 몽글이 — LCD 속 작은 생명체
+    '........................',
+    '........................',
+    '........................',
+    '..........####..........',
+    '........##gggg##........',
+    '.......#gggggggg#.......',
+    '......#gggggggggg#......',
+    '.....#gggggggggggg#.....',
+    '.....#ggg##gg##ggg#.....',
+    '....#gggg##gg##gggg#....',
+    '....#gggggggggggggg#....',
+    '....#googgggggggoog#....',
+    '...#ggggggg##ggggggg#...',
+    '...#gggggggggggggggg#...',
+    '...#gggggggggggggggg#...',
+    '...#gggggggggggggggg#...',
+    '....#gggggggggggggg#....',
+    '.....##############.....',
+    '......##........##......',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+  ],
+  sticker: [ // 붙이 — 모서리가 들린 스티커 한 장
+    '........................',
+    '........................',
+    '...###############......',
+    '...#wwwwwwwwwwwwww#.....',
+    '...#wwwwwwwwwwwwwww#....',
+    '...#wwwwwwwwwwwwwwww#...',
+    '...#wwwwwwwwwwwwww###...',
+    '...#www##wwww##ww#gg#...',
+    '...#www##wwww##w#ggg#...',
+    '...#wwwwwwwwwwww#ggg#...',
+    '...#wwoowwwwwoow#####...',
+    '...#wwwwww##wwwwwwww#...',
+    '...#wwwwwwwwwwwwwwww#...',
+    '...#wwwwwwwwwwwwwwww#...',
+    '...#wwwwwwwwwwwwwwww#...',
+    '...#wwwwwwwwwwwwwwww#...',
+    '...#wwwwwwwwwwwwwwww#...',
+    '...##################...',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+    '........................',
+  ],
+};
+// 몽글이 계열 2차 (24×24). 모양은 줄마다 [시작, 끝] 칸으로 정하고, 바깥 테두리는 자동으로 잉크로 찍는다.
+// 모양을 여러 겹 쌓을 수 있다(뒤에 오는 모양이 위). 그다음 얼굴·볼·선 같은 점을 찍는다.
+const PAL2 = {'#': '#06261C', w: '#FEF1D1', g: '#C7DE94', m: '#AFE1CB', o: '#FD855F'};
+function shape(rows, fill) { return {rows, fill}; } // rows: {y: [x0, x1]}
+const sym = (w) => [12 - w / 2, 11 + w / 2]; // 가운데 맞춘 폭 w
+function build(shapes, dots) {
+  const g = Array.from({length: 24}, () => Array(24).fill('.'));
+  for (const s of shapes) {
+    const inside = (x, y) => s.rows[y] && x >= s.rows[y][0] && x <= s.rows[y][1];
+    for (const y in s.rows) {
+      const [x0, x1] = s.rows[y];
+      for (let x = x0; x <= x1; x++) {
+        const yy = Number(y);
+        const edge = !inside(x - 1, yy) || !inside(x + 1, yy) || !inside(x, yy - 1) || !inside(x, yy + 1);
+        g[yy][x] = edge ? '#' : (typeof s.fill === 'function' ? s.fill(x, yy) : s.fill);
+      }
+    }
+  }
+  for (const [c, pts] of Object.entries(dots)) for (const [x, y] of pts) g[y][x] = c;
+  return g.map(r => r.join(''));
+}
+const range = (a, b, f) => Object.fromEntries(Array.from({length: b - a + 1}, (_, i) => [a + i, f(a + i)]));
+const eyes = (y, l, r) => [[l, y], [l + 1, y], [l, y + 1], [l + 1, y + 1], [r, y], [r + 1, y], [r, y + 1], [r + 1, y + 1]];
+
+const CHARS2 = {
+  // 1. 층층이 — 세 단 계단 실루엣. 위로 갈수록 좁다.
+  tier: build([
+    shape({4: sym(8), ...range(5, 9, () => sym(12)), 10: sym(10),
+           11: sym(14), ...range(12, 14, () => sym(16)), 15: sym(14),
+           16: sym(18), ...range(17, 19, () => sym(20)), 20: sym(18)}, 'g'),
+  ], {
+    '#': [...eyes(6, 9, 13), [11, 9], [12, 9], [7, 21], [8, 21], [15, 21], [16, 21],
+          [6, 11], [17, 11], [4, 16], [19, 16]],
+    o: [[7, 8], [16, 8]],
+  }),
+  // 2. 두단이 — 작은 몽글이가 큰 몽글이 위에 올라탐
+  duo: build([
+    shape({11: sym(12), 12: sym(14), ...range(13, 18, () => sym(16)), 19: sym(14), 20: sym(12)}, 'g'),
+    shape({3: sym(4), 4: sym(8), ...range(5, 9, () => sym(10)), 10: sym(8), 11: sym(4)}, 'g'),
+  ], {
+    '#': [...eyes(6, 9, 13), [11, 8], [12, 8], ...eyes(14, 8, 14), [11, 17], [12, 17], [8, 21], [9, 21], [14, 21], [15, 21]],
+    o: [[6, 16], [17, 16]],
+  }),
+  // 3. 이고지고 — 머리에 블록 세 장을 차곡차곡 이고 있음
+  carry: build([
+    shape({11: sym(8), 12: sym(12), ...range(13, 14, () => sym(14)), ...range(15, 20, () => sym(16)), 21: sym(14)}, 'g'),
+    shape(range(8, 11, () => [8, 15]), 'm'),
+    shape(range(5, 8, () => [9, 16]), 'w'),
+    shape(range(2, 5, () => [7, 14]), 'o'),
+  ], {
+    '#': [...eyes(14, 8, 14), [11, 17], [12, 17], [8, 22], [9, 22], [14, 22], [15, 22]],
+    o: [[6, 16], [7, 16], [16, 16], [17, 16]],
+  }),
+  // 4. 말랑블록 — 모서리 둥근 네모 몸, 아래 한 층이 다른 색
+  brick: build([
+    shape({4: [7, 16], 5: [5, 18], ...range(6, 17, () => [4, 19]), 18: [5, 18], 19: [7, 16]},
+      (x, y) => (y === 14 ? '#' : y > 14 ? 'w' : 'g')),
+  ], {
+    '#': [...eyes(8, 8, 14), [11, 11], [12, 11], [7, 20], [8, 20], [15, 20], [16, 20]],
+    o: [[6, 11], [7, 11], [16, 11], [17, 11]],
+  }),
+  // 5. 방석이 — 스티커 더미(세 장) 위에 앉은 몽글이
+  cushion: build([
+    shape(range(19, 21, () => [4, 19]), 'g'),
+    shape(range(17, 19, () => [5, 20]), 'o'),
+    shape(range(15, 17, () => [3, 18]), 'w'),
+    shape({4: sym(6), 5: sym(10), 6: sym(12), ...range(7, 14, () => sym(14)), 15: sym(14)}, 'g'),
+  ], {
+    '#': [...eyes(8, 8, 14), [11, 11], [12, 11]],
+    o: [[6, 11], [7, 11], [16, 11], [17, 11]],
+  }),
+};
+function charSvg2(id, size) {
+  let rects = '';
+  CHARS2[id].forEach((r, y) => { for (let x = 0; x < 24; x++) { const c = r[x]; if (PAL2[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL2[c]}"/>`; } });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" shape-rendering="crispEdges" role="img" aria-label="${id}">${rects}</svg>`;
+}
+
+
+const PAL = {'#': '#06261C', w: '#FEF1D1', g: '#C7DE94', m: '#AFE1CB', o: '#FD855F'};
+function charSvg1(id, size) {
+  const rows = CHARS[id];
+  let rects = '';
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const c = r[x]; if (PAL[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL[c]}"/>`; } });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" shape-rendering="crispEdges" role="img" aria-label="${id}">${rects}</svg>`;
+}
+
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+const C = {mint: '#AFE1CB', lcd: '#C7DE94', ink: '#06261C', btn: '#01241C', apricot: '#FD855F', ivory: '#FEF1D1'};
+
+/* ── 디자인 시스템의 픽셀 외곽선 (src/design-system/geometry.ts 그대로) ── */
+function ol(w, h, i = 0, unit = 3) {
+  const x = i, y = i, r = w - i, b = h - i;
+  if (r <= x || b <= y) return '';
+  const u = Math.min(unit, (r - x) / 4, (b - y) / 4);
+  return `M${x+2*u} ${y}H${r-2*u}V${y+u}H${r-u}V${y+2*u}H${r}V${b-2*u}H${r-u}V${b-u}H${r-2*u}V${b}H${x+2*u}V${b-u}H${x+u}V${b-2*u}H${x}V${y+2*u}H${x+u}V${y+u}H${x+2*u}Z`;
+}
+/* PixelFrame과 같은 층으로 그린다: panel / button / dialog / slot */
+function frameSvg(kind, W, H, fill) {
+  if (kind === 'panel') {
+    const o = (i) => ol(W, H, i, 6);
+    return `<path d="${o(0)}" fill="${C.ink}"/><path d="${o(3)}" fill="${C.mint}"/><path d="${o(3)}" fill="${C.ink}" opacity="0.62"/><path d="${o(8)}" fill="${C.ink}"/><path d="${o(12)}" fill="${fill || C.lcd}"/>`;
+  }
+  if (kind === 'selection') return `<path d="${ol(W, H, 0, 3)}" fill="${fill || C.ink}"/>`;
+  if (kind === 'slot') return `<path d="${ol(W, H, 1.5, 3)}" fill="${fill || C.lcd}" stroke="${C.ink}" stroke-width="3"/>`;
+  const u = kind === 'dialog' ? 6 : 5, w = W - 1, h = H - 2, s = ol(w, h, 1.5, u);
+  return `<path d="${s}" fill="${C.ink}" stroke="${C.ink}" stroke-width="3" transform="translate(1,2)"/><path d="${s}" fill="${fill}" stroke="${C.ink}" stroke-width="3"/>` +
+    `<path d="M${2*u+5} 5H${w-2*u-5}M5 ${2*u+5}V${h-2*u-5}" stroke="${C.ivory}" stroke-width="2" fill="none"/>`;
+}
+function drawFrames(root) {
+  for (const el of root.querySelectorAll('[data-f]')) {
+    const W = el.offsetWidth, H = el.offsetHeight;
+    if (!W || !H) continue;
+    let svg = el.querySelector(':scope > svg.bg');
+    if (!svg) { svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'bg'); svg.setAttribute('aria-hidden', 'true'); el.prepend(svg); }
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    svg.innerHTML = frameSvg(el.dataset.f, W, H, el.dataset.fill);
+  }
+}
+
+/* ── 아이콘 경로 ── */
+const ICON = {
+  chevron: 'M4 1H7V4H10V7H13V10H10V13H7V16H4V13H7V10H10V7H7V4H4Z',
+  back: 'M10 1H13V4H10V7H7V10H10V13H13V16H10V13H7V10H4V7H7V4H10Z',
+  flower: 'M7 0H11V2H13V4H16V6H18V10H16V12H13V15H11V20H13V18H18V22H15V24H11V26H7V24H3V22H0V18H5V20H7V15H5V12H2V10H0V6H2V4H5V2H7Z',
+};
+const svg16 = (d, size, color = C.ink) => `<svg width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="${color}" fill-rule="evenodd"/></svg>`;
+const flowerParts = `<path d="${ICON.flower}" fill="${C.ink}" fill-rule="evenodd"/><path d="M7 2H11V4H12V7H15V6H16V10H12V12H11V14H7V12H6V10H2V6H5V7H6V4H7Z" fill="${C.ivory}"/><path d="M7 6H11V7H12V10H11V11H7V10H6V7H7Z" fill="${C.ink}"/><path d="M8 7H10V10H8Z" fill="${C.lcd}"/>`;
+const flowerSvg = (h) => `<svg width="${h*18/26}" height="${h}" viewBox="0 0 18 26" aria-hidden="true">${flowerParts}</svg>`;
+const sticker = (id, size, color = C.ink) => `<svg width="${size}" height="${size}" viewBox="0 0 56 56" aria-hidden="true"><path d="${A[id]}" fill="${color}"/></svg>`;
+
+/* ── 앱 설정 화면 조각 ── */
+const btn = (label, primary = true) => `<div class="f btn" data-f="button" data-fill="${primary ? C.apricot : C.ivory}"><div class="fc">${esc(label)}</div></div>`;
+const header = `<div class="hdr"><div class="l"><div class="f btn icon" data-f="button" data-fill="${C.ivory}" style="width:48px"><div class="fc">${svg16(ICON.back, 20)}</div></div></div><div class="t">앱 설정</div><div class="r"></div></div>`;
+const row = (label, value, nav = true) => `<div class="row"><span class="lb">${esc(label)}</span>${value ? `<span class="val">${esc(value)}</span>` : ''}${nav ? svg16(ICON.chevron, 14) : ''}</div>`;
+const panel = (inner, title) => `<div class="f panel" data-f="panel"><div class="fc">${title ? `<div class="ptitle">${esc(title)}</div>` : ''}${inner}</div></div>`;
+const statusLines = (synced) => synced
+  ? {main: 'Apple 계정으로 연결했어요', sub: '오늘 9:20에 모두 백업했어요'}
+  : {main: '지금은 이 기기에만 저장하고 있어요', sub: ''};
+const VERSION = '1.0.0';
+
+const SETTINGS = {
+  now(synced) {
+    const s = statusLines(synced);
+    const acct = synced
+      ? panel(`<div class="pad12">${s.main}</div><div class="rule"></div><div class="pad12">${s.sub}</div><div class="rule"></div>${row('로그아웃')}<div class="rule"></div>${row('계정 삭제')}`, '계정과 백업')
+      : panel(`<div class="pad12">${s.main}</div><div style="padding-bottom:12px">${btn('계정 연결하기')}</div>`, '계정과 백업');
+    return acct + panel(row('사용법 다시 보기'), '도움말') + panel(row('약관과 라이선스'), '정보');
+  },
+  s1(synced) {
+    const s = statusLines(synced);
+    const acct = synced
+      ? `<div class="pad12" style="padding-top:2px">${s.main}<div class="cap">${s.sub}</div></div>${row('로그아웃')}${row('계정 삭제')}`
+      : `<div class="pad12" style="padding-top:2px">${s.main}</div><div style="padding-bottom:12px">${btn('계정 연결하기')}</div>`;
+    return panel(
+      `<div class="sec" style="padding-top:0">계정과 백업</div>${acct}<div class="rule"></div>` +
+      `<div class="sec">도움말</div>${row('사용법 다시 보기')}${row('문의하기')}<div class="rule"></div>` +
+      `<div class="sec">정보</div>${row('약관과 라이선스')}${row('앱 버전', VERSION, false)}`);
+  },
+  s2(synced) {
+    const s = statusLines(synced);
+    const status = `<div class="f dlg" data-f="dialog" data-fill="${C.ivory}"><div class="fc"><div class="status"><span class="big">${synced ? '백업하고 있어요' : '이 기기에만 있어요'}</span><span class="cap">${synced ? `${s.main} · ${s.sub}` : '계정을 연결하면 기기를 바꿔도 기록을 이어 쓸 수 있어요'}</span></div>${synced ? '' : btn('계정 연결하기')}</div></div>`;
+    return status + panel(
+      `<div class="sec" style="padding-top:0">도움말</div>${row('사용법 다시 보기')}${row('문의하기')}<div class="rule"></div>` +
+      `<div class="sec">정보</div>${row('약관과 라이선스')}${row('앱 버전', VERSION, false)}` +
+      (synced ? `<div class="rule"></div><div class="sec">계정</div>${row('로그아웃')}${row('계정 삭제')}` : ''));
+  },
+  s3(synced) {
+    const s = statusLines(synced);
+    const g = (name, inner) => `<div class="v3group"><div class="f badge b${view.badge}" data-f="selection" data-fill="${C.ink}"><div class="fc">${name}</div></div><div class="v3list">${inner}</div></div>`;
+    const acct = synced
+      ? `<div class="pad12" style="border-bottom:3px solid var(--ink);padding-inline:4px">${s.main}<div class="cap">${s.sub}</div></div>${row('로그아웃')}${row('계정 삭제')}`
+      : `<div class="pad12" style="padding-inline:4px">${s.main}</div><div style="padding-bottom:4px">${btn('계정 연결하기')}</div>`;
+    return `<div style="display:flex;flex-direction:column;gap:22px">` +
+      g('계정과 백업', acct) + g('도움말', row('사용법 다시 보기') + row('문의하기')) + g('정보', row('약관과 라이선스') + row('앱 버전', VERSION, false)) + `</div>`;
+  },
+};
+const settingsPhone = (id, width, synced) => `<div class="phone" style="width:${width}px;min-height:760px"><div class="sb">9:41</div><div class="scr">${header}${SETTINGS[id](synced)}</div></div>`;
+
+/* ── 앱 아이콘 (1024 기준 SVG) ── */
+const ICONS = {
+  i1() { // 새싹 한 칸
+    const s = 600, x = 212, u = 40, sw = 40;
+    return `<rect width="1024" height="1024" fill="${C.mint}"/><g transform="translate(${x},${x})"><path d="${ol(s, s, sw/2, u)}" fill="${C.lcd}" stroke="${C.ink}" stroke-width="${sw}"/></g>` +
+      `<g transform="translate(${512-210},${x+s-sw-420-14}) scale(${420/56})"><path d="${A.sprout}" fill="${C.ink}"/></g>`;
+  },
+  i2() { // 쌓이는 판 3×3
+    let out = `<rect width="1024" height="1024" fill="${C.lcd}"/>`;
+    const cell = 236, gap = 34, start = (1024 - (cell * 3 + gap * 2)) / 2;
+    for (let i = 0; i < 9; i++) {
+      const cx = start + (i % 3) * (cell + gap), cy = start + Math.floor(i / 3) * (cell + gap);
+      out += `<g transform="translate(${cx},${cy})"><path d="${ol(cell, cell, 12, 20)}" fill="${i < 5 ? C.lcd : C.mint}" stroke="${C.ink}" stroke-width="24"/></g>`;
+      if (i < 5) out += `<g transform="translate(${cx + 38},${cy + 30}) scale(${160/56})"><path d="${A.sprout}" fill="${C.ink}"/></g>`;
+    }
+    return out;
+  },
+  i3() { // 꽃 마크 (앱 머리글의 꽃)
+    const h = 600, sc = h / 26, w = 18 * sc;
+    return `<rect width="1024" height="1024" fill="${C.apricot}"/><g transform="translate(${(1024-w)/2},${(1024-h)/2}) scale(${sc})">${flowerParts}</g>`;
+  },
+};
+const iconSvg = (id, size, shape) => {
+  const clip = shape === 'ios' ? `<clipPath id="c-${id}-${size}"><rect width="1024" height="1024" rx="229" ry="229"/></clipPath>`
+    : `<clipPath id="c-${id}-${size}"><circle cx="512" cy="512" r="512"/></clipPath>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 1024 1024" role="img" aria-label="아이콘 ${size}px"><defs>${clip}</defs><g clip-path="url(#c-${id}-${size})">${ICONS[id]()}</g></svg>`;
+};
+const iconShots = (id) => `
+  <figure><div class="icons-row">
+    <div class="icon-cell">${iconSvg(id, 180, 'ios')}<span>iOS 180</span></div>
+    <div class="icon-cell">${iconSvg(id, 60, 'ios')}<span>홈 화면 60</span></div>
+    <div class="icon-cell">${iconSvg(id, 40, 'ios')}<span>설정·검색 40</span></div>
+    <div class="icon-cell">${iconSvg(id, 72, 'android')}<span>Android 원형 72</span></div>
+  </div><figcaption>Android는 가운데 66%만 안전 영역이라 원형으로 잘라 보여 줍니다.</figcaption></figure>
+  <figure><div class="home-strip">
+    ${['메모', '캘린더'].map(n => `<div class="home-app"><div class="ph"></div>${n}</div>`).join('')}
+    <div class="home-app">${iconSvg(id, 60, 'ios')}차곡차곡</div>
+    <div class="home-app"><div class="ph"></div>사진</div>
+  </div><figcaption>홈 화면에서 다른 앱 사이에 놓였을 때</figcaption></figure>`;
+
+/* ── 스플래시 (390×844, 배경색 + 가운데 그림 한 장) ── */
+const SPLASH = {
+  p1: {bg: C.mint, art: () => `<div style="display:flex;align-items:center;gap:10px">${flowerSvg(44)}<span style="font-size:32px;line-height:40px;white-space:nowrap">차곡차곡</span></div>`},
+  p2: {bg: C.lcd, art: () => `<div class="f" data-f="slot" data-fill="${C.lcd}" style="width:150px;height:150px;display:flex;align-items:flex-end;justify-content:center"><div class="fc" style="padding-bottom:6px">${sticker('sprout', 108)}</div></div>`},
+  p3: {bg: C.apricot, art: () => flowerSvg(120)},
+};
+const splashPhone = (id) => `<div class="phone" style="width:390px;height:844px;background:${SPLASH[id].bg};display:flex;align-items:center;justify-content:center">${SPLASH[id].art()}</div>`;
+const android12 = (id) => `<div style="width:160px;height:160px;border-radius:50%;overflow:hidden;background:${SPLASH[id].bg};display:flex;align-items:center;justify-content:center;outline:1px solid var(--line)"><div style="transform:scale(${id === 'p1' ? 0.42 : 0.62});font-family:var(--pixel);color:${C.ink}">${SPLASH[id].art()}</div></div>`;
+
+/* ── 묶음과 안 ── */
+const BUNDLES = [
+  {id: 'character2', title: '2차 · 몽글이 계열', note: '1차 메모(4안 몽글이 스타일 + 2안 차곡이의 쌓인 느낌, 둥근 것만 말고)를 반영했습니다. 모두 몽글이의 LCD 몸·살구 볼·점 눈을 그대로 두고, 쌓임을 넣는 방법만 다릅니다.', groups: [
+    {id: 'd1', code: '1', title: '층층이', like: '세 단으로 쌓인 계단 몸',
+     layout: ['몽글이의 몸을 세 단으로 나눠, 아래로 갈수록 넓게 쌓았습니다. 얼굴은 맨 위 단.'],
+     pro: ['얼굴은 둥근 몽글이 그대로인데, 실루엣만 봐도 "쌓였다"가 보입니다.', '단마다 모서리를 깎아 딱딱하지 않습니다.'],
+     con: ['산이나 종처럼 보일 수 있습니다.', '몸이 커서 작은 크기에서는 얼굴이 작아집니다.'],
+     watch: '기록이 쌓이면 단이 하나씩 늘어납니다.'},
+    {id: 'd2', code: '2', title: '두단이', like: '작은 몽글이가 큰 몽글이 위에',
+     layout: ['큰 몽글이 위에 작은 몽글이가 올라타 있습니다. 둘 다 얼굴이 있습니다.'],
+     pro: ['쌓기를 캐릭터 둘로 보여 줘서 가장 귀엽고, 둘 사이 이야기를 만들기 쉽습니다.'],
+     con: ['눈사람처럼 보일 수 있습니다.', '누가 주인공인지 흐려집니다.'],
+     watch: '판을 완성할 때마다 작은 몽글이가 하나씩 더 올라탑니다.'},
+    {id: 'd3', code: '3', title: '이고지고', like: '머리에 블록 세 장을 이고 있음',
+     layout: ['몽글이가 머리 위에 살구·아이보리·민트 블록을 엇갈려 이고 있습니다.'],
+     pro: ['몽글이는 그대로 두고, "모은 것을 이고 다닌다"는 동작으로 차곡차곡을 보여 줍니다.', '블록 색을 그 목표의 색으로 바꿔 쓸 수 있습니다.'],
+     con: ['작은 크기에서는 블록이 모자처럼 보입니다.'],
+     watch: '붙인 스티커만큼 머리 위 블록이 올라가고, 높아지면 흔들흔들합니다.'},
+    {id: 'd4', code: '4', title: '말랑블록', like: '둥근 네모 몸, 아래 한 층은 아이보리',
+     layout: ['모서리를 깎은 네모 몸에 가로 선 하나로 아래층을 나눴습니다.'],
+     pro: ['몽글이의 말랑함과 차곡이의 블록 모양이 반반입니다.', '아이콘 칸을 꽉 채워 작은 크기에서 가장 잘 읽힙니다.'],
+     con: ['아래층이 바지나 기저귀처럼 보일 수 있습니다.'],
+     watch: '층이 하나씩 늘어 키가 자랍니다.'},
+    {id: 'd5', code: '5', title: '방석이', like: '스티커 더미 위에 앉은 몽글이',
+     layout: ['아이보리·살구·LCD 스티커 세 장을 엇갈려 쌓은 더미 위에 몽글이가 앉아 있습니다.'],
+     pro: ['쌓인 기록 위에 앉은 모습이라 "판 자체가 회고"(PRD 2절)와 맞습니다.'],
+     con: ['머리가 길쭉해 묘비처럼 보일 수 있습니다.', '더미 때문에 가로로 넓어 아이콘에서 작아집니다.'],
+     watch: '더미가 높아지면서 몽글이가 점점 위로 올라갑니다.'},
+  ]},
+  {id: 'character', title: '1차 · 다섯 갈래', note: '큰 그림은 192px, 오른쪽은 실제로 쓰일 크기(48·24px)와 앱 머리글·앱 아이콘에 넣어 본 모습입니다.', groups: [
+    {id: 'c1', code: '1', title: '칸칸이', like: '몸이 스티커판',
+     layout: ['아이보리 얼굴 아래 몸이 3×2 칸입니다. 살구색 칸이 붙인 스티커입니다.'],
+     pro: ['앱이 무엇을 하는지(칸을 채운다)가 캐릭터 자체에 드러납니다.', '칸이 채워지는 정도로 표정·상태를 바꿔 보여 줄 수 있습니다.'],
+     con: ['네모난 몸이라 로봇이나 달력처럼 보일 수 있습니다.', '목표마다 칸 수가 달라 몸의 칸과 실제 판이 맞지 않습니다.'],
+     watch: '오늘 붙인 칸이 몸에 하나씩 차오릅니다.'},
+    {id: 'c2', code: '2', title: '차곡이', like: '쌓인 블록, 맨 위가 얼굴',
+     layout: ['아이보리 블록(얼굴) 아래로 LCD·살구·민트 블록이 조금씩 엇갈려 쌓여 있습니다.'],
+     pro: ['앱 이름 "차곡차곡"을 그대로 그림으로 옮겼습니다.', '쌓인 층 수로 "모은 양"을 보여 주기 쉽습니다.'],
+     con: ['얼굴 붙은 블록이라 캐릭터로서 정이 덜 갈 수 있습니다.', '블록 쌓기 게임처럼 보일 수 있습니다.'],
+     watch: '스티커를 붙일 때마다 블록이 한 층 올라갑니다.'},
+    {id: 'c3', code: '3', title: '볼볼이', like: '볼주머니에 모으는 햄스터',
+     layout: ['살구색 햄스터가 볼주머니를 빵빵하게 채운 모습입니다.'],
+     pro: ['"모은다"가 동물의 습성이라 설명 없이 이해됩니다.', '다마고치 느낌이 가장 강해 워치 키우기로 잇기 쉽습니다.'],
+     con: ['햄스터 캐릭터 앱이 많아 구별이 어렵습니다.', '살구색 면적이 넓어 민트 화면 위에서 많이 튑니다.'],
+     watch: '붙인 스티커를 볼에 모으고, 판을 완성하면 굴에 차곡차곡 쌓아 둡니다.'},
+    {id: 'c4', code: '4', title: '몽글이', like: 'LCD 화면 속 작은 생명체',
+     layout: ['LCD 색 몸에 살구색 볼, 작은 발. 앱의 LCD 판에 사는 존재입니다.'],
+     pro: ['레트로 휴대용 기기 방향과 가장 잘 맞고, 앱 화면 색과 한 몸처럼 보입니다.', '모양이 단순해 표정·성장 단계(알 → 몽글이)를 만들기 쉽습니다.'],
+     con: ['단순한 만큼 기억에 덜 남고, 슬라임 캐릭터가 흔합니다.', 'LCD 바탕 위에서는 테두리에만 기대어 보입니다.'],
+     watch: '알에서 시작해, 쌓인 기록에 따라 모양이 조금씩 바뀝니다.'},
+    {id: 'c5', code: '5', title: '붙이', like: '모서리가 들린 스티커 한 장',
+     layout: ['아이보리 스티커 한 장에 얼굴이 있고, 오른쪽 위 모서리가 들려 뒷면(LCD)이 보입니다.'],
+     pro: ['앱의 핵심 동작 "붙인다"를 바로 떠올리게 합니다.', '모양이 가장 단순해 아이콘·작은 크기에서 잘 읽힙니다.'],
+     con: ['움직임이나 성장으로 잇기가 어렵습니다.', '스티커 목록 속 스티커와 헷갈릴 수 있습니다.'],
+     watch: '손목을 들면 붙이가 "톡" 하고 칸에 붙는 빠른 붙이기 동작의 얼굴이 됩니다.'},
+  ]},
+];
+
+let view = {synced: true, width: 390, badge: 18};
+const state = {choice: {}, notes: {}};
+const ALL = BUNDLES.flatMap(b => b.groups.map(g => ({...g, bundle: b.id})));
+for (const g of ALL) state.notes[g.id] = '';
+for (const b of BUNDLES) state.choice[b.id] = '';
+const LS = 'chagok-character';
+try {
+  const local = JSON.parse(localStorage.getItem(LS) || '{}');
+  for (const b of BUNDLES) if (local.choice && typeof local.choice[b.id] === 'string') state.choice[b.id] = local.choice[b.id];
+  for (const g of ALL) if (local.notes && typeof local.notes[g.id] === 'string') state.notes[g.id] = local.notes[g.id];
+} catch (e) {}
+let db = null;
+const writing = {}, queued = {}, timers = {};
+
+function shotsFor(b, g) {
+  const v2 = g.id.startsWith('d');
+  const id = {c1: 'kan', c2: 'block', c3: 'hamster', c4: 'blob', c5: 'sticker', d1: 'tier', d2: 'duo', d3: 'carry', d4: 'brick', d5: 'cushion'}[g.id];
+  const charSvg = v2 ? charSvg2 : charSvg1;
+  const iconBg = id === 'hamster' ? C.lcd : (v2 || id === 'blob') ? C.mint : C.apricot;
+  return `<figure><div style="background:${C.mint};padding:14px;display:flex;align-items:flex-end;gap:16px">${charSvg(id, 192)}<div style="display:flex;flex-direction:column;gap:10px;align-items:center">${charSvg(id, 48)}${charSvg(id, 24)}</div></div><figcaption>192 · 48 · 24px</figcaption></figure>
+    <figure><div style="background:${C.mint};padding:14px 16px;display:flex;align-items:center;gap:10px;font-family:var(--pixel);font-size:32px;line-height:40px;color:${C.ink}">${charSvg(id, 44)}차곡차곡</div><figcaption>앱 머리글 (지금은 꽃 자리)</figcaption>
+      <div style="display:flex;gap:14px;align-items:flex-end;margin-top:10px"><svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true"><defs><clipPath id="ic-${id}"><rect width="120" height="120" rx="27" ry="27"/></clipPath></defs><g clip-path="url(#ic-${id})"><rect width="120" height="120" fill="${iconBg}"/><g transform="translate(12,12)">${charSvg(id, 96)}</g></g></svg>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);max-width:200px"><b style="color:var(--fg)">워치로 이으면</b><span>${esc(g.watch)}</span></div></div><figcaption>앱 아이콘에 넣어 본 모습 (어림)</figcaption></figure>`;
+}
+function render() {
+  $('jump').innerHTML = BUNDLES.map(b => `<a href="#b-${b.id}" id="jump-${b.id}">${b.title}</a>`).join('');
+  $('bundles').innerHTML = BUNDLES.map(b => `
+    <section class="bundle" id="b-${b.id}">
+      <div class="bundle-head"><h2>${b.title}</h2>
+        ${b.id === 'settings' ? `<div class="controls">
+          <div class="seg" role="group" aria-label="계정 상태"><button type="button" id="st-on" aria-pressed="${view.synced}">계정 연결됨</button><button type="button" id="st-off" aria-pressed="${!view.synced}">이 기기에만</button></div>
+          <div class="seg" role="group" aria-label="3안 배지 크기"><button type="button" id="bd12" aria-pressed="${view.badge === 12}">배지 12</button><button type="button" id="bd14" aria-pressed="${view.badge === 14}">14</button><button type="button" id="bd18" aria-pressed="${view.badge === 18}">18</button></div>
+          <div class="seg" role="group" aria-label="화면 폭"><button type="button" id="w390" aria-pressed="${view.width === 390}">390px</button><button type="button" id="w320" aria-pressed="${view.width === 320}">320px</button></div>
+        </div>` : ''}
+        <span class="picked" id="picked-${b.id}"></span>
+      </div>
+      <p class="bundle-note">${esc(b.note)}</p>
+      ${b.groups.map(g => `
+      <section class="group${g.ref ? ' ref' : ''}" id="g-${g.id}">
+        <div class="side">
+          <div class="head"><h2>${g.ref ? g.title : `${b.title} ${g.code}. ${g.title}`}</h2><span class="like">${esc(g.like)}</span></div>
+          <h3>배치</h3>
+          <ol class="flow">${g.layout.map(f => `<li>${esc(f)}</li>`).join('')}</ol>
+          <h3>좋은 점과 걸리는 점</h3>
+          <ul class="pc">${g.pro.map(p => `<li class="pro">${esc(p)}</li>`).join('')}${g.con.map(p => `<li class="con">${esc(p)}</li>`).join('')}</ul>
+          <div class="review">
+            ${g.ref ? '' : `<button type="button" class="ok-btn" id="ok-${g.id}" data-b="${b.id}" data-g="${g.id}" aria-pressed="false">이 안 고르기</button>`}
+            <textarea id="note-${g.id}" data-g="${g.id}" aria-label="${esc(g.title)} 메모" placeholder="${g.ref ? '지금 앱에서 남기고 싶은 점이 있으면 적어 주세요' : '고치고 싶은 점, 가져오고 싶은 부분을 적어 주세요'}"></textarea>
+            <span class="save-state" id="state-${g.id}" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="shots" id="shots-${g.id}">${shotsFor(b, g)}</div>
+      </section>`).join('')}
+    </section>`).join('');
+  bindView();
+  paint();
+  redraw();
+}
+function rerenderSettings() {
+  const b = BUNDLES[0];
+  for (const g of b.groups) $(`shots-${g.id}`).innerHTML = shotsFor(b, g);
+  $('st-on').setAttribute('aria-pressed', String(view.synced)); $('st-off').setAttribute('aria-pressed', String(!view.synced));
+  for (const n of [12, 14, 18]) $(`bd${n}`).setAttribute('aria-pressed', String(view.badge === n));
+  $('w390').setAttribute('aria-pressed', String(view.width === 390)); $('w320').setAttribute('aria-pressed', String(view.width === 320));
+  redraw();
+}
+function bindView() {
+  if (!$('st-on')) return;
+  $('st-on').onclick = () => { view.synced = true; rerenderSettings(); };
+  $('st-off').onclick = () => { view.synced = false; rerenderSettings(); };
+  $('w390').onclick = () => { view.width = 390; rerenderSettings(); };
+  for (const n of [12, 14, 18]) $(`bd${n}`).onclick = () => { view.badge = n; rerenderSettings(); };
+  $('w320').onclick = () => { view.width = 320; rerenderSettings(); };
+}
+function redraw() {
+  drawFrames(document);
+  // 축소한 화면의 상자 높이를 내용 높이에 맞춘다 (지금 앱은 760px보다 길다)
+  for (const box of document.querySelectorAll(".phone-box[data-scale]")) box.style.height = `${box.querySelector(".phone").offsetHeight * Number(box.dataset.scale)}px`;
+}
+function label(bid) {
+  const b = BUNDLES.find(x => x.id === bid), g = b.groups.find(x => x.id === state.choice[bid]);
+  return g ? `${b.title} ${g.code}. ${g.title}` : `${b.title} 안 고름`;
+}
+function paint() {
+  for (const g of ALL) {
+    const picked = state.choice[g.bundle] === g.id;
+    $(`g-${g.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${g.id}`);
+    if (b) { b.setAttribute('aria-pressed', String(picked)); b.textContent = picked ? '고른 안' : '이 안 고르기'; }
+    const t = $(`note-${g.id}`);
+    if (document.activeElement !== t && t.value !== state.notes[g.id]) t.value = state.notes[g.id];
+  }
+  for (const b of BUNDLES) {
+    $(`jump-${b.id}`).classList.toggle('done', !!state.choice[b.id]);
+    const g = b.groups.find(x => x.id === state.choice[b.id]);
+    $(`picked-${b.id}`).textContent = g ? `고른 안: ${g.code}. ${g.title}` : '아직 안 골랐어요';
+  }
+  const notes = ALL.filter(x => state.notes[x.id].trim()).length;
+  $('summary').textContent = BUNDLES.map(b => label(b.id)).join(' · ') + (notes ? ` · 메모 ${notes}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-<묶음> {value}, review/note-<안> {note}. 한 문서에는 한 번에 한 번만 쓰고, 쓰는 중에 또 바뀌면 끝난 뒤 한 번 더 쓴다.
+async function persist(key, statusId) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[key]) { queued[key] = statusId; return; }
+  writing[key] = true; setStatus(statusId, '저장 중…');
+  try {
+    const data = key.startsWith('choice-') ? {value: state.choice[key.slice(7)]} : {note: state.notes[key.slice(5)]};
+    await db.doc(`review/${key}`).set({...data, updatedAt: new Date().toISOString()});
+    setStatus(statusId, '저장됨');
+  } catch (e) {
+    setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true);
+  } finally {
+    writing[key] = false;
+    if (queued[key]) { const s = queued[key]; queued[key] = null; persist(key, s); }
+  }
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn');
+  if (!b) return;
+  const bid = b.dataset.b, id = b.dataset.g;
+  state.choice[bid] = state.choice[bid] === id ? '' : id;
+  paint(); persist(`choice-${bid}`, id);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t) return;
+  const id = t.dataset.g;
+  state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-${id}`, id); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t || !timers[t.dataset.g]) return;
+  const id = t.dataset.g;
+  clearTimeout(timers[id]); timers[id] = null; persist(`note-${id}`, id);
+});
+$('copy').addEventListener('click', () => {
+  const text = BUNDLES.map(b => label(b.id)).join('\n') + '\n' +
+    ALL.filter(x => state.notes[x.id].trim()).map(x => `${BUNDLES.find(b => b.id === x.bundle).title} ${x.code} 메모: ${state.notes[x.id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+window.addEventListener('load', redraw);
+
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got;
+  $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data();
+      if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-')) { const bid = d.id.slice(7); if (bid in state.choice && typeof v.value === 'string') state.choice[bid] = v.value; continue; }
+      const id = d.id.replace(/^note-/, '');
+      if (!(id in state.notes)) continue;
+      const t = document.activeElement;
+      state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>
