@@ -35,7 +35,7 @@
 패치 적용: `git checkout -b feat/terms-change-notice main && git apply docs/migration/feat-terms-change-notice.patch`,
 커밋 패치는 `git am docs/migration/<이름>.patch`.
 
-태그 `backup/main-before-split`는 원격에 있다. 정책 저장소 `../chagok-app-policy`는 `main`·`publish` 모두 원격과 같고, 원격은 이미 GitHub Org `nol-meok`(`github.com/nol-meok/chagok-app-policy`)으로 옮겼다(2026-10-04 확인). 앱 저장소 원격은 아직 개인 계정(`eunjukkkkim/chagok-app`)이다.
+태그 `backup/main-before-split`는 원격에 있다. 정책 저장소 `../chagok-app-policy`는 `main`·`publish` 모두 원격과 같고, 원격은 이미 GitHub Org `nol-meok`(`github.com/nol-meok/chagok-app-policy`)으로 옮겼다(2026-10-04 확인). 앱 저장소도 2026-10-04 `nol-meok`으로 옮겼고, 로컬 `origin`을 `https://eunjukkkkim@github.com/nol-meok/chagok-app.git`으로 바꿨다(앞의 `eunjukkkkim@`은 로그인 계정을 고르는 용도 — 정책 저장소와 같은 방식). 새 원격에서 모든 브랜치·태그가 로컬과 같고 push 권한도 확인했다. 폴더는 그대로라 clone·메모리 복원은 필요 없었다.
 
 **저장소 밖에 있던 근거 문서:** PRD 12절이 가리키던 원 인터뷰(`~/.omc/specs/deep-interview-chamjal-sticker-app.md`)는 2026-10-04 [archive/](../archive/deep-interview-chamjal-sticker-app.md)로 옮겼다.
 
