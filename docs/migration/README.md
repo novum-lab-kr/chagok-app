@@ -3,6 +3,11 @@
 작성: 2026-10-04. 레포를 옮기기 전에 git에 없는 것까지 빠짐없이 챙기고, 옮긴 뒤 같은 상태에서 이어서 작업하기 위한 목록이다.
 옮긴 뒤 첫 세션은 이 문서 → [HANDOFF](../HANDOFF.md) 0절 순서로 읽는다.
 
+## 0. 어떤 이전인지에 따라 할 일이 다르다
+
+- **GitHub에서 저장소만 옮기는 경우(예: Org `nol-meok`으로 transfer)** — 이 컴퓨터의 폴더는 그대로라 다시 clone할 필요가 없다. `git remote set-url origin <새 주소>`만 바꾸면 된다(GitHub가 예전 주소를 한동안 넘겨 주지만 바꿔 두는 것이 맞다). git이 무시하는 파일(`.omc/`, `.env.local`, `.secrets/`, `node_modules/`)과 에이전트 메모리도 폴더 경로가 같으니 그대로 쓴다. 정책 저장소가 이미 이렇게 옮겨졌다.
+- **새로 clone하거나 폴더 위치를 바꾸는 경우** — 아래 1~3절을 모두 한다. git이 무시하는 파일은 따라오지 않고, 메모리는 폴더 경로 기준이라 새 경로에서 비어 보인다.
+
 ## 1. git에 없어서 손으로 옮겨야 하는 것
 
 | 무엇 | 위치 | 왜 | 처리 |
@@ -11,14 +16,15 @@
 | 서버 관리자 키 | `.secrets/server-test.env` | git-ignore. 이름을 `.env.`로 시작하면 Expo가 번들에 넣으려다 깨진다 | 폴더째 복사 |
 | Supabase CLI 연결 | `supabase/.temp/` | CLI가 만든 link 정보 | 복사하거나 새 위치에서 `supabase link`(프로젝트 `chagok-dev`) |
 | Claude 메모리 | `~/.claude/projects/-Users-eunjukim-Desktop-workspace-chagok-app/memory/` | **저장소 경로 기준**이라 경로가 바뀌면 새 세션이 못 찾는다 | 사본: [`docs/agent-memory/`](../agent-memory/MEMORY.md). 아래 3절로 복원 |
+| 도구 상태 | `.omc/` | git-ignore. 세션마다 바뀌는 도구 상태라 옮기지 않아도 된다(없으면 다시 생긴다) | 선택 |
 
 ## 2. 로컬에만 있는 작업
 
-원격(`origin`)에 없는 것. 브랜치째 올리면 가장 안전하고, 그래도 빠질 때를 위해 패치를 이 폴더에 둔다.
+2026-10-04 로컬 브랜치를 모두 원격에 올렸다(`feat/terms-change-notice`는 커밋이 없어 패치로만 남김). 아래는 그 전 상태와 패치 기록이다.
 
 | 무엇 | 상태 | 패치 |
 | --- | --- | --- |
-| `feat/terms-change-notice` (작업 공간 `../chagok-wt-terms`) | **커밋 안 함.** 약관 변경 안내 다이얼로그 — jest·타입·린트·iOS 번들 통과, 기기 확인 전 | [`feat-terms-change-notice.patch`](feat-terms-change-notice.patch) |
+| `feat/terms-change-notice` (작업 공간 `../chagok-wt-terms`) | **커밋 안 함 — 원격에 없는 유일한 작업.** 약관 변경 안내 다이얼로그 — jest·타입·린트·iOS 번들 통과, 기기 확인 전 | [`feat-terms-change-notice.patch`](feat-terms-change-notice.patch) |
 | `fix/light-mode-font-scale` (b4d9101) | 커밋 1개, main에 안 합침. 다크 모드 막기·글자 크기 고정. 실기기 확인 대기 | [`fix-light-mode-font-scale.patch`](fix-light-mode-font-scale.patch) |
 | `docs/scope-decisions` (b06564f) | 커밋 1개, main에 안 합침. 2026-10-04 내용을 PRD·HANDOFF에 옮겼으니 되살리지 않아도 된다(기록용) | [`docs-scope-decisions.patch`](docs-scope-decisions.patch) |
 | `integration/expo-go-phase` (작업 공간 `../chagok-app-backup`) | main에 없는 병합 커밋 4개 — 로컬 통합 확인용이라 버려도 된다(내용은 각 브랜치로 main에 들어감) | — |
