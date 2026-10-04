@@ -53,7 +53,7 @@ function posePaths(pose: MascotPose) {
   return paths;
 }
 
-/** Main character 「이고지고」. Decorative unless a label is given. */
+/** Main character 「차곡이」. Decorative unless a label is given. */
 export function Mascot({ pose = 'basic', size = 96, label }: { pose?: MascotPose; size?: number; label?: string }) {
   const a11y = label
     ? Platform.OS === 'web'

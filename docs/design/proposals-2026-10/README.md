@@ -6,7 +6,7 @@
 | 시안 | 링크 | 원본 | 상태 |
 | --- | --- | --- | --- |
 | 앱 설정 | https://claude.ai/artifact/5N5m1HJhkjyj2pAAv4TDJA | `settings.template.html` | 3안(프레임 없는 목록) 유력. 구역 머리글 `PixelBadge`, 배지 크기 12·14·18 비교 중 |
-| 캐릭터 | https://claude.ai/artifact/3qkb69GG9Ku7xJoaNRtqQb | `character.template.html` | 2차 3안 「이고지고」 확정 |
+| 캐릭터 | https://claude.ai/artifact/3qkb69GG9Ku7xJoaNRtqQb | `character.template.html` | 2차 3안 확정(가칭 「이고지고」 → 이름 「차곡이」 2026-10-04) |
 | 아이콘·스플래시·표정 | https://claude.ai/artifact/CtGPQfkXPo95cnDduSP5uH | `icon-splash.template.html` | 아이콘 1안 확정, 표정·팔·머리 위 물건 확정, 스플래시 미확정 |
 | 홈 화면 위젯 모양 | https://claude.ai/artifact/K5qfAcqRA2vyLZVxY2oqD3 | `widget.template.html` | 2026-10-04 발행. 지금 미리보기 + 1안 판을 안쪽으로 · 2안 LCD 창 · 3안 캐릭터와 함께 · (2차, 중간에 목표 두 개) 4안 나란히 · 5안 목록 두 줄 · 6안 판 미니 두 개 · (3차, 위젯에서 바로 붙이기 — db `choice-tap`) A 칸 · B 스티커 단추(B-1~3 메모 반영) · C 카드 전체 · (5차, 사용자 실기기 위젯 참고 — 테두리 없이 꽉 채움, iPhone 16 Pro 170·364pt, db `choice-full`) 1 큰 숫자 · 2 링 · 3 판 크게 · (6차) 링 위젯 + 달력 위젯. **2026-10-04 확정: 6-링·6-달력 둘 다, 바탕 민트·아이보리 + 유리(iOS 투명·틴트 모드에 맡김), 진행 문구 `n% 채웠어요`** (PRD 4.10) |
 | 아이콘·스플래시 확정 | https://claude.ai/artifact/4e7k1HAotEjKzYwg5k8XMV | `icon-splash-final.template.html` | 2026-10-04 발행. iOS 아이콘 1안(확정, 비교용) + Android 적응형 A1 안전 영역 안 · A2 조금 크게 · A3 아래에서 빼꼼 / 스플래시 S1 「2+」 그대로 · S2 빠르게 · S3 끝에 미소. db `choice-adaptive`·`choice-splash`. **Android A1·스플래시 S2-B 확정(2026-10-04).** |
