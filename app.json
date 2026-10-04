@@ -8,11 +8,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.eunjukim.chagok",
+      "bundleIdentifier": "com.novum.chagok",
       "supportsTablet": false
     },
     "android": {
-      "package": "com.eunjukim.chagok",
+      "package": "com.novum.chagok",
       "edgeToEdgeEnabled": true
     },
     "plugins": [
