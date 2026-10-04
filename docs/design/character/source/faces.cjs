@@ -1,4 +1,6 @@
-/* eslint-disable */ // 문서용: 네 파일을 이어 붙여 한 번에 돌린다(../README.md 「다시 만들기」). 파일 하나로는 전역이 비어 보인다.
+// 캐릭터 그리기 2/3 — 확정 캐릭터의 몸·책 모양 판·표정. 기초 도구는 base.cjs.
+const {PAL2, shape, sym, build, range, eyes} = require('./base.cjs');
+
 // 이고지고 표정 2차. carryFace(얼굴 점, 블록 수): 얼굴 점은 {색: [[x,y]...]}. 눈 기준 칸: 왼쪽 8~9, 오른쪽 14~15, 14~15줄. 입 11~12, 17줄.
 function carryFace(dots, blocks = 3) {
   const shapes = [shape({...(blocks === 0 ? {10: sym(4)} : {}), 11: sym(8), 12: sym(12), ...range(13, 14, () => sym(14)), ...range(15, 20, () => sym(16)), 21: sym(14)}, 'g')];
@@ -41,3 +43,5 @@ function faceSvg(id, size) {
   (FACE_ART[id] || BLOCK_ART[id]).forEach((r, y) => { for (let x = 0; x < 24; x++) { const c = r[x]; if (PAL2[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL2[c]}"/>`; } });
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" shape-rendering="crispEdges" role="img" aria-label="${id}">${rects}</svg>`;
 }
+
+module.exports = {carryFace, FACES, BLOCK_ART, FACE_ART, faceSvg};

@@ -1,3 +1,4 @@
+// 캐릭터 그리기 1/3 — 픽셀 그리기 도구(shape·build·…)와 몽글이 계열 2차 시안 5종(CHARS2, 비교 기록).
 // 몽글이 계열 2차 (24×24). 모양은 줄마다 [시작, 끝] 칸으로 정하고, 바깥 테두리는 자동으로 잉크로 찍는다.
 // 모양을 여러 겹 쌓을 수 있다(뒤에 오는 모양이 위). 그다음 얼굴·볼·선 같은 점을 찍는다.
 const PAL2 = {'#': '#06261C', w: '#FEF1D1', g: '#C7DE94', m: '#AFE1CB', o: '#FD855F'};
@@ -75,4 +76,4 @@ function charSvg2(id, size) {
   CHARS2[id].forEach((r, y) => { for (let x = 0; x < 24; x++) { const c = r[x]; if (PAL2[c]) rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${PAL2[c]}"/>`; } });
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" shape-rendering="crispEdges" role="img" aria-label="${id}">${rects}</svg>`;
 }
-if (typeof module !== 'undefined') module.exports = {CHARS2, charSvg2};
+module.exports = {PAL2, shape, sym, build, range, eyes, CHARS2, charSvg2};

@@ -1,10 +1,13 @@
-/* eslint-disable */ // 문서용: 네 파일을 이어 붙여 한 번에 돌린다(../README.md 「다시 만들기」). 파일 하나로는 전역이 비어 보인다.
 // 확정 캐릭터 데이터와 한 장짜리 시트를 다시 만든다.
-// 실행: (cd docs/design/character/source && cat chars2.js chars4.js chars5.js export.js | node - ..)
-// → ../character-data.json, ../character-sheet.html (시트 PNG는 이 HTML을 렌더해서 만든다)
+// 실행: node docs/design/character/source/export.cjs [출력 폴더, 기본은 docs/design/character]
+// → character-data.json, character-sheet.html (시트 PNG는 이 HTML을 렌더해서 만든다)
+const fs = require('fs');
+const path = require('path');
+const {carryFace, FACES, FACE_ART} = require('./faces.cjs');
+const {carry3, carryBody, carryItem, gridSvg} = require('./variants.cjs');
+
 {
-  const fs = require('fs');
-  const out = process.argv[2] || '..';
+  const out = process.argv[2] || path.join(__dirname, '..');
   const faces = {basic: 'basic', smile: 'happy3', grin: 'happyB', excited: 'happy5', surprised: 'wow', sleepy: 'sleepyZ2', wink: 'wink', sparkle: 'sparkle', shy: 'shy', curious: 'curious'};
   const data = {
     name: '이고지고 (가칭)', decided: '2026-10-04', grid: '24x24',
