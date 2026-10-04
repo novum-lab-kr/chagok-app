@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { AppState, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { AppState, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { retro } from '../src/design-system';
+import { SplashAnimation, retro } from '../src/design-system';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
@@ -14,12 +15,21 @@ import { pushOnce } from '../src/sync/push';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
 
+// OS 스플래시(윤곽선만 있는 차곡이)를 앱이 그릴 때까지 잡아 둔다. 같은 자리의 애니메이션 첫 장면이
+// 그려지는 순간 페이드 없이 내려서 끊김 없이 이어지게 한다 (docs/design/character/README.md 「스플래시」).
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 0, fade: false });
+
 /**
  * 네비게이터 헤더는 끈다. 화면마다 레트로 헤더(`ScreenHeader`, 홈의 브랜드 줄)를 직접 그리기
  * 때문에, 켜두면 제목과 뒤로가기가 두 벌씩 나온다. 상단 여백은 `RetroScreen`이 세이프에어리어로
  * 처리한다. 픽셀 폰트를 불러오기 전에는 대체 폰트로 그리지 않는다 (DESIGN-SYSTEM.md).
  */
 export default function RootLayout() {
+  // 앱을 처음 켤 때만 재생한다. 백그라운드에서 돌아올 때는 이 레이아웃이 다시 만들어지지 않는다.
+  const [splashDone, setSplashDone] = useState(false);
+  const finishSplash = useCallback(() => setSplashDone(true), []);
+  const handOff = useCallback(() => { SplashScreen.hideAsync().catch(() => {}); }, []);
   // 로그인해 있는 동안만 백업을 올린다 (계정·백업 설계 ②). 서버 설정이 없으면 기기에서만 쓴다.
   useEffect(() => {
     const supabase = getSupabase();
@@ -98,6 +108,12 @@ export default function RootLayout() {
           <Stack.Screen name="account/delete" options={{ gestureEnabled: false }} />
           <Stack.Screen name="dev/sync" />
         </Stack>
+        {/* 글꼴이 준비된 뒤에 그려야 "차곡차곡" 글자가 대체 글꼴로 나오지 않는다 — 그동안은 OS 스플래시가 남아 있다. */}
+        {splashDone ? null : (
+          <View style={StyleSheet.absoluteFill} onLayout={handOff}>
+            <SplashAnimation onDone={finishSplash} />
+          </View>
+        )}
       </RetroFontProvider>
     </SafeAreaProvider>
   );

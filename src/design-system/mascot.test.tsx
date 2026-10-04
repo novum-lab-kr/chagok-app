@@ -29,8 +29,8 @@ describe('메인 캐릭터',()=>{
     }
   });
   it('이름을 주면 그림으로 읽히고, 없으면 꾸밈으로 숨긴다',()=>{
-    const {container,rerender}=render(<Mascot label="웃는 이고지고"/>);
-    expect(container.querySelector('[aria-label="웃는 이고지고"]')).toBeTruthy();
+    const {container,rerender}=render(<Mascot label="웃는 차곡이"/>);
+    expect(container.querySelector('[aria-label="웃는 차곡이"]')).toBeTruthy();
     rerender(<Mascot/>);
     expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
   });

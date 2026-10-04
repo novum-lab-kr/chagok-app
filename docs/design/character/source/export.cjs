@@ -10,7 +10,7 @@ const {carry3, carryBody, carryItem, gridSvg} = require('./variants.cjs');
   const out = process.argv[2] || path.join(__dirname, '..');
   const faces = {basic: 'basic', smile: 'happy3', grin: 'happyB', excited: 'happy5', surprised: 'wow', sleepy: 'sleepyZ2', wink: 'wink', sparkle: 'sparkle', shy: 'shy', curious: 'curious'};
   const data = {
-    name: '이고지고 (가칭)', decided: '2026-10-04', grid: '24x24',
+    name: '차곡이', decided: '2026-10-04', grid: '24x24',
     legend: {'.': '투명', '#': 'ink #06261C', g: 'lcd #C7DE94', o: 'apricot #FD855F', w: 'ivory #FEF1D1', m: 'mint #AFE1CB'},
     faces: Object.fromEntries(Object.entries(faces).map(([k, v]) => [k, carryFace(FACES[v])])),
     variants: {sleepyBubble: carryFace(FACES.sleepyZ3), armsDotSide: carry3({arms: 'dside', item: 'book'}), armsDotDown: carry3({arms: 'ddown', item: 'book'})},

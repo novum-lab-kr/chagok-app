@@ -7,5 +7,5 @@
 - [Expo Go work before accounts](no-account-work-first.md) — accounts not ready: no dev build/login suggestions; pick Expo Go work first
 - [Proposals as artifact](proposals-as-artifact.md) — show 시안 as pick+memo artifact first; Storybook only after all are confirmed
 - [Sprout is not the mascot](sprout-not-mascot.md) — sprout is just a default sticker; never use it as app icon/brand without asking
-- [Branding & watch idea](branding-and-watch-idea.md) — mascot 「이고지고」 confirmed 2026-10-04 (docs/design/character); name & splash pending; watch idea vs PRD §2
+- [Branding & watch idea](branding-and-watch-idea.md) — mascot 「차곡이」 — name, faces, icon, splash confirmed 2026-10-04 (docs/design/character); watch idea vs PRD §2
 - [Repo migration](repo-migration.md) — moving repo soon: checklist docs/migration/README.md; keep docs/agent-memory/ in sync

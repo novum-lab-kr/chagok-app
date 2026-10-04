@@ -4,11 +4,11 @@ import type {Meta,StoryObj} from '@storybook/react-vite';
 import {Mascot,PixelText,mascotBlockStates,mascotFaces,mascotVariants,retro} from '../src/design-system';
 import type {MascotPose} from '../src/design-system';
 
-const meta={title:'Brand/Mascot',parameters:{docs:{description:{component:'메인 캐릭터 「이고지고」(가칭). 원본은 docs/design/character/character-data.json. 쓰임새는 초안이라 아직 앱 화면에 붙이지 않았습니다.'}}}} satisfies Meta;
+const meta={title:'Brand/Mascot',parameters:{docs:{description:{component:'메인 캐릭터 「차곡이」. 원본은 docs/design/character/character-data.json. 표정 쓰임새는 2026-10-04 확정(PRD 4.11).'}}}} satisfies Meta;
 export default meta;
 type Story=StoryObj<typeof meta>;
 
-// 쓰임새는 docs/design/character/README.md 초안을 그대로 옮겼다.
+// 쓰임새는 docs/design/character/README.md 표 그대로(2026-10-04 확정).
 const poseLabel:Record<MascotPose,string>={
   basic:'기본 · 앱 머리글, 평소',smile:'미소 · 스티커를 붙였을 때',grin:'활짝 · 새 목표를 만들었을 때',excited:'신남 · 판을 완성했을 때',
   surprised:'놀람 · 칸을 늘리거나 이어 쓸 때',sleepy:'졸림 · 목표가 하나도 없을 때',wink:'윙크 · 튜토리얼을 마쳤을 때',sparkle:'반짝 · 새 스티커·새 기능',

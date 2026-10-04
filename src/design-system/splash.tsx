@@ -87,7 +87,7 @@ function Typed({n,cursor}:{n:number;cursor:boolean}) {
 }
 
 /**
- * 앱 첫 화면 전에 한 번 재생하는 스플래시. 캐릭터는 화면 가운데에서 24px 위(OS 스플래시와 같은 자리).
+ * 앱 첫 화면 전에 한 번 재생하는 스플래시. 캐릭터 그림(24칸)은 화면 정가운데 — OS 스플래시가 그림을 가운데에 놓기 때문이다.
  * - reduceMotion: 생략하면 기기 설정을 따른다. 켜져 있으면 마지막 장면만 보여 주고 바로 onDone.
  * - at: 그 시점(ms)에서 멈춘 장면만 그린다(검토용).
  */
@@ -112,8 +112,8 @@ export function SplashAnimation({onDone,reduceMotion,at}:{onDone?:()=>void;reduc
   },[at,reduced,tl,onDone]);
   const frame=at!==undefined?splashFrameAt(tl,at):reduced?tl.events[tl.events.length-1]:tl.events[index];
   return <View accessible accessibilityLabel="차곡차곡" style={{flex:1,backgroundColor:retro.color.screen,alignItems:'center',justifyContent:'center'}}>
-    {/* Svg 위쪽 12칸은 떨어지는 판 자리다. 그림 24칸의 가운데(Svg 위에서 24칸)가 화면 가운데에서 24px 위에 오게 옮긴다. */}
-    <View style={{alignItems:'center',transform:[{translateY:-(24*CELL-(36*CELL+TEXT_H)/2)-24}]}}>
+    {/* Svg 위쪽 12칸은 떨어지는 판 자리다. 그림 24칸의 가운데(Svg 위에서 24칸)가 화면 정가운데에 오게 옮긴다. */}
+    <View style={{alignItems:'center',transform:[{translateY:-(24*CELL-(36*CELL+TEXT_H)/2)}]}}>
       <Scene f={frame}/>
       <View style={{height:TEXT_H,justifyContent:'center'}}>
         {frame.text?<Typed n={frame.text} cursor={!!frame.cursor}/>:null}
