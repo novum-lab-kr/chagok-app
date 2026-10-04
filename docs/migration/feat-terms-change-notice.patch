@@ -1,0 +1,163 @@
+diff --git a/__tests__/policyVersions.test.ts b/__tests__/policyVersions.test.ts
+index d08e0e9..406b33c 100644
+--- a/__tests__/policyVersions.test.ts
++++ b/__tests__/policyVersions.test.ts
+@@ -1,4 +1,4 @@
+-import { effectiveVersion, needsReconsent } from '../src/policy/versions';
++import { effectiveVersion, monthDayLabel, needsReconsent, upcomingChange } from '../src/policy/versions';
+ import type { PolicyManifest, PolicyVersion } from '../src/policy/versions';
+ import { policyUrl } from '../src/policy/urls';
+ 
+@@ -29,6 +29,26 @@ describe('재동의 판단', () => {
+     expect(needsReconsent(null, { terms: 1, privacy: 1 }, '2026-12-01')).toBe(false));
+ });
+ 
++describe('개정 안내', () => {
++  const posted = (version: number, postedAt: string, effectiveAt: string): PolicyVersion =>
++    ({ version, postedAt, effectiveAt, summary: '', requiresConsent: true });
++  const list = [posted(1, '2026-09-30', '2026-09-30'), posted(2, '2026-10-08', '2026-10-15')];
++  it('게시일부터 시행일 전날까지 새 판을 알린다', () => {
++    expect(upcomingChange(list, '2026-10-08', 0)?.version).toBe(2);
++    expect(upcomingChange(list, '2026-10-14', 0)?.version).toBe(2);
++  });
++  it('게시 전과 시행일부터는 알리지 않는다', () => {
++    expect(upcomingChange(list, '2026-10-07', 0)).toBeNull();
++    expect(upcomingChange(list, '2026-10-15', 0)).toBeNull();
++  });
++  it('이미 알린 판은 다시 알리지 않는다', () => expect(upcomingChange(list, '2026-10-10', 2)).toBeNull());
++  it('시행 중인 판이 없으면(처음 게시) 바뀐 것이 아니라 알리지 않는다', () =>
++    expect(upcomingChange([posted(1, '2026-09-30', '2026-10-07')], '2026-10-01', 0)).toBeNull());
++  it('예고된 판이 둘이면 번호가 큰 판을 알린다', () =>
++    expect(upcomingChange([...list, posted(3, '2026-10-09', '2026-11-09')], '2026-10-10', 0)?.version).toBe(3));
++  it('시행일을 「M월 D일」로 쓴다', () => expect(monthDayLabel('2026-10-05')).toBe('10월 5일'));
++});
++
+ describe('정책 URL', () => {
+   it('종류별 최신본 주소', () => {
+     expect(policyUrl('terms')).toBe('https://chagok-app-terms.netlify.app/terms/');
+diff --git a/app/index.tsx b/app/index.tsx
+index ce1b9dc..8e0fe6b 100644
+--- a/app/index.tsx
++++ b/app/index.tsx
+@@ -1,4 +1,4 @@
+-import { useCallback, useEffect, useState } from 'react';
++import { useCallback, useEffect, useRef, useState } from 'react';
+ import { View } from 'react-native';
+ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+ import { AccountStartScreen, FirstRunTutorial, GoalListScreen, PixelLoadingIndicator, RetroScreen, accountDialogs } from '../src/design-system';
+@@ -11,6 +11,10 @@ import { readAccountState } from '../src/sync/accountStatus';
+ import { getSupabase } from '../src/sync/supabaseClient';
+ import { orderGoals } from '../src/domain/board';
+ import { goalCard } from '../src/app-data/pocketAdapter';
++import { localDateKey } from '../src/domain/dates';
++import { fetchPolicyManifest } from '../src/policy/manifest';
++import { openPolicy } from '../src/policy/openPolicy';
++import { monthDayLabel, upcomingChange } from '../src/policy/versions';
+ 
+ /** 홈 = 목표 목록 (PRD 4.1). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
+ export default function GoalList() {
+@@ -24,6 +28,8 @@ export default function GoalList() {
+   const [showStart, setShowStart] = useState<boolean | undefined>(undefined);
+   const [startChoice, setStartChoice] = useState<AccountStartChoice>('account');
+   const { ask, dialog } = useDialog();
++  /** 로그인 풀림 안내가 끝났는지. true면 연결 화면으로 떠났다. 약관 안내가 그 뒤에 이어 묻도록 기다린다. */
++  const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
+ 
+   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
+   useFocusEffect(useCallback(() => {
+@@ -44,21 +50,46 @@ export default function GoalList() {
+     const supabase = getSupabase();
+     if (!supabase) return;
+     let alive = true;
+-    void (async () => {
++    sessionCheck.current = (async () => {
+       const { data, error } = await supabase.auth.getSession();
+       // 오프라인에서 토큰을 갱신하지 못한 것은 로그인이 풀린 게 아니다 — 한 번뿐인 안내를 쓰지 않는다
+-      if (error) return;
++      if (error) return false;
+       const state = await readAccountState(data.session?.user.id ?? null);
+       const userId = await getSetting('accountUserId');
+-      if (!alive || state.state !== 'needsLogin' || !userId || (await getSetting('sessionPrompted')) === userId) return;
++      if (!alive || state.state !== 'needsLogin' || !userId || (await getSetting('sessionPrompted')) === userId) return false;
+       await setSetting('sessionPrompted', userId);
+       if ((await ask(accountDialogs.session)) === 'primary') {
+         router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
++        return true;
+       }
+-    })();
++      return false;
++    })().catch(() => false);
+     return () => { alive = false; };
+   }, [ask, router]);
+ 
++  // 약관이 바뀌기 전(게시일~시행일 전날)에 앱을 열면 한 번 알린다. 목록을 받지 못하면 건너뛴다 — 앱 사용을 막지 않는다.
++  // 시작 화면·튜토리얼 중에는 띄우지 않는다. 처음 쓰는 사람에게 「바뀌어요」는 맞지 않는다.
++  const firstRun = showStart !== false || showTutorial !== false;
++  useEffect(() => {
++    if (firstRun) return;
++    let alive = true;
++    void (async () => {
++      try {
++        if (await sessionCheck.current) return;
++        const today = localDateKey(Date.now());
++        const change = upcomingChange((await fetchPolicyManifest()).terms, today, Number(await getSetting('termsNoticeSeen') ?? 0));
++        if (!alive || !change) return;
++        await setSetting('termsNoticeSeen', String(change.version));
++        if ((await ask(accountDialogs.termsChanged(monthDayLabel(change.effectiveAt)))) === 'secondary') {
++          await openPolicy('terms', ask);
++        }
++      } catch {
++        // 오프라인·사이트 오류: 다음에 열 때 다시 본다
++      }
++    })();
++    return () => { alive = false; };
++  }, [ask, firstRun]);
++
+   // 판 상세·새 목표에서 돌아올 때마다 다시 읽는다. 떠난 뒤 도착한 응답은 버린다.
+   useFocusEffect(useCallback(() => {
+     let alive = true;
+diff --git a/src/policy/versions.ts b/src/policy/versions.ts
+index 7530ba1..c3334dc 100644
+--- a/src/policy/versions.ts
++++ b/src/policy/versions.ts
+@@ -21,6 +21,25 @@ export function effectiveVersion(list: readonly PolicyVersion[], today: DateKey)
+   return best;
+ }
+ 
++/**
++ * 시행 전에 한 번 알릴 새 판 (약관 설계 「재동의」 2026-10-01 변경). 게시일 ≤ 오늘 < 시행일인 판 중 번호가 가장 큰 것.
++ * 이미 알린 판(`seen` 이하)과, 시행 중인 판이 없는 처음 게시(바뀐 것이 아님)는 알리지 않는다.
++ */
++export function upcomingChange(list: readonly PolicyVersion[], today: DateKey, seen: number): PolicyVersion | null {
++  if (!effectiveVersion(list, today)) return null;
++  let best: PolicyVersion | null = null;
++  for (const v of list) {
++    if (v.postedAt <= today && today < v.effectiveAt && v.version > seen && (!best || v.version > best.version)) best = v;
++  }
++  return best;
++}
++
++/** 'YYYY-MM-DD' → 'M월 D일' (안내 문구). */
++export function monthDayLabel(key: DateKey): string {
++  const [, month, day] = key.split('-').map(Number);
++  return `${month}월 ${day}일`;
++}
++
+ /**
+  * 로그인한 사용자에게 동의 화면을 다시 띄울지. 목록을 받지 못하면 묻지 않는다 — 앱 사용을 막지 않는다.
+  * 동의한 판 이후의 시행된 판 중 하나라도 동의가 필요하면 참이다.
+diff --git a/src/repositories/appSettingsRepository.ts b/src/repositories/appSettingsRepository.ts
+index 6a9567d..82f0ef0 100644
+--- a/src/repositories/appSettingsRepository.ts
++++ b/src/repositories/appSettingsRepository.ts
+@@ -34,7 +34,9 @@ export type SettingKey =
+   /** 로그인 풀림 안내를 한 번 보여준 계정 id */
+   | 'sessionPrompted'
+   /** 연결 흐름 진행 중: {"previous": 이전 계정 id | null} (connectMarker) */
+-  | 'connecting';
++  | 'connecting'
++  /** 개정 안내를 한 번 보여준 약관 판 번호 (약관 설계 「재동의」 2026-10-01 변경) */
++  | 'termsNoticeSeen';
+ 
+ export async function getSetting(key: SettingKey): Promise<string | null> {
+   const db = await getDb();
