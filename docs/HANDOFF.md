@@ -1,6 +1,6 @@
 # 차곡차곡 디자인 시스템 인계
 
-갱신: 2026-10-04 · 프로젝트: `/Users/eunjukim/Desktop/workspace/chagok-app`
+갱신: 2026-10-04 · 프로젝트: `chagok-app` 저장소 루트 (로컬 경로는 레포 이전 때 바뀔 수 있다 — [migration/README.md](migration/README.md))
 
 구현 현황과 시각 기준의 단일 출처다. 제품 요구사항은 [PRD.md](PRD.md), 작업 방식은 [WORKING-AGREEMENT.md](WORKING-AGREEMENT.md)를 따른다. 이미 끝난 수정 이력은 git 기록과 [보관본](archive/HANDOFF-design-system-history-2026-09-23.md)에 있다.
 

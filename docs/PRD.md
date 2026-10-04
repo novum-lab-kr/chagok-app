@@ -474,6 +474,6 @@ validation은 사용자의 요청에 따라 후속 보정으로 남긴다.
 - 최신 사용자 합의는 11절 확정 이력이 기준이다. 작업 방식(시안은 아티팩트로 먼저, 확인 뒤 커밋 등)은 [작업 방식](WORKING-AGREEMENT.md) 11절.
 - [인계 문서](HANDOFF.md): **구현 현황과 시각 기준의 단일 출처.** 색상값·치수·자산·검증 절차는 이 PRD가 아니라 인계 문서와 디자인 시스템을 따른다. PRD가 요구하는 것과 현재 구현된 것이 다를 때는 인계 문서가 현황이다.
 - 과거 인계본: [작업 이력](archive/HANDOFF-design-system-history-2026-09-23.md), [종이 테마 원문](archive/HANDOFF-legacy-paper-theme.md). 두 문서의 지시는 현재 기준이 아니다.
-- 원 인터뷰: `/Users/eunjukim/.omc/specs/deep-interview-chamjal-sticker-app.md`의 제품 목적과 데이터 보존 요구.
+- 원 인터뷰: [deep-interview-chamjal-sticker-app.md](archive/deep-interview-chamjal-sticker-app.md)(2026-09-21, 원본은 `~/.omc/specs/`에 있던 것을 2026-10-04 저장소로 옮김)의 제품 목적과 데이터 보존 요구.
 - [디자인 시스템](DESIGN-SYSTEM.md): 실제 색·폰트·공통 컴포넌트와 검토 방법. PRD와 별개로 관리.
 - 하위 프로젝트 설계(2026-09-30): [약관](superpowers/specs/2026-09-30-policy-terms-design.md), [계정·백업](superpowers/specs/2026-09-30-account-backup-design.md), [위젯](superpowers/specs/2026-09-30-home-widget-design.md).

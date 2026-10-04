@@ -16,7 +16,8 @@
 | 서버 관리자 키 | `.secrets/server-test.env` | git-ignore. 이름을 `.env.`로 시작하면 Expo가 번들에 넣으려다 깨진다 | 폴더째 복사 |
 | Supabase CLI 연결 | `supabase/.temp/` | CLI가 만든 link 정보 | 복사하거나 새 위치에서 `supabase link`(프로젝트 `chagok-dev`) |
 | Claude 메모리 | `~/.claude/projects/-Users-eunjukim-Desktop-workspace-chagok-app/memory/` | **저장소 경로 기준**이라 경로가 바뀌면 새 세션이 못 찾는다 | 사본: [`docs/agent-memory/`](../agent-memory/MEMORY.md). 아래 3절로 복원 |
-| 도구 상태 | `.omc/` | git-ignore. 세션마다 바뀌는 도구 상태라 옮기지 않아도 된다(없으면 다시 생긴다) | 선택 |
+| 도구 상태 | `.omc/` | git-ignore. 세션 기록과 자동 스캔 결과(`project-memory.json`, 사용자 지시는 비어 있음 — 2026-10-04 확인)라 옮기지 않아도 다시 생긴다 | 선택 |
+| Claude 대화 기록 | `~/.claude/projects/<경로 키>/*.jsonl` | 메모리처럼 경로 기준. 새 경로에서는 지난 대화를 `/resume`으로 못 연다 | 옮기지 않아도 된다 — 이어 갈 내용은 HANDOFF·PRD·이 문서에 있다 |
 
 ## 2. 로컬에만 있는 작업
 
@@ -36,6 +37,10 @@
 
 태그 `backup/main-before-split`는 원격에 있다. 정책 저장소 `../chagok-app-policy`는 `main`·`publish` 모두 원격과 같고, 원격은 이미 GitHub Org `nol-meok`(`github.com/nol-meok/chagok-app-policy`)으로 옮겼다(2026-10-04 확인). 앱 저장소 원격은 아직 개인 계정(`eunjukkkkim/chagok-app`)이다.
 
+**저장소 밖에 있던 근거 문서:** PRD 12절이 가리키던 원 인터뷰(`~/.omc/specs/deep-interview-chamjal-sticker-app.md`)는 2026-10-04 [archive/](../archive/deep-interview-chamjal-sticker-app.md)로 옮겼다.
+
+**작업 공간(git worktree):** `../chagok-app-backup`(integration/expo-go-phase, 버려도 됨), `../chagok-wt-terms`(feat/terms-change-notice, 커밋 안 한 작업 — 패치 있음). 절대 경로로 묶여 있어 폴더를 옮기면 끊긴다. 옮긴 뒤 `git worktree repair <새 경로들>` 또는 필요 없으면 `git worktree prune`. GitHub에서만 옮기면 손댈 것 없다.
+
 ## 3. 옮긴 뒤 이어서 작업하기
 
 1. 위 1절 파일 복사, `npm install` (react-dom override 유지 — `npm ls react-dom --all`이 `19.2.3` 하나인지).
@@ -48,6 +53,8 @@
 3. 2절 브랜치·패치를 되살린다(커밋·병합은 사용자 확인 뒤).
 4. 확인: `npm test`, `npm run test:components`, `npm run typecheck`, `npm run lint`, `npm run test:server`(관리자 키 필요).
 5. 원격 주소가 바뀌면 `git remote set-url origin <새 주소>`. 정책 사이트(Netlify)가 정책 저장소의 `publish` 브랜치를 보고 있으니, 정책 저장소를 옮기면 Netlify 연결도 바꾼다.
+   - 정책 저장소는 이미 `nol-meok`으로 옮겼다. Netlify의 GitHub 앱이 `nol-meok` Org 저장소에 접근할 수 있는지, 사이트 설정(Build & deploy → Repository)이 새 주소를 가리키는지 확인한다. 사이트는 2026-10-04에도 열렸지만(200), 다음 `publish` push가 배포되는지는 확인 전이다.
+6. 같은 방식으로 작업되는지 확인: 새 세션에서 메모리가 읽히는지(첫 응답이 한국어인지, 시안을 아티팩트로 내는지), `docs/agent-memory/`와 `~/.claude/projects/<새 키>/memory/`가 같은지(`diff -rq`).
 
 ## 4. 외부에 걸린 것 (레포와 별개로 계속 쓰임)
 
