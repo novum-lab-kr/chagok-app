@@ -34,7 +34,9 @@ export type SettingKey =
   /** 로그인 풀림 안내를 한 번 보여준 계정 id */
   | 'sessionPrompted'
   /** 연결 흐름 진행 중: {"previous": 이전 계정 id | null} (connectMarker) */
-  | 'connecting';
+  | 'connecting'
+  /** 개정 안내를 한 번 보여준 약관 판 번호 (약관 설계 「재동의」 2026-10-01 변경) */
+  | 'termsNoticeSeen';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();
