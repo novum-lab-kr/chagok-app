@@ -1,0 +1,779 @@
+<title>차곡차곡 위젯 시안</title>
+<style>
+/* 배치: 안마다 한 띠. 왼쪽은 설명·고르기·메모, 오른쪽은 홈 화면 바탕 위에 실제 pt 크기로 그린 위젯. 아래 고정 막대에 고른 안. */
+@font-face { font-family: "NeoDGM"; src: url(data:font/ttf;base64,__FONT__) format("truetype"); font-display: block; }
+:root {
+  --bg: #f3f6f2; --surface: #ffffff; --line: #d3ddd5; --fg: #0e2a20; --muted: #4f6559;
+  --accent: #c8532c; --pick: #0e2a20; --pick-fg: #f3f6f2; --ok: #2f6b4a; --stage: #e4ebe5;
+  --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --pixel: "NeoDGM", var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* 앱 팔레트 — 디자인 시스템 토큰 그대로. 위젯 안에서만 쓴다 */
+  --mint: #AFE1CB; --lcd: #C7DE94; --ink: #06261C; --apricot: #FD855F; --ivory: #FEF1D1;
+  /* 홈 화면 바탕(어림) */
+  --wall-light: linear-gradient(160deg, #f4f5f7, #e3e6ea); --wall-dark: linear-gradient(160deg, #1f2a38, #2c3a2f);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --pick: #c7de94; --pick-fg: #0f1814; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --pick: #c7de94; --pick-fg: #0f1814; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 32px; }
+h1 { font-family: var(--pixel); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h2 { font-size: 19px; line-height: 1.3; margin: 0; text-wrap: balance; }
+h3 { font-size: 13px; line-height: 1.35; margin: 0; color: var(--muted); font-weight: 600; letter-spacing: 0.03em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 80ch; }
+header.top { display: flex; flex-direction: column; gap: 12px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 4px 12px; border: 0; background: var(--surface); color: var(--fg); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pick); color: var(--pick-fg); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+section.group { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 18px; background: var(--surface); border: 1px solid var(--line); padding: 18px; }
+section.group.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+section.group.ref { background: transparent; border-style: dashed; }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.like { font-size: 13px; color: var(--muted); }
+.flow { margin: 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+ul.pc { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+ul.pc li { padding-left: 10px; border-left: 2px solid var(--line); }
+ul.pc li.pro { border-color: var(--ok); }
+ul.pc li.con { border-color: var(--accent); }
+.review { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ok-btn { align-self: flex-start; font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--ok); background: transparent; color: var(--ok); border-radius: 4px; cursor: pointer; }
+section.group.ok .ok-btn { background: var(--ok); color: var(--surface); }
+.ok-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.review textarea { width: 100%; box-sizing: border-box; min-height: 72px; resize: vertical; font: inherit; font-size: 14px; line-height: 1.5; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.review textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.review textarea::placeholder { color: var(--muted); }
+.save-state { font-size: 12px; color: var(--muted); min-height: 18px; }
+.save-state.bad { color: var(--accent); }
+
+/* ── 홈 화면 바탕 ── */
+.home { overflow-x: auto; min-width: 0; padding: 18px; border-radius: 6px; display: grid; grid-template-columns: repeat(2, max-content); gap: 22px; align-content: start; }
+.home.light { background: var(--wall-light); }
+.home.dark { background: var(--wall-dark); }
+.cap { font-size: 12px; margin-top: 6px; }
+.home.light .cap { color: #24323d; }
+.home.dark .cap { color: #e7eef2; }
+.home .wide { grid-column: 1 / -1; display: flex; gap: 22px; flex-wrap: wrap; }
+
+/* ── 위젯 공통 (iOS가 둥근 모서리로 잘라 낸다 — 반지름 22pt 어림) ── */
+.w { position: relative; overflow: hidden; border-radius: 22px; font-family: var(--pixel); color: var(--ink); }
+.w.s { width: 158px; height: 158px; }
+.w.m { width: 338px; height: 158px; }
+.w svg.bg { position: absolute; inset: 0; pointer-events: none; }
+.w .in { position: absolute; display: flex; flex-direction: column; }
+.px { image-rendering: pixelated; shape-rendering: crispEdges; display: block; }
+.badge { position: relative; display: inline-block; align-self: flex-start; }
+.badge span { position: relative; display: block; padding: 1px 6px; color: var(--lcd); font-size: 12px; line-height: 18px; }
+.name { font-size: 15px; line-height: 20px; }
+.small-txt { font-size: 13px; line-height: 18px; }
+.bar { height: 10px; border-radius: 4px; overflow: hidden; background: rgba(6, 38, 28, .38); }
+.bar i { display: block; height: 100%; background: var(--ink); border-radius: 4px; }
+.cells { display: flex; flex-wrap: wrap; gap: 2px; }
+.cells b { width: 11px; height: 11px; box-sizing: border-box; border: 1px solid var(--ink); }
+.cells b.filled { background: var(--ink); } .cells b.missed { background: var(--lcd); } .cells b.future, .cells b.empty { background: var(--ivory); } .cells b.outside { border: 0; }
+.cells.sm { gap: 1px; } .cells.sm b { width: 8px; height: 8px; }
+.half { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.vline { width: 2px; align-self: stretch; background: var(--ink); opacity: .5; }
+.hline { height: 2px; background: var(--ink); opacity: .5; }
+/* 누르는 영역 */
+.zones [data-zone="stick"] { outline: 2px dashed var(--apricot); outline-offset: 1px; }
+.zones [data-zone="open"] { outline: 2px dotted #3b6ea8; outline-offset: -3px; }
+[data-act] { cursor: pointer; }
+.stickbtn { width: 28px; height: 28px; box-sizing: border-box; border: 2px solid var(--ink); background: var(--ivory); display: flex; align-items: center; justify-content: center; flex: none; }
+.stickbtn.on { background: var(--apricot); }
+.undo { display: inline-block; border: 2px solid var(--ink); background: var(--ivory); padding: 0 6px; font-size: 12px; line-height: 16px; }
+.ends { display: flex; align-items: center; gap: 6px; } .ends .n { font-size: 12px; line-height: 16px; flex: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 22px; height: 12px; vertical-align: -1px; margin-right: 6px; }
+.lg-stick { outline: 2px dashed var(--apricot); } .lg-open { outline: 2px dotted #3b6ea8; }
+.msg { font-size: 13px; min-height: 20px; color: var(--fg); }
+.home .msg { color: inherit; }
+.reset { font: inherit; font-size: 12px; padding: 2px 10px; border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 4px; cursor: pointer; }
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── 5차: 꽉 채운 위젯 (iPhone 16 Pro: 작은 170pt, 중간 364pt) ── */
+.home.blue { background: linear-gradient(180deg, #2f68c4, #6ea9e6 55%, #3a6fc0); }
+.home.blue .cap { color: #f2f6fb; }
+.fw { position: relative; overflow: hidden; border-radius: 23px; font-family: var(--pixel); color: var(--ink); background: var(--fill); box-sizing: border-box; padding: 16px; display: flex; flex-direction: column; }
+.fw.s { width: 170px; height: 170px; }
+.fw.m { width: 364px; height: 170px; }
+.fw .big { font-size: 34px; line-height: 36px; }
+.fw .mid { font-size: 22px; line-height: 26px; }
+.fw .cap2 { font-size: 13px; line-height: 16px; opacity: .72; }
+.fw .nm { font-size: 16px; line-height: 20px; }
+.fw .sb { width: 40px; height: 40px; box-sizing: border-box; border: 2px solid var(--ink); background: var(--ivory); display: flex; align-items: center; justify-content: center; flex: none; border-radius: 2px; }
+.fw .sb.on { background: var(--apricot); }
+.fw .fbar { height: 8px; border-radius: 4px; background: rgba(6, 38, 28, .2); overflow: hidden; }
+.fw .fbar i { display: block; height: 100%; background: var(--ink); border-radius: 4px; }
+.fw .cells b { border-width: 1.5px; }
+.fw .undo { font-size: 13px; line-height: 20px; padding: 1px 8px; }
+.fw .disc { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.fw .disc.on { background: rgba(253, 133, 95, .55); }
+.zones .fw .disc[data-zone="stick"] { outline-offset: -2px; }
+/* 유리(시스템): iOS 투명·틴트 모드에서 시스템이 배경을 유리로 바꾼 모습을 흉내 낸다 */
+.fw.glass { background: rgba(255, 255, 255, .16); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28); }
+.fw.glass .fbar { background: rgba(255, 255, 255, .3); } .fw.glass .fbar i { background: #fff; }
+.fw.glass .cells b { border-color: rgba(255, 255, 255, .9); }
+.fw.glass .cells b.filled { background: #fff; } .fw.glass .cells b.future, .fw.glass .cells b.empty { background: transparent; } .fw.glass .cells b.missed { background: rgba(255, 255, 255, .3); }
+.fw.glass .undo { background: rgba(255, 255, 255, .22); border-color: #fff; color: #fff; }
+.fw.glass .cap2 { opacity: .85; }
+.home.photo { background: radial-gradient(circle at 20% 25%, #f4e7c8 0 18%, transparent 40%), radial-gradient(circle at 80% 30%, #2b4d2f 0 22%, transparent 45%), radial-gradient(circle at 40% 80%, #c0453a 0 15%, transparent 38%), radial-gradient(circle at 75% 85%, #f2f2ee 0 20%, transparent 42%), linear-gradient(135deg, #6b8fb8, #d9c7a2); }
+.home.photo .cap { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+details.old { border-top: 2px solid var(--fg); padding-top: 12px; }
+details.old > summary { cursor: pointer; font-size: 15px; color: var(--muted); }
+details.old[open] > summary { margin-bottom: 24px; }
+.notes { display: flex; flex-direction: column; gap: 8px; }
+.notes ul { margin: 0; padding-left: 20px; max-width: 90ch; }
+.notes li { margin-block: 4px; }
+
+.pbar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pbar-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.pbar-label { font-size: 13px; color: var(--muted); }
+#summary { font-family: var(--mono); font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.pbar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+.pbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 800px) {
+  section.group { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 24px; }
+}
+</style>
+
+<div class="wrap" id="wrap">
+  <header class="top">
+    <h1>차곡차곡 위젯 · 꽉 채운 모양</h1>
+    <p class="lede"><b>8차:</b> 위젯 바탕색에 <b>유리(시스템)</b>를 더했고, 바탕화면에 <b>사진(복잡한 바탕)</b>을 더했습니다. 바탕화면은 사람마다 다르니 밝은·어두운·사진 바탕에서 함께 비교해 보세요. 유리일 때는 글자·스티커·링을 흰색으로 바꿨습니다(iOS 배터리 위젯과 같은 방식).</p>
+    <p class="lede"><b>7차:</b> 진행 문구를 "n% 채웠어요"로 바꿨습니다(앱 목록 카드도 같은 말로 바꿉니다). 링 위젯과 달력 위젯은 둘 다 제공합니다.</p>
+    <p class="lede"><b>6차:</b> 2안 메모를 반영해 <b>링 위젯</b>과 <b>달력 위젯</b>을 두 종류로 함께 제공하는 안을 맨 위에 두었습니다. 둘 다 스티커 상자를 없애고 넓은 영역을 누르면 붙습니다(링은 링 안쪽, 달력은 판 전체). 목표 없음 화면은 가운데로 모았습니다. 사용자는 홈 화면에 위젯을 추가할 때 둘 중 하나(또는 둘 다)를 고릅니다.</p>
+    <p class="lede"><b>5차:</b> 실제 홈 화면 위젯처럼 테두리와 안쪽 여백 없이 위젯 전체를 바탕색으로 채웠습니다. 크기는 iPhone 16 Pro(작은 170pt, 중간 364pt)에 맞췄습니다. 글자는 크게, 넣는 것은 스티커 단추·이름·진행만 남겼습니다(판 종류 배지 없음, 적립판은 %만). 바로 붙이기는 B안처럼 스티커 단추를 누르면 붙고, 나머지를 누르면 판 상세가 열립니다. 그림 속 위젯을 눌러 볼 수 있습니다.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="위젯 바탕색"><button type="button" id="c-lcd" aria-pressed="false">바탕 LCD</button><button type="button" id="c-mint" aria-pressed="false">민트</button><button type="button" id="c-ivory" aria-pressed="false">아이보리</button><button type="button" id="c-glass" aria-pressed="true">유리(시스템)</button></div>
+      <div class="seg" role="group" aria-label="홈 화면 바탕"><button type="button" id="wb" aria-pressed="true">파란 바탕화면</button><button type="button" id="wl" aria-pressed="false">밝은</button><button type="button" id="wd" aria-pressed="false">어두운</button><button type="button" id="wp" aria-pressed="false">사진(복잡한 바탕)</button></div>
+      <div class="legend"><span><i class="lg-stick"></i>누르면 붙이기</span><span><i class="lg-open"></i>누르면 앱이 열림</span>
+        <div class="seg" role="group" aria-label="누르는 곳 표시"><button type="button" id="zon" aria-pressed="true">누르는 곳 표시</button><button type="button" id="zoff" aria-pressed="false">숨기기</button></div></div>
+    </div>
+  </header>
+  <div id="fullgroups" style="display:flex;flex-direction:column;gap:24px"></div>
+
+  <details class="old"><summary>이전 시안 (1~4차: 테두리 있는 모양, 바로 붙이기 방식) 펼치기</summary>
+  <div style="display:flex;flex-direction:column;gap:32px">
+  <header class="top">
+    <h1>차곡차곡 홈 화면 위젯 시안</h1>
+    <p class="lede"><b>2차:</b> 4·5·6안을 더했습니다. 셋 다 중간 크기에 목표를 두 개 넣는 방식입니다. 테두리는 위쪽 「테두리」 버튼으로 LCD 창(2안)과 판(1안) 중에서 바꿔 볼 수 있습니다. 1차 안(1·2·3)은 그대로 아래에 있습니다.</p>
+    <p class="lede">위젯에 들어갈 내용(작은 크기는 목록 카드 요약, 중간 크기는 판 미니, 목표가 없으면 안내 한 줄)은 9월 30일에 정했고, 이번에는 모양을 고릅니다. 위젯은 실제 크기(iPhone 기준 작은 158pt, 중간 338pt)로 그렸습니다. iOS는 위젯을 둥근 모서리로 잘라 내기 때문에, 그 모서리까지 같이 보여 줍니다. 마음에 드는 안에서 [이 안 고르기]를 누르고, 고칠 점은 안마다 메모 칸에 적어 주세요.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="4·5·6안 테두리"><button type="button" id="fl" aria-pressed="true">테두리: LCD 창</button><button type="button" id="fp" aria-pressed="false">판</button></div>
+      <div class="seg" role="group" aria-label="오늘 붙였는지"><button type="button" id="t1" aria-pressed="true">오늘 붙임</button><button type="button" id="t0" aria-pressed="false">오늘 아직</button></div>
+    </div>
+  </header>
+
+  <div id="groups" style="display:flex;flex-direction:column;gap:24px"></div>
+
+  <header class="top" id="tap">
+    <h1>위젯에서 바로 붙이기 · 누르는 곳</h1>
+    <p class="lede"><b>4차:</b> B 메모를 반영한 B-1·B-2·B-3을 B 아래에 더했습니다. 셋 다 판 종류 배지를 빼고 목표 없음 화면(졸린 캐릭터, 누르면 새 목표 만들기)을 넣었고, 적립판 개수를 보여 주는 방법만 다릅니다.</p>
+    <p class="lede">3차: 위젯을 누르면 앱을 열지 않고 바로 스티커를 붙이는 방식 세 가지입니다. 위젯은 길게 누르기·두 번 누르기를 받을 수 없어서(길게 누르기는 시스템이 위젯 편집에 씁니다), <b>어디를 누르면 붙이고 어디를 누르면 앱이 열리는지</b>로 나눴습니다. 그림 속 위젯을 직접 눌러 보세요. 오늘은 아직 안 붙인 상태에서 시작합니다. 위젯 모양(4·5·6안, 테두리)은 위에서 고른 것과 따로 정할 수 있게 각 방식에 어울리는 모양에 얹었습니다.</p>
+  </header>
+  <div id="tapgroups" style="display:flex;flex-direction:column;gap:24px"></div>
+  </div></details>
+
+  <section class="notes">
+    <h2>공통</h2>
+    <ul>
+      <li>예시 목표는 「산책하기」(달력판, 10월 4일 기준 3일 붙임 → 이번 달 9%)와 「책 20권 읽기」(적립판, 7/20 → 35%)입니다. 진행 문구는 앱 목록 카드와 같은 규칙으로 계산했습니다.</li>
+      <li>위젯은 보기만 할 수 있고, 누르면 그 목표의 판 상세가 열립니다. 재촉하거나 평가하는 문구는 어느 안에도 넣지 않았습니다.</li>
+      <li>실제 위젯은 iOS(SwiftUI)와 Android에서 따로 그립니다. 픽셀 글꼴을 위젯에 넣을 수 있는지와 iOS 18 틴트(한 색으로 칠해지는 모드)에서 어떻게 보이는지는 시험 구현 때 확인합니다. 글꼴이 안 되면 시스템 글꼴로 바뀝니다.</li>
+      <li>위쪽 「오늘 붙임 / 오늘 아직」 버튼은 3안의 캐릭터 표정에만 영향을 줍니다.</li>
+      <li><b>목표 두 개(4·5·6안)는 9월 30일 결정과 다릅니다.</b> 그때는 "위젯마다 목표 하나를 고른다"로 정했습니다. 두 개로 바꾸면 위젯 설정에서 목표를 두 개 고르고, 고르지 않은 자리는 가장 최근에 붙인 목표로 채웁니다. 목표가 하나뿐이면 그 목표를 넓게 보여 줍니다(각 안의 「목표 하나뿐」 그림).</li>
+      <li>목표가 없을 때는 모든 안에서 졸린 캐릭터를 씁니다(2026-10-04 사용자 결정).</li>
+      <li><b>바로 붙이기(A·B·C)는 9월 30일 결정("읽기 전용, 위젯에서 붙이기는 써 본 뒤 재검토")을 앞당기는 것입니다.</b> 위젯에서는 기본 스티커만 붙고 사진·메모는 앱에서 남깁니다. iOS는 17 이상에서만 위젯 버튼이 동작하고, 앱을 열지 않고 기록하려면 Swift로 따로 만드는 부분이 생깁니다. 실제로 되는지는 계정이 준비된 뒤 위젯 시험 구현에서 먼저 확인합니다.</li>
+      <li>큰 크기(338×354pt)는 중간 크기 두 칸을 위아래로 쌓은 높이라, 고르신 안을 바탕으로 목표 네 개 또는 두 개 + 판 전체로 따로 그려 드릴 수 있습니다.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="pbar" role="region" aria-label="고른 안">
+  <div class="pbar-in">
+    <span class="pbar-label">고른 안</span>
+    <span id="summary">아직 안 골랐어요</span>
+    <button type="button" id="copy">메모까지 복사</button>
+    <span class="pbar-label" id="store-state">저장소 연결 중…</span>
+  </div>
+</div>
+
+<script>
+const A = __ASSETS__;
+const M = __MASCOT__;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+const C = {mint: '#AFE1CB', lcd: '#C7DE94', ink: '#06261C', apricot: '#FD855F', ivory: '#FEF1D1'};
+
+/* ── 디자인 시스템의 픽셀 외곽선 (src/design-system/geometry.ts 그대로) ── */
+function ol(w, h, i = 0, unit = 3) {
+  const x = i, y = i, r = w - i, b = h - i;
+  if (r <= x || b <= y) return '';
+  const u = Math.min(unit, (r - x) / 4, (b - y) / 4);
+  return `M${x+2*u} ${y}H${r-2*u}V${y+u}H${r-u}V${y+2*u}H${r}V${b-2*u}H${r-u}V${b-u}H${r-2*u}V${b}H${x+2*u}V${b-u}H${x+u}V${b-2*u}H${x}V${y+2*u}H${x+u}V${y+u}H${x+2*u}Z`;
+}
+/* PixelPanel 층: 잉크 테두리 → 민트 → 잉크 62% → 잉크 → 안쪽 색. (ox, oy)만큼 옮겨 그린다 */
+function panelSvg(W, H, fill = C.lcd, ox = 0, oy = 0) {
+  const o = (i) => ol(W, H, i, 6);
+  return `<g transform="translate(${ox},${oy})"><path d="${o(0)}" fill="${C.ink}"/><path d="${o(3)}" fill="${C.mint}"/><path d="${o(3)}" fill="${C.ink}" opacity="0.62"/><path d="${o(8)}" fill="${C.ink}"/><path d="${o(12)}" fill="${fill}"/></g>`;
+}
+/* LCD 창: 잉크 2px 테두리, 계단 모서리 한 단 */
+function lcdSvg(W, H, ox, oy) {
+  return `<g transform="translate(${ox},${oy})"><path d="${ol(W, H, 0, 3)}" fill="${C.ink}"/><path d="${ol(W, H, 2, 3)}" fill="${C.lcd}"/></g>`;
+}
+const bgSvg = (W, H, inner, ground = C.mint) => `<svg class="bg" width="${W}" height="${H}" aria-hidden="true"><rect width="${W}" height="${H}" fill="${ground}"/>${inner}</svg>`;
+const badge = (label) => `<span class="badge"><svg class="bg" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0"></svg><span>${esc(label)}</span></span>`;
+function drawBadges(root) {
+  for (const b of root.querySelectorAll('.badge')) {
+    const W = b.offsetWidth, H = b.offsetHeight, s = b.querySelector('svg');
+    if (!W || !H) continue;
+    s.setAttribute('viewBox', `0 0 ${W} ${H}`); s.innerHTML = `<path d="${ol(W, H, 0, 3)}" fill="${C.ink}"/>`;
+  }
+}
+const sticker = (id, size) => `<svg width="${size}" height="${size}" viewBox="0 0 56 56" aria-hidden="true" style="flex:none"><path d="${A[id]}" fill="currentColor"/></svg>`;
+const CELL = {'#': C.ink, g: C.lcd, o: C.apricot, w: C.ivory, m: C.mint};
+function mascot(rows, size) {
+  let r = '';
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = CELL[row[x]]; if (c) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`; } });
+  return `<svg class="px" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" style="flex:none">${r}</svg>`;
+}
+const bar = (p) => `<div class="bar"><i style="width:${p}%"></i></div>`;
+
+/* ── 예시 목표 (2026-10-04 기준) ── */
+const firstWeekday = new Date(2026, 9, 1).getDay();
+function calGoal(today) {
+  const days = Array.from({length: 31}, (_, i) => i + 1 < 4 ? (i + 1 === 3 ? 'missed' : 'filled') : i + 1 === 4 ? (today ? 'filled' : 'future') : 'future');
+  const placed = days.filter(d => d === 'filled').length;
+  return {name: '산책하기', sticker: 'shoe', kind: '달력판', placed, pct: Math.floor(placed / 31 * 100), label: `이번 달 ${Math.floor(placed / 31 * 100)}%`, mini: {type: 'calendar', days}};
+}
+function tallyGoal(today) {
+  const placed = today ? 7 : 6;
+  return {name: '책 20권 읽기', sticker: 'book', kind: '적립판', placed, pct: Math.floor(placed / 20 * 100), label: `${Math.floor(placed / 20 * 100)}%`,
+    mini: {type: 'tally', cells: Array.from({length: 20}, (_, i) => i < placed ? 'filled' : 'empty'), total: 20}};
+}
+function mini(g, cols) {
+  if (g.mini.type === 'calendar') return `<div class="cells" style="width:${7*13}px">${'<b class="outside"></b>'.repeat(firstWeekday)}${g.mini.days.map(d => `<b class="${d}"></b>`).join('')}</div>`;
+  return `<div class="cells" style="width:${cols*13}px">${g.mini.cells.map(c => `<b class="${c}"></b>`).join('')}</div>`;
+}
+
+/* 4·5·6안 테두리: LCD 창 또는 판 */
+function frame(W, H) {
+  if (view.frame === 'panel') { const I = 8; return {bg: bgSvg(W, H, panelSvg(W - 2*I, H - 2*I, C.lcd, I, I)), pad: I + 17}; }
+  const I = 12; return {bg: bgSvg(W, H, lcdSvg(W - 2*I, H - 2*I, I, I)), pad: I + 10};
+}
+function miniSm(g) {
+  if (g.mini.type === 'calendar') return `<div class="cells sm" style="width:${7*9}px">${'<b class="outside"></b>'.repeat(firstWeekday)}${g.mini.days.map(d => `<b class="${d}"></b>`).join('')}</div>`;
+  return `<div class="cells sm" style="width:${10*9}px">${g.mini.cells.map(c => `<b class="${c}"></b>`).join('')}</div>`;
+}
+const progText = (g) => g.mini.type === 'tally' ? `${g.placed}/${g.mini.total} · ${g.label}` : g.label;
+/* 목표 하나뿐일 때: 2안과 같은 중간 구성 */
+function oneGoal(g) {
+  const f = frame(338, 158);
+  return `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;gap:5px"><div style="display:flex;align-items:center;gap:8px">${sticker(g.sticker, 22)}<div class="name clamp1" style="flex:1">${esc(g.name)}</div>${badge(g.kind)}</div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex:1">${mini(g)}<div class="small-txt" style="flex:1;text-align:right">${esc(g.label)}</div></div></div></div>`;
+}
+const TWO = {
+  // 4안: 작은 위젯 두 개를 나란히
+  p4(a, b) {
+    const f = frame(338, 158);
+    const col = (g) => `<div class="half">${sticker(g.sticker, 22)}<div class="name clamp1">${esc(g.name)}</div>${badge(g.kind)}<div class="small-txt">${esc(g.label)}</div>${bar(g.pct)}</div>`;
+    return `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;flex-direction:row;gap:12px">${col(a)}<div class="vline"></div>${col(b)}</div></div>`;
+  },
+  // 5안: 목록 두 줄
+  p5(a, b) {
+    const f = frame(338, 158);
+    const row = (g) => `<div style="display:flex;flex-direction:column;gap:4px;flex:1;justify-content:center"><div style="display:flex;align-items:center;gap:8px">${sticker(g.sticker, 24)}<div class="name clamp1" style="flex:1">${esc(g.name)}</div>${badge(g.kind)}</div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1">${bar(g.pct)}</div><div class="small-txt" style="flex:none">${esc(progText(g))}</div></div></div>`;
+    return `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;gap:6px">${row(a)}<div class="hline"></div>${row(b)}</div></div>`;
+  },
+  // 6안: 판 미니 두 개 나란히
+  p6(a, b) {
+    const f = frame(338, 158);
+    const col = (g) => `<div class="half" style="gap:4px"><div style="display:flex;align-items:center;gap:6px">${sticker(g.sticker, 18)}<div class="small-txt clamp1" style="flex:1">${esc(g.name)}</div></div><div style="flex:1;display:flex;align-items:center">${miniSm(g)}</div><div class="small-txt">${esc(progText(g))}</div></div>`;
+    return `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;flex-direction:row;gap:12px">${col(a)}<div class="vline"></div>${col(b)}</div></div>`;
+  },
+};
+
+/* ── 안별 위젯 ── 각 함수는 {small, medium, empty}를 돌려준다 */
+const PAD = 12 + 6; // PixelPanel 안쪽 장식 + 여백 (지금 미리보기와 같다)
+const V = {
+  now(g) {
+    const small = `<div class="w s">${bgSvg(158, 158, panelSvg(158, 158))}<div class="in" style="inset:${PAD}px;gap:4px">${sticker(g.sticker, 22)}<div class="name clamp2">${esc(g.name)}</div>${badge(g.kind)}<div class="small-txt">${esc(g.label)}</div>${bar(g.pct)}</div></div>`;
+    const medium = `<div class="w m">${bgSvg(338, 158, panelSvg(338, 158))}<div class="in" style="inset:${PAD}px;gap:6px"><div style="display:flex;align-items:center;gap:8px">${sticker(g.sticker, 22)}<div class="name clamp1" style="flex:1">${esc(g.name)}</div>${badge(g.kind)}</div>
+      ${g.mini.type === 'calendar' ? `<div style="display:flex;align-items:flex-end;gap:12px;flex:1">${mini(g)}<div class="small-txt" style="flex:1;text-align:right">${esc(g.label)}</div></div>` : `${mini(g, 20)}<div class="small-txt" style="text-align:right">${g.placed}/${g.mini.total} · ${esc(g.label)}</div>`}</div></div>`;
+    const empty = `<div class="w s">${bgSvg(158, 158, panelSvg(158, 158))}<div class="in" style="inset:${PAD}px;justify-content:center;text-align:center"><div class="name">첫 목표를 만들어 보세요</div></div></div>`;
+    return {small, medium, empty};
+  },
+  p1(g) {
+    const I = 8, P = I + 14;
+    const small = `<div class="w s">${bgSvg(158, 158, panelSvg(158 - 2*I, 158 - 2*I, C.lcd, I, I))}<div class="in" style="inset:${P}px;gap:3px">${sticker(g.sticker, 22)}<div class="name clamp2">${esc(g.name)}</div>${badge(g.kind)}<div class="small-txt">${esc(g.label)}</div>${bar(g.pct)}</div></div>`;
+    const medium = `<div class="w m">${bgSvg(338, 158, panelSvg(338 - 2*I, 158 - 2*I, C.lcd, I, I))}<div class="in" style="inset:${P}px;gap:5px"><div style="display:flex;align-items:center;gap:8px">${sticker(g.sticker, 22)}<div class="name clamp1" style="flex:1">${esc(g.name)}</div>${badge(g.kind)}</div>
+      ${g.mini.type === 'calendar' ? `<div style="display:flex;align-items:flex-end;gap:12px;flex:1">${mini(g)}<div class="small-txt" style="flex:1;text-align:right">${esc(g.label)}</div></div>` : `${mini(g, 10)}<div class="small-txt" style="text-align:right">${g.placed}/${g.mini.total} · ${esc(g.label)}</div>`}</div></div>`;
+    const empty = `<div class="w s">${bgSvg(158, 158, panelSvg(158 - 2*I, 158 - 2*I, C.lcd, I, I))}<div class="in" style="inset:${P}px;align-items:center;justify-content:center;gap:4px;text-align:center">${mascot(M.faces.sleepy, 48)}<div class="small-txt">첫 목표를 만들어 보세요</div></div></div>`;
+    return {small, medium, empty};
+  },
+  p2(g) {
+    const I = 12, P = I + 10;
+    const small = `<div class="w s">${bgSvg(158, 158, lcdSvg(158 - 2*I, 158 - 2*I, I, I))}<div style="position:absolute;right:${I+4}px;top:${I+4}px">${mascot(M.faces.basic, 24)}</div><div class="in" style="inset:${P}px;gap:3px">${sticker(g.sticker, 22)}<div class="name clamp2" style="padding-right:14px">${esc(g.name)}</div>${badge(g.kind)}<div class="small-txt">${esc(g.label)}</div>${bar(g.pct)}</div></div>`;
+    const medium = `<div class="w m">${bgSvg(338, 158, lcdSvg(338 - 2*I, 158 - 2*I, I, I))}<div class="in" style="inset:${P}px;gap:5px"><div style="display:flex;align-items:center;gap:8px">${sticker(g.sticker, 22)}<div class="name clamp1" style="flex:1">${esc(g.name)}</div>${badge(g.kind)}</div>
+      ${g.mini.type === 'calendar' ? `<div style="display:flex;align-items:flex-end;gap:12px;flex:1">${mini(g)}<div style="flex:1;display:flex;flex-direction:column;align-items:flex-end;gap:2px">${mascot(M.faces.basic, 24)}<div class="small-txt">${esc(g.label)}</div></div></div>` : `<div style="display:flex;gap:12px;align-items:flex-end">${mini(g, 10)}<div style="flex:1"></div>${mascot(M.faces.basic, 24)}</div><div class="small-txt" style="text-align:right">${g.placed}/${g.mini.total} · ${esc(g.label)}</div>`}</div></div>`;
+    const empty = `<div class="w s">${bgSvg(158, 158, lcdSvg(158 - 2*I, 158 - 2*I, I, I))}<div class="in" style="inset:${P}px;align-items:center;justify-content:center;gap:6px;text-align:center">${mascot(M.faces.sleepy, 48)}<div class="small-txt">첫 목표를 만들어 보세요</div></div></div>`;
+    return {small, medium, empty};
+  },
+  p3(g, today) {
+    const face = today ? M.faces.smile : M.faces.basic;
+    const small = `<div class="w s">${bgSvg(158, 158, '')}<div class="in" style="inset:12px 14px;gap:2px"><div style="display:flex;align-items:flex-end;justify-content:space-between">${mascot(face, 72)}${sticker(g.sticker, 22)}</div><div class="name clamp1">${esc(g.name)}</div><div class="small-txt">${esc(g.label)}</div>${bar(g.pct)}</div></div>`;
+    const medium = `<div class="w m">${bgSvg(338, 158, '')}<div class="in" style="inset:12px 16px;flex-direction:row;gap:14px"><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:96px">${mascot(face, 96)}</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;gap:6px">${sticker(g.sticker, 20)}<div class="name clamp1" style="flex:1">${esc(g.name)}</div></div>
+      ${g.mini.type === 'calendar' ? `${mini(g)}<div class="small-txt">${badge(g.kind)} ${esc(g.label)}</div>` : `${mini(g, 10)}<div class="small-txt" style="display:flex;gap:6px;align-items:center">${badge(g.kind)}<span>${g.placed}/${g.mini.total} · ${esc(g.label)}</span></div>`}</div></div></div>`;
+    const empty = `<div class="w s">${bgSvg(158, 158, '')}<div class="in" style="inset:12px;align-items:center;justify-content:center;gap:4px;text-align:center">${mascot(M.faces.sleepy, 72)}<div class="small-txt">첫 목표를 만들어 보세요</div></div></div>`;
+    return {small, medium, empty};
+  },
+};
+
+const GROUPS = [
+  {id: 'now', code: '현재', title: 'Storybook 미리보기', ref: true, like: '비교용 · 9월 30일 미리보기 그대로',
+   layout: ['앱 목록 카드의 픽셀 판(PixelPanel)을 위젯 크기 그대로 채웁니다.', '캐릭터는 없습니다.'],
+   pro: ['앱 목록 카드와 똑같이 보입니다.'],
+   con: ['iOS가 모서리를 둥글게 잘라 내서, 판의 계단 모서리와 두꺼운 테두리가 모서리에서 잘립니다.', '테두리가 두꺼워 158pt 안에서 글자 칸이 좁습니다.']},
+  {id: 'p1', code: '1', title: '판을 안쪽으로', like: '앱 카드 그대로, 잘리지 않게',
+   layout: ['위젯 바탕은 민트로 칠하고, 픽셀 판을 8pt 안쪽에 둡니다.', '내용과 배치는 지금 미리보기와 같습니다.', '캐릭터는 목표가 없을 때만 졸린 얼굴로 나옵니다.'],
+   pro: ['판 모서리가 잘리지 않고 온전히 보입니다.', '앱 목록 카드와 같은 모양이라 어떤 앱인지 바로 알 수 있습니다.'],
+   con: ['테두리 층이 많아 내용 칸이 가장 좁습니다. 적립판 미니는 한 줄 10칸까지만 들어갑니다.', '네이티브 위젯에서 판 테두리 다섯 층을 그대로 그리려면 그림 파일이나 손으로 그린 모양이 필요합니다.']},
+  {id: 'p2', code: '2', title: 'LCD 창', like: '휴대용 기기 화면 느낌',
+   layout: ['민트 바탕 안에 잉크 한 줄 테두리의 LCD 창을 둡니다.', '오른쪽 위에 작은 캐릭터(기본 얼굴, 24pt)를 도장처럼 찍습니다.', '목표가 없으면 졸린 캐릭터를 크게 보여 줍니다.'],
+   pro: ['테두리가 얇아 글자와 판 미니 칸이 넉넉합니다.', '사각형 두 개라 iOS·Android 위젯으로 그대로 옮기기 쉽습니다.', '캐릭터가 늘 같은 얼굴이라 평가처럼 읽힐 일이 없습니다.'],
+   con: ['앱 목록 카드와 모양이 조금 다릅니다.', '24pt 캐릭터는 작아서 얼굴이 잘 안 보입니다.']},
+  {id: 'p3', code: '3', title: '캐릭터와 함께', like: '캐릭터가 주인공',
+   layout: ['테두리 없이 민트 바탕에 캐릭터를 크게(작은 72pt, 중간 96pt) 둡니다.', '오늘 그 목표에 붙였으면 미소, 아직이면 기본 얼굴입니다. 슬프거나 조르는 얼굴은 쓰지 않습니다.', '작은 크기에서는 판 종류 배지를 빼고 이름·진행 문구·막대만 둡니다.'],
+   pro: ['홈 화면에서 가장 눈에 띄고, 캐릭터가 앱의 얼굴이 됩니다.', '나중에 워치·위젯에서 붙이기를 할 때 반응을 보여 줄 자리가 생깁니다.'],
+   con: ['작은 크기에서 판 종류 배지를 빼서, 정해 둔 작은 크기 구성(목록 카드 요약)과 조금 다릅니다.', '표정이 오늘 붙였는지에 따라 바뀌어서, 사람에 따라 칭찬이나 재촉으로 느낄 수 있습니다(PRD 2절).']},
+  {id: 'p4', code: '4', title: '두 목표 나란히', like: '작은 위젯 두 개를 한 칸에',
+   layout: ['중간 크기를 세로선으로 반 나눠, 왼쪽·오른쪽에 작은 위젯과 같은 요약(스티커·이름·판 종류·진행 문구·막대)을 하나씩 둡니다.', '누르는 곳에 따라 그 목표의 판 상세가 열립니다.', '판 미니는 넣지 않습니다.'],
+   pro: ['빈 공간 없이 꽉 찹니다. 작은 위젯과 모양이 같아 익히기 쉽습니다.', '두 목표의 진행 막대를 나란히 비교하기 쉽습니다.'],
+   con: ['칸이 반으로 좁아 긴 이름은 한 줄에서 잘립니다.', '중간 크기의 원래 역할(판 미니)이 없어져서, 작은 위젯 두 개를 놓는 것과 차이가 적습니다.', '목표 하나만 고르는 9월 30일 결정을 바꿔야 합니다.']},
+  {id: 'p5', code: '5', title: '목록 두 줄', like: '앱 목록 화면을 줄여 놓은 느낌',
+   layout: ['위아래 두 줄에 목표를 하나씩 둡니다.', '줄마다 윗줄은 스티커·이름·판 종류, 아랫줄은 막대와 진행 문구입니다.', '줄 사이에 가는 선을 긋습니다.'],
+   pro: ['이름이 한 줄로 길게 들어가서 긴 목표 이름에 가장 강합니다.', '큰 크기에서는 같은 줄을 네 개까지 늘리기 쉽습니다.'],
+   con: ['판 미니가 없어 "판을 쌓는" 느낌이 약하고 막대 두 개만 보입니다.', '목표 하나만 고르는 9월 30일 결정을 바꿔야 합니다.']},
+  {id: 'p6', code: '6', title: '판 미니 두 개', like: '두 목표의 판을 한눈에',
+   layout: ['반 나눈 칸마다 스티커·이름, 작게 줄인 판 미니(칸 8pt), 진행 문구를 둡니다.', '달력판은 이번 달 전체, 적립판은 다음 빈칸이 든 묶음(한 줄 10칸)입니다.', '판 종류 배지는 미니 모양으로 알 수 있어 뺐습니다.'],
+   pro: ['중간 크기의 역할(판 미니)을 지키면서 목표를 두 개 보여 줍니다.', '스티커가 쌓이는 모습이 두 목표 모두 보입니다.'],
+   con: ['칸이 8pt라 작습니다. 실제 기기에서 잘 보이는지 확인해야 합니다.', '판 종류 배지를 빼서 작은 위젯과 표시가 다릅니다.', '목표 하나만 고르는 9월 30일 결정을 바꿔야 합니다.']},
+];
+
+/* ── 바로 붙이기: 누르는 곳 시안 ── */
+const TAPS = [
+  {id: 'ta', code: 'A', title: '칸을 누르면 붙이기', like: '앱 판과 같은 규칙 · 6안 모양에 얹음',
+   layout: ['중간 크기에서 오늘 칸(달력판)이나 다음 빈칸(적립판)을 누르면 붙이고, 붙인 칸을 다시 누르면 뗍니다. 앱 판의 "한 번 누르면 붙이기·떼기"와 같습니다.', '칸 밖(이름·진행 문구 쪽)을 누르면 판 상세가 열립니다.', '작은 크기에는 판 미니가 없어서 누르면 앱이 열리기만 합니다.', '판 미니 칸은 11pt로 키웠습니다(6안은 8pt).'],
+   pro: ['앱에서 붙이는 것과 똑같아서 따로 배울 것이 없습니다.', '떼기도 같은 자리라 실수를 바로 되돌릴 수 있습니다.', '붙이는 칸이 정해져 있어 엉뚱한 날에 붙을 일이 없습니다.'],
+   con: ['누르는 칸이 11pt로 작습니다. Apple 권장 크기(44pt)보다 한참 작아 손가락으로 맞히기 어렵습니다.', '작은 크기에서는 붙일 수 없습니다.']},
+  {id: 'tb', code: 'B', title: '스티커 단추를 누르면 붙이기', like: '5안 모양에 얹음',
+   layout: ['목표마다 왼쪽 스티커를 네모 단추 안에 넣고, 그 단추를 누르면 붙입니다. 오늘 붙인 달력판은 단추가 살구색으로 바뀝니다.', '달력판은 다시 누르면 오늘 것을 뗍니다. 적립판은 누를 때마다 한 칸씩 붙고, 붙인 뒤 나오는 [되돌리기]로 하나를 뗍니다.', '단추 밖을 누르면 판 상세가 열립니다.', '작은 크기도 왼쪽 위 단추로 붙입니다.'],
+   pro: ['누르는 곳(28pt)이 크고 단추처럼 보여서 무엇을 하는지 알 수 있습니다.', '작은 크기와 중간 크기 모두 같은 방식입니다.', '판 상세로 가는 길도 남습니다.'],
+   con: ['스티커가 단추 안에 들어가 지금 목록 카드와 모양이 조금 달라집니다.', '적립판은 하루에 여러 번 붙일 수 있어 [되돌리기]가 따로 필요합니다.']},
+  {id: 'tb1', code: 'B-1', title: '스티커 단추 · %만', like: 'B 메모 반영 · 가장 단순',
+   layout: ['B와 같이 스티커 단추로 붙입니다. 판 종류 배지는 뺐습니다(달력판은 "이번 달 n%"로 구분됩니다).', '적립판은 개수 없이 진행률(%)만 보여 줍니다.', '목표가 없으면 졸린 캐릭터와 "첫 목표를 만들어 보세요"가 나오고, 누르면 새 목표 만들기 화면이 열립니다.'],
+   pro: ['날짜로 잘못 읽힐 숫자가 없습니다.', '글자가 가장 적어 작은 크기에서도 여유가 있습니다.'],
+   con: ['몇 개 붙였는지는 앱을 열어야 압니다.', '적립판과 기간 없는 판의 %가 같은 모양이라 둘을 글자로는 구분하기 어렵습니다.']},
+  {id: 'tb2', code: 'B-2', title: '스티커 단추 · 막대 양끝 개수', like: 'B 메모 반영 · 붙인 개수 / 전체를 막대 양끝에',
+   layout: ['B-1과 같고, 적립판만 막대 왼쪽에 붙인 개수, 오른쪽 끝에 전체 칸 수를 둡니다.', '달력판은 "이번 달 n%"를 그대로 둡니다.', '목표 없음은 B-1과 같습니다.'],
+   pro: ['막대 양끝이라 "6/20" 같은 날짜 모양이 생기지 않습니다.', '얼마나 남았는지 막대와 숫자로 함께 보입니다.'],
+   con: ['양끝 숫자가 작아(12pt) 막대가 짧아집니다.', '달력판과 적립판의 진행 줄 모양이 다릅니다.']},
+  {id: 'tb3', code: 'B-3', title: '스티커 단추 · 칸 단위', like: 'B 메모 반영 · "6칸 · 30%"',
+   layout: ['B-1과 같고, 적립판은 "6칸 · 30%"처럼 단위를 붙여 보여 줍니다.', '목표 없음은 B-1과 같습니다.'],
+   pro: ['"칸"이 붙어 날짜로 읽히지 않습니다.', '개수와 %를 한 번에 봅니다.'],
+   con: ['전체 칸 수(20)는 보이지 않습니다.', '글자가 길어져 중간 크기에서 막대가 짧아집니다.']},
+  {id: 'tc', code: 'C', title: '카드 전체를 누르면 붙이기', like: '가장 빠름 · 4안 모양에 얹음',
+   layout: ['목표 칸 어디를 눌러도 붙입니다. 붙이면 그 칸에 "붙였어요"와 [되돌리기]가 나옵니다.', '달력판은 오늘 이미 붙였으면 다시 눌러도 그대로입니다.', '위젯에서는 판 상세로 갈 수 없고, 앱 아이콘으로 엽니다.'],
+   pro: ['누르는 곳이 가장 넓어서 가장 빠릅니다.', '모양을 거의 바꾸지 않아도 됩니다.'],
+   con: ['스치기만 해도 붙어서 실수가 가장 많을 수 있습니다.', '위젯을 눌러 판 상세를 여는 9월 30일 결정이 없어집니다.', '"홈 화면에서 앱을 열려고 눌렀는데 붙어 버리는" 일이 생길 수 있습니다.']},
+];
+const sim = {};
+const simReset = (id) => { sim[id] = {cal: false, tal: 6, undo: '', msg: '위젯을 눌러 보세요'}; };
+for (const t of TAPS) simReset(t.id);
+const z = (zone, act, o, extra = '') => `data-zone="${zone}" data-act="${act}" data-o="${o}" ${extra}`;
+function tapGoals(o) {
+  const c = calGoal(sim[o].cal), t = tallyGoal(true);
+  const tal = {...t, placed: sim[o].tal, pct: Math.floor(sim[o].tal / 20 * 100), label: `${Math.floor(sim[o].tal / 20 * 100)}%`, mini: {...t.mini, cells: Array.from({length: 20}, (_, i) => i < sim[o].tal ? 'filled' : 'empty')}};
+  return {cal: c, tal};
+}
+/* A: 칸 */
+function cellsA(o, g, key) {
+  if (g.mini.type === 'calendar') return `<div class="cells" style="width:${7*13}px">${'<b class="outside"></b>'.repeat(firstWeekday)}${g.mini.days.map((d, i) => i === 3 ? `<b class="${d}" ${z('stick', 'toggle-cal', o)}></b>` : `<b class="${d}"></b>`).join('')}</div>`;
+  const n = sim[o].tal;
+  return `<div class="cells" style="width:${10*13}px">${g.mini.cells.map((c, i) => i === n ? `<b class="${c}" ${z('stick', 'add-tal', o)}></b>` : i === n - 1 ? `<b class="${c}" ${z('stick', 'remove-tal', o)}></b>` : `<b class="${c}"></b>`).join('')}</div>`;
+}
+function tapA(o) {
+  const {cal, tal} = tapGoals(o), f = frame(338, 158), fs = frame(158, 158);
+  const col = (g, k) => `<div class="half" style="gap:4px" ${z('open', 'open-' + k, o)}><div style="display:flex;align-items:center;gap:6px">${sticker(g.sticker, 18)}<div class="small-txt clamp1" style="flex:1">${esc(g.name)}</div></div><div style="flex:1;display:flex;align-items:center">${cellsA(o, g, k)}</div><div class="small-txt">${esc(progText(g))}</div></div>`;
+  const medium = `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;flex-direction:row;gap:12px">${col(cal, 'cal')}<div class="vline"></div>${col(tal, 'tal')}</div></div>`;
+  const small = `<div class="w s">${fs.bg}<div class="in" style="inset:${fs.pad}px;gap:3px" ${z('open', 'open-cal', o)}>${sticker(cal.sticker, 22)}<div class="name clamp2">${esc(cal.name)}</div>${badge(cal.kind)}<div class="small-txt">${esc(cal.label)}</div>${bar(cal.pct)}</div></div>`;
+  return {small, medium};
+}
+/* B: 스티커 단추 */
+function tapB(o) {
+  const {cal, tal} = tapGoals(o), f = frame(338, 158), fs = frame(158, 158), S = sim[o];
+  const btn = (g, k) => `<div class="stickbtn${k === 'cal' && S.cal ? ' on' : ''}" ${z('stick', k === 'cal' ? 'toggle-cal' : 'add-tal', o)}>${sticker(g.sticker, 20)}</div>`;
+  const prog = (g, k) => S.undo === k ? `<span class="small-txt">붙였어요 <span class="undo" ${z('stick', 'undo', o)}>되돌리기</span></span>` : `<span class="small-txt" style="flex:none">${esc(progText(g))}</span>`;
+  const row = (g, k) => `<div style="display:flex;align-items:center;gap:8px;flex:1" ${z('open', 'open-' + k, o)}>${btn(g, k)}<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><div style="display:flex;align-items:center;gap:6px"><div class="name clamp1" style="flex:1">${esc(g.name)}</div>${badge(g.kind)}</div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1">${bar(g.pct)}</div>${prog(g, k)}</div></div></div>`;
+  const medium = `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;gap:6px">${row(cal, 'cal')}<div class="hline"></div>${row(tal, 'tal')}</div></div>`;
+  const small = `<div class="w s">${fs.bg}<div class="in" style="inset:${fs.pad}px;gap:3px" ${z('open', 'open-cal', o)}>${btn(cal, 'cal')}<div class="name clamp1">${esc(cal.name)}</div>${badge(cal.kind)}${S.undo === 'cal' ? `<div class="small-txt">붙였어요 <span class="undo" ${z('stick', 'undo', o)}>되돌리기</span></div>` : `<div class="small-txt">${esc(cal.label)}</div>`}${bar(cal.pct)}</div></div>`;
+  return {small, medium};
+}
+/* C: 카드 전체 */
+function tapC(o) {
+  const {cal, tal} = tapGoals(o), f = frame(338, 158), fs = frame(158, 158), S = sim[o];
+  const prog = (g, k) => S.undo === k ? `<div class="small-txt">붙였어요 <span class="undo" ${z('stick', 'undo', o)}>되돌리기</span></div>` : `<div class="small-txt">${esc(g.label)}</div>`;
+  const col = (g, k) => `<div class="half" ${z('stick', k === 'cal' ? 'add-cal' : 'add-tal', o)}>${sticker(g.sticker, 22)}<div class="name clamp1">${esc(g.name)}</div>${badge(g.kind)}${prog(g, k)}${bar(g.pct)}</div>`;
+  const medium = `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;flex-direction:row;gap:12px">${col(cal, 'cal')}<div class="vline"></div>${col(tal, 'tal')}</div></div>`;
+  const small = `<div class="w s">${fs.bg}<div class="in" style="inset:${fs.pad}px;gap:3px" ${z('stick', 'add-cal', o)}>${sticker(cal.sticker, 22)}<div class="name clamp1">${esc(cal.name)}</div>${badge(cal.kind)}${prog(cal, 'cal')}${bar(cal.pct)}</div></div>`;
+  return {small, medium};
+}
+/* B 고친 안: 판 종류 배지 없음 + 적립판 개수 표시 3가지 + 목표 없음 */
+function tapBx(o, mode) {
+  const {cal, tal} = tapGoals(o), f = frame(338, 158), fs = frame(158, 158), S = sim[o];
+  const btn = (g, k) => `<div class="stickbtn${k === 'cal' && S.cal ? ' on' : ''}" ${z('stick', k === 'cal' ? 'toggle-cal' : 'add-tal', o)}>${sticker(g.sticker, 20)}</div>`;
+  const undo = `<span class="small-txt">붙였어요 <span class="undo" ${z('stick', 'undo', o)}>되돌리기</span></span>`;
+  // 진행 줄: 막대 + 문구. 적립판만 mode에 따라 다르다
+  const line = (g, k) => {
+    if (S.undo === k) return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1">${bar(g.pct)}</div>${undo}</div>`;
+    if (k === 'tal' && mode === 'ends') return `<div class="ends"><span class="n">${g.placed}</span><div style="flex:1">${bar(g.pct)}</div><span class="n">${g.mini.total}</span></div>`;
+    const txt = k === 'cal' ? g.label : mode === 'unit' ? `${g.placed}칸 · ${g.label}` : g.label;
+    return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1">${bar(g.pct)}</div><span class="small-txt" style="flex:none">${esc(txt)}</span></div>`;
+  };
+  const row = (g, k) => `<div style="display:flex;align-items:center;gap:8px;flex:1" ${z('open', 'open-' + k, o)}>${btn(g, k)}<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><div class="name clamp1">${esc(g.name)}</div>${line(g, k)}</div></div>`;
+  const medium = `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;gap:6px">${row(cal, 'cal')}<div class="hline"></div>${row(tal, 'tal')}</div></div>`;
+  // 작은 크기: 문구와 막대를 두 줄로
+  const lineS = (g, k) => {
+    if (S.undo === k) return `${undo}${bar(g.pct)}`;
+    if (k === 'tal' && mode === 'ends') return line(g, k);
+    const txt = k === 'cal' ? g.label : mode === 'unit' ? `${g.placed}칸 · ${g.label}` : g.label;
+    return `<div class="small-txt">${esc(txt)}</div>${bar(g.pct)}`;
+  };
+  const sm = (g, k) => `<div class="w s">${fs.bg}<div class="in" style="inset:${fs.pad}px;gap:5px" ${z('open', 'open-' + k, o)}>${btn(g, k)}<div class="name clamp2">${esc(g.name)}</div><div style="flex:1"></div>${lineS(g, k)}</div></div>`;
+  const emptyS = `<div class="w s">${fs.bg}<div class="in" style="inset:${fs.pad}px;align-items:center;justify-content:center;gap:4px;text-align:center" ${z('open', 'open-new', o)}>${mascot(M.faces.sleepy, 56)}<div class="small-txt">첫 목표를 만들어 보세요</div></div></div>`;
+  const emptyM = `<div class="w m">${f.bg}<div class="in" style="inset:${f.pad}px;flex-direction:row;align-items:center;gap:14px" ${z('open', 'open-new', o)}>${mascot(M.faces.sleepy, 80)}<div style="display:flex;flex-direction:column;gap:8px"><div class="name">첫 목표를 만들어 보세요</div><span class="undo" style="align-self:flex-start;font-size:13px;line-height:20px;padding:2px 10px">목표 만들기</span></div></div></div>`;
+  return {small: sm(cal, 'cal'), small2: sm(tal, 'tal'), medium, emptyS, emptyM};
+}
+const TAPV = {ta: tapA, tb: tapB, tc: tapC, tb1: o => tapBx(o, 'pct'), tb2: o => tapBx(o, 'ends'), tb3: o => tapBx(o, 'unit')};
+function tapHome(o) {
+  const w = TAPV[o](o), f = (html, cap) => `<figure style="margin:0">${html}<figcaption class="cap">${cap}</figcaption></figure>`;
+  if (w.emptyM) return `<div class="home ${view.wall}${view.zones ? ' zones' : ''}">${f(w.small, '작은 · 달력판')}${f(w.small2, '작은 · 적립판')}<div class="wide">${f(w.medium, '중간 · 달력판 + 적립판')}</div>
+    <div class="wide">${f(w.emptyS, '작은 · 목표 없음')}${f(w.emptyM, '중간 · 목표 없음')}</div>
+    <div class="wide" style="align-items:center"><span class="msg" id="msg-${o}" aria-live="polite">${esc(sim[o].msg)}</span><button type="button" class="reset" data-reset="${o}">처음 상태로</button></div></div>`;
+  return `<div class="home ${view.wall}${view.zones ? ' zones' : ''}">${f(w.small, '작은 · 달력판')}<div></div><div class="wide">${f(w.medium, '중간 · 달력판 + 적립판')}</div>
+    <div class="wide" style="align-items:center"><span class="msg" id="msg-${o}" aria-live="polite">${esc(sim[o].msg)}</span><button type="button" class="reset" data-reset="${o}">처음 상태로</button></div></div>`;
+}
+function tapAct(o, act) {
+  const S = sim[o], CAL = '산책하기', TAL = '책 20권 읽기';
+  if (!S) return;
+  if (act === 'toggle-water') { S.msg = '「물 마시기」 오늘 칸에 붙였어요'; return; }
+  if (act === 'open-new') { S.msg = '앱이 열리고 새 목표 만들기 화면이 보여요'; return; }
+  if (act === 'open-cal' || act === 'open-tal') { S.msg = `앱이 열리고 「${act === 'open-cal' ? CAL : TAL}」 판 상세가 보여요`; return; }
+  if (act === 'toggle-cal') { S.cal = !S.cal; S.undo = S.cal && o === 'tb' ? 'cal' : ''; S.msg = S.cal ? `「${CAL}」 오늘 칸에 붙였어요` : `「${CAL}」 오늘 칸에서 뗐어요`; return; }
+  if (act === 'add-cal') { if (S.cal) { S.msg = `「${CAL}」은 오늘 이미 붙였어요`; return; } S.cal = true; S.undo = 'cal'; S.msg = `「${CAL}」 오늘 칸에 붙였어요`; return; }
+  if (act === 'add-tal') { if (S.tal >= 20) return; S.tal++; S.undo = o === 'ta' ? '' : 'tal'; S.msg = `「${TAL}」에 붙였어요 (${S.tal}/20)`; return; }
+  if (act === 'remove-tal') { if (S.tal <= 0) return; S.tal--; S.msg = `「${TAL}」 마지막 칸에서 뗐어요 (${S.tal}/20)`; return; }
+  if (act === 'undo') { if (S.undo === 'cal') S.cal = false; if (S.undo === 'tal') S.tal--; S.msg = '되돌렸어요'; S.undo = ''; }
+}
+function rerenderTap(o) { if (o === 'f-empty') return; $(`shots-${o}`).innerHTML = FV[o] ? fullHome(o) : tapHome(o); drawBadges($(`shots-${o}`)); }
+document.addEventListener('click', e => {
+  const r = e.target.closest('[data-reset]');
+  if (r) { simReset(r.dataset.reset); rerenderTap(r.dataset.reset); return; }
+  const a = e.target.closest('[data-act]');
+  if (!a) return;
+  tapAct(a.dataset.o, a.dataset.act); rerenderTap(a.dataset.o);
+});
+
+/* ── 5차: 꽉 채운 위젯 ── */
+const FULL = [
+  {id: 'f1', code: '1', title: '큰 숫자', like: '진행률을 가장 크게',
+   layout: ['작은: 왼쪽 위 스티커 단추와 그 옆 이름(두 줄까지), 아래쪽에 진행률을 큰 숫자(34pt)로, 맨 아래 가는 막대.', '달력판은 숫자 위에 "이번 달"을 작게 붙입니다. 적립판은 %만.', '중간: 같은 칸을 둘 나란히 — 목표 두 개.', '목표가 없으면 졸린 캐릭터와 "첫 목표를 만들어 보세요".'],
+   pro: ['멀리서도 숫자가 읽힙니다(배터리 위젯처럼).', '글자 종류가 셋(이름·숫자·작은 설명)뿐이라 정돈돼 보입니다.'],
+   con: ['판(칸)이 보이지 않아 "쌓는" 느낌은 숫자와 막대로만 전합니다.', '% 숫자가 커서 낮은 숫자(6%)가 눈에 띌 수 있습니다. 재촉으로 읽히지 않는지 봐야 합니다.']},
+  {id: 'f2', code: '2', title: '링', like: '배터리 위젯처럼 · 중간에 목표 세 개',
+   layout: ['스티커 단추를 진행 링이 둘러쌉니다. 링 안 스티커를 누르면 붙입니다.', '링 아래에 진행률, 그 아래 이름 한 줄.', '작은: 목표 하나를 크게(링 92pt). 중간: 목표 세 개를 나란히.', '목표가 없으면 졸린 캐릭터.'],
+   pro: ['중간 크기에 목표 세 개가 들어가 공간을 가장 알차게 씁니다.', '누르는 곳(링 안 스티커)이 크고 분명합니다.'],
+   con: ['둥근 링은 앱의 각진 픽셀 모양과 결이 다릅니다.', '중간에서 이름이 한 줄(약 6자)로 잘립니다.', '목표 하나만 고르는 9월 30일 결정을 바꿔야 합니다(셋을 고르거나 최근 붙인 순).']},
+  {id: 'f3', code: '3', title: '판을 크게', like: '목표 하나, 판 미니를 크게',
+   layout: ['중간: 왼쪽에 스티커 단추·이름·진행률, 오른쪽에 판 미니를 크게(칸 16pt) 둡니다. 목표는 하나입니다.', '달력판은 이번 달 전체, 적립판은 다음 빈칸이 든 묶음 20칸.', '작은: 위에 이름과 스티커 단추, 아래에 이번 달 판(칸 12pt).', '목표가 없으면 졸린 캐릭터.'],
+   pro: ['9월 30일에 정한 "중간 = 판 미니, 목표 하나"를 지키면서 빈 곳을 판으로 채웁니다.', '스티커가 칸에 쌓이는 모습이 가장 잘 보입니다.'],
+   con: ['목표가 하나뿐이라 여러 목표를 보려면 위젯을 여러 개 놓아야 합니다.', '적립판 묶음(20칸)이 달력보다 납작해 보입니다.']},
+  {id: 'r1', code: '6-링', title: '링 위젯 (상자 없음)', like: '6차 · 2안 메모 반영 · 두 종류 중 하나',
+   layout: ['스티커를 감싸던 네모 상자를 없앴습니다. 링 안쪽 동그라미 전체가 누르는 곳이고, 누르면 붙습니다.', '오늘 붙인 달력판은 링 안쪽이 살구색으로 차오릅니다. 적립판은 누를 때마다 한 칸씩, [되돌리기]로 하나를 뗍니다.', '링 밖(숫자·이름)을 누르면 판 상세가 열립니다.', '작은: 목표 하나. 중간: 목표 세 개.'],
+   pro: ['누르는 곳(링 안 72pt)이 상자보다 크고 모양이 깔끔합니다.', '배터리 위젯처럼 한눈에 여러 목표의 진행이 보입니다.'],
+   con: ['상자가 없어 "누르면 붙는다"는 단서가 약합니다. 처음 한 번은 앱(튜토리얼이나 위젯 추가 안내)에서 알려 줘야 합니다.', '둥근 링은 픽셀 모양과 결이 조금 다릅니다.']},
+  {id: 'r2', code: '6-달력', title: '달력 위젯 (상자 없음)', like: '6차 · 두 종류 중 하나 · 3안을 다듬음',
+   layout: ['목표 하나의 판을 크게 보여 줍니다. 판 영역 전체가 누르는 곳이고, 누르면 오늘 칸(달력판)이나 다음 빈칸(적립판)에 붙습니다.', '오늘 칸은 살구색 테두리로 표시합니다.', '판 밖(이름·숫자)을 누르면 판 상세가 열립니다.', '스티커는 상자 없이 이름 옆에 작게 둡니다.'],
+   pro: ['칸 하나를 맞히지 않아도 판 어디든 누르면 되어 누르기 쉽습니다.', '9월 30일 결정(목표 하나 + 판 미니)을 그대로 지킵니다.'],
+   con: ['판 아무 곳을 눌러도 "오늘"에 붙어서, 다른 날 칸을 눌렀는데 오늘에 붙는 게 어색할 수 있습니다.', '적립판은 판이 납작해 누르는 곳이 달력보다 작습니다.']},
+];
+FULL.unshift(...FULL.splice(3, 2));
+for (const t of FULL) simReset(t.id);
+const fbar = (p) => `<div class="fbar"><i style="width:${p}%"></i></div>`;
+function fGoals(o) {
+  const {cal, tal} = tapGoals(o);
+  const water = {name: '물 마시기', sticker: 'star', kind: '달력판', pct: 12, label: '이번 달 12%', placed: 4, mini: {type: 'calendar', days: []}};
+  return {cal, tal, water};
+}
+const sbtn = (o, g, k, size = 40, icon = 28) => `<div class="sb${k === 'cal' && sim[o].cal ? ' on' : ''}" style="width:${size}px;height:${size}px" ${z('stick', k === 'cal' ? 'toggle-cal' : k === 'tal' ? 'add-tal' : 'toggle-water', o)}>${sticker(g.sticker, icon)}</div>`;
+const pctOf = (g) => `${g.pct}%`;
+const pctWord = (g, cls) => `<div style="display:flex;align-items:baseline;gap:4px"><span class="${cls}">${g.pct}%</span><span class="cap2" style="opacity:1">채웠어요</span></div>`;
+const undoLine = (o) => `<div style="display:flex;align-items:center;gap:6px;padding-block:4px"><span class="cap2" style="opacity:1">붙였어요</span><span class="undo" ${z('stick', 'undo', o)}>되돌리기</span></div>`;
+function fEmpty(size) {
+  const m = size === 's';
+  return `<div class="fw${view.fill === 'glass' ? ' glass' : ''} ${size}" style="align-items:center;justify-content:center;gap:6px;text-align:center" ${z('open', 'open-new', 'f-empty')}>${mascot(M.faces.sleepy, m ? 72 : 76)}<div class="nm">첫 목표를 만들어 보세요</div>${m ? '' : '<span class="undo">목표 만들기</span>'}</div>`;
+}
+const FV = {
+  f1(o) {
+    const {cal, tal} = fGoals(o), S = sim[o];
+    const col = (g, k) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px" ${z('open', 'open-' + k, o)}><div style="display:flex;gap:8px;align-items:flex-start">${sbtn(o, g, k, 38, 26)}<div class="nm clamp2" style="flex:1;min-width:0">${esc(g.name)}</div></div><div style="flex:1"></div>${S.undo === k ? undoLine(o) : `${k === 'cal' ? '<div class="cap2">이번 달</div>' : ''}${pctWord(g, 'big')}`}${fbar(g.pct)}</div>`;
+    return {small: `<div class="fw${view.fill === 'glass' ? ' glass' : ''} s">${col(cal, 'cal')}</div>`, small2: `<div class="fw${view.fill === 'glass' ? ' glass' : ''} s">${col(tal, 'tal')}</div>`, medium: `<div class="fw${view.fill === 'glass' ? ' glass' : ''} m" style="flex-direction:row;gap:20px">${col(cal, 'cal')}${col(tal, 'tal')}</div>`};
+  },
+  f2(o) {
+    const {cal, tal, water} = fGoals(o), S = sim[o];
+    const ring = (g, k, R) => {
+      const r = R / 2 - 5, c = 2 * Math.PI * r, inner = Math.round(R * 0.5);
+      return `<div style="position:relative;width:${R}px;height:${R}px;flex:none"><svg width="${R}" height="${R}" aria-hidden="true" style="position:absolute;inset:0;transform:rotate(-90deg)"><circle cx="${R/2}" cy="${R/2}" r="${r}" fill="none" stroke="rgba(6,38,28,.2)" stroke-width="7"/><circle cx="${R/2}" cy="${R/2}" r="${r}" fill="none" stroke="${C.ink}" stroke-width="7" stroke-dasharray="${c * g.pct / 100} ${c}" stroke-linecap="butt"/></svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">${sbtn(o, g, k, inner, Math.round(inner * 0.66))}</div></div>`;
+    };
+    const unit = (g, k, R, nm) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px" ${z('open', 'open-' + (k === 'water' ? 'cal' : k), o)}>${ring(g, k, R)}${S.undo === k ? `<span class="undo" ${z('stick', 'undo', o)}>되돌리기</span>` : `${pctWord(g, 'mid')}`}${nm ? `<div class="cap2 clamp1" style="max-width:100%">${esc(g.name)}</div>` : ''}</div>`;
+    const small = `<div class="fw${view.fill === 'glass' ? ' glass' : ''} s" style="align-items:center;padding:12px">${unit(cal, 'cal', 92, true)}</div>`;
+    const medium = `<div class="fw${view.fill === 'glass' ? ' glass' : ''} m" style="flex-direction:row;gap:8px;padding:12px 10px">${unit(cal, 'cal', 84, true)}${unit(tal, 'tal', 84, true)}${unit(water, 'water', 84, true)}</div>`;
+    return {small, medium};
+  },
+  f3(o) {
+    const {cal, tal} = fGoals(o), S = sim[o];
+    const cells = (g, size, cols) => {
+      const st = `width:${size}px;height:${size}px`;
+      if (g.mini.type === 'calendar') return `<div class="cells" style="gap:2px;width:${7*(size+2)}px">${`<b class="outside" style="${st}"></b>`.repeat(firstWeekday)}${g.mini.days.map((d, i) => `<b class="${d}" style="${st}"></b>`).join('')}</div>`;
+      return `<div class="cells" style="gap:2px;width:${cols*(size+2)}px">${g.mini.cells.map(c => `<b class="${c}" style="${st}"></b>`).join('')}</div>`;
+    };
+    const left = (g, k) => `<div style="width:120px;flex:none;display:flex;flex-direction:column;gap:6px">${sbtn(o, g, k)}<div class="nm clamp2">${esc(g.name)}</div><div style="flex:1"></div>${S.undo === k ? undoLine(o) : `${k === 'cal' ? '<div class="cap2">이번 달</div>' : ''}${pctWord(g, 'mid')}`}</div>`;
+    const med = (g, k) => `<div class="fw${view.fill === 'glass' ? ' glass' : ''} m" style="flex-direction:row;gap:16px;align-items:stretch" ${z('open', 'open-' + k, o)}>${left(g, k)}<div style="flex:1;display:flex;align-items:center;justify-content:center">${cells(g, k === 'cal' ? 16 : 18, 10)}</div></div>`;
+    const small = `<div class="fw${view.fill === 'glass' ? ' glass' : ''} s" style="gap:6px;padding:14px" ${z('open', 'open-cal', o)}><div style="display:flex;align-items:flex-start;gap:6px"><div class="nm clamp2" style="flex:1">${esc(cal.name)}</div>${sbtn(o, cal, 'cal', 34, 24)}</div><div style="flex:1;display:flex;align-items:flex-end">${cells(cal, 12, 7)}</div></div>`;
+    return {small, medium: med(cal, 'cal'), medium2: med(tal, 'tal')};
+  },
+};
+/* 6차: 링 · 달력 (상자 없음) */
+FV.r1 = (o) => {
+  const {cal, tal, water} = fGoals(o), S = sim[o];
+  const ring = (g, k, R) => {
+    const r = R / 2 - 5, c = 2 * Math.PI * r, d = R - 22;
+    const act = k === 'cal' ? 'toggle-cal' : k === 'tal' ? 'add-tal' : 'toggle-water';
+    return `<div style="position:relative;width:${R}px;height:${R}px;flex:none"><svg width="${R}" height="${R}" aria-hidden="true" style="position:absolute;inset:0;transform:rotate(-90deg)"><circle cx="${R/2}" cy="${R/2}" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".2" stroke-width="7"/><circle cx="${R/2}" cy="${R/2}" r="${r}" fill="none" stroke="currentColor" stroke-width="7" stroke-dasharray="${c * g.pct / 100} ${c}"/></svg>
+      <div class="disc${k === 'cal' && S.cal ? ' on' : ''}" style="left:11px;top:11px;width:${d}px;height:${d}px" ${z('stick', act, o)}>${sticker(g.sticker, Math.round(d * 0.62))}</div></div>`;
+  };
+  const unit = (g, k, R) => `<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px" ${z('open', 'open-' + (k === 'water' ? 'cal' : k), o)}>${ring(g, k, R)}${S.undo === k ? `<span class="undo" ${z('stick', 'undo', o)}>되돌리기</span>` : `${pctWord(g, 'mid')}`}<div class="cap2 clamp1" style="max-width:100%">${esc(g.name)}</div></div>`;
+  return {small: `<div class="fw${view.fill === 'glass' ? ' glass' : ''} s" style="align-items:center;padding:12px">${unit(cal, 'cal', 92)}</div>`,
+    medium: `<div class="fw${view.fill === 'glass' ? ' glass' : ''} m" style="flex-direction:row;gap:8px;padding:12px 10px">${unit(cal, 'cal', 84)}${unit(tal, 'tal', 84)}${unit(water, 'water', 84)}</div>`};
+};
+FV.r2 = (o) => {
+  const {cal, tal} = fGoals(o), S = sim[o];
+  const board = (g, size, cols) => {
+    const st = `width:${size}px;height:${size}px`;
+    if (g.mini.type === 'calendar') return `<div class="cells" style="gap:2px;width:${7*(size+2)}px">${`<b class="outside" style="${st}"></b>`.repeat(firstWeekday)}${g.mini.days.map((d, i) => `<b class="${d}" style="${st}${i === 3 ? `;box-shadow:0 0 0 2px ${C.apricot}` : ''}"></b>`).join('')}</div>`;
+    return `<div class="cells" style="gap:2px;width:${cols*(size+2)}px">${g.mini.cells.map((c, i) => `<b class="${c}" style="${st}${i === S.tal ? `;box-shadow:0 0 0 2px ${C.apricot}` : ''}"></b>`).join('')}</div>`;
+  };
+  const act = (k) => k === 'cal' ? 'toggle-cal' : 'add-tal';
+  const head = (g, k, big) => `<div style="display:flex;align-items:flex-start;gap:6px">${sticker(g.sticker, big ? 24 : 20)}<div class="nm ${big ? 'clamp2' : 'clamp1'}" style="flex:1;min-width:0">${esc(g.name)}</div></div>`;
+  const left = (g, k) => `<div style="width:116px;flex:none;display:flex;flex-direction:column;gap:6px">${head(g, k, true)}<div style="flex:1"></div>${S.undo === k ? undoLine(o) : `${k === 'cal' ? '<div class="cap2">이번 달</div>' : ''}${pctWord(g, 'mid')}`}</div>`;
+  const med = (g, k) => `<div class="fw${view.fill === 'glass' ? ' glass' : ''} m" style="flex-direction:row;gap:12px;align-items:stretch" ${z('open', 'open-' + k, o)}>${left(g, k)}<div style="flex:1;display:flex;align-items:center;justify-content:center;border-radius:8px" ${z('stick', act(k), o)}>${board(g, k === 'cal' ? 16 : 18, 10)}</div></div>`;
+  const small = `<div class="fw${view.fill === 'glass' ? ' glass' : ''} s" style="gap:6px;padding:14px" ${z('open', 'open-cal', o)}>${head(cal, 'cal')}<div style="flex:1;display:flex;align-items:flex-end;justify-content:center" ${z('stick', 'toggle-cal', o)}>${board(cal, 12, 7)}</div>${S.undo === 'cal' ? undoLine(o) : ''}</div>`;
+  return {small, medium: med(cal, 'cal'), medium2: med(tal, 'tal')};
+};
+function fullHome(o) {
+  const w = FV[o](o), f = (html, cap) => `<figure style="margin:0">${html}<figcaption class="cap">${cap}</figcaption></figure>`;
+  const style = `--fill:${view.fill}`;
+  return `<div class="home ${view.wall}${view.zones ? ' zones' : ''}" style="${style};grid-template-columns:repeat(2,max-content)">
+    ${f(w.small, o === 'f2' || o === 'r1' ? '작은 · 목표 하나' : '작은 · 달력판')}${w.small2 ? f(w.small2, '작은 · 적립판') : f(fEmpty('s'), '작은 · 목표 없음')}
+    <div class="wide">${f(w.medium, o === 'f1' ? '중간 · 목표 두 개' : o === 'f2' || o === 'r1' ? '중간 · 목표 세 개' : '중간 · 달력판')}</div>
+    ${w.medium2 ? `<div class="wide">${f(w.medium2, '중간 · 적립판')}</div>` : ''}
+    <div class="wide">${w.small2 ? f(fEmpty('s'), '작은 · 목표 없음') : ''}${f(fEmpty('m'), '중간 · 목표 없음')}</div>
+    <div class="wide" style="align-items:center"><span class="msg" id="msg-${o}" aria-live="polite">${esc(sim[o].msg)}</span><button type="button" class="reset" data-reset="${o}">처음 상태로</button></div></div>`;
+}
+
+let view = {wall: 'blue', today: true, frame: 'lcd', zones: true, fill: 'glass'};
+const BUNDLE = {full: FULL, widget: GROUPS, tap: TAPS};
+const state = {choice: {full: '', widget: '', tap: ''}, notes: {}};
+const ALLG = [...FULL.map(g => ({...g, b: 'full'})), ...GROUPS.map(g => ({...g, b: 'widget'})), ...TAPS.map(g => ({...g, b: 'tap'}))];
+for (const g of ALLG) state.notes[g.id] = '';
+const LS = 'chagok-widget-proposals';
+try {
+  const local = JSON.parse(localStorage.getItem(LS) || '{}');
+  for (const k of Object.keys(BUNDLE)) if (local.choice && typeof local.choice[k] === 'string') state.choice[k] = local.choice[k];
+  for (const g of ALLG) if (local.notes && typeof local.notes[g.id] === 'string') state.notes[g.id] = local.notes[g.id];
+} catch (e) {}
+let db = null;
+const writing = {}, queued = {}, timers = {};
+
+function homeFor(id) {
+  if (TWO[id]) {
+    const t = view.today, cal = calGoal(t), tal = tallyGoal(t);
+    const cal2 = {...calGoal(t), name: '물 마시기', sticker: 'star', label: `이번 달 ${Math.floor(4 / 31 * 100)}%`, pct: Math.floor(4 / 31 * 100), mini: {type: 'calendar', days: Array.from({length: 31}, (_, i) => i < 4 ? 'filled' : 'future')}};
+    const f = (html, cap) => `<figure style="margin:0">${html}<figcaption class="cap">${cap}</figcaption></figure>`;
+    return `<div class="home ${view.wall}" style="grid-template-columns:max-content">
+      ${f(TWO[id](cal, tal), '중간 · 달력판 + 적립판')}
+      ${f(TWO[id]({...cal, name: '아침마다 스트레칭하고 산책하기'}, cal2), '중간 · 달력판 두 개 (긴 이름)')}
+      ${f(oneGoal(cal), '목표 하나뿐 · 넓게 보여 줌')}
+    </div>`;
+  }
+  const cal = V[id](calGoal(view.today), view.today), tal = V[id](tallyGoal(view.today), view.today);
+  const f = (html, cap) => `<figure style="margin:0">${html}<figcaption class="cap">${cap}</figcaption></figure>`;
+  return `<div class="home ${view.wall}">
+    ${f(cal.small, '작은 · 달력판')}${f(tal.small, '작은 · 적립판')}
+    <div class="wide">${f(cal.medium, '중간 · 달력판 (이번 달)')}</div>
+    <div class="wide">${f(tal.medium, '중간 · 적립판 (다음 빈칸이 든 묶음)')}${f(cal.empty, '목표 없음')}</div>
+  </div>`;
+}
+function groupHtml(g, b, shots) {
+  const name = b === 'full' ? `꽉 채운 위젯 ${g.code}. ${g.title}` : b === 'tap' ? `바로 붙이기 ${g.code}. ${g.title}` : g.ref ? g.title : `위젯 ${g.code}. ${g.title}`;
+  return `
+    <section class="group${g.ref ? ' ref' : ''}" id="g-${g.id}">
+      <div class="side">
+        <div class="head"><h2>${name}</h2><span class="like">${esc(g.like)}</span></div>
+        <h3>${b === 'tap' ? '누르면' : '배치'}</h3>
+        <ol class="flow">${g.layout.map(f => `<li>${esc(f)}</li>`).join('')}</ol>
+        <h3>좋은 점과 걸리는 점</h3>
+        <ul class="pc">${g.pro.map(p => `<li class="pro">${esc(p)}</li>`).join('')}${g.con.map(p => `<li class="con">${esc(p)}</li>`).join('')}</ul>
+        <div class="review">
+          ${g.ref ? '' : `<button type="button" class="ok-btn" id="ok-${g.id}" data-b="${b}" data-g="${g.id}" aria-pressed="false">이 안 고르기</button>`}
+          <textarea id="note-${g.id}" data-g="${g.id}" aria-label="${esc(g.title)} 메모" placeholder="${g.ref ? '지금 미리보기에서 남기고 싶은 점이 있으면 적어 주세요' : '고치고 싶은 점, 가져오고 싶은 부분을 적어 주세요'}"></textarea>
+          <span class="save-state" id="state-${g.id}" aria-live="polite"></span>
+        </div>
+      </div>
+      <div id="shots-${g.id}" style="min-width:0">${shots}</div>
+    </section>`;
+}
+function render() {
+  $('fullgroups').innerHTML = FULL.map(g => groupHtml(g, 'full', fullHome(g.id))).join('');
+  $('tapgroups').innerHTML = TAPS.map(g => groupHtml(g, 'tap', tapHome(g.id))).join('');
+  $('groups').innerHTML = GROUPS.map(g => groupHtml(g, 'widget', homeFor(g.id))).join('');
+  paint(); drawBadges(document);
+}
+function rerender() {
+  for (const g of GROUPS) $(`shots-${g.id}`).innerHTML = homeFor(g.id);
+  for (const g of TAPS) $(`shots-${g.id}`).innerHTML = tapHome(g.id);
+  for (const g of FULL) $(`shots-${g.id}`).innerHTML = fullHome(g.id);
+  $('wb').setAttribute('aria-pressed', String(view.wall === 'blue'));
+  for (const [id, c] of [['c-lcd', C.lcd], ['c-mint', C.mint], ['c-ivory', C.ivory], ['c-glass', 'glass']]) $(id).setAttribute('aria-pressed', String(view.fill === c));
+  $('wp').setAttribute('aria-pressed', String(view.wall === 'photo'));
+  $('zon').setAttribute('aria-pressed', String(view.zones)); $('zoff').setAttribute('aria-pressed', String(!view.zones));
+  $('wl').setAttribute('aria-pressed', String(view.wall === 'light')); $('wd').setAttribute('aria-pressed', String(view.wall === 'dark'));
+  $('fl').setAttribute('aria-pressed', String(view.frame === 'lcd')); $('fp').setAttribute('aria-pressed', String(view.frame === 'panel'));
+  $('t1').setAttribute('aria-pressed', String(view.today)); $('t0').setAttribute('aria-pressed', String(!view.today));
+  drawBadges(document);
+}
+$('wb').onclick = () => { view.wall = 'blue'; rerender(); };
+$('c-lcd').onclick = () => { view.fill = C.lcd; rerender(); };
+$('c-mint').onclick = () => { view.fill = C.mint; rerender(); };
+$('c-ivory').onclick = () => { view.fill = C.ivory; rerender(); };
+$('c-glass').onclick = () => { view.fill = 'glass'; rerender(); };
+$('wp').onclick = () => { view.wall = 'photo'; rerender(); };
+$('wl').onclick = () => { view.wall = 'light'; rerender(); };
+$('wd').onclick = () => { view.wall = 'dark'; rerender(); };
+$('fl').onclick = () => { view.frame = 'lcd'; rerender(); };
+$('fp').onclick = () => { view.frame = 'panel'; rerender(); };
+$('zon').onclick = () => { view.zones = true; rerender(); };
+$('zoff').onclick = () => { view.zones = false; rerender(); };
+$('t1').onclick = () => { view.today = true; rerender(); };
+$('t0').onclick = () => { view.today = false; rerender(); };
+
+function label(b) {
+  if (!b) return label('full') + ' · ' + label('widget') + ' · ' + label('tap');
+  const g = BUNDLE[b].find(x => x.id === state.choice[b]), n = {full: '꽉 채운 위젯', tap: '바로 붙이기', widget: '위젯'}[b];
+  return g ? `${n} ${g.code}. ${g.title}` : `${n} 안 고름`;
+}
+function paint() {
+  for (const g of ALLG) {
+    const picked = state.choice[g.b] === g.id;
+    $(`g-${g.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${g.id}`);
+    if (b) { b.setAttribute('aria-pressed', String(picked)); b.textContent = picked ? '고른 안' : '이 안 고르기'; }
+    const t = $(`note-${g.id}`);
+    if (document.activeElement !== t && t.value !== state.notes[g.id]) t.value = state.notes[g.id];
+  }
+  const notes = ALLG.filter(x => state.notes[x.id].trim()).length;
+  $('summary').textContent = label() + (notes ? ` · 메모 ${notes}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-widget·choice-tap {value}, review/note-<안> {note}. 한 문서에는 한 번에 한 번만 쓰고, 쓰는 중에 또 바뀌면 끝난 뒤 한 번 더 쓴다.
+async function persist(key, statusId) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[key]) { queued[key] = statusId; return; }
+  writing[key] = true; setStatus(statusId, '저장 중…');
+  try {
+    const data = key.startsWith('choice-') ? {value: state.choice[key.slice(7)]} : {note: state.notes[key.slice(5)]};
+    await db.doc(`review/${key}`).set({...data, updatedAt: new Date().toISOString()});
+    setStatus(statusId, '저장됨');
+  } catch (e) {
+    setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true);
+  } finally {
+    writing[key] = false;
+    if (queued[key]) { const s = queued[key]; queued[key] = null; persist(key, s); }
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn');
+  if (!b) return;
+  const id = b.dataset.g, bid = b.dataset.b;
+  state.choice[bid] = state.choice[bid] === id ? '' : id;
+  paint(); persist(`choice-${bid}`, id);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t) return;
+  const id = t.dataset.g;
+  state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-${id}`, id); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t || !timers[t.dataset.g]) return;
+  const id = t.dataset.g;
+  clearTimeout(timers[id]); timers[id] = null; persist(`note-${id}`, id);
+});
+$('copy').addEventListener('click', () => {
+  const text = label('full') + '\n' + label('widget') + '\n' + label('tap') + '\n' + ALLG.filter(x => state.notes[x.id].trim()).map(x => `${{full: '꽉 채운 위젯', tap: '바로 붙이기', widget: '위젯'}[x.b]} ${x.code} 메모: ${state.notes[x.id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawBadges(document));
+window.addEventListener('load', () => drawBadges(document));
+
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got;
+  $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data();
+      if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-')) { const k = d.id.slice(7); if (k in state.choice && typeof v.value === 'string') state.choice[k] = v.value; continue; }
+      const id = d.id.replace(/^note-/, '');
+      if (!(id in state.notes)) continue;
+      const t = document.activeElement;
+      state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>

@@ -1,0 +1,353 @@
+<title>차곡차곡 아이콘·스플래시 확정</title>
+<style>
+/* 배치: 묶음(Android 아이콘·스플래시)마다 안을 한 띠씩. 왼쪽 설명·고르기·메모, 오른쪽 실제 크기 그림. 아래 고정 막대에 고른 안. */
+@font-face { font-family: "NeoDGM"; src: url(data:font/ttf;base64,__FONT__) format("truetype"); font-display: block; }
+:root {
+  --bg: #f3f6f2; --surface: #ffffff; --line: #d3ddd5; --fg: #0e2a20; --muted: #4f6559;
+  --accent: #c8532c; --ok: #2f6b4a; --stage: #e4ebe5;
+  --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --pixel: "NeoDGM", var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mint: #AFE1CB; --lcd: #C7DE94; --ink: #06261C; --apricot: #FD855F; --ivory: #FEF1D1;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4; --accent: #ff9a76; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4; --accent: #ff9a76; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 36px; }
+h1 { font-family: var(--pixel); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h2 { font-size: 19px; line-height: 1.3; margin: 0; text-wrap: balance; }
+h3 { font-size: 13px; line-height: 1.35; margin: 0; color: var(--muted); font-weight: 600; letter-spacing: 0.03em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 84ch; }
+.bundle { display: flex; flex-direction: column; gap: 16px; }
+.bundle-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--fg); padding-bottom: 8px; }
+.bundle-head h2 { font-family: var(--pixel); font-weight: 400; font-size: 26px; }
+.picked { font-size: 13px; color: var(--muted); }
+section.group { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 18px; background: var(--surface); border: 1px solid var(--line); padding: 18px; }
+section.group.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+section.group.ref { background: transparent; border-style: dashed; }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.like { font-size: 13px; color: var(--muted); }
+.flow { margin: 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+ul.pc { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+ul.pc li { padding-left: 10px; border-left: 2px solid var(--line); }
+ul.pc li.pro { border-color: var(--ok); } ul.pc li.con { border-color: var(--accent); }
+.review { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ok-btn { align-self: flex-start; font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--ok); background: transparent; color: var(--ok); border-radius: 4px; cursor: pointer; }
+section.group.ok .ok-btn { background: var(--ok); color: var(--surface); }
+.ok-btn:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.review textarea { width: 100%; box-sizing: border-box; min-height: 72px; resize: vertical; font: inherit; font-size: 14px; line-height: 1.5; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.review textarea::placeholder { color: var(--muted); }
+.save-state { font-size: 12px; color: var(--muted); min-height: 18px; }
+.save-state.bad { color: var(--accent); }
+.shots { display: flex; flex-wrap: wrap; gap: 18px; min-width: 0; align-items: flex-start; background: var(--stage); padding: 16px; border-radius: 6px; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+figcaption { font-size: 12px; color: var(--muted); text-align: center; max-width: 220px; }
+canvas { display: block; image-rendering: pixelated; }
+.phone { border-radius: 26px; overflow: hidden; outline: 1px solid var(--line); }
+.replay { font: inherit; font-size: 13px; padding: 3px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+.pbar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pbar-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.pbar-label { font-size: 13px; color: var(--muted); }
+#summary { font-family: var(--mono); font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.pbar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+@media (max-width: 800px) { section.group { grid-template-columns: minmax(0, 1fr); } h1 { font-size: 24px; } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>차곡차곡 아이콘·스플래시 확정</h1>
+    <p class="lede"><b>3차:</b> 시작 순서를 바꿨습니다 — 윤곽선만 있는 캐릭터(OS 정지 화면) → 아래에서 위로 색 채우기 → 판 낙하 → 글자 쓰기. S2-A·B·C 모두 같은 순서입니다.</p>
+    <p class="lede"><b>2차:</b> Android 아이콘은 A1로 고르셨습니다. 스플래시는 S2 메모(커서, 한 자씩, 캐릭터가 좌우로 받아내기)를 반영해 S2-A·B·C를 만들었습니다. 1차의 S1·S3는 뺐습니다.</p>
+    <p class="lede">iOS 앱 아이콘은 1안(민트 바탕 전신)으로 확정돼 있어 비교용으로만 둡니다. 남은 것은 두 가지입니다. ① <b>Android 아이콘</b>: Android는 기기마다 아이콘을 원·둥근 사각형 등으로 잘라서, 그림을 가운데 안전 영역(지름 66/108) 안에 넣어야 합니다. ② <b>스플래시</b>: 후보 「2+」(판이 하나씩 떨어져 쌓이고 글자가 한 자씩 써짐)를 길이와 끝맺음만 달리해 세 가지로 만들었습니다. 안마다 [이 안 고르기]와 메모를 남겨 주세요.</p>
+  </header>
+  <div id="bundles" style="display:flex;flex-direction:column;gap:44px"></div>
+</div>
+
+<div class="pbar" role="region" aria-label="고른 안">
+  <div class="pbar-in">
+    <span class="pbar-label">고른 안</span>
+    <span id="summary">아직 안 골랐어요</span>
+    <button type="button" id="copy">메모까지 복사</button>
+    <span class="pbar-label" id="store-state">저장소 연결 중…</span>
+  </div>
+</div>
+
+<script>
+const M = __MASCOT__;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+const C = {mint: '#AFE1CB', lcd: '#C7DE94', ink: '#06261C', apricot: '#FD855F', ivory: '#FEF1D1'};
+const CELL = {'#': C.ink, g: C.lcd, o: C.apricot, w: C.ivory, m: C.mint};
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* 24칸 그림을 캔버스에 그린다. (ox, oy)는 왼쪽 위 px, s는 칸 크기 px, rows 범위 [r0, r1) */
+function drawGrid(ctx, rows, ox, oy, s, r0 = 0, r1 = 24, fillFrom = 0) {
+  for (let y = r0; y < r1; y++) for (let x = 0; x < 24; x++) { const ch = rows[y][x]; const c = y < fillFrom && ch !== '#' ? null : CELL[ch]; if (c) { ctx.fillStyle = c; ctx.fillRect(Math.round(ox + x * s), Math.round(oy + y * s), Math.ceil(s), Math.ceil(s)); } }
+}
+function canvas(w, h, scale = 2) { const cv = document.createElement('canvas'); cv.width = w * scale; cv.height = h * scale; cv.style.width = w + 'px'; cv.style.height = h + 'px'; const ctx = cv.getContext('2d'); ctx.scale(scale, scale); ctx.imageSmoothingEnabled = false; return [cv, ctx]; }
+
+/* ── iOS 아이콘 (확정 1안): 민트 1024, 칸당 36px, 왼쪽 위 (80, 60) ── */
+function iosIcon(size) {
+  const [cv, ctx] = canvas(size, size); const k = size / 1024;
+  ctx.fillStyle = C.mint; ctx.beginPath(); ctx.roundRect(0, 0, size, size, size * 0.2237); ctx.fill(); ctx.save(); ctx.clip();
+  drawGrid(ctx, M.faces.basic, 80 * k, 60 * k, 36 * k); ctx.restore(); return cv;
+}
+/* ── Android 적응형 아이콘: 108 단위 캔버스, 보이는 곳은 가운데 72, 안전 영역 지름 66 ── */
+const ADAPT = {
+  a1: {cell: 2.55, rows: [0, 24], anchor: 'center'},
+  a2: {cell: 3.1, rows: [0, 24], anchor: 'center'},
+  a3: {cell: 3.4, rows: [0, 18], anchor: 'bottom'},
+};
+function drawAdaptive(ctx, id, px, unit) {
+  const o = ADAPT[id], s = o.cell * unit, bb = {x0: 4, x1: 20, y0: 2, y1: 23};
+  const w = (bb.x1 - bb.x0) * s, rowsH = (Math.min(bb.y1, o.rows[1]) - bb.y0) * s;
+  const ox = px / 2 - (bb.x0 * s + w / 2);
+  const oy = o.anchor === 'bottom' ? (px / 2 + 36 * unit) - o.rows[1] * s : px / 2 - (bb.y0 * s + rowsH / 2);
+  ctx.fillStyle = C.mint; ctx.fillRect(0, 0, px, px);
+  drawGrid(ctx, M.faces.basic, ox, oy, s, o.rows[0], o.rows[1]);
+}
+function adaptiveLayer(id) {
+  const P = 216, u = P / 108, [cv, ctx] = canvas(P, P);
+  drawAdaptive(ctx, id, P, u);
+  ctx.strokeStyle = 'rgba(200,83,44,.9)'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(P / 2, P / 2, 33 * u, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(6,38,28,.5)'; ctx.strokeRect(18 * u, 18 * u, 72 * u, 72 * u);
+  return cv;
+}
+function adaptiveMasked(id, shape, size) {
+  const [cv, ctx] = canvas(size, size), u = size / 72;
+  ctx.save(); ctx.beginPath();
+  if (shape === 'circle') ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+  else if (shape === 'squircle') ctx.roundRect(0, 0, size, size, size * 0.3);
+  else ctx.roundRect(0, 0, size, size, size * 0.12);
+  ctx.clip(); ctx.translate(-18 * u, -18 * u); drawAdaptive(ctx, id, 108 * u, u); ctx.restore(); return cv;
+}
+
+/* ── 스플래시: 판 없는 몸(OS 스플래시) → 판 세 장 낙하 → 글자 ── */
+const SPLASH = {
+  s1: {wait: 350, step: 45, squash: 70, gap: 150, type: 140, typeAll: false, smile: 0},
+  s2: {wait: 120, step: 28, squash: 60, gap: 60, type: 0, typeAll: true, smile: 0},
+  s3: {wait: 350, step: 45, squash: 70, gap: 150, type: 140, typeAll: false, smile: 450},
+  // S2 메모 반영: 커서 + 한 자씩, 캐릭터가 좌우로 움직여 판을 받는다. sway = 판마다 몸이 옮겨 갈 칸(-왼쪽, +오른쪽)
+  s2a: {fill: 28, wait: 120, step: 28, squash: 60, gap: 60, type: 60, cursor: true, sway: [-1, 1, 0], move: 40},
+  s2b: {fill: 28, wait: 120, step: 28, squash: 60, gap: 60, type: 100, cursor: true, sway: [-2, 2, 0], move: 40},
+  s2c: {fill: 28, wait: 120, step: 28, squash: 60, gap: 60, type: 28, cursor: true, sway: [-1, 1, 0], move: 28},
+};
+function timeline(o) {
+  const ev = []; let t = 0, dx = 0;
+  // 윤곽만 있는 몸 → 아래에서 위로 한 줄씩 색이 찬다 (몸은 10~22줄)
+  if (o.fill) { ev.push({t, fill: 23}); t += 200; for (let y = 22; y >= 10; y--) { ev.push({t, fill: y}); t += o.fill; } }
+  t += o.wait;
+  for (let i = 0; i < 3; i++) {
+    const target = o.sway ? o.sway[i] : 0;
+    // 판이 떨어지기 시작하면 몸이 한 칸씩 받으러 간다
+    let f = 0;
+    for (; f <= 6; f++) {
+      if (dx !== target && f >= 1) dx += Math.sign(target - dx);
+      ev.push({t, landed: i, falling: i, dy: 12 - f * 2, dx, catchX: target}); t += o.step;
+    }
+    while (dx !== target) { dx += Math.sign(target - dx); ev.push({t, landed: i, falling: i, dy: 0, dx, catchX: target}); t += o.move || o.step; }
+    ev.push({t, landed: i + 1, squash: true, dx}); t += o.squash;
+    ev.push({t, landed: i + 1, dx}); t += o.gap;
+  }
+  if (o.typeAll) { ev.push({t, landed: 3, text: 4}); t += 300; }
+  else for (let n = 1; n <= 4; n++) { ev.push({t, landed: 3, text: n, cursor: o.cursor, dx}); t += o.type; }
+  if (o.cursor) for (let k = 0; k < 4; k++) { ev.push({t, landed: 3, text: 4, cursor: k % 2 === 1, dx}); t += 160; }
+  if (o.smile) { ev.push({t, landed: 3, text: 4, smile: true}); t += o.smile; }
+  return {ev, total: t};
+}
+const LAYERS = ['item0_mint', 'item1_ivory', 'item2_apricot'];
+function drawSplash(ctx, W, H, st) {
+  const s = 7, ox = W / 2 - 12 * s, oy = H / 2 - 12 * s - 24;
+  ctx.fillStyle = C.mint; ctx.fillRect(0, 0, W, H);
+  if (st.smile) drawGrid(ctx, M.faces.smile, ox, oy, s);
+  else {
+    const bx = ox + (st.dx || 0) * s;
+    drawGrid(ctx, M.splashLayers.body, bx, oy, s, 0, 24, st.fill === undefined ? 0 : st.fill);
+    for (let i = 0; i < (st.landed || 0); i++) drawGrid(ctx, M.splashLayers[LAYERS[i]], bx, oy + (st.squash ? s : 0), s);
+    if (st.falling !== undefined && st.dy !== undefined) drawGrid(ctx, M.splashLayers[LAYERS[st.falling]], ox + (st.catchX || 0) * s, oy - st.dy * s, s);
+  }
+  const ty = oy + 24 * s + 40;
+  if (st.text) {
+    // 글자는 왼쪽부터 자리를 잡아 써지게(가운데 정렬이면 한 자마다 글자가 밀린다)
+    ctx.fillStyle = C.ink; ctx.font = '28px NeoDGM, sans-serif'; ctx.textAlign = 'left';
+    const full = ctx.measureText('차곡차곡').width, x0 = W / 2 - full / 2, part = '차곡차곡'.slice(0, st.text);
+    ctx.fillText(part, x0, ty);
+    if (st.cursor) ctx.fillRect(Math.round(x0 + ctx.measureText(part).width + 2), ty - 24, 14, 28);
+  }
+}
+const players = {};
+function splashFigure(id) {
+  const W = 390, H = 844, sc = 0.5, [cv, ctx] = canvas(W, H, 1);
+  cv.style.width = W * sc + 'px'; cv.style.height = H * sc + 'px'; cv.className = 'phone';
+  const tl = timeline(SPLASH[id]);
+  const state = {start: 0, raf: 0};
+  const first = SPLASH[id].fill ? {landed: 0, fill: 24} : {landed: 0};
+  const frameAt = (t) => { let cur = first; for (const e of tl.ev) { if (e.t <= t) cur = e; else break; } return cur; };
+  const play = () => {
+    cancelAnimationFrame(state.raf);
+    if (reduce) { drawSplash(ctx, W, H, tl.ev[tl.ev.length - 1]); return; }
+    state.start = performance.now();
+    const tick = (now) => {
+      const t = now - state.start;
+      drawSplash(ctx, W, H, t < tl.total ? frameAt(t) : tl.ev[tl.ev.length - 1]);
+      if (t < tl.total + 1600) state.raf = requestAnimationFrame(tick); else play();
+    };
+    state.raf = requestAnimationFrame(tick);
+  };
+  players[id] = play;
+  drawSplash(ctx, W, H, first);
+  const fig = document.createElement('figure');
+  fig.append(cv);
+  const cap = document.createElement('figcaption'); cap.textContent = `iPhone 화면의 50% · 약 ${(tl.total / 1000).toFixed(1)}초 뒤 앱 시작`; fig.append(cap);
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'replay'; b.textContent = '처음부터 다시'; b.onclick = play; fig.append(b);
+  return fig;
+}
+function osSplash(kind) {
+  const W = 390, H = 844, [cv, ctx] = canvas(W, H, 1); cv.style.width = W * 0.5 + 'px'; cv.style.height = H * 0.5 + 'px'; cv.className = 'phone';
+  ctx.fillStyle = C.mint; ctx.fillRect(0, 0, W, H);
+  if (kind === 'ios') drawGrid(ctx, M.splashLayers.body, W / 2 - 84, H / 2 - 84 - 24, 7, 0, 24, 24);
+  else { const d = 192; ctx.save(); ctx.beginPath(); ctx.arc(W / 2, H / 2, d / 2, 0, Math.PI * 2); ctx.clip(); drawGrid(ctx, M.splashLayers.body, W / 2 - 12 * 6, H / 2 - 12 * 6 - 18, 6, 0, 24, 24); ctx.restore(); }
+  const fig = document.createElement('figure'); fig.append(cv);
+  const cap = document.createElement('figcaption'); cap.textContent = kind === 'ios' ? 'OS 스플래시(정지 그림) — iOS·Android 11 이하. 앱이 이 그림에서 이어받는다' : 'Android 12 이상 OS 스플래시 — 그림을 원 안에 보여 준다(어림)'; fig.append(cap);
+  return fig;
+}
+
+const secs = (id) => `약 ${(timeline(SPLASH[id]).total / 1000).toFixed(1)}초`;
+const BUNDLES = [
+  {id: 'adaptive', title: 'Android 아이콘', groups: [
+    {id: 'ios', code: '확정', title: 'iOS 아이콘 1안', ref: true, like: '비교용 · 2026-10-03 확정',
+     layout: ['민트 바탕에 전신, 칸당 36px(1024 기준), 왼쪽 위 (80, 60).', 'iOS는 모서리만 둥글게 깎아서 그대로 쓸 수 있습니다.'],
+     pro: ['홈 화면 60pt에서도 판 세 장과 얼굴이 읽힙니다.'], con: ['Android 원형 마스크에 그대로 넣으면 위 판과 발이 잘립니다 → 아래 안 중에서 고릅니다.']},
+    {id: 'a1', code: 'A1', title: '전신을 안전 영역 안에', like: '가장 안전 · 고른 안(2026-10-04)',
+     layout: ['iOS와 같은 전신을 안전 영역(점선 원) 안에 들어가게 줄입니다.', '어떤 모양으로 잘려도 그림이 잘리지 않습니다.'],
+     pro: ['기기·런처가 어떤 모양으로 잘라도 안전합니다.', 'iOS 아이콘과 같은 그림입니다.'], con: ['그림이 작아 iOS보다 여백이 많아 보입니다.']},
+    {id: 'a2', code: 'A2', title: '전신을 조금 크게', like: '여백과 크기의 중간',
+     layout: ['전신을 A1보다 20% 크게 둡니다. 원형 마스크에서는 위 판 모서리와 발끝이 가장자리에 닿습니다.'],
+     pro: ['둥근 사각형·사각형 마스크에서는 iOS와 비슷한 크기로 보입니다.'], con: ['원형 마스크에서 위 판 모서리가 살짝 잘릴 수 있습니다.']},
+    {id: 'a3', code: 'A3', title: '아래에서 빼꼼', like: '얼굴과 판을 크게',
+     layout: ['판 세 장과 얼굴(볼까지)만 크게 넣고, 몸 아래쪽은 아이콘 아래 가장자리 밖으로 뺍니다.', '아래에서 고개를 내민 것처럼 보입니다.'],
+     pro: ['작은 크기에서 얼굴과 판이 가장 크게 보입니다.'], con: ['iOS 아이콘과 그림이 달라집니다(발이 안 보임).', '입이 잘려 표정이 덜 읽힙니다.']},
+  ]},
+  {id: 'splash', title: '스플래시', groups: [
+    {id: 'os', code: '공통', title: 'OS 스플래시 (정지 그림)', ref: true, like: '세 안 공통 · 앱을 누른 직후',
+     layout: ['OS 스플래시는 그림 한 장만 됩니다. 민트 바탕에 판 없는 몸을 <b>윤곽선만</b> 둡니다(2026-10-04 메모).'.replace(/<\/?b>/g, ''), '앱이 준비되면 같은 자리·같은 크기(칸당 7px)에서 애니메이션이 이어집니다.', 'Android 12 이상은 OS가 이 그림을 원 안에 보여 줍니다(OS 규칙).'],
+     pro: ['OS 그림과 앱 첫 장면이 같아 끊김 없이 이어집니다.'], con: ['Android 12 이상은 원 모양이 OS 규칙이라 바꿀 수 없습니다.']},
+    {id: 's2', code: 'S2', title: '빠르게 (1차, 고른 안)', ref: true, like: secs('s2') + ' · 메모 반영 전',
+     layout: ['쉬는 시간과 낙하 간격을 줄였고, 글자는 한 번에 나옵니다.'],
+     pro: ['자주 여는 앱에 맞는 길이입니다.'], con: ['메모: 커서와 한 자씩 쓰기, 캐릭터가 좌우로 움직이며 받기 → 아래 세 안.']},
+    {id: 's2a', code: 'S2-A', title: '한 칸씩 받기 + 커서', like: secs('s2a'),
+     layout: ['윤곽선만 있는 몸에 아래에서 위로 한 줄씩 색이 찹니다(약 0.4초). 그다음 판, 그다음 글자 순서입니다.', '판이 떨어지기 시작하면 캐릭터가 한 칸씩 옮겨 가 받습니다(왼쪽 → 오른쪽 → 가운데).', '받은 판은 몸과 함께 움직입니다.', '"차곡차곡"을 한 자씩(0.06초) 쓰고, 글자 끝에 네모 커서가 따라오다 두 번 깜빡입니다.'],
+     pro: ['받아내는 움직임이 보이면서도 정신없지 않습니다.', '커서 덕분에 "쓰는" 느낌이 납니다.'], con: ['S2보다 0.3초쯤 깁니다.']},
+    {id: 's2b', code: 'S2-B', title: '두 칸씩 크게 받기', like: secs('s2b'),
+     layout: ['윤곽선만 있는 몸에 아래에서 위로 한 줄씩 색이 찹니다(약 0.4초). 그다음 판, 그다음 글자 순서입니다.', 'S2-A와 같고, 캐릭터가 두 칸씩 크게 움직입니다.', '글자는 한 자씩 조금 천천히(0.1초) 써집니다.'],
+     pro: ['받아내는 동작이 가장 분명하게 보입니다.'], con: ['움직임이 커서 빠른 낙하와 겹치면 바빠 보일 수 있습니다.', '가장 깁니다.']},
+    {id: 's2c', code: 'S2-C', title: '판과 같은 속도로 쓰기', like: secs('s2c'),
+     layout: ['윤곽선만 있는 몸에 아래에서 위로 한 줄씩 색이 찹니다(약 0.4초). 그다음 판, 그다음 글자 순서입니다.', 'S2-A와 같은 움직임에, 글자를 판이 떨어지는 한 칸 속도(0.028초)로 씁니다.', '커서가 따라오다 두 번 깜빡입니다.'],
+     pro: ['가장 짧고, 판과 글자의 리듬이 같습니다.'], con: ['글자가 너무 빨리 써져서 "한 자씩"이 거의 안 느껴질 수 있습니다.']},
+  ]},
+];
+const ALL = BUNDLES.flatMap(b => b.groups.map(g => ({...g, bundle: b.id})));
+const state = {choice: {}, notes: {}};
+for (const b of BUNDLES) state.choice[b.id] = '';
+for (const g of ALL) state.notes[g.id] = '';
+const LS = 'chagok-icon-splash-final';
+try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); for (const k in state.choice) if (l.choice && typeof l.choice[k] === 'string') state.choice[k] = l.choice[k]; for (const g of ALL) if (l.notes && typeof l.notes[g.id] === 'string') state.notes[g.id] = l.notes[g.id]; } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+function shots(b, g) {
+  const box = document.createElement('div'); box.className = 'shots';
+  const fig = (el, cap) => { const f = document.createElement('figure'); f.append(el); const c = document.createElement('figcaption'); c.textContent = cap; f.append(c); return f; };
+  if (g.id === 'ios') { for (const s of [180, 120, 60, 40]) box.append(fig(iosIcon(s), `${s}pt`)); }
+  else if (b.id === 'adaptive') {
+    box.append(fig(adaptiveLayer(g.id), '전체 그림(108) · 점선 원 = 안전 영역 · 사각형 = 보이는 곳'));
+    for (const [sh, n] of [['circle', '원'], ['squircle', '둥근 사각형'], ['square', '사각형']]) box.append(fig(adaptiveMasked(g.id, sh, 96), `${n} 마스크`));
+    box.append(fig(adaptiveMasked(g.id, 'circle', 48), '원 · 실제 크기(48dp)'));
+  } else if (g.id === 'os') { box.append(osSplash('ios')); box.append(osSplash('android')); }
+  else box.append(splashFigure(g.id));
+  return box;
+}
+function render() {
+  const root = $('bundles');
+  for (const b of BUNDLES) {
+    const sec = document.createElement('section'); sec.className = 'bundle';
+    sec.innerHTML = `<div class="bundle-head"><h2>${b.title}</h2><span class="picked" id="picked-${b.id}"></span></div>`;
+    for (const g of b.groups) {
+      const el = document.createElement('section'); el.className = 'group' + (g.ref ? ' ref' : ''); el.id = 'g-' + g.id;
+      el.innerHTML = `<div class="side"><div class="head"><h2>${g.ref ? g.title : `${b.title} ${g.code}. ${g.title}`}</h2><span class="like">${esc(g.like)}</span></div>
+        <h3>내용</h3><ol class="flow">${g.layout.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+        <h3>좋은 점과 걸리는 점</h3><ul class="pc">${g.pro.map(x => `<li class="pro">${esc(x)}</li>`).join('')}${g.con.map(x => `<li class="con">${esc(x)}</li>`).join('')}</ul>
+        <div class="review">${g.ref ? '' : `<button type="button" class="ok-btn" id="ok-${g.id}" data-b="${b.id}" data-g="${g.id}" aria-pressed="false">이 안 고르기</button>`}
+        <textarea id="note-${g.id}" data-g="${g.id}" aria-label="${esc(g.title)} 메모" placeholder="${g.ref ? '남기고 싶은 점이 있으면 적어 주세요' : '고치고 싶은 점, 가져오고 싶은 부분을 적어 주세요'}"></textarea>
+        <span class="save-state" id="state-${g.id}" aria-live="polite"></span></div></div>`;
+      el.append(shots(b, g)); sec.append(el);
+    }
+    root.append(sec);
+  }
+  paint();
+}
+function label(bid) { const b = BUNDLES.find(x => x.id === bid), g = b.groups.find(x => x.id === state.choice[bid]); return g ? `${b.title} ${g.code}. ${g.title}` : `${b.title} 안 고름`; }
+function paint() {
+  for (const g of ALL) {
+    const picked = state.choice[g.bundle] === g.id; $(`g-${g.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${g.id}`); if (b) { b.setAttribute('aria-pressed', String(picked)); b.textContent = picked ? '고른 안' : '이 안 고르기'; }
+    const t = $(`note-${g.id}`); if (document.activeElement !== t && t.value !== state.notes[g.id]) t.value = state.notes[g.id];
+  }
+  for (const b of BUNDLES) { const g = b.groups.find(x => x.id === state.choice[b.id]); $(`picked-${b.id}`).textContent = g ? `고른 안: ${g.code}. ${g.title}` : '아직 안 골랐어요'; }
+  const n = ALL.filter(x => state.notes[x.id].trim()).length;
+  $('summary').textContent = BUNDLES.map(b => label(b.id)).join(' · ') + (n ? ` · 메모 ${n}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+// 문서: review/choice-<묶음> {value}, review/note-<안> {note}. 한 문서에는 한 번에 한 번만 쓰고, 쓰는 중에 또 바뀌면 끝난 뒤 한 번 더 쓴다.
+async function persist(key, statusId) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[key]) { queued[key] = statusId; return; }
+  writing[key] = true; setStatus(statusId, '저장 중…');
+  try {
+    const data = key.startsWith('choice-') ? {value: state.choice[key.slice(7)]} : {note: state.notes[key.slice(5)]};
+    await db.doc(`review/${key}`).set({...data, updatedAt: new Date().toISOString()}); setStatus(statusId, '저장됨');
+  } catch (e) { setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true); }
+  finally { writing[key] = false; if (queued[key]) { const s = queued[key]; queued[key] = null; persist(key, s); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn'); if (!b) return;
+  const bid = b.dataset.b, id = b.dataset.g; state.choice[bid] = state.choice[bid] === id ? '' : id; paint(); persist(`choice-${bid}`, id);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-g]'); if (!t) return;
+  const id = t.dataset.g; state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-${id}`, id); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-g]'); if (!t || !timers[t.dataset.g]) return;
+  const id = t.dataset.g; clearTimeout(timers[id]); timers[id] = null; persist(`note-${id}`, id);
+});
+$('copy').addEventListener('click', () => {
+  const text = BUNDLES.map(b => label(b.id)).join('\n') + '\n' + ALL.filter(x => state.notes[x.id].trim()).map(x => `${BUNDLES.find(b => b.id === x.bundle).title} ${x.code} 메모: ${state.notes[x.id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+const start = () => { render(); for (const id of Object.keys(players)) players[id](); };
+if (document.fonts && document.fonts.load) document.fonts.load('28px NeoDGM').then(start, start); else start();
+
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-')) { const k = d.id.slice(7); if (k in state.choice && typeof v.value === 'string') state.choice[k] = v.value; continue; }
+      const id = d.id.replace(/^note-/, ''); if (!(id in state.notes)) continue;
+      const t = document.activeElement; state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>
