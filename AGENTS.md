@@ -5,6 +5,7 @@
 
 ## 코드 작성 전에 읽을 것
 
+0. **레포를 옮긴 직후라면 [docs/migration/README.md](docs/migration/README.md)부터** — 키 파일·메모리 복원·커밋 안 한 작업.
 1. **[docs/WORKING-AGREEMENT.md](docs/WORKING-AGREEMENT.md)** — 이 저장소의 작업 방식. 시각 작업은
    렌더해서 보고 고치기, 결정과 작성 분리, 되돌리면 안 되는 것 목록.
 2. **[docs/HANDOFF.md](docs/HANDOFF.md)** — 구현 현황과 시각 기준의 **단일 출처**.
