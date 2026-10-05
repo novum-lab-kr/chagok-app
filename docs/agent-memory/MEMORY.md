@@ -4,7 +4,7 @@
 - [Policy site pending](policy-site-pending.md) — draft live on Netlify chagok-app-terms (noindex); official publish waits on cloud provider
 - [Copy from user's side](copy-user-perspective.md) — UI text says what the user can do, not system state ("로그인이 필요해요")
 - [Server dev environment](server-dev-environment.md) — Supabase cloud dev project chagok-dev; keys in .secrets/, never .env.* names; prod hosting undecided
-- [Expo Go work before accounts](no-account-work-first.md) — accounts not ready: no dev build/login suggestions; pick Expo Go work first
+- [Account readiness](no-account-work-first.md) — Apple paid 2026-10-05, approval pending; Google OAuth not ready; account-gated work only once ready
 - [Proposals as artifact](proposals-as-artifact.md) — show 시안 as pick+memo artifact first; Storybook only after all are confirmed
 - [Sprout is not the mascot](sprout-not-mascot.md) — sprout is just a default sticker; never use it as app icon/brand without asking
 - [Branding & watch idea](branding-and-watch-idea.md) — mascot 「차곡이」 — name, faces, icon, splash confirmed 2026-10-04 (docs/design/character); watch idea vs PRD §2

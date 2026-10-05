@@ -10,9 +10,56 @@
 | Xcode.app | ✅ `/Applications/Xcode.app` → **iOS 시뮬레이터 동작 확인됨** ([설정](#처음-한-번만--라이선스-동의와-초기-설정)) |
 | cmdline-tools | ❌ 없음 → `sdkmanager`/`avdmanager` 사용 불가 (새 AVD를 만들 때만 필요) |
 
-앱이 쓰는 네이티브 모듈(expo-router, expo-sqlite, expo-image-picker, expo-haptics,
-expo-font, react-native-svg, reanimated, screens, safe-area-context)은 **전부 Expo Go에
-기본 포함**이라 개발 빌드 없이 Expo Go로 바로 돌아간다.
+2026-10-05부터 **개발 빌드**(`expo-dev-client`)가 기본이다 — 아래 「개발 빌드」.
+지금 앱이 쓰는 네이티브 모듈은 아직 전부 Expo Go에도 들어 있어서 `npx expo start --go`로 Expo Go를
+계속 쓸 수 있다. 로그인·위젯처럼 Expo Go에 없는 모듈이 들어오면 개발 빌드로만 돈다.
+
+---
+
+## 개발 빌드 (2026-10-05~)
+
+Expo Go 대신 이 앱만의 개발용 앱을 시뮬레이터·에뮬레이터에 깔아 쓴다. 네이티브 폴더(`ios/`·`android/`)는
+빌드할 때마다 `app.json`에서 만들고 **커밋하지 않는다**(`.gitignore`). 설정은 `app.json`·`eas.json`에만 둔다.
+
+**iOS 시뮬레이터** — Xcode와 CocoaPods가 필요하다. CocoaPods가 없으면 첫 빌드가 Homebrew로 설치한다(2026-10-05 이 맥에 설치됨).
+
+```sh
+npx expo run:ios --no-bundler   # 첫 빌드는 pod 내려받기 때문에 10분 넘게 걸릴 수 있다
+```
+
+**Android 에뮬레이터** — 기본 `java`가 21이라 **JDK 17로 고정**한다.
+
+```sh
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+emulator -avd Pixel_7 &
+npx expo run:android --no-bundler   # 첫 Gradle 빌드 약 8분
+```
+
+**실행** — 설치한 뒤에는 Metro만 띄우면 된다. `npx expo start`가 이제 개발 빌드를 기본으로 연다.
+앱을 열었는데 「Searching for development servers...」 런처 화면이면 Metro가 꺼져 있는 것이다.
+개발 메뉴는 iOS `Cmd+D`, Android `Cmd+M`.
+
+**다시 빌드해야 할 때** — 네이티브 라이브러리를 추가·업데이트했거나 `app.json`(아이콘·스플래시·플러그인·권한)을
+바꿨을 때만. JS·화면 코드는 Metro 리로드로 충분하다.
+
+```sh
+npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은 방식
+```
+
+**알아 둘 것**
+
+- 개발 빌드와 Expo Go는 **다른 앱**이라 기록(SQLite)이 따로다. Expo Go에 쌓인 기록은 넘어오지 않는다.
+- Expo Go를 계속 쓰려면 `npx expo start --go`(실기기 iPhone은 아직 Expo Go로 본다 — Apple 승인 전).
+- Android 첫 실행에서 `Can't perform a React state update on a component that hasn't mounted yet`
+  (`expo-router` `useLinking.native.js`) 경고가 가끔 뜬다. 개발 빌드가 주소를 붙여 앱을 여는 타이밍 문제로,
+  앱 코드 문제가 아니고 출시 빌드에는 없다. 닫으면 된다(2026-10-05, expo-router 57.0.22).
+
+**EAS** — 프로젝트는 Expo 조직 `novum-lab` 아래 `@novum-lab/chagok`이다(두 사람이 멤버). 빌드 프로필은
+`eas.json`: `development`(실기기 개발 빌드), `development-simulator`, `preview`(내부 배포), `production`(빌드 번호 자동 증가 —
+[버전 규칙](RELEASE-VERSIONING.md)). iOS 실기기·스토어 빌드는 Apple Developer Program 승인 뒤에 한다.
+**클라우드 빌드는 `.env.local`을 읽지 않는다** — `preview`·`production`을 빌드하기 전에 서버 주소·키를 EAS 환경 변수로 넣어야 한다.
 
 ---
 
@@ -29,7 +76,7 @@ expo-font, react-native-svg, reanimated, screens, safe-area-context)은 **전부
 
    ```sh
    cd ~/Desktop/workspace/chagok-app
-   npx expo start --lan
+   npx expo start --go --lan   # 개발 빌드 도입 뒤로 Expo Go는 --go가 필요하다
    ```
 
 5. 터미널의 QR을 찍는다
@@ -40,7 +87,7 @@ expo-font, react-native-svg, reanimated, screens, safe-area-context)은 **전부
 느리고, 아래에 적은 함정이 있다.
 
 ```sh
-npx expo start --tunnel
+npx expo start --go --tunnel
 ```
 
 ### 실기기 iOS는 로그인이 필요하다
@@ -92,7 +139,7 @@ adb devices          # emulator-5554  device 가 보여야 한다
 
 # 3) 앱 실행
 cd ~/Desktop/workspace/chagok-app
-npx expo start --android
+npx expo start --go --android   # 개발 빌드를 깔았으면 --go 없이(위 「개발 빌드」)
 ```
 
 에뮬레이터에서는 **햅틱이 나지 않고** 마우스 드래그라 스와이프 감각도 실제와 다르다.
@@ -235,7 +282,7 @@ curl -s -H 'expo-platform: ios' http://<맥IP>:8081 | grep -o '"launchAsset":{[^
 
 ```sh
 pkill -f "expo start"
-npx expo start --lan --port 8081
+npx expo start --go --lan --port 8081   # 개발 빌드로 볼 때는 --go를 뺀다
 ```
 
 ### 개발 서버는 사람이 직접 터미널에서 돌린다
