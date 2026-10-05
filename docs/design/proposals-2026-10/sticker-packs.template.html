@@ -128,6 +128,7 @@ const GROUPS = DATA.themes.map(t => ({id: t.id, title: t.name, ref: t.id === 'fr
 const FREE_SPROUT = DATA.stickers.find(s => s.id === 'sprout').layers;
 function boards(g) {
   const st = g.items.map(([, l]) => svg(l)), sp = svg(FREE_SPROUT), at = i => st[i % st.length];
+  if (g.ref && st.length > 6) { const last = st.pop(); st.unshift(last); } // 기본 줄에 새로 넣은 그림을 판 앞쪽에
   const tally = `<div class="tally">${[at(0), at(1), g.ref ? at(2) : sp, at(3), at(4), null].map((c, i) => c ? `<div class="tslot">${c}</div>` : `<div class="tslot empty">${i + 1}</div>`).join('')}</div>`;
   const marks = {1: at(0), 2: at(1), 3: g.ref ? at(2) : sp, 5: at(3), 6: at(4), 7: at(5), 8: at(0), 9: at(2), 10: g.ref ? at(3) : sp, 12: at(1), 13: at(4)};
   const cal = `<div class="cal"><div class="cal-grid">${['일','월','화','수','목','금','토'].map(d => `<div class="dow">${d}</div>`).join('')}${Array.from({length: 14}, (_, i) => `<div class="day">${i + 1}${marks[i + 1] || ''}</div>`).join('')}</div></div>`;

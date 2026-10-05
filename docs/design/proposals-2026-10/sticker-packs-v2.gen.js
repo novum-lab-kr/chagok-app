@@ -24,7 +24,7 @@ const cloudShape = (dx = 0, dy = 0) => U(circle(7.2 + dx, 14.4 + dy, 4.2), circl
 const rays = () => U(...[0, 1, 2, 3, 4, 5, 6, 7].map(k => rot(rbox(12, 2.6, 1.9, 2.1, 0.8), k * Math.PI / 4 + Math.PI / 8, 12, 12)));
 
 const THEMES = [
-  {id: 'free', name: '무료 6종 (지금 있는 것)'},
+  {id: 'free', name: '기본 스티커 (무료)'},
   {id: 'fit', name: '운동·건강'}, {id: 'study', name: '공부·일'}, {id: 'life', name: '생활·마음'},
   {id: 'season', name: '계절·날씨'}, {id: 'animal', name: '동물 친구'},
 ];
@@ -61,6 +61,28 @@ add('free', 'cat', '고양이', draw([
   {mat: 'orange', shape: ell(20, 13, 2.2, 5.4, 0.3)},
   {mat: 'orange', shape: U(ell(11, 14, 8.6, 6.8), poly([[3.4, 10], [4.4, 3], [9.4, 7.6]]), poly([[18.6, 10], [17.6, 3], [12.6, 7.6]])), hl: P('5,7 5,8')},
 ], [...px('5,6 17,6', MAT.pink.b), ...face(11, 13, 3.5, {spark: W, blush: true})]));
+
+// 비행기: 사용자 Codex 그림을 참고한 옆모습(24칸에서 원근 각도는 날개가 어색해 옆모습으로)
+function plane(A){
+  const c=f=>rot(f,A,12,12);
+  const loc=(x,y)=>{const ca=Math.cos(-A),sa=Math.sin(-A),dx=x-12,dy=y-12;return [12+dx*ca-dy*sa,12+dx*sa+dy*ca];};
+  const g=draw([
+    {mat:'cream',shape:c(poly([[17.2,10.6],[19.4,3.8],[22.8,3.8],[22.8,11.6]]))},   // 꼬리 날개
+    {mat:'dark',shape:c(rbox(1.3,12.6,1,5.6,0.8))},                                // 프로펠러
+    {mat:'cream',shape:c(U(ell(11.4,12.8,9.4,4),poly([[13,9],[22.8,10.6],[22.8,14.4],[13,16.6]])))}, // 몸통
+    {mat:'sky',shape:c(ell(8.4,9.2,3.2,2.4)),hl:null},                               // 조종석 창(몸통 위)
+    {mat:'blue',shape:c(ell(20.6,12.6,2.8,1.2))},                                  // 수평 꼬리
+    {mat:'blue',shape:c(ell(12,15,5.6,1.5))},                                    // 주 날개
+    {mat:'orange',shape:c(circle(2.8,12.8,2.3))},                                  // 코
+  ]);
+  for(let y=0;y<24;y++)for(let x=0;x<24;x++){const col=g[y][x];if(!col||col===OUT)continue;const [u,v]=loc(x+.5,y+.5);
+    const blue=col===MAT.blue.b||col===MAT.blue.s;
+    if(blue&&v>13.6&&u<9.4)g[y][x]=u<7.6?MAT.cream.b:MAT.orange.b;
+    if((col===MAT.cream.b||col===MAT.cream.s)&&u>18&&v>5.4&&v<7)g[y][x]=MAT.orange.b;}
+  for(const [lu,lv] of [[13.4,11.4],[15.4,11.4],[17.4,11.6]]){const ca=Math.cos(A),sa=Math.sin(A),dx=lu-12,dy=lv-12;const x=Math.floor(12+dx*ca-dy*sa),y=Math.floor(12+dx*sa+dy*ca);if(g[y][x]&&g[y][x]!==OUT)g[y][x]=MAT.navy.b;}
+  return g;
+}
+add('free', 'plane', '비행기', plane(0.2));
 
 /* ── 운동·건강 ── */
 add('fit', 'dumbbell', '덤벨', draw([
