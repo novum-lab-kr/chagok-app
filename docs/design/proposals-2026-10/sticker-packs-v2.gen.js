@@ -95,13 +95,24 @@ add('fit', 'apple', '사과', G.S.apple);
 
 /* ── 공부·일 ── */
 {
-  const c = (f) => rot(f, -0.75, 12, 12);
-  add('study', 'pencil', '연필', draw([
-    {mat: 'wood', shape: c(poly([[16, 8.6], [22.5, 12], [16, 15.4]]))},
-    {mat: 'yellow', shape: c(rbox(9.5, 12, 7.2, 3.4)), hl: P('6,13 7,12')},
-    {mat: 'gray', shape: c(rbox(1.8, 12, 1.2, 3.4))},
-    {mat: 'pink', shape: c(rbox(-0.6, 12, 1.8, 3.4, 1))},
-  ], px('19,4 20,3', E)));
+  // 참고(사용자 PixelLab 연필): 왼쪽 아래 심 → 오른쪽 위 지우개, 몸통 면 세 줄, 쇠테 홈 두 줄
+  const A = -Math.PI / 4, c = (f) => rot(f, A, 12, 12);
+  const local = (x, y) => { const ca = Math.cos(-A), sa = Math.sin(-A), dx = x - 12, dy = y - 12; return [12 + dx * ca - dy * sa, 12 + dx * sa + dy * ca]; };
+  const g = draw([
+    {mat: 'wood', shape: c(poly([[7.4, 8.6], [7.4, 15.4], [0.6, 12]]))},
+    {mat: 'orange', shape: c(rbox(13.8, 12, 6.6, 3.4))},
+    {mat: 'gray', shape: c(rbox(22, 12, 1.8, 3.4))},
+    {mat: 'pink', shape: c(rbox(25.4, 12, 1.8, 3.4, 1.2))},
+  ]);
+  for (let y = 0; y < 24; y++) for (let x = 0; x < 24; x++) {
+    const col = g[y][x]; if (!col || col === OUT) continue;
+    const [u, v] = local(x + 0.5, y + 0.5);
+    if (col === MAT.orange.b || col === MAT.orange.s) g[y][x] = v < 10.9 ? MAT.yellow.b : v > 13.1 ? MAT.orange.s : MAT.orange.b;
+    if (col === MAT.gray.b || col === MAT.gray.s) g[y][x] = (Math.abs(u - 21.4) < 0.5 || Math.abs(u - 22.8) < 0.5) ? MAT.gray.s : v < 11 ? MAT.gray.l : MAT.gray.b;
+    if (col === MAT.wood.b || col === MAT.wood.s) g[y][x] = u < 3.2 ? OUT : v > 12.6 ? MAT.wood.s : MAT.wood.b;
+    if (col === MAT.pink.b || col === MAT.pink.s) g[y][x] = v < 11 ? MAT.pink.l : v > 13 ? MAT.pink.s : MAT.pink.b;
+  }
+  add('study', 'pencil', '연필', g);
 }
 add('study', 'laptop', '노트북', draw([
   {mat: 'gray', shape: rbox(12, 10, 9, 7, 1.2)},
