@@ -1,0 +1,250 @@
+<title>차곡차곡 24px 스티커 팩</title>
+<style>
+/* 배치: 주제마다 한 띠. 왼쪽은 설명·고르기(3개까지)·메모, 오른쪽은 스티커(큰 칸·실제 크기)와 판에 붙인 모습. 아래 고정 막대에 고른 주제. */
+@font-face { font-family: "NeoDGM"; src: url(data:font/ttf;base64,__FONT__) format("truetype"); font-display: block; }
+:root {
+  --bg: #f3f6f2; --surface: #ffffff; --line: #d3ddd5; --fg: #0e2a20; --muted: #4f6559;
+  --accent: #c8532c; --ok: #2f6b4a; --stage: #e4ebe5;
+  --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --pixel: "NeoDGM", var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* 앱 팔레트 — 디자인 시스템 토큰 그대로. 스티커 칸 안에서만 쓴다 */
+  --mint: #AFE1CB; --lcd: #C7DE94; --ink: #06261C; --ivory: #FEF1D1;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 28px; }
+h1 { font-family: var(--pixel); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--pixel); font-weight: 400; font-size: 24px; line-height: 1.3; margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 74ch; }
+header.top { display: flex; flex-direction: column; gap: 10px; }
+
+section.group { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 18px; background: var(--surface); border: 1px solid var(--line); padding: 18px; }
+section.group.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+section.group.ref { background: transparent; border-style: dashed; }
+.side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.for { font-size: 14px; color: var(--muted); }
+.review { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ok-btn { align-self: flex-start; font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--ok); background: transparent; color: var(--ok); border-radius: 4px; cursor: pointer; }
+section.group.ok .ok-btn { background: var(--ok); color: var(--surface); }
+.ok-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ok-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.review textarea { width: 100%; box-sizing: border-box; min-height: 72px; resize: vertical; font: inherit; font-size: 14px; line-height: 1.5; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.review textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.review textarea::placeholder { color: var(--muted); }
+.save-state { font-size: 12px; color: var(--muted); min-height: 18px; }
+.save-state.bad { color: var(--accent); }
+
+.content { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.shots { background: var(--stage); padding: 14px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; align-content: start; }
+.boards { display: flex; flex-wrap: wrap; gap: 14px; background: var(--stage); padding: 14px; overflow-x: auto; }
+.boards figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.boards figcaption { font-size: 12px; color: var(--muted); }
+.tally { background: var(--mint); padding: 10px; display: grid; grid-template-columns: repeat(3, 84px); gap: 10px 12px; }
+.tslot { width: 84px; height: 64px; background: var(--lcd); box-shadow: inset 0 0 0 3px var(--ink); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; box-sizing: border-box; }
+.tslot.empty { align-items: center; font-family: var(--pixel); font-size: 18px; color: var(--ink); }
+.tslot svg { width: 48px; height: 48px; shape-rendering: crispEdges; }
+.cal { background: var(--mint); padding: 10px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 44px); border-top: 3px solid var(--ink); border-left: 3px solid var(--ink); }
+.cal-grid > div { border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); display: flex; flex-direction: column; align-items: center; font-family: var(--pixel); color: var(--ink); background: var(--lcd); }
+.cal-grid .dow { height: 28px; justify-content: center; font-size: 14px; background: var(--mint); }
+.cal-grid .day { height: 56px; font-size: 13px; line-height: 18px; gap: 4px; }
+.cal-grid .day svg { width: 24px; height: 24px; shape-rendering: crispEdges; }
+.tile { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.big { width: 100%; max-width: 112px; aspect-ratio: 1; background: var(--ivory); display: flex; align-items: center; justify-content: center; }
+.big svg { width: 86%; height: 86%; shape-rendering: crispEdges; }
+.small { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.slot { width: 40px; height: 40px; background: var(--lcd); outline: 3px solid var(--ink); outline-offset: -3px; display: flex; align-items: center; justify-content: center; }
+.slot svg { width: 30px; height: 30px; }
+.chip { width: 40px; height: 40px; background: var(--mint); display: flex; align-items: center; justify-content: center; }
+.chip svg { width: 28px; height: 28px; }
+.name { font-family: var(--pixel); font-size: 15px; color: var(--fg); }
+
+.notes { display: flex; flex-direction: column; gap: 8px; }
+.notes ul { margin: 0; padding-left: 20px; max-width: 86ch; }
+.notes li { margin-block: 4px; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bar-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.bar-label { font-size: 13px; color: var(--muted); }
+#summary { font-family: var(--mono); font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.bar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+.bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 1060px) { section.group { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } h1 { font-size: 24px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>차곡차곡 24px 스티커 팩</h1>
+    <p class="lede">사용자가 Codex로 만든 24×24px 스티커 40종(사물·동물·감정·날씨 각 10종)을 고치지 않고 그대로 넣었습니다. 모두 점 1개 = 1px, 투명 배경, 중간색 없이 3~8색이라 앞에서 정한 규격과 맞습니다. 맨 위는 비교용으로 제가 새 화풍으로 그린 기본 스티커입니다. 출시 팩으로 쓸 주제를 [이 주제 고르기]로 고르고(3개까지), 빼거나 바꿀 스티커는 주제마다 메모에 적어 주세요. 주제마다 10종이라 팩(6종)으로 추리거나 10종 팩으로 갈지도 메모로 알려 주세요. 판은 실제 앱 크기(적립판 48pt = 2배, 달력 24pt = 1배)입니다.</p>
+  </header>
+
+  <div id="groups" style="display:flex;flex-direction:column;gap:20px"></div>
+
+  <section class="notes">
+    <h2 style="font-size:20px">보는 법</h2>
+    <ul>
+      <li>큰 칸은 그림 확인용, 작은 두 칸은 판 칸과 목록 카드 자리입니다. 아래 판 두 개는 그 주제 스티커로 채운 모습이고, 팩 줄의 판에는 기본 새싹을 섞었습니다.</li>
+      <li>원본 PNG를 칸 그대로 색별 층으로 바꿔 그렸습니다(앱에서도 같은 방식). 확대해도 흐려지지 않습니다.</li>
+      <li>기본 스티커 줄과 함께 보면서, 화풍이 섞여도 괜찮은지 봐 주세요.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="bar" role="region" aria-label="고른 주제">
+  <div class="bar-in">
+    <span class="bar-label">고른 주제</span>
+    <span id="summary">아직 안 골랐어요</span>
+    <button type="button" id="copy">메모까지 복사</button>
+    <span class="bar-label" id="store-state">저장소 연결 중…</span>
+  </div>
+</div>
+
+<script>
+const DATA = __STICKERS__;
+const MAX = 3;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+const svg = (layers) => `<svg viewBox="0 0 24 24" aria-hidden="true">${layers.map(l => `<path d="${l.d}" fill="${l.color}"/>`).join('')}</svg>`;
+const FOR = {
+  objects: '여행, 공부, 일정, 사진, 충전(쉬기) 같은 생활 기록',
+  animals: '목표와 상관없이 좋아하는 동물로 고르는 스티커',
+  emotions: '그날 기분을 함께 남기는 기록 — 하트 얼굴 10가지',
+  weather: '날씨 기록, 계절 목표',
+};
+const tile = (name, d) => `<div class="tile"><div class="big">${svg(d)}</div><div class="small"><span class="slot">${svg(d)}</span><span class="chip">${svg(d)}</span></div><span class="name">${esc(name)}</span></div>`;
+
+const GROUPS = DATA.themes.map(t => ({id: t.id, title: t.name, ref: t.id === 'free', items: DATA.stickers.filter(s => s.theme === t.id).map(s => [s.name, s.layers])}));
+const FREE_SPROUT = DATA.stickers.find(s => s.id === 'sprout').layers;
+function boards(g) {
+  const st = g.items.map(([, l]) => svg(l)), sp = svg(FREE_SPROUT), at = i => st[i % st.length];
+  if (g.ref && st.length > 6) { const last = st.pop(); st.unshift(last); } // 기본 줄에 새로 넣은 그림을 판 앞쪽에
+  const tally = `<div class="tally">${[at(0), at(1), g.ref ? at(2) : sp, at(3), at(4), null].map((c, i) => c ? `<div class="tslot">${c}</div>` : `<div class="tslot empty">${i + 1}</div>`).join('')}</div>`;
+  const marks = {1: at(0), 2: at(1), 3: g.ref ? at(2) : sp, 5: at(3), 6: at(4), 7: at(5), 8: at(0), 9: at(2), 10: g.ref ? at(3) : sp, 12: at(1), 13: at(4)};
+  const cal = `<div class="cal"><div class="cal-grid">${['일','월','화','수','목','금','토'].map(d => `<div class="dow">${d}</div>`).join('')}${Array.from({length: 14}, (_, i) => `<div class="day">${i + 1}${marks[i + 1] || ''}</div>`).join('')}</div></div>`;
+  return `<div class="boards"><figure>${tally}<figcaption>적립판 (실제 크기)</figcaption></figure><figure>${cal}<figcaption>달력판 두 주 (실제 크기)${g.ref ? '' : ' · 새싹은 무료 스티커'}</figcaption></figure></div>`;
+}
+const THEMES = GROUPS.filter(g => !g.ref);
+
+const state = {choice: [], notes: {}};
+for (const g of GROUPS) state.notes[g.id] = '';
+const LS = 'chagok-sticker-packs-24';
+try {
+  const local = JSON.parse(localStorage.getItem(LS) || '{}');
+  if (Array.isArray(local.choice)) state.choice = local.choice.filter(id => THEMES.some(t => t.id === id)).slice(0, MAX);
+  for (const g of GROUPS) if (local.notes && typeof local.notes[g.id] === 'string') state.notes[g.id] = local.notes[g.id];
+} catch (e) {}
+let db = null;
+const writing = {}, queued = {}, timers = {};
+
+function render() {
+  $('groups').innerHTML = GROUPS.map(g => `
+    <section class="group${g.ref ? ' ref' : ''}" id="g-${g.id}">
+      <div class="side">
+        <h2>${esc(g.title)}</h2>
+        <p class="for">${g.ref ? '무료 6종을 새 화풍으로 다시 그린 것. 계속 무료입니다(고를 수 없음).' : `어울리는 목표: ${esc(FOR[g.id] || '')}`}</p>
+        <p class="for">${g.items.map(([n]) => esc(n)).join(' · ')}</p>
+        <div class="review">
+          ${g.ref ? '' : `<button type="button" class="ok-btn" id="ok-${g.id}" data-g="${g.id}" aria-pressed="false">이 주제 고르기</button>`}
+          <textarea id="note-${g.id}" data-g="${g.id}" aria-label="${esc(g.title)} 메모" placeholder="${g.ref ? '지금 스티커와 비교해 남길 점이 있으면 적어 주세요' : '바꾸고 싶은 스티커, 넣고 싶은 그림을 적어 주세요'}"></textarea>
+          <span class="save-state" id="state-${g.id}" aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="content"><div class="shots">${g.items.map(([n, d]) => tile(n, d)).join('')}</div>${boards(g)}</div>
+    </section>`).join('');
+  paint();
+}
+const label = () => state.choice.length ? state.choice.map(id => THEMES.find(t => t.id === id).title).join(', ') + ` (${state.choice.length}/${MAX})` : `아직 안 골랐어요 (0/${MAX})`;
+function paint() {
+  for (const g of THEMES) {
+    const picked = state.choice.includes(g.id);
+    $(`g-${g.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${g.id}`);
+    b.setAttribute('aria-pressed', String(picked));
+    b.textContent = picked ? '고른 주제' : '이 주제 고르기';
+    b.disabled = !picked && state.choice.length >= MAX;
+  }
+  for (const g of GROUPS) {
+    const t = $(`note-${g.id}`);
+    if (document.activeElement !== t && t.value !== state.notes[g.id]) t.value = state.notes[g.id];
+  }
+  const notes = GROUPS.filter(x => state.notes[x.id].trim()).length;
+  $('summary').textContent = label() + (notes ? ` · 메모 ${notes}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-themes {value: [주제 id]}, review/note-<주제> {note}. 한 문서에는 한 번에 한 번만 쓰고, 쓰는 중에 또 바뀌면 끝난 뒤 한 번 더 쓴다.
+async function persist(key, statusId) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[key]) { queued[key] = statusId; return; }
+  writing[key] = true; setStatus(statusId, '저장 중…');
+  try {
+    const data = key === 'choice-themes' ? {value: state.choice.slice()} : {note: state.notes[key.slice(5)]};
+    await db.doc(`review/${key}`).set({...data, updatedAt: new Date().toISOString()});
+    setStatus(statusId, '저장됨');
+  } catch (e) {
+    setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true);
+  } finally {
+    writing[key] = false;
+    if (queued[key]) { const s = queued[key]; queued[key] = null; persist(key, s); }
+  }
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn');
+  if (!b || b.disabled) return;
+  const id = b.dataset.g;
+  state.choice = state.choice.includes(id) ? state.choice.filter(x => x !== id) : state.choice.concat(id).slice(0, MAX);
+  paint(); persist('choice-themes', id);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t) return;
+  const id = t.dataset.g;
+  state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-${id}`, id); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t || !timers[t.dataset.g]) return;
+  const id = t.dataset.g;
+  clearTimeout(timers[id]); timers[id] = null; persist(`note-${id}`, id);
+});
+$('copy').addEventListener('click', () => {
+  const text = '스티커 팩 주제: ' + label() + '\n' + GROUPS.filter(x => state.notes[x.id].trim()).map(x => `${x.title} 메모: ${state.notes[x.id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got;
+  $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data();
+      if (!v || writing[d.id]) continue;
+      if (d.id === 'choice-themes') { if (Array.isArray(v.value)) state.choice = v.value.filter(id => THEMES.some(t => t.id === id)).slice(0, MAX); continue; }
+      const id = d.id.replace(/^note-/, '');
+      if (!(id in state.notes)) continue;
+      const t = document.activeElement;
+      state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>
