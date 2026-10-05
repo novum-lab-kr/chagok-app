@@ -56,7 +56,7 @@ function draw(objs, extra = []) {
     const o = objs[k], m = MAT[o.mat];
     let edge = false;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; const n = nx < 0 || ny < 0 || nx >= N || ny >= N ? -1 : own[ny][nx]; if (n === -1 || n > k) { edge = true; break; } }
-    if (edge) { g[y][x] = OUT; continue; }
+    if (edge) { g[y][x] = o.out || OUT; continue; }
     if (o.flat) { g[y][x] = m.b; continue; }
     // 참고 하트 규칙: 무게중심보다 아래에서, 바로 아래(대각선 포함) 한 칸이 윤곽이면 그림자 한 칸
     const shade = y + 0.5 > cy[k] && [[-1, 1], [0, 1], [1, 1]].some(([dx, dy]) => !inside(k, x + dx, y + dy) && !(own[y + dy] && own[y + dy][x + dx] > k));
