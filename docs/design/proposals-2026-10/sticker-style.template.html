@@ -67,6 +67,20 @@ ul.pc li.con { border-color: var(--accent); }
 .bar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
 .bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+.content { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.boards { display: flex; flex-wrap: wrap; gap: 14px; background: var(--stage); padding: 14px; overflow-x: auto; }
+.boards figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.boards figcaption { font-size: 12px; color: var(--muted); }
+.tally { background: var(--mint); padding: 10px; display: grid; grid-template-columns: repeat(3, 84px); gap: 10px 12px; }
+.tslot { width: 84px; height: 64px; background: var(--lcd); box-shadow: inset 0 0 0 3px var(--ink); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; box-sizing: border-box; }
+.tslot.empty { align-items: center; font-family: var(--pixel); font-size: 18px; color: var(--ink); }
+.tslot svg { width: 54px; height: 54px; shape-rendering: crispEdges; }
+.cal { background: var(--mint); padding: 10px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 44px); border-top: 3px solid var(--ink); border-left: 3px solid var(--ink); }
+.cal-grid > div { border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); display: flex; flex-direction: column; align-items: center; font-family: var(--pixel); color: var(--ink); background: var(--lcd); }
+.cal-grid .dow { height: 28px; justify-content: center; font-size: 14px; background: var(--mint); }
+.cal-grid .day { height: 56px; font-size: 13px; line-height: 18px; gap: 2px; }
+.cal-grid .day svg { width: 28px; height: 28px; shape-rendering: crispEdges; }
 @media (max-width: 1060px) { section.group { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) { .shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } h1 { font-size: 24px; } }
 </style>
@@ -104,7 +118,8 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
 const sv = (rects, vb) => `<svg viewBox="0 0 ${vb} ${vb}" aria-hidden="true">${rects}</svg>`;
 const tile = (name, rects, vb) => `<div class="tile"><div class="big">${sv(rects, vb)}</div><div class="small"><span class="slot">${sv(rects, vb)}</span><span class="chip">${sv(rects, vb)}</span></div><span class="name">${esc(name)}</span></div>`;
-const GROUPS = DATA;
+const GROUPS = DATA.groups;
+const SPROUT = `<path d="${DATA.sprout}" fill="#06261C"/>`;
 const PICK = GROUPS.filter(g => !g.ref);
 const state = {choice: '', notes: {}};
 for (const g of GROUPS) state.notes[g.id] = '';
@@ -112,6 +127,15 @@ const LS = 'chagok-sticker-style';
 try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); if (typeof l.choice === 'string') state.choice = l.choice; for (const g of GROUPS) if (l.notes && typeof l.notes[g.id] === 'string') state.notes[g.id] = l.notes[g.id]; } catch (e) {}
 let db = null;
 const writing = {}, queued = {}, timers = {};
+/* 판에 붙인 모습: 적립판 3열(84×64 칸, 스티커 54) · 달력판 7열(스티커 28). 새싹은 지금 무료 스티커(잉크 한 색)라 섞였을 때를 함께 본다. */
+function boards(g) {
+  const st = g.items.map(([, r]) => sv(r, g.vb)), sprout = sv(SPROUT, 56);
+  const tallyCells = [st[0], st[1], sprout, st[3], st[2], null];
+  const tally = `<div class="tally">${tallyCells.map((c, i) => c ? `<div class="tslot">${c}</div>` : `<div class="tslot empty">${i + 1}</div>`).join('')}</div>`;
+  const marks = {1: st[0], 2: st[1], 3: sprout, 5: st[3], 6: st[2], 7: st[0], 8: st[1], 9: st[3], 10: sprout, 12: st[2], 13: st[0]};
+  const cal = `<div class="cal"><div class="cal-grid">${['일','월','화','수','목','금','토'].map(d => `<div class="dow">${d}</div>`).join('')}${Array.from({length: 14}, (_, i) => `<div class="day">${i + 1}${marks[i + 1] || ''}</div>`).join('')}</div></div>`;
+  return `<div class="boards"><figure>${tally}<figcaption>적립판 (실제 크기)</figcaption></figure><figure>${cal}<figcaption>달력판 두 주 (실제 크기) · 새싹은 지금 무료 스티커</figcaption></figure></div>`;
+}
 function render() {
   $('groups').innerHTML = GROUPS.map(g => `
     <section class="group${g.ref ? ' ref' : ''}" id="g-${g.id}">
@@ -125,7 +149,7 @@ function render() {
           <span class="save-state" id="state-${g.id}" aria-live="polite"></span>
         </div>
       </div>
-      <div class="shots">${g.items.map(([n, r]) => tile(n, r, g.vb)).join('')}</div>
+      <div class="content"><div class="shots">${g.items.map(([n, r]) => tile(n, r, g.vb)).join('')}</div>${boards(g)}</div>
     </section>`).join('');
   paint();
 }
