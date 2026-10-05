@@ -1,4 +1,4 @@
-import React,{useCallback,useMemo,useRef,useState,type ReactNode} from 'react';
+import React,{memo,useCallback,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {PanResponder,Pressable,View} from 'react-native';
 import {retro} from './tokens';
 import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,StickerGrid} from './components';
@@ -87,6 +87,15 @@ function assignRef<T>(ref:React.Ref<T>|undefined,value:T|null) {
   else if(ref) (ref as React.RefObject<T|null>).current=value;
 }
 /**
+ * 적립판 칸 하나. 칸 번호를 받아 같은 함수를 모든 칸이 나눠 쓰므로, 붙이거나 뗄 때 상태가 바뀐 칸만 다시 그린다.
+ * 칸 수 상한이 없어 칸마다 새 함수를 넘기면 붙일 때마다 판 전체를 다시 그렸다(300칸 약 33ms → 측정은
+ * board-render.perf.test.tsx, 2026-10-04).
+ */
+const TallyCell=memo(function TallyCell({n,sticker,state,enabled,readonly,hasRecord,popIn,onPress,onOpenRecord}:{n:number;sticker:PocketStickerId;state:'filled'|'available'|'empty';enabled:boolean;readonly:boolean;hasRecord:boolean;popIn:boolean;onPress:(n:number)=>void;onOpenRecord?:(n:number)=>void}) {
+  return <GoalStickerCell number={n} sticker={sticker} state={state} enabled={enabled} readonly={readonly} hasRecord={hasRecord} popIn={popIn}
+    onPress={()=>onPress(n)} onOpenRecord={onOpenRecord?()=>onOpenRecord(n):undefined}/>;
+});
+/**
  * 적립판 칸. 다음 빈칸을 화면 가운데로 스크롤한다 — 판을 열 때, 그리고 칸 수가 바뀌었을 때(칸 늘리기)만.
  * 붙일 때마다 옮기면 누르는 중에 판이 움직인다 (2026-09-30).
  * 옮긴 뒤(빈칸이 없으면 그리고 나서) onSettled를 부른다.
@@ -104,6 +113,11 @@ function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sti
   const {nextSlotRef}=board;
   const setNextNode=useCallback((node:View|null)=>{nextNode.current=node;assignRef(nextSlotRef,node);},[nextSlotRef]);
   const settle=()=>{settled.current=true;onSettled();};
+  // 앱은 그릴 때마다 새 onPress·onOpenRecord를 넘긴다. 칸에는 늘 같은 함수를 주고, 누를 때 가장 최근 것을 부른다.
+  const handlers=useRef({press:board.onPress,open:board.onOpenRecord});
+  useLayoutEffect(()=>{handlers.current={press:board.onPress,open:board.onOpenRecord};});
+  const press=useCallback((n:number)=>handlers.current.press(n),[]);
+  const open=useCallback((n:number)=>handlers.current.open(n),[]);
   function centerNext() {
     const node=nextNode.current;
     if(!node||centeredTotal.current===board.total) return;
@@ -114,8 +128,8 @@ function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sti
   }
   return <View onLayout={next===undefined?settle:undefined}><StickerGrid>{numbers.map(n=>{
     const filled=board.filled[n];
-    const cell=<GoalStickerCell key={n} number={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'} enabled={Boolean(filled)||!completed} readonly={completed}
-      hasRecord={board.recorded?.has(n)} popIn={n===board.justPlaced} onPress={()=>board.onPress(n)} onOpenRecord={filled?()=>board.onOpenRecord(n):undefined}/>;
+    const cell=<TallyCell key={n} n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'} enabled={Boolean(filled)||!completed} readonly={completed}
+      hasRecord={board.recorded?.has(n)??false} popIn={n===board.justPlaced} onPress={press} onOpenRecord={filled?open:undefined}/>;
     // 튜토리얼 대상 칸은 감싸서 잰다. 감싸는 View는 칸을 그대로 채운다.
     if(n===next) return <View key={n} ref={setNextNode} onLayout={centerNext} style={{width:'100%',height:'100%'}}>{cell}</View>;
     if(filled&&n===lastFilled) return <View key={n} ref={board.recordSlotRef} style={{width:'100%',height:'100%'}}>{cell}</View>;
