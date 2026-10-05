@@ -53,10 +53,7 @@ add('free', 'book', '책', draw([
     {mat: 'yellow', shape: circle(12, 9.6, 3.2)},
   ], [...px('12,15 12,16 12,17 12,18 12,19 12,20 12,21', E), ...px('11,9 13,9', E)]));
 }
-{
-  const star = (cx, cy, R, r) => poly(Array.from({length: 10}, (_, i) => { const t = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; return [cx + rr * Math.cos(t), cy + rr * Math.sin(t)]; }));
-  add('free', 'star', '별', draw([{mat: 'yellow', shape: star(12, 13, 11.2, 5.4), hl: P('11,5 11,6')}], face(12, 12, 3, {spark: W, blush: true})));
-}
+add('free', 'star', '별', require('./sticker-star.gen.js'));
 add('free', 'cat', '고양이', draw([
   {mat: 'orange', shape: ell(20, 13, 2.2, 5.4, 0.3)},
   {mat: 'orange', shape: U(ell(11, 14, 8.6, 6.8), poly([[3.4, 10], [4.4, 3], [9.4, 7.6]]), poly([[18.6, 10], [17.6, 3], [12.6, 7.6]])), hl: P('5,7 5,8')},
@@ -142,10 +139,11 @@ add('study', 'laptop', '노트북', draw([
   {mat: 'gray', shape: rbox(12, 19, 11.4, 2, 0.8), hl: P('3,18 4,18 5,18')},
 ], [...face(12, 9, 2.8, {spark: W}), ...px('10,19 11,19 12,19 13,19', MAT.gray.s)]));
 add('study', 'clock', '시계', draw([
-  {mat: 'yellow', shape: circle(5.4, 5, 3)}, {mat: 'yellow', shape: circle(18.6, 5, 3)},
-  {mat: 'red', shape: circle(12, 13, 9.4), hl: P('6,8 5,9 5,10')},
-  {mat: 'cream', shape: circle(12, 13, 6.6), flat: true},
-], [...px('12,8 12,9 12,10 12,11 12,12 13,13 14,14 15,15', E), ...px('5,22 6,21 18,21 19,22', E), ...px('12,7 6,13 18,13 12,19', MAT.cream.s)]));
+  // 벽걸이 시계(사용자 참고): 주황 테 · 하늘색 판 · 네 방향 눈금 · 바늘 두 개
+  {mat: 'orange', shape: circle(12, 12, 10.4), hl: P('5,6 4,7 4,8')},
+  {mat: 'sky', shape: circle(12, 12, 7.4), flat: true},
+], [...px('12,6 12,7 17,12 18,12 12,17 12,18 6,12 7,12', MAT.blue.s),
+  ...px('11,11 10,10 9,9 8,8', E), ...px('13,11 14,10 15,9 16,8 17,7', E), ...px('12,12 11,12 12,11', E), ...px('9,7 8,8', MAT.sky.l)]));
 add('study', 'bulb', '전구', draw([
   {mat: 'yellow', shape: U(circle(12, 9.6, 7.2), poly([[7.6, 13], [16.4, 13], [15, 17.4], [9, 17.4]])), hl: P('7,5 6,6 6,7')},
   {mat: 'gray', shape: rbox(12, 19.6, 3.6, 2.4, 0.8)},
