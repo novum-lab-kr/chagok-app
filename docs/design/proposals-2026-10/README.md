@@ -9,6 +9,7 @@
 | 캐릭터 | https://claude.ai/artifact/3qkb69GG9Ku7xJoaNRtqQb | `character.template.html` | 2차 3안 확정(가칭 「이고지고」 → 이름 「차곡이」 2026-10-04) |
 | 아이콘·스플래시·표정 | https://claude.ai/artifact/CtGPQfkXPo95cnDduSP5uH | `icon-splash.template.html` | 아이콘 1안 확정, 표정·팔·머리 위 물건 확정, 스플래시 미확정 |
 | 홈 화면 위젯 모양 | https://claude.ai/artifact/K5qfAcqRA2vyLZVxY2oqD3 | `widget.template.html` | 2026-10-04 발행. 지금 미리보기 + 1안 판을 안쪽으로 · 2안 LCD 창 · 3안 캐릭터와 함께 · (2차, 중간에 목표 두 개) 4안 나란히 · 5안 목록 두 줄 · 6안 판 미니 두 개 · (3차, 위젯에서 바로 붙이기 — db `choice-tap`) A 칸 · B 스티커 단추(B-1~3 메모 반영) · C 카드 전체 · (5차, 사용자 실기기 위젯 참고 — 테두리 없이 꽉 채움, iPhone 16 Pro 170·364pt, db `choice-full`) 1 큰 숫자 · 2 링 · 3 판 크게 · (6차) 링 위젯 + 달력 위젯. **2026-10-04 확정: 6-링·6-달력 둘 다, 바탕 민트·아이보리 + 유리(iOS 투명·틴트 모드에 맡김), 진행 문구 `n% 채웠어요`** (PRD 4.10) |
+| 홈 화면 위젯 스타일 | https://claude.ai/artifact/47ZmtU8SZbzWQSNb8sDkXM | `widget-style.template.html` | 2026-10-05 발행, 11차까지. spike 위젯을 실기기 크기로 보고 다시 그림: 1차 링 다듬기 3안 → 2차 레퍼런스(습관 앱) 반영 큰 숫자·컬러 스티커·차곡이 → 3~6차 목표 하나 뼈대·문구·적립판 칸 → 7차 경우의 수(색 6쌍·문구·상태 11~16가지·투명/틴트) → 8~11차 차곡이 말풍선. **고른 것(db `choices/widget-style-7`)**: 위젯 3종 모두, 말풍선 마3 `Ready?`/`Nice!`, 색 P2·P3 둘 다(위젯 설정), 긴 이름은 두 줄 말줄임. 확정 내용은 PRD 4.10. 만들기: 아래 「위젯 스타일 만들기」 |
 | 아이콘·스플래시 확정 | https://claude.ai/artifact/4e7k1HAotEjKzYwg5k8XMV | `icon-splash-final.template.html` | 2026-10-04 발행. iOS 아이콘 1안(확정, 비교용) + Android 적응형 A1 안전 영역 안 · A2 조금 크게 · A3 아래에서 빼꼼 / 스플래시 S1 「2+」 그대로 · S2 빠르게 · S3 끝에 미소. db `choice-adaptive`·`choice-splash`. **Android A1·스플래시 S2-B 확정(2026-10-04).** |
 | 광고 위치 | https://claude.ai/artifact/AuLzpnK3wXze14Qk9XBFb4 | `ad-placement.template.html` | 2026-10-05 발행. 비맞춤 배너 첫 출시(PRD 11절). 지금 앱(비교용) · 1안 홈 아래 고정 · 2안 목록 끝 한 칸 · 3안 앱 설정·완성한 판에만. db `choice-ads`. **2026-10-05 1안 확정(홈 아래 고정 배너).** 다시 만들 때 `__ASSETS__`는 shoe·book·flower·star |
 | 스티커 팩 후보 | https://claude.ai/artifact/Mx87SQVMUvXTuxV3sArADk | `sticker-packs.template.html` | 2026-10-05 발행. 출시 팩 3개 주제 고르기(3개까지). 후보 5주제 26종(운동·건강 / 공부·일 / 생활·마음 / 계절·날씨 / 동물 친구) + 지금 무료 6종(비교용). 그림은 `sticker-candidates.gen.js`(도형을 56 격자에 찍는 초안 생성기, `node sticker-candidates.gen.js <dir>`)로 만든 `sticker-candidates.json`. 템플릿 자리: `__FONT__`·`__STICKERS__`(json)·`__ASSETS__`(무료 6종, 새싹은 `sproutPath`). db `choice-themes`(배열)·`note-<주제>`. 메모(2026-10-05): 계절·날씨에 구름·비구름·해·눈송이·눈구름 추가. 그림 화풍은 다음 줄 시안에서 다시 고름. **2차(2026-10-05)**: 화풍 결정(24칸 · SVG로 그림 · PixelLab PNG는 변환해서 사용) 뒤 새 화풍으로 무료 6종 + 다섯 주제 33종 다시 그림(`sticker-packs-v2.gen.js` → `sticker-packs-v2.json`, 색별 path 층). 주제마다 적립판·달력판 미리보기. 침대 → 잠(초승달), 생활·마음의 해 → 계절·날씨로, 그 자리에 편지. 계절·날씨 9종(구름·비구름·해·눈송이·눈구름 추가), 동물 친구 6종(햄스터·곰 추가). 템플릿 자리 `__FONT__`·`__STICKERS__`(json) |
@@ -33,6 +34,21 @@ for (const n of ["settings","character","icon-splash","widget","icon-splash-fina
   const t=fs.readFileSync(`docs/design/proposals-2026-10/${n}.template.html`,"utf8").replace("__FONT__",font).replace("__ASSETS__",JSON.stringify(n==="widget"?A:{sprout})).replace("__MASCOT__",n==="icon-splash-final"?JSON.stringify({faces:require("./docs/design/character/character-data.json").faces,splashLayers:require("./docs/design/character/character-data.json").splashLayers}):mascot);
   fs.writeFileSync(`/tmp/${n}.html`,"<!doctype html><meta charset=utf-8>"+t);
 }'
+```
+
+**위젯 스타일 만들기** — `__FONT__`(Neo둥근모 base64)와 `__DATA__`(흑백·컬러 스티커 path, 차곡이 얼굴)를 채운다.
+
+```sh
+node -e '
+const fs=require("fs");
+const font=fs.readFileSync("src/design-system/assets/neodgm-1.601.ttf").toString("base64");
+const mono={};for(const id of ["star","shoe","book","flower","cat"])mono[id]=fs.readFileSync(`src/stickers/pocket/assets/${id}.ts`,"utf8").match(/"path": "([^"]+)"/)[1];
+mono.sprout=fs.readFileSync("src/stickers/pocket/assets/sprout.ts","utf8").match(/sproutPath = "([^"]+)"/)[1];
+const src=require("./src/stickers/color/source/sticker-packs-24.json"),P={free:"basic"},color={};
+for(const k of ["sports.bottle","basic.book","basic.shoe","sports.yoga","objects.notebook","emotions.love","snack.milk"]){const [p,i]=k.split(".");color[k]=src.stickers.find(s=>(P[s.theme]||s.theme)===p&&s.id===i).layers;}
+const f=require("./docs/design/character/character-data.json").faces;
+const t=fs.readFileSync("docs/design/proposals-2026-10/widget-style.template.html","utf8").replace("__FONT__",font).replace("__DATA__",JSON.stringify({mono,color,faces:{curious:f.curious,excited:f.excited,sleepy:f.sleepy}}));
+fs.writeFileSync("/tmp/widget-style.html",t);'
 ```
 
 아티팩트로 다시 발행할 때는 기존 링크를 `url`로 넘겨 같은 주소를 유지하고, `capabilities: {db: {}, user: {}}`로 고르기·메모 저장을 켠다.
