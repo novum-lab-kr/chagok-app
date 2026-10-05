@@ -18,3 +18,7 @@ expo-env.d.ts
 .env*.local
 # 관리자 키. 이름을 .env로 시작하지 않는다 — Expo 개발 서버가 .env.* 파일을 앱 번들로 읽으려 한다.
 .secrets/
+
+# 개발 빌드 네이티브 폴더 — CNG로 매번 만든다(커밋하지 않음)
+/ios
+/android

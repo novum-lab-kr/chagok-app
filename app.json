@@ -2,6 +2,7 @@
   "expo": {
     "name": "차곡차곡",
     "slug": "chagok",
+    "owner": "novum-lab",
     "scheme": "chagok",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,6 +35,7 @@
       ],
       "expo-font",
       "expo-web-browser",
+      "expo-system-ui",
       [
         "expo-splash-screen",
         {
@@ -50,6 +52,12 @@
     "icon": "./assets/icon.png",
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bb89bc84-8571-4191-a095-563d2e04e2d0"
+      }
     }
   }
 }
