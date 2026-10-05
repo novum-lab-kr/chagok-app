@@ -45,5 +45,14 @@
       "choice-ads": "p1 (홈 아래 고정 배너)"
     },
     "exportedAt": "2026-10-05"
+  },
+  "stickerPacks": {
+    "url": "https://claude.ai/artifact/Mx87SQVMUvXTuxV3sArADk",
+    "docs": {
+      "choice-themes": "(아직 없음)",
+      "note-season": "구름, 비오는 구름, 해, 눈(눈송이), 구름+눈 도 추가하면 좋겠어.",
+      "chat": "전체적으로 도트 느낌이 아니라 그냥 선이 깨진 느낌. 돈 주고 살 법한 느낌이 아님 → 도트 느낌으로 보완"
+    },
+    "exportedAt": "2026-10-05"
   }
 }
