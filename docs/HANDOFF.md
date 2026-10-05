@@ -11,7 +11,7 @@
 **상태.** 홈 구조 전환(목록 / 판 상세 / 목표 설정 / 완성 흐름 / 5단계 튜토리얼, 스키마 v4)과 Expo Go 단계(약관 화면, 백업 기기 쪽, 위젯 스냅샷, 스키마 v5)가 main에 들어갔다. 홈 구조의 구현 기록·미확인 항목은 [DEV-DESIGN-home-structure.md](DEV-DESIGN-home-structure.md) 10절, Expo Go 단계의 범위와 결정은 [계획](superpowers/plans/2026-09-30-expo-go-phase.md)과 설계 문서 3개([약관](superpowers/specs/2026-09-30-policy-terms-design.md) · [계정·백업](superpowers/specs/2026-09-30-account-backup-design.md) · [위젯](superpowers/specs/2026-09-30-home-widget-design.md))가 단일 출처다.
 2026-10-02 계정 화면 연결(개발 로그인: 시작·동의·연결·복원·충돌·로그아웃·계정 삭제·로그인 풀림 안내)이 main에 들어갔다([계획](superpowers/plans/2026-10-01-account-wiring.md), 확인 범위는 9절 위 「화면에 연결되지 않은 것」의 계정·백업 줄).
 
-**계정이 아직 없다 (2026-10-03).** Apple Developer Program·Google Cloud OAuth가 준비되기 전에는 개발 빌드 전환·실제 로그인·위젯 네이티브처럼 계정이 걸린 일을 다음 할 일로 제안하지 않는다. Expo Go·Storybook·개발 계정 로그인으로 할 수 있는 일부터 한다(사용자 지시).
+**계정 상태 (2026-10-05).** Apple Developer Program: 남편 명의 개인 계정으로 등록·결제 완료, **승인 대기**. Google Cloud OAuth: 아직 없음. Expo 조직 `novum-lab`(EAS 프로젝트 `@novum-lab/chagok`). 준비되지 않은 계정에 걸린 일(Apple 로그인·TestFlight·Google 로그인)은 다음 할 일로 제안하지 않는다(사용자 지시). 개발 빌드는 2026-10-05 전환했다([계획](superpowers/plans/2026-10-05-dev-build.md)).
 
 **작업 방식 (2026-09-30 사용자 지시).**
 
@@ -47,7 +47,7 @@
 
 1. **실기기 확인이 밀린 수정 건** — 판 진입 스크롤(main에 있음), 기록 화면 첫 진입 스타일 빠짐(재현 대기), `fix/light-mode-font-scale`의 다크 모드·글자 크기. 사용자가 iPhone 15 Pro로 본다. 고정 헤더는 2026-10-01 실기기에서 확인됐다.
 2. **계정 화면 남은 테스트** — 계정 삭제(개발 계정과 서버 테스트 기록이 지워짐 → `npm run server:dev-user`로 다시 만듦), "이 기기 기록 사용하기"(서버 테스트 기록을 덮어씀 — 하기 전에 묻는다), 남은 기록이 있는 로그아웃 경고, 만 14세 미만 안내, 사진 복원, iOS 가장자리 스와이프·iOS 오프라인. 개발 서버 기록 "10분 독서"에 테스트로 붙인 스티커 1개(42번 칸)를 뗀다.
-3. **계정이 생긴 뒤:** 개발 빌드 전환(+`expo-system-ui`) → Google 로그인(Android) → Apple 로그인·`apple-link`·Apple 토큰 폐기 → 위젯 spike·네이티브 → 광고·결제 SDK. 로그인 버튼은 연결 화면의 [개발 계정으로 계속] 자리에 끼운다.
+3. **계정이 생긴 뒤:** ~~개발 빌드 전환(+`expo-system-ui`)~~ 2026-10-05 완료 → Google 로그인(Android) → Apple 로그인·`apple-link`·Apple 토큰 폐기 → 위젯 spike·네이티브 → 광고·결제 SDK. 로그인 버튼은 연결 화면의 [개발 계정으로 계속] 자리에 끼운다.
 
 **나중에 정할 것 (설계 전에 범위부터 묻는다):** 푸시 알림, 이용 분석·오류 추적, 워치 아이디어(캐릭터 키우기 + 빠른 스티커 붙이기 — PRD 2절 제외 범위와 부딪침, PRD 11절).
 
@@ -189,7 +189,7 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 
 ## 8. 현재 앱 상태
 
-Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Expo Go로 실행한다(개발 빌드 전환 전).
+Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 개발 빌드로 실행한다(2026-10-05~, [DEV-SETUP](DEV-SETUP.md) 「개발 빌드」). Expo Go도 `--go`로 아직 돈다.
 
 | 라우트 | 동작 |
 | --- | --- |
@@ -227,7 +227,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. Exp
 **준비물이 필요한 것** (Docker Desktop, Apple Developer Program, Google Cloud OAuth — 2026-09-30 기준 없음)
 
 - **2026-09-30 정정: Apple Developer Program(유료)이 꼭 필요한 것은 Apple 로그인, TestFlight, 심사 제출뿐이다.** 개발 빌드 전환과 iOS 위젯 개발은 시뮬레이터에서 계정 없이 된다. 실기기는 무료 Apple ID로 설치할 수 있을 것으로 보지만(7일마다 재설치, Apple 로그인 권한이 들어가면 빌드 불가) 직접 확인하지 않았다 — 위젯 spike에서 먼저 확인한다. 계정을 먼저 만들라고 권하지 않는다.
-- 개발 빌드 전환(`npx expo run:ios`/`run:android`, prebuild 폴더는 커밋하지 않음)과 `docs/DEV-SETUP.md` 갱신. 로그인·위젯 모두 Expo Go로는 안 된다.
+- ~~개발 빌드 전환(`npx expo run:ios`/`run:android`, prebuild 폴더는 커밋하지 않음)과 `docs/DEV-SETUP.md` 갱신.~~ 2026-10-05 완료(`feat/dev-build`): `expo-dev-client`·`expo-system-ui`·`react-native-worklets`(reanimated 필수 peer — Expo Go 밖에서 빠지면 죽을 수 있음), iOS 시뮬레이터·Android 에뮬레이터 빌드 확인, OS 앱 아이콘(iOS·Android 런처)·스플래시 확인, EAS 프로젝트 연결과 `eas.json`. EAS 클라우드 빌드는 아직 돌리지 않았다 — 그전에 서버 주소·키를 EAS 환경 변수로 넣는다.
 - ~~서버~~ 2026-09-30 완료(`feat/server-local`): 개발 서버는 Supabase 클라우드 무료 프로젝트 `chagok-dev`(서울, Docker 불필요). 테이블·RLS·RPC 5개·`record-photos` 버킷·`delete-account`를 올렸고, 가짜 서버와 같은 계약 테스트를 실제 서버에도 돌린다(`npm run test:server`). 남은 것: **운영 서버 결정**(Supabase 클라우드 서울 별도 프로젝트 1순위 — 무료면 매일 DB 백업 작업 필수 / VPS 셀프 호스팅은 국외 이전 기재), `apple-link`와 **Apple 토큰 폐기**(그전에는 토큰이 있으면 계정 삭제가 멈춘다).
 - ~~앱 연결~~ 2026-09-30 완료: `SupabaseSyncServer`·`SupabasePhotoStore`(1600px·JPEG 80%), 로그인해 있는 동안 자동 전송(`connectSync`, 기록 2초 뒤·앱이 앞으로 올 때). 개발용 이메일 로그인과 `/dev/sync` 화면으로 Expo Go에서 확인한다. ~~남은 것: 앱 설정의 백업 상태, 계정 화면·실제 로그아웃·계정 삭제 흐름 연결, 복원 충돌 선택.~~ 2026-10-02 완료(`feat/account-wiring`).
 - 로그인: Google(Android) 먼저, Apple은 계정 승인 뒤. 시작·동의·복원 분기·로그아웃·계정 삭제 화면은 2026-10-02 개발 로그인으로 연결해 두었다 — 연결 화면의 [개발 계정으로 계속] 자리에 Apple·Google 버튼을 끼운다. 재동의 화면은 두지 않는다(약관 변경 안내로 대신, 0절 우선순위 1).
