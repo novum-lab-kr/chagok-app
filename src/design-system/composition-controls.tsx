@@ -4,6 +4,7 @@ import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,Pi
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
+import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
 import {pixelOutline} from './geometry';
 import {ActionSymbol,StickerGlyph,pocketStickers,stickerLabel,type PocketStickerId} from './sticker-glyphs';
@@ -232,10 +233,10 @@ export function SelectionBadge() {
 
 // ── 홈 목록·판 상세 (2026-09-29 시안) ─────────────────────────────────
 const caption={color:retro.color.buttonText};
-/** 앱 최상단: 꽃 + 차곡차곡 + 앱 설정 톱니바퀴. */
+/** 앱 최상단: 차곡이 + 차곡차곡 + 앱 설정 톱니바퀴. */
 export function AppHeader({onSettings}:{onSettings?:()=>void}) {
   return <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}>
-    <PixelIcon name="flower" size={44}/><PixelText variant="brand">차곡차곡</PixelText>
+    <Mascot size={44}/><PixelText variant="brand">차곡차곡</PixelText>
     {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel="앱 설정" onPress={onSettings} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
   </View>;
 }

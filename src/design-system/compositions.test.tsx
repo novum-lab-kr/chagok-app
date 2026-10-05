@@ -7,6 +7,12 @@ import {ExtendSlotsScreen,GoalSettingsScreen,NewGoalScreen} from './board-screen
 import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 afterEach(cleanup);
+/** react-native-web은 누른 채 450ms가 지나면 onLongPress를 부른다. */
+function longPress(el:Element) {
+  vi.useFakeTimers();
+  fireEvent.mouseDown(el,{button:0});vi.advanceTimersByTime(500);fireEvent.mouseUp(el,{button:0});
+  vi.useRealTimers();
+}
 describe('화면 구성 컴포넌트',()=>{
   it('월별 시작 요일, 윤년과 마지막 주 빈칸을 계산한다',()=>{
     expect(monthCells(2026,9).slice(0,4)).toEqual([null,null,1,2]);
@@ -96,38 +102,39 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     fireEvent.click(screen.getByRole('tab',{name:'완성한 판 2'}));expect(tab).toHaveBeenCalledWith('completed');
     fireEvent.click(screen.getByRole('button',{name:'새 목표 만들기'}));expect(add).toHaveBeenCalledTimes(1);
   });
-  it('붙인 칸: 한 번 누르면 기다렸다 떼기, 두 번 누르면 기록만 연다',()=>{
-    vi.useFakeTimers();
+  it('붙인 칸: 한 번 누르면 바로 기록을 열고, 꾹 누르면 뗀다',()=>{
     const press=vi.fn(),open=vi.fn();
     render(<GoalStickerCell number={3} sticker="star" state="filled" onPress={press} onOpenRecord={open}/>);
     const cell=screen.getByRole('button');
-    fireEvent.click(cell);expect(press).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(260);expect(press).toHaveBeenCalledTimes(1);expect(open).not.toHaveBeenCalled();
-    fireEvent.click(cell);fireEvent.click(cell);vi.advanceTimersByTime(260);
-    expect(open).toHaveBeenCalledTimes(1);expect(press).toHaveBeenCalledTimes(1);
+    fireEvent.click(cell);expect(open).toHaveBeenCalledTimes(1);expect(press).not.toHaveBeenCalled();
+    longPress(cell);expect(press).toHaveBeenCalledTimes(1);expect(open).toHaveBeenCalledTimes(1);
+  });
+  it('빈칸은 한 번 누르면 바로 붙인다',()=>{
+    const press=vi.fn(),open=vi.fn();
+    render(<GoalStickerCell number={4} sticker="star" state="available" enabled onPress={press} onOpenRecord={open}/>);
+    fireEvent.click(screen.getByRole('button'));expect(press).toHaveBeenCalledTimes(1);expect(open).not.toHaveBeenCalled();
   });
   it('기록 열기를 주지 않으면 기존처럼 바로 누른다',()=>{
     const press=vi.fn();render(<GoalStickerCell number={3} sticker="star" state="filled" onPress={press}/>);
     fireEvent.click(screen.getByRole('button'));expect(press).toHaveBeenCalledTimes(1);
   });
-  it('완성한 판(readonly)은 한 번 누르기를 무시하고 빈칸은 막는다',()=>{
-    vi.useFakeTimers();
+  it('완성한 판(readonly)은 누르면 기록만 열고, 꾹 눌러도 떼지 않고, 빈칸은 막는다',()=>{
     const press=vi.fn(),open=vi.fn();
     const {rerender}=render(<GoalStickerCell number={3} sticker="star" state="filled" readonly onPress={press} onOpenRecord={open}/>);
-    fireEvent.click(screen.getByRole('button'));vi.advanceTimersByTime(260);expect(press).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button'));fireEvent.click(screen.getByRole('button'));expect(open).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button'));expect(open).toHaveBeenCalledTimes(1);
+    longPress(screen.getByRole('button'));expect(press).not.toHaveBeenCalled();
     rerender(<GoalStickerCell number={4} sticker="star" state="available" readonly enabled onPress={press} onOpenRecord={open}/>);
-    fireEvent.click(screen.getByRole('button'));vi.advanceTimersByTime(260);expect(press).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button'));expect(press).not.toHaveBeenCalled();
   });
-  it('달력: 스티커 있는 날은 두 번 눌러 기록을 열고, 비활성 날짜는 막는다',()=>{
-    vi.useFakeTimers();
+  it('달력: 스티커 있는 날은 눌러 기록을 열고 꾹 눌러 떼며, 비활성 날짜는 막는다',()=>{
     const select=vi.fn(),open=vi.fn();
     render(<CalendarBoard year={2026} month={9} records={{'2026-09-02':'shoe'}} onSelect={select} onMonthChange={()=>{}} onOpenRecord={open} isDateEnabled={date=>date<='2026-09-23'}/>);
     const second=screen.getByRole('button',{name:'9월 2일, 스티커 있음'});
-    fireEvent.click(second);fireEvent.click(second);vi.advanceTimersByTime(260);
+    fireEvent.click(second);
     expect(open).toHaveBeenCalledWith('2026-09-02');expect(select).not.toHaveBeenCalled();
+    longPress(second);expect(select).toHaveBeenCalledWith('2026-09-02');
     fireEvent.click(screen.getByRole('button',{name:'9월 5일'}));expect(select).toHaveBeenCalledWith('2026-09-05');
-    fireEvent.click(screen.getByRole('button',{name:'9월 24일'}));expect(select).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button',{name:'9월 24일'}));expect(select).toHaveBeenCalledTimes(2);
   });
   it('기간 필드: 시작일은 바꿀 수 없고, 종료일은 마지막으로 붙인 날 다음 날부터 고른다',async ()=>{
     const {PeriodField}=await import('./index');

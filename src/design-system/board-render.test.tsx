@@ -38,12 +38,12 @@ describe('적립판 다시 그리기 (2026-10-04 최적화)',()=>{
     expect(latest).toHaveBeenCalledWith(4);
     expect(first).not.toHaveBeenCalled();
   });
-  it('붙인 칸을 두 번 누르면 가장 최근 기록 열기 함수가 칸 번호와 함께 불린다',()=>{
+  it('붙인 칸을 누르면 가장 최근 기록 열기 함수가 칸 번호와 함께 불린다',()=>{
     const first=vi.fn(),latest=vi.fn();
     const r=render(<Screen b={board(10,3,{onOpenRecord:first})}/>);
     r.rerender(<Screen b={board(10,3,{onOpenRecord:latest})}/>);
     const cell=screen.getByRole('button',{name:/^2번 칸/});
-    fireEvent.click(cell);fireEvent.click(cell);
+    fireEvent.click(cell);
     expect(latest).toHaveBeenCalledWith(2);
     expect(first).not.toHaveBeenCalled();
   });

@@ -850,7 +850,7 @@
       "id": "detail-record",
       "source": "detail",
       "target": "record",
-      "label": "스티커 두 번·꾹",
+      "label": "붙인 스티커",
       "data": {
         "scenarios": [
           "daily"

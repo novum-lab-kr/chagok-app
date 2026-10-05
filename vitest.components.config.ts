@@ -5,5 +5,5 @@ export default defineConfig({
   plugins:[react()],
   resolve:{alias:[{find:/^react-native$/,replacement:'react-native-web'},{find:/^react-native-svg$/,replacement:path.resolve('node_modules/react-native-svg/lib/module/ReactNativeSVG.web.js')},{find:/^react-native-safe-area-context$/,replacement:path.resolve('node_modules/react-native-safe-area-context/src/index.tsx')}],extensions:['.web.tsx','.web.ts','.web.jsx','.web.js','.tsx','.ts','.jsx','.js','.json']},
   define:{__DEV__:true},
-  test:{environment:'jsdom',include:['src/design-system/**/*.test.tsx'],globals:false,server:{deps:{inline:['react-native-svg','react-native-safe-area-context']}}},
+  test:{environment:'jsdom',include:['src/design-system/**/*.test.tsx','src/stickers/**/*.test.tsx'],globals:false,server:{deps:{inline:['react-native-svg','react-native-safe-area-context']}}},
 });
