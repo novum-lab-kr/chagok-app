@@ -26,7 +26,6 @@
 
 | 브랜치 | 내용 | 할 일 |
 | --- | --- | --- |
-| `docs/monetization-decisions` (worktree `chagok-wt-monetization`) | `RELEASE-DECISIONS.md`의 수익화·광고·가격·권한 규칙·스티커 그림 기준·해외 확장 메모, PRD·HANDOFF 줄, 스티커 시안 기록 | 우선순위 1. 시안 데이터를 `src/stickers/color/source`와 맞춘 뒤 합친다 |
 | `spike/widgets` (worktree `chagok-wt-widgets`) | 위젯 spike 코드, 결과 문서 `docs/superpowers/specs/2026-10-05-widget-spike-results.md` | 코드는 합치지 않는다. 사용자 결정 뒤 결과 문서와 스크린샷만 main으로 옮긴다 |
 | `fix/light-mode-font-scale` | 다크 모드 막기, 글자 크기 고정 (PRD 6.1·6.2) | 사용자가 실기기에서 확인하면 합친다 |
 | `docs/scope-decisions` | 2026-09-30 범위 결정 | 내용을 PRD·HANDOFF로 옮겼으니 합치지 않는다 |
@@ -45,8 +44,7 @@
 
 **다음에 할 일 — 우선순위 (2026-10-05 갱신, 위에서부터).** 실기기 테스트는 맨 뒤다(사용자 지시).
 
-1. **오늘 결정한 것 정리**
-   - `docs/monetization-decisions`를 합친다. 합치기 전에 시안 데이터 `docs/design/proposals-2026-10/sticker-packs-24.json`을 `src/stickers/color/source/sticker-packs-24.json`과 맞춘다. 원본 쪽에만 있는 2026-10-05 수정 4가지: 기본 꽃 새로 그림, 사물 꽃 좌우 대칭, 축구공 가운데 선 연회색, 머그컵 손잡이 닫힘.
+1. **위젯 spike 결정** (2026-10-05 `docs/monetization-decisions`는 main에 합쳤다)
    - 위젯 spike 결정을 받는다. 정해지면 결과 문서만 main으로 옮긴다.
      - iOS 위젯마다 목표 고르기(가/나/다)
      - 유리 바탕을 뺄지
@@ -55,7 +53,7 @@
 2. **스티커 화면 다시 설계.** 사용자가 요청할 때 시작한다(2026-10-05 "스토리북 에셋이 다 확인되면 화면 설계 다시 하자고 할게").
    - 대상: 묶음별 스티커 선택기, 잠긴 묶음, 묶음 상세·구매, 구매 복원, 광고 제거 진입, 구독이 끝난 뒤 보이는 모습.
    - 먼저 정할 것:
-     - 출시 때 낼 유료 묶음(후보 6개 중)
+     - 출시 때 낼 유료 묶음(후보 6개 중)과 팩당 개수 — 처음 정한 「6종 팩 3개」를 다시 정한다
      - 10개 묶음의 가격
      - 흑백 스티커를 컬러로 바꿀지(바꾸면 저장된 `stickerType` 마이그레이션이 필요하다)
      - 판 칸 스티커 크기: 지금 44px이다. 컬러 24칸 그림은 24의 정수배인 48px이어야 선명하다.
@@ -138,7 +136,7 @@
 - 튜토리얼 다시 보기: 앱 설정 → 도움말 → 사용법 다시 보기(`/tutorial`).
 - 수동 완성 확인 문구: "완성해도 계속하기로 다시 이어 쓸 수 있어요".
 - 앱 식별자: `com.novum.chagok`(2026-10-04, [RELEASE-DECISIONS](RELEASE-DECISIONS.md)).
-- 수익화(2026-10-05, `docs/monetization-decisions`의 RELEASE-DECISIONS):
+- 수익화(2026-10-05, [RELEASE-DECISIONS](RELEASE-DECISIONS.md)):
   - 첫 출시는 스티커 팩 판매 + 비맞춤 배너 광고. 광고 제거는 따로 판다. 구독은 나중이다.
   - 가격: 팩 2,200원, 광고 제거 5,500원. 한 번 사면 계속 쓴다.
   - 구독이 끝나도 붙인 스티커는 남는다. 잠긴 팩의 스티커는 새로 고를 수 없다.
