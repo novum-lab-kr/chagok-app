@@ -85,7 +85,7 @@ section.group.ok .ok-btn { background: var(--ok); color: var(--surface); }
 <div class="wrap">
   <header class="top">
     <h1>차곡차곡 24px 스티커 팩</h1>
-    <p class="lede">사용자가 Codex로 만든 24×24px 스티커 40종(사물·동물·감정·날씨 각 10종)을 고치지 않고 그대로 넣었습니다. 모두 점 1개 = 1px, 투명 배경, 중간색 없이 3~8색이라 앞에서 정한 규격과 맞습니다. 맨 위는 비교용으로 제가 새 화풍으로 그린 기본 스티커입니다. 출시 팩으로 쓸 주제를 [이 주제 고르기]로 고르고(3개까지), 빼거나 바꿀 스티커는 주제마다 메모에 적어 주세요. 주제마다 10종이라 팩(6종)으로 추리거나 10종 팩으로 갈지도 메모로 알려 주세요. 판은 실제 앱 크기(적립판 48pt = 2배, 달력 24pt = 1배)입니다.</p>
+    <p class="lede">사용자가 Codex로 만든 24×24px 스티커 40종(사물·동물·감정·날씨 각 10종)을 고치지 않고 그대로 넣었습니다. 모두 점 1개 = 1px, 투명 배경, 중간색 없이 3~8색이라 앞에서 정한 규격과 맞습니다. 맨 위는 무료 기본 스티커(제가 새 화풍으로 그림), 운동 팩·간식 팩 각 10종도 제가 그렸습니다. 출시 팩으로 쓸 주제를 [이 주제 고르기]로 고르고(3개까지), 빼거나 바꿀 스티커는 주제마다 메모에 적어 주세요. 주제마다 10종이라 팩(6종)으로 추리거나 10종 팩으로 갈지도 메모로 알려 주세요. 판은 실제 앱 크기(적립판 48pt = 2배, 달력 24pt = 1배)입니다.</p>
   </header>
 
   <div class="seg" role="group" aria-label="보기" style="display:inline-flex;gap:0;border:1px solid var(--line);border-radius:4px;overflow:hidden;align-self:flex-start"><button type="button" id="v-color" aria-pressed="true" style="font:inherit;font-size:14px;padding:6px 14px;border:0;cursor:pointer">색으로 보기</button><button type="button" id="v-mono" aria-pressed="false" style="font:inherit;font-size:14px;padding:6px 14px;border:0;cursor:pointer">흑백으로 보기 (잉크 한 색 · 윤곽 두 칸)</button></div>
@@ -131,6 +131,8 @@ const monoLayers = layers => {
 };
 const svg = (layers) => `<svg viewBox="0 0 24 24" aria-hidden="true">${(MONO ? monoLayers(layers) : layers).map(l => `<path d="${l.d}" fill="${l.color}"/>`).join('')}</svg>`;
 const FOR = {
+  snack: '커피·간식 기록, 아껴 먹기, 일주일에 한 번 같은 작은 보상',
+  sports: '운동, 산책, 수영, 줄넘기, 공놀이 같은 몸 쓰는 목표',
   objects: '여행, 공부, 일정, 사진, 충전(쉬기) 같은 생활 기록',
   animals: '목표와 상관없이 좋아하는 동물로 고르는 스티커',
   emotions: '그날 기분을 함께 남기는 기록 — 하트 얼굴 10가지',
