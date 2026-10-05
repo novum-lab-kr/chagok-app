@@ -10,6 +10,7 @@
 | 아이콘·스플래시·표정 | https://claude.ai/artifact/CtGPQfkXPo95cnDduSP5uH | `icon-splash.template.html` | 아이콘 1안 확정, 표정·팔·머리 위 물건 확정, 스플래시 미확정 |
 | 홈 화면 위젯 모양 | https://claude.ai/artifact/K5qfAcqRA2vyLZVxY2oqD3 | `widget.template.html` | 2026-10-04 발행. 지금 미리보기 + 1안 판을 안쪽으로 · 2안 LCD 창 · 3안 캐릭터와 함께 · (2차, 중간에 목표 두 개) 4안 나란히 · 5안 목록 두 줄 · 6안 판 미니 두 개 · (3차, 위젯에서 바로 붙이기 — db `choice-tap`) A 칸 · B 스티커 단추(B-1~3 메모 반영) · C 카드 전체 · (5차, 사용자 실기기 위젯 참고 — 테두리 없이 꽉 채움, iPhone 16 Pro 170·364pt, db `choice-full`) 1 큰 숫자 · 2 링 · 3 판 크게 · (6차) 링 위젯 + 달력 위젯. **2026-10-04 확정: 6-링·6-달력 둘 다, 바탕 민트·아이보리 + 유리(iOS 투명·틴트 모드에 맡김), 진행 문구 `n% 채웠어요`** (PRD 4.10) |
 | 아이콘·스플래시 확정 | https://claude.ai/artifact/4e7k1HAotEjKzYwg5k8XMV | `icon-splash-final.template.html` | 2026-10-04 발행. iOS 아이콘 1안(확정, 비교용) + Android 적응형 A1 안전 영역 안 · A2 조금 크게 · A3 아래에서 빼꼼 / 스플래시 S1 「2+」 그대로 · S2 빠르게 · S3 끝에 미소. db `choice-adaptive`·`choice-splash`. **Android A1·스플래시 S2-B 확정(2026-10-04).** |
+| 광고 위치 | https://claude.ai/artifact/AuLzpnK3wXze14Qk9XBFb4 | `ad-placement.template.html` | 2026-10-05 발행. 비맞춤 배너 첫 출시(PRD 11절). 지금 앱(비교용) · 1안 홈 아래 고정 · 2안 목록 끝 한 칸 · 3안 앱 설정·완성한 판에만. db `choice-ads`. 다시 만들 때 `__ASSETS__`는 shoe·book·flower·star |
 
 고른 안과 메모 전문: [`review-notes.json`](review-notes.json). 확정된 캐릭터 데이터: [`../character/`](../character/README.md).
 
