@@ -223,14 +223,14 @@ export function StickerGrid({children}: {children:ReactNode}) {
   </View>;
 }
 
-/** 붙인 칸의 기록 열기를 스크린리더에서도 쓸 수 있게 하는 접근성 동작 (두 번 누르기·꾹 누르기 대체). */
-export const openRecordAction={name:'longpress',label:'기록 열기'} as const;
-export function StickerSlot({number,state='empty',onPress,onLongPress,width=84,height=64,enabled=state!=='empty'}: {number:number;state?:'empty'|'available'|'filled';onPress?:()=>void;/** 붙인 칸을 꾹 눌렀을 때 (기록 열기) */onLongPress?:()=>void;width?:DimensionValue;height?:DimensionValue;enabled?:boolean}) {
+/** 붙인 칸의 스티커 떼기를 스크린리더에서도 쓸 수 있게 하는 접근성 동작 (꾹 누르기 대체). */
+export const removeStickerAction={name:'longpress',label:'스티커 떼기'} as const;
+export function StickerSlot({number,state='empty',onPress,onLongPress,width=84,height=64,enabled=state!=='empty'}: {number:number;state?:'empty'|'available'|'filled';onPress?:()=>void;/** 붙인 칸을 꾹 눌렀을 때 (스티커 떼기) */onLongPress?:()=>void;width?:DimensionValue;height?:DimensionValue;enabled?:boolean}) {
   const [focused,setFocused]=useState(false);
   const [slotSize,setSlotSize]=useState({width:84,height:64});
   const sh=slotSize.height;
   return <Pressable onLayout={e=>setSlotSize(e.nativeEvent.layout)} disabled={!enabled} onPress={onPress} onLongPress={onLongPress}
-    accessibilityActions={onLongPress?[openRecordAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===openRecordAction.name)onLongPress?.()}} accessibilityRole="button"
+    accessibilityActions={onLongPress?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===removeStickerAction.name)onLongPress?.()}} accessibilityRole="button"
     accessibilityLabel={`${number}번 칸, ${state==='filled'?'새싹이 스티커':enabled?'붙일 수 있음':'빈칸'}`}
     accessibilityState={{disabled:!enabled}} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} style={{width,height}}>
     <PixelFrame variant={state==='available'?'selection':'slot'} style={{height:'100%'}} focused={focused} contentStyle={{height:'100%',padding:0,paddingBottom:state==='filled'?retro.layout.stickerBottomInset:0,alignItems:'center',justifyContent:state==='filled'?'flex-end':'center'}}>

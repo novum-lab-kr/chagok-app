@@ -13,6 +13,6 @@ export const ComponentBoard:Story={name:'공통 컴포넌트 한눈에',render:(
       <PixelPanel title="책 읽기"><BoardProgressRow value={6} total={15} percentLabel="40%" sticker="sprout"/><View style={{height:retro.layout.progressGridGap}}/><StickerGrid>{Array.from({length:9},(_,i)=><StickerSlot key={i} width="100%" height="100%" number={i+1} state={i<6?'filled':i===6?'available':'empty'}/>)}</StickerGrid></PixelPanel>
     </View>
     <View style={{width:340,gap:20}}><PixelText variant="title">입력과 버튼</PixelText><PixelInput label="목표 이름" defaultValue="책 읽기"/><PixelButton label="저장하기"/><PixelButton label="바꾸기" variant="secondary"/><PixelButton label="저장하기" disabled/><PixelInput label="메모" defaultValue="오늘도 한 칸을 채웠다." multiline style={{minHeight:96}}/></View>
-    <View style={{width:340,gap:20}}><PixelText variant="title">튜토리얼</PixelText><PixelDialog step="3 / 5" title="빈칸에 톡!" description="어느 빈칸이든 누르면 스티커가 붙어요. 다시 누르면 떼져요"/><PixelText>Viewport {retro.color.screen}</PixelText><PixelText>Frame {retro.color.lcd}</PixelText><PixelText>Main text {retro.color.ink}</PixelText><PixelText>Button text {retro.color.buttonText}</PixelText></View>
+    <View style={{width:340,gap:20}}><PixelText variant="title">튜토리얼</PixelText><PixelDialog step="3 / 5" title="빈칸에 톡!" description="어느 빈칸이든 누르면 스티커가 붙어요. 꾹 누르면 떼져요"/><PixelText>Viewport {retro.color.screen}</PixelText><PixelText>Frame {retro.color.lcd}</PixelText><PixelText>Main text {retro.color.ink}</PixelText><PixelText>Button text {retro.color.buttonText}</PixelText></View>
   </View>
 </View>};
