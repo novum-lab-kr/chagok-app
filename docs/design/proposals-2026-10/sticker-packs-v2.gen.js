@@ -41,14 +41,24 @@ add('free', 'sprout', '새싹', draw([
   {mat: 'cream', shape: ell(12, 15.4, 7.6, 6.8), hl: P('7,11 6,12 7,12')},
 ], [...px('11,7 11,8', E), ...face(12, 14, 3.5, {spark: W, blush: true})]));
 add('free', 'shoe', '운동화', draw([
-  {mat: 'apricot', shape: poly([[2.5, 9], [9, 8], [12, 11], [18, 12.5], [21.5, 14.5], [21.5, 17], [2.5, 17]]), hl: P('4,10 4,11')},
-  {mat: 'cream', shape: rbox(12, 18.2, 10, 1.9, 0.9)},
+  {mat: 'apricot', shape: poly([[2.5, 8.4], [9, 7.4], [12, 10.6], [18, 12.2], [21.5, 14.4], [21.5, 18], [2.5, 18]]), hl: P('4,10 4,11')},
+  {mat: 'cream', shape: rbox(12, 18.6, 10, 1.1, 0.5), flat: true},
 ], px('8,11 10,12 12,13', W).concat(px('9,11 11,12 13,13', E))));
-add('free', 'book', '책', draw([
-  {mat: 'apricot', shape: rbox(12, 14.2, 11, 6.6, 1)},
-  {mat: 'cream', shape: poly([[1.5, 6.5], [11.5, 8], [11.5, 19], [1.5, 18]]), hl: P('3,8')},
-  {mat: 'cream', shape: poly([[12.5, 8], [22.5, 6.5], [22.5, 18], [12.5, 19]])},
-], px('4,11 5,11 6,11 7,11 8,11 4,14 5,14 6,14 7,14 15,11 16,11 17,11 18,11 19,11 15,14 16,14 17,14 18,14', '#B8A898')));
+{
+  // 펼친 책(사용자 참고): 페이지 윗선은 둥글게 솟고 가운데로 휘어 들어가며, 아랫선은 가운데로 처진다. 글줄도 곡선을 따른다
+  const top = (x) => { const u = Math.min(1, Math.abs(x - 12) / 10); return 4.4 + 3 * (1 - u) * (1 - u); }; // 책등에서 낮고 바깥으로 올라감
+  const bot = (x) => { const u = Math.min(1, Math.abs(x - 12) / 10); return 17.4 + 2 * (1 - u) * (1 - u); };
+  const page = (side) => (x, y) => { const inX = side < 0 ? (x > 1.6 && x < 11.8) : (x > 12.2 && x < 22.4); if (!inX) return 1; return Math.max(top(x) - y, y - bot(x)); };
+  const g = draw([
+    {mat: 'apricot', shape: (x, y) => Math.max(Math.abs(x - 12) - 11.4, Math.max(top(x) + 1.4 - y, y - bot(x) - 1.6))},
+    {mat: 'cream', shape: page(-1), hl: P('3,7 3,8')},
+    {mat: 'cream', shape: page(1)},
+  ]);
+  for (let k = 0; k < 4; k++) for (let x = 0; x < 24; x++) {
+    if ((x > 3 && x < 10) || (x > 13 && x < 20)) { const y = Math.round(top(x + 0.5) + 2.4 + k * 2.4); if (g[y] && g[y][x] === MAT.cream.b) g[y][x] = '#B8A898'; }
+  }
+  add('free', 'book', '책', g);
+}
 {
   const petals = [0, 1, 2, 3, 4].map(k => { const t = -Math.PI / 2 + k * 2 * Math.PI / 5; return circle(12 + 4.8 * Math.cos(t), 9.6 + 4.8 * Math.sin(t), 3.7); });
   add('free', 'flower', '꽃', draw([
