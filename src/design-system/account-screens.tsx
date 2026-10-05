@@ -44,7 +44,7 @@ function ChoiceCard({title,selected,onPress,children}:{title:string;selected:boo
   const [size,setSize]=useState({width:0,height:0});
   return <Pressable accessibilityRole="radio" accessibilityLabel={title} accessibilityState={{checked:selected}} aria-checked={selected} onPress={onPress}>
     <View onLayout={e=>setSize(e.nativeEvent.layout)} style={{padding:16,gap:6}}>
-      {size.width>0&&<Svg width={size.width} height={size.height} style={{position:'absolute',left:0,top:0}}>
+      {size.width>0&&<Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={{position:'absolute',left:0,top:0}}>
         <Path d={pixelOutline(size.width,size.height,1.5,retro.shape.controlUnit)} fill={selected?retro.color.primary:retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>
         {selected&&<Path d={pixelOutline(size.width,size.height,7.5,retro.shape.controlUnit)} fill={retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>}
       </Svg>}

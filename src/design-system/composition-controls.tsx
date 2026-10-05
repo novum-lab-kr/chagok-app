@@ -27,7 +27,7 @@ function BoardMiniature({kind,selected}:{kind:BoardKind;selected:boolean}) {
   return <View accessible={false} aria-hidden style={{height,width:'100%'}} onLayout={e=>setWidth(Math.floor(e.nativeEvent.layout.width))}>
     {width>0&&<>
       {calendar&&<View style={{position:'absolute',top:8,left:start,width:cell*7+gap*6,flexDirection:'row',gap}}>{['일','월','화','수','목','금','토'].map(day=><PixelText key={day} style={{width:cell,textAlign:'center',fontSize:10,lineHeight:14}}>{day}</PixelText>)}</View>}
-      <Svg width={width} height={height} style={{position:'absolute',left:0,top:0}}>
+      <Svg key={`${width}x${height}`} width={width} height={height} style={{position:'absolute',left:0,top:0}}>
         {calendar&&<Path d={pixelOutline(width,height,1.5,3)} fill="none" stroke={retro.color.ink} strokeWidth={retro.shape.cellBorder}/>}
         {Array.from({length:calendar?28:9},(_,i)=>{
           const x=start+(i%columns)*(cell+gap),y=calendar?29+Math.floor(i/columns)*15:Math.floor(i/columns)*33;
@@ -42,7 +42,7 @@ function BoardMiniature({kind,selected}:{kind:BoardKind;selected:boolean}) {
 function BoardTypeCard({kind,selected}:{kind:BoardKind;selected:boolean}) {
   const [size,setSize]=useState({width:0,height:0});
   return <View onLayout={e=>setSize(e.nativeEvent.layout)} style={{padding:12,gap:8}}>
-    {size.width>0&&<Svg width={size.width} height={size.height} style={{position:'absolute',left:0,top:0}}>
+    {size.width>0&&<Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={{position:'absolute',left:0,top:0}}>
       <Path d={pixelOutline(size.width,size.height,1.5,retro.shape.controlUnit)} fill={selected?retro.color.primary:retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>
       {selected&&<Path d={pixelOutline(size.width,size.height,7.5,retro.shape.controlUnit)} fill={retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>}
     </Svg>}

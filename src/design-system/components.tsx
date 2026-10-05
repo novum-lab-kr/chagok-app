@@ -33,7 +33,9 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
   const surfaceOutline = outline(border / 2);
   return <View style={[{ position: 'relative', paddingRight: raised ? 1 : 0, paddingBottom: depth }, style]}
     onLayout={e => { const { width, height } = e.nativeEvent.layout; setSize(s => s.width === width && s.height === height ? s : {width, height}); }}>
-    {w > 0 && h > 0 && <Svg width={size.width} height={size.height} style={StyleSheet.absoluteFill} pointerEvents="none" {...decorativeSvg}>
+    {/* 크기가 바뀌면 Svg를 새로 만든다(key). iOS(react-native-svg 15 + 새 아키텍처)는 만든 뒤 width·height만 바꾸면
+        다시 그리지 않아, 판 상세 → 목표 설정에서 틀이 통째로 빠졌다(2026-10-04 실기기, 시뮬레이터에서 재현·확인). */}
+    <Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={StyleSheet.absoluteFill} pointerEvents="none" {...decorativeSvg}>{w > 0 && h > 0 && <>
       {raised && <Path d={surfaceOutline} fill={c.ink} stroke={c.ink} strokeWidth={border} strokeLinejoin="miter" transform={`translate(1,${depth})`} />}
       {variant === 'panel' || variant === 'selection' ? <>
         <Path d={outline()} fill={variant === 'selection' ? fill : c.ink}/>
@@ -42,7 +44,7 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
       {variant === 'panel' && <><Path d={outline(border)} fill={c.ink} opacity={0.62}/><Path d={outline(retro.shape.panelInnerInset)} fill={c.ink}/><Path d={outline(retro.shape.panelInnerInset+4)} fill={fill}/></>}
       {(variant === 'button' || variant === 'dialog') && <Path d={`M${2*unit+border+2} ${border+2} H${w-2*unit-border-2} M${border+2} ${2*unit+border+2} V${h-2*unit-border-2}`} stroke={c.secondary} strokeWidth={2} transform={`translate(0,${pressed ? retro.shape.pressed : 0})`}/>}
       {focused && <Path d={outline(border+3)} fill="none" stroke={c.ink} strokeWidth={1} strokeDasharray="2 2"/>}
-    </Svg>}
+    </>}</Svg>
     <View style={[{ padding, transform: [{ translateY: pressed ? retro.shape.pressed : 0 }] }, contentStyle]}>{children}</View>
   </View>;
 }
@@ -183,7 +185,7 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
   const corner=`M${cut} 0H${arm}V${thickness}H${thickness}V${arm}H0V${cut}H${cut}Z`;
   return <View pointerEvents="none" style={[StyleSheet.absoluteFill,style]}
     onLayout={e=>{const {width,height}=e.nativeEvent.layout;setSize(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
-    {w>0&&h>0&&<Svg width={w} height={h} {...decorativeSvg}>
+    {w>0&&h>0&&<Svg key={`${w}x${h}`} width={w} height={h} {...decorativeSvg}>
       <Path d={`M${start} ${inset}H${w-start} M${start} ${h-inset}H${w-start} M${inset} ${start}V${h-start} M${w-inset} ${start}V${h-start}`} stroke={c.ink} strokeWidth={f.lineWidth} fill="none"/>
       <Path d={corner} fill={c.ink}/>
       <Path d={corner} fill={c.ink} transform={`translate(${w},0) scale(-1,1)`}/>

@@ -1,9 +1,14 @@
 import React from 'react';
 import { describe,it,expect,afterEach,vi } from 'vitest';
 import { render,screen,fireEvent,cleanup } from '@testing-library/react';
-import { PixelButton,PixelDialog,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro } from './index';
+import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro } from './index';
 afterEach(cleanup);
 describe('공통 컴포넌트 동작',()=>{
+  it('픽셀 틀 SVG는 크기를 재기 전부터 있다 — 크기가 바뀌면 key로 새로 만든다(iOS는 만든 뒤 크기만 바꾸면 다시 그리지 않는다, 2026-10-04)',()=>{
+    const {container}=render(<PixelFrame variant="input"><PixelText>런닝 30분</PixelText></PixelFrame>);
+    // 레이아웃 이벤트가 오기 전(jsdom은 onLayout을 보내지 않는다)에도 틀 SVG가 이미 있어야 한다
+    expect(container.querySelector('svg')).toBeTruthy();
+  });
   it('활성 버튼만 동작하고 비활성·저장 중 버튼은 호출하지 않는다',()=>{
     const onPress=vi.fn();
     const {rerender}=render(<PixelButton label="저장하기" onPress={onPress}/>);
