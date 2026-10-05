@@ -71,17 +71,17 @@ function CellGestureDemo({readonly = false}: {readonly?: boolean}) {
   const [log, setLog] = useState('칸을 눌러 보세요');
   return <View style={{gap: 12}}>
     <View style={{backgroundColor: retro.color.lcd, padding: 8}}><StickerGrid>{[1, 2, 3].map(n => <GoalStickerCell key={n} number={n} sticker="star" state={n < 3 ? 'filled' : readonly ? 'empty' : 'available'} enabled hasRecord={n === 2} readonly={readonly}
-      onPress={() => setLog(n < 3 ? `${n}번: 한 번 → 떼기` : `${n}번: 붙이기`)} onOpenRecord={() => setLog(`${n}번: 두 번·꾹 → 기록 열기`)}/>)}</StickerGrid></View>
+      onPress={() => setLog(n < 3 ? `${n}번: 꾹 → 떼기` : `${n}번: 붙이기`)} onOpenRecord={() => setLog(`${n}번: 한 번 → 기록 열기`)}/>)}</StickerGrid></View>
     <PixelText variant="caption">{log}</PixelText>
   </View>;
 }
-export const CellGestures: Story = {name: '칸 조작 · 한 번 / 두 번·꾹', render: () => <CellGestureDemo/>};
+export const CellGestures: Story = {name: '칸 조작 · 한 번 / 꾹', render: () => <CellGestureDemo/>};
 export const CellGesturesReadonly: Story = {name: '칸 조작 · 완성한 판 (readonly)', render: () => <CellGestureDemo readonly/>};
 function CalendarDemo() {
   const [log, setLog] = useState('날짜를 눌러 보세요');
   return <View style={{gap: 12}}>
     <CalendarBoard year={2026} month={9} records={{'2026-09-02': 'shoe', '2026-09-04': 'shoe'}} recordedDates={new Set(['2026-09-04'])} selectedDate="2026-09-29"
-      onSelect={date => setLog(`${date}: 한 번`)} onOpenRecord={date => setLog(`${date}: 두 번·꾹 → 기록 열기`)} onMonthChange={() => {}}
+      onSelect={date => setLog(`${date}: 빈 날 한 번 → 붙이기 / 붙인 날 꾹 → 떼기`)} onOpenRecord={date => setLog(`${date}: 한 번 → 기록 열기`)} onMonthChange={() => {}}
       isDateEnabled={date => date <= '2026-09-23'} canGoNext={false}/>
     <PixelText variant="caption">{log}</PixelText>
   </View>;

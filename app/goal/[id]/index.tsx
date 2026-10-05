@@ -24,7 +24,7 @@ import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRe
 const COMPLETION_DIALOG_DELAY_MS = 700;
 
 /**
- * 판 상세 (PRD 4.1–4.7). 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 떼기, 두 번·꾹 = 기록 열기.
+ * 판 상세 (PRD 4.1–4.7). 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기.
  * 완성했고 아직 닫기/계속하기를 고르지 않은 판은 열 때 완성 흐름을 보여준다
  * (마지막 칸, 종료일 지남, 수동 완성이 모두 같은 규칙 · DEV-DESIGN 5절).
  */

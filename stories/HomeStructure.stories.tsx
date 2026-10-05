@@ -115,8 +115,8 @@ function Home({list, initialTab = 'active'}: {list: ListedGoal[]; initialTab?: G
 // ── 상세 ──────────────────────────────────────────────────────────
 const filledStickers = (goal: ListedGoal) => Object.fromEntries(goal.filled.map(n => [n, goal.sticker])) as Record<number, PocketStickerId>;
 /**
- * 판 조작: 빈칸 한 번 누름 = 붙이기, 붙인 칸 한 번 누름 = 떼기(사진·메모가 있으면 확인),
- * 붙인 칸 두 번 누름 또는 꾹 누름 = 기록 열기. 완성한 판은 readonly라 기록 열기만 된다.
+ * 판 조작: 빈칸 한 번 누름 = 붙이기, 붙인 칸 한 번 누름 = 기록 열기,
+ * 붙인 칸 꾹 누름 = 떼기(사진·메모가 있으면 확인). 완성한 판은 readonly라 기록 열기만 된다 (2026-10-05 변경).
  */
 function Detail({goal, month = MONTH, overlay, recorded}: {goal: ListedGoal; month?: number; overlay?: ReactNode; /** 사진 또는 메모가 있는 칸 */recorded?: ReadonlySet<number>}) {
   const {value, total} = progressOf(goal), done = isDone(goal);
