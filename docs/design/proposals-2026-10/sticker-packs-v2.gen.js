@@ -57,7 +57,7 @@ add('free', 'book', '책', draw([
     {mat: 'yellow', shape: circle(12, 9.6, 3.2)},
   ], [...px('12,15 12,16 12,17 12,18 12,19 12,20 12,21', E), ...px('11,9 13,9', E)]));
 }
-add('free', 'star', '별', require('./sticker-star.gen.js'));
+add('free', 'star', '별', require('./sticker-star-soccer.gen.js').b); // 통통한 별 (후보 가·나·다 중 나)
 add('free', 'cat', '고양이', draw([
   {mat: 'lgray', shape: ell(20, 13, 2.2, 5.4, 0.3)},
   {mat: 'lgray', shape: U(ell(11, 14, 8.6, 6.8), poly([[3.4, 10], [4.4, 3], [9.4, 7.6]]), poly([[18.6, 10], [17.6, 3], [12.6, 7.6]])), hl: P('5,7 5,8')},
@@ -90,6 +90,8 @@ Object.assign(MAT, {
   choco: {b: '#6B4226', s: '#4A2C18', l: '#8E5E3C'},
   cheese: {b: '#FFC94A', s: '#E09A22', l: '#FFE9A6'},
   crust: {b: '#D9984E', s: '#A8692C', l: '#F2C084'},
+  custard: {b: '#F6DC92', s: '#D9B566', l: '#FFF1C8'},
+  caramel: {b: '#A86A3C', s: '#7A4724', l: '#C98E5E'},
 });
 THEMES.push({id: 'snack', name: '간식'});
 add('snack', 'cheese', '치즈', draw([
@@ -100,7 +102,11 @@ add('snack', 'cheese', '치즈', draw([
 ], [...px('5,13 7,12 8,12 9,11 10,11 11,10 12,10 13,9 14,8 15,8 16,7 9,12 11,11 13,10 15,9 17,8 18,8 17,9 19,9 12,11 10,12 14,9', MAT.cheese.l),
   ...px('7,16 8,16 7,17 13,14 14,14 13,15 14,15 18,16 19,16 18,17 10,18 11,18', MAT.cheese.s),
   ...px('11,9 12,9', MAT.cheese.s)]));
-add('snack', 'coffee', '커피', G.S.coffee);
+add('snack', 'coffee', '커피', draw([
+  {mat: 'cream', shape: SUB(circle(18.4, 14.5, 3.6), circle(18.4, 14.5, 1.4))},
+  {mat: 'cream', shape: rbox(10.5, 15, 7, 6.8, 1.6), hl: P('5,10 5,11 5,12')},
+  {mat: 'coffee', shape: rbox(10.5, 8.8, 5.6, 0.9), flat: true},
+], px('7,2 8,3 7,4 12,1 13,2 12,3', '#B8A898')));
 add('snack', 'cookie', '쿠키', draw([
   {mat: 'crust', shape: circle(12, 12, 9.4), hl: P('6,6 5,7 5,8')},
 ], [...px('8,8 9,8 8,9 14,7 15,7 15,8 16,13 17,13 16,14 10,15 11,15 10,16 6,12 7,12 13,11 14,11 12,18 13,18', MAT.choco.b)]));
@@ -108,11 +114,11 @@ add('snack', 'bread', '식빵', draw([
   // 테두리를 검정 대신 갈색으로 (탄 것처럼 보이지 않게, 사용자 메모)
   {mat: 'crust', out: '#7A4A22', shape: U(circle(7.6, 8.4, 4.8), circle(16.4, 8.4, 4.8), rbox(12, 14.4, 8.6, 7, 1.4))},
   {mat: 'cream', out: '#C98A48', shape: U(circle(7.6, 8.8, 3.2), circle(16.4, 8.8, 3.2), rbox(12, 14.6, 7, 5.6, 1)), flat: true},
-], face(12, 12, 3.2, {spark: W, blush: true})));
+]));
 add('snack', 'icecream', '아이스크림', draw([
   {mat: 'crust', shape: poly([[6.6, 11.6], [17.4, 11.6], [12, 22.8]])},
   {mat: 'pink', shape: U(circle(12, 8.2, 6.2), circle(7.4, 11, 1.6), circle(16.4, 11.6, 1.8), circle(12, 12, 1.6)), hl: P('8,4 7,5 7,6')},
-], [...px('9,14 10,15 11,16 12,17 14,14 13,15 12,16 11,17 10,14 14,16', MAT.crust.s), ...px('12,1 12,2 11,2 13,2', MAT.red.b), ...face(12, 7, 2.6, {spark: W})]));
+], [...px('9,14 10,15 11,16 12,17 14,14 13,15 12,16 11,17 10,14 14,16', MAT.crust.s), ...px('12,1 12,2 11,2 13,2', MAT.red.b)]));
 add('snack', 'donut', '도넛', draw([
   {mat: 'crust', shape: SUB(circle(12, 12.6, 9.6), circle(12, 12.6, 2.8)), hl: P('5,15 6,17')},
   {mat: 'pink', shape: SUB(U(circle(12, 11.4, 8), circle(7, 15, 2), circle(17, 15.4, 1.8)), circle(12, 12.2, 3.6)), flat: true},
@@ -130,13 +136,15 @@ add('snack', 'milk', '우유', draw([
   {mat: 'blue', shape: poly([[6.4, 7.8], [12, 2.6], [17.6, 7.8]])},
   {mat: 'white2', shape: rbox(12, 14.6, 5.8, 7.4, 0.8), hl: P('7,9 7,10 7,11')},
   {mat: 'blue', shape: rbox(12, 18.6, 4.6, 2, 0.4), flat: true},
-], face(12, 12, 2.6, {spark: W, blush: true})));
+]));
 add('snack', 'pudding', '푸딩', draw([
-  {mat: 'white2', shape: ell(12, 20.6, 10, 2.2), flat: true},
-  {mat: 'cheese', shape: poly([[6.4, 8], [17.6, 8], [19.8, 19.6], [4.2, 19.6]]), hl: P('6,12 6,13')},
-  {mat: 'choco', shape: U(poly([[6.4, 8], [17.6, 8], [18.2, 11], [5.8, 11]]), circle(8.6, 11.4, 1.2), circle(15, 11.8, 1.4)), flat: true},
-], face(12, 14, 2.8, {spark: W, blush: true})));
-
+  // 참고(사용자): 세로 골 몸통 · 꽃 모양 캐러멜 윗면 · 흰 접시. 기둥 다섯 개를 따로 그려 사이 윤곽이 골이 된다
+  {mat: 'white2', shape: ell(12, 20.6, 11, 2.4), flat: true},
+  {mat: 'custard', shape: rbox(5.2, 14.6, 2.1, 5.4, 1.8)}, {mat: 'custard', shape: rbox(18.8, 14.6, 2.1, 5.4, 1.8)},
+  {mat: 'custard', shape: rbox(8.6, 14.8, 2.1, 5.6, 1.8)}, {mat: 'custard', shape: rbox(15.4, 14.8, 2.1, 5.6, 1.8)},
+  {mat: 'custard', shape: rbox(12, 15, 2.2, 5.8, 1.8), hl: P('11,12 11,13')},
+  {mat: 'caramel', shape: U(circle(7.8, 9, 2.6), circle(12, 7.6, 2.9), circle(16.2, 9, 2.6), circle(9.8, 10.4, 2.4), circle(14.2, 10.4, 2.4)), hl: P('9,7 10,6')},
+]));
 /* ── 운동 팩 10종 (2026-10-05 사용자 요청) ── */
 THEMES.push({id: 'sports', name: '운동'});
 add('sports', 'bottle', '물병', draw([
@@ -150,11 +158,7 @@ add('sports', 'jumprope', '줄넘기', draw([
   {mat: 'yellow', shape: rbox(3.4, 6.4, 1.9, 4.6, 0.9), hl: P('2,3 2,4')},
   {mat: 'yellow', shape: rbox(20.6, 6.4, 1.9, 4.6, 0.9), hl: P('19,3 19,4')},
 ]));
-add('sports', 'soccer', '축구공', draw([
-  {mat: 'white2', shape: circle(12, 12, 9.4), hl: P('7,6 6,7')},
-], [...px('11,9 12,9 10,10 11,10 12,10 13,10 10,11 11,11 12,11 13,11 11,12 12,12', E),
-  ...px('4,11 5,11 4,12 5,12 18,11 19,11 18,12 19,12 7,17 8,17 7,18 15,17 16,17 16,18 11,4 12,4', E),
-  ...px('12,8 9,11 14,11 10,13 13,13 6,11 17,11 8,15 15,15 12,5', MAT.white2.s)]));
+add('sports', 'soccer', '축구공', require('./sticker-star-soccer.gen.js').soccer);
 add('sports', 'basketball', '농구공', draw([
   {mat: 'bball', shape: circle(12, 12, 9.4), hl: P('7,6 6,7 6,8')},
 ], [...px('12,3 12,4 12,5 12,6 12,7 12,8 12,9 12,10 12,11 12,12 12,13 12,14 12,15 12,16 12,17 12,18 12,19 12,20', E),
@@ -272,22 +276,21 @@ add('life', 'letter', '편지', draw([
 ], [...px('3,7 4,8 5,9 6,10 7,11 8,12 9,13 10,14 11,15 12,15 13,14 14,13 15,12 16,11 17,10 18,9 19,8 20,7', MAT.cream.s),
   ...px('11,13 12,13 10,14 11,14 12,14 13,14 11,15 12,15 10,13 13,13', MAT.red.b), ...px('11,16 12,16', MAT.red.s)]));
 /* ── 계절·날씨 ── */
-add('season', 'cloud', '구름', G.S.cloud);
+add('season', 'cloud', '구름', draw([{mat: 'white', shape: cloudShape(0, 0), hl: P('9,8 8,9 10,8')}]));
 add('season', 'raincloud', '비구름', draw([{mat: 'gray', shape: cloudShape(0, -3), hl: P('9,5 8,6 10,5')}],
-  [...face(12.6, 10, 3.5, {spark: W}), ...px('6,18 6,19 11,20 11,21 16,18 16,19 8,22 14,22 19,21', MAT.blue.b)]));
+  [...px('6,18 6,19 11,20 11,21 16,18 16,19 8,22 14,22 19,21', MAT.blue.b)]));
 add('season', 'sun2', '해', draw([
   // 햇살은 윤곽 없이 주황 점으로 가늘게 — 가운데 원이 잘 보이게 (사용자 메모)
   {mat: 'yellow', shape: circle(12, 12, 6.6), hl: P('8,9 9,8')},
 ], [...px('11,1 12,1 11,2 12,2 11,3 12,3  11,20 12,20 11,21 12,21 11,22 12,22  1,11 1,12 2,11 2,12 3,11 3,12  20,11 20,12 21,11 21,12 22,11 22,12', MAT.orange.b),
   ...px('4,4 5,4 4,5 5,5 6,6  19,4 18,4 19,5 18,5 17,6  4,19 5,19 4,18 5,18 6,17  19,19 18,19 19,18 18,18 17,17', MAT.orange.b),
-  ...px('12,1 12,2 12,3 12,20 12,21 12,22 3,12 2,12 1,12 22,12 21,12 20,12 5,5 18,5 5,18 18,18', MAT.orange.s),
-  ...face(12, 11, 2.8, {spark: W, blush: true})]));
+  ...px('12,1 12,2 12,3 12,20 12,21 12,22 3,12 2,12 1,12 22,12 21,12 20,12 5,5 18,5 5,18 18,18', MAT.orange.s)]));
 add('season', 'snowflake', '눈송이', draw([
   // 줄기 6개(세 칸 굵기)에 V자 가지와 끝 마름모 — 세로 줄기가 딱딱해 보이지 않게 (사용자 메모)
   {mat: 'sky', shape: U(...[0, 1, 2, 3, 4, 5].map(k => { const a = k * Math.PI / 3; return U(rot(rbox(12, 6.4, 1.5, 5.6), a, 12, 12), rot(rot(rbox(12, 5.2, 0.9, 2.6), 0.7, 12, 6.6), a, 12, 12), rot(rot(rbox(12, 5.2, 0.9, 2.6), -0.7, 12, 6.6), a, 12, 12), rot(rot(rbox(12, 1.6, 1.6, 1.6), Math.PI / 4, 12, 1.6), a, 12, 12)); }), circle(12, 12, 2.6)), flat: true},
 ], px('11,11 12,11 11,12 12,12', MAT.blue.b)));
 add('season', 'snowcloud', '눈구름', draw([{mat: 'white', shape: cloudShape(0, -3), hl: P('9,5 8,6 10,5')}],
-  [...face(12.6, 10, 3.5, {spark: W}), ...px('6,18 11,20 16,18 8,22 14,22 19,21 3,21', MAT.blue.s), ...px('5,18 7,18 6,17 6,19 10,20 12,20 11,19 11,21 15,18 17,18 16,17 16,19', MAT.sky.s)]));
+  [...px('6,18 11,20 16,18 8,22 14,22 19,21 3,21', MAT.blue.s), ...px('5,18 7,18 6,17 6,19 10,20 12,20 11,19 11,21 15,18 17,18 16,17 16,19', MAT.sky.s)]));
 add('season', 'snowman', '눈사람', draw([
   {mat: 'white', shape: circle(12, 16.4, 6.6), hl: P('8,12 7,13')},
   {mat: 'white', shape: circle(12, 7.6, 4.6), hl: P('9,5')},
