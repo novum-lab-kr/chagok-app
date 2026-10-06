@@ -40,6 +40,9 @@ export function widgetArt(): Promise<WidgetArt> {
     stickers: Object.fromEntries(await Promise.all(
       (['sprout', 'shoe', 'book', 'flower', 'star', 'cat'] as const).map(async (id) => [id, await uri(`color-${id}`)] as const),
     )),
-  }))();
+  }))().catch((e) => {
+    cached = null; // 일시적인 복사 실패가 앱을 다시 켤 때까지 남지 않게 — 다음 호출에서 다시 시도한다
+    throw e;
+  });
   return cached;
 }
