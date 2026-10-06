@@ -67,4 +67,12 @@ describe('위젯 화면 로직', () => {
     expect(hasPlaceLink(ChagokGoal({ ...shared, goals: { run: tallyLike }, requests: [lateTap] } as GoalWidgetProps, env(t(7, 9))))).toBe(true);
     expect(hasPlaceLink(ChagokGoal({ ...shared, goals: { run: tallyLike }, requests: [] } as GoalWidgetProps, env(t(7, 9))))).toBe(false);
   });
+
+  it('카드의 달과 항목의 달이 다르면 다른 달 요청을 칸에 합치지 않는다', () => {
+    const days = Array.from({ length: 31 }, () => 'future') as MonthWidgetProps['goals'][string]['days'];
+    const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 0 };
+    const novTap = { id: 'w2', goalId: 'run', kind: 'add' as const, at: new Date(2026, 10, 1, 0, 3).getTime(), dateKey: '2026-11-01' };
+    const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [novTap] } as MonthWidgetProps, env(new Date(2026, 10, 1, 0, 5).getTime()));
+    expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(0);
+  });
 });

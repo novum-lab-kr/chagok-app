@@ -73,13 +73,14 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
   const lastSlot = remaining !== null && remaining <= 1;
   // 이번 달 칸: 이 달 요청을 반영한다. 오늘 칸은 이 항목의 날짜 기준.
   const days = g.days.slice();
+  const sameMonth = g.monthLabel === `${day.getMonth() + 1}월`; // 칸이 이 항목의 달일 때만 요청을 합친다
   for (const r of mine) {
-    if (!r.dateKey.startsWith(todayKey.slice(0, 8))) continue; // 이 달 요청만
+    if (!sameMonth || !r.dateKey.startsWith(todayKey.slice(0, 8))) continue; // 이 달 요청만
     const i = Number(r.dateKey.slice(8, 10)) - 1;
     if (days[i] === undefined || days[i] === 'outside') continue;
     days[i] = r.kind === 'add' ? 'filled' : r.dateKey < todayKey ? 'missed' : 'future';
   }
-  const todayDay = g.monthLabel === `${day.getMonth() + 1}월` ? day.getDate() : 0;
+  const todayDay = sameMonth ? day.getDate() : 0;
   const cells: { day: number; state: string }[] = [];
   for (let i = 0; i < g.firstWeekday; i++) cells.push({ day: 0, state: 'blank' });
   days.forEach((state, i) => cells.push({ day: i + 1, state }));
