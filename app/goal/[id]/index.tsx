@@ -12,8 +12,8 @@ import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
 import {
-  canPlace, canRemove, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, pendingCompletion,
-  progressOf, stickerDate,
+  canPlace, canRemove, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, nextEmptySlot,
+  pendingCompletion, progressOf, stickerDate,
 } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Sticker } from '../../../src/domain/types';
@@ -29,7 +29,7 @@ const COMPLETION_DIALOG_DELAY_MS = 700;
  * (마지막 칸, 종료일 지남, 수동 완성이 모두 같은 규칙 · DEV-DESIGN 5절).
  */
 export default function Board() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, place: placeParam } = useLocalSearchParams<{ id: string; place?: string }>();
   const router = useRouter();
   const today = new Date();
   const [shown, setShown] = useState({ year: today.getFullYear(), month: today.getMonth() + 1 });
@@ -96,6 +96,24 @@ export default function Board() {
     // 다시 읽어 goal이 바뀔 때만 다시 판단한다. askCompletion은 매 렌더 새로 만들어지므로 넣지 않는다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goal, pending]);
+
+  // 위젯에서 마지막 칸을 눌러 열렸다 → 평소처럼 완성을 확인받고 붙인다 (2026-10-06 결정, PRD 4.7).
+  const placeHandled = useRef(false);
+  useEffect(() => {
+    if (placeParam !== '1' || placeHandled.current || !data || !goal || isCompleted(goal)) return;
+    placeHandled.current = true;
+    router.setParams({ place: undefined });
+    const at = new Date();
+    if (goal.boardType === 'tally') {
+      const slot = nextEmptySlot(goal, data.stickers);
+      if (slot !== null) void place(slot, { slot: slot + 1 });
+    } else {
+      const date = localDateKey(at.getTime());
+      if (canPlace(goal, data.stickers, { date }, at)) void place(at.getDate() - 1, { date });
+    }
+    // place는 매 렌더 새로 만들어진다. 데이터가 처음 준비될 때 한 번만 본다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeParam, data, goal]);
 
   if (!data || !goal) {
     return (
