@@ -1,4 +1,4 @@
-import { createGoal } from '../src/repositories/goalRepository';
+import { createGoal, getGoal } from '../src/repositories/goalRepository';
 import { placeSticker, listStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { withFreshDb } from './support/setup';
 
@@ -53,6 +53,23 @@ describe('stickerRepository', () => {
     const { deleteGoal } = await import('../src/repositories/goalRepository');
     await deleteGoal(g.id);
     expect(await getSticker(s.id)).toBeNull();
+  });
+
+  it('id와 붙인 시각을 정해 붙일 수 있다 (위젯 요청)', async () => {
+    const g = await goal();
+    const at = new Date(2026, 9, 5, 23, 59).getTime();
+    const s = await placeSticker(g.id, 0, 'sprout', { id: 'req-1', placedAt: at });
+    expect(s.id).toBe('req-1');
+    expect(s.placedAt).toBe(at);
+    expect((await getSticker('req-1'))?.placedAt).toBe(at);
+  });
+
+  it('예전 시각으로 붙여도 마지막으로 붙인 시각은 뒤로 가지 않는다', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    const before = (await getGoal(g.id))!.lastPlacedAt!;
+    await placeSticker(g.id, 1, 'sprout', { placedAt: before - 60_000 });
+    expect((await getGoal(g.id))!.lastPlacedAt).toBe(before);
   });
 });
 

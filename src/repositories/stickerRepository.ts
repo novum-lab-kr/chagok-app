@@ -25,21 +25,23 @@ function toSticker(r: StickerRow): Sticker {
 const COMPLETED = '완성한 판은 고칠 수 없습니다.';
 
 /**
- * 붙인다. 목표의 마지막으로 붙인 시각도 함께 바꾼다 (PRD 4.1).
+ * 붙인다. 목표의 마지막으로 붙인 시각도 함께 바꾼다 (PRD 4.1) — 더 늦은 시각일 때만.
  * complete면 같은 트랜잭션에서 완성한다. 마지막 칸 확인을 받은 뒤에만 쓴다 (PRD 4.7).
  * 완성한 판이면 거부한다. 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt으로 정한다.
+ * id·placedAt은 위젯 요청을 처리할 때 준다: 요청 id를 스티커 id로 써서 두 번 붙지 않게 하고, 누른 시각으로 붙인다.
  */
 export async function placeSticker(
   goalId: string,
   slotIndex: number,
   stickerType: StickerType = STICKER_TYPE_DEFAULT,
-  options: { complete?: boolean } = {},
+  options: { complete?: boolean; id?: string; placedAt?: number } = {},
 ): Promise<Sticker> {
   const db = await getDb();
+  const now = Date.now();
   const sticker: Sticker = {
-    id: newId(),
+    id: options.id ?? newId(),
     goalId,
-    placedAt: Date.now(),
+    placedAt: options.placedAt ?? now,
     slotIndex,
     stickerType,
   };
@@ -49,14 +51,17 @@ export async function placeSticker(
     if (goal.completed_at !== null) throw new Error(COMPLETED);
     await tx.run(
       'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType, sticker.placedAt,
+      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType, now,
     );
-    await tx.run('UPDATE goals SET last_placed_at = ?, updated_at = ? WHERE id = ?', sticker.placedAt, sticker.placedAt, goalId);
+    await tx.run(
+      'UPDATE goals SET last_placed_at = MAX(COALESCE(last_placed_at, 0), ?), updated_at = ? WHERE id = ?',
+      sticker.placedAt, now, goalId,
+    );
     if (options.complete) {
       await tx.run('UPDATE goals SET completed_at = ?, completion_seen = 0 WHERE id = ?', sticker.placedAt, goalId);
     }
-    await enqueue(tx, 'sticker', sticker.id, sticker.placedAt);
-    await enqueue(tx, 'goal', goalId, sticker.placedAt);
+    await enqueue(tx, 'sticker', sticker.id, now);
+    await enqueue(tx, 'goal', goalId, now);
   });
   return sticker;
 }
