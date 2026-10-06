@@ -1,7 +1,7 @@
 import type { Goal } from '../domain/types';
 import type { DateKey } from '../domain/dates';
-import { dateKeyOf, daysInMonth, localDateKey } from '../domain/dates';
-import { inPeriod, orderGoals, progressBasis, progressOf } from '../domain/board';
+import { dateKeyOf, daysInclusive, daysInMonth, localDateKey } from '../domain/dates';
+import { inPeriod, orderGoals, progressBasis, progressOf, startDate } from '../domain/board';
 import { kindLabel, percentLabel, safeStickerId } from '../app-data/pocketAdapter';
 import type { WidgetCalendarCell, WidgetGoalView, WidgetMini, WidgetTallyCell } from '../design-system/widget-preview';
 
@@ -9,11 +9,31 @@ import type { WidgetCalendarCell, WidgetGoalView, WidgetMini, WidgetTallyCell } 
  * 위젯 입력. 달력판은 이번 달에 붙인 날짜, 적립판은 붙인 칸 번호(0부터)를 준다.
  * 이번 달 기준 진행은 placedDates로 여기서 센다 — 자정 타임라인에서 다음 달을 만들 때도 맞게 하기 위해서다.
  */
-export type WidgetInput = { goal: Goal; placedAll: number; placedDates: DateKey[]; slotIndexes: number[] };
-export type WidgetSnapshot = { today: DateKey; goals: WidgetGoalView[]; defaultGoalId: string | null };
+export type WidgetInput = {
+  goal: Goal; placedAll: number; placedDates: DateKey[]; slotIndexes: number[];
+  /** 그날 마지막으로 붙인 스티커. 날짜가 스냅샷 날짜와 다르면(자정 타임라인) 무시한다 */
+  todaySticker?: { dateKey: DateKey; hasRecord: boolean } | null;
+};
+export type WidgetGoal = WidgetGoalView & {
+  placedToday: boolean;
+  /** 같은 곳을 다시 누르면 뗄 수 있는가 — 오늘 붙였고 기록이 없을 때 */
+  undoable: boolean;
+  /** 완성까지 남은 칸 수. 붙여서 완성되지 않는 판(종료일 없는 달력판)은 null. 1이면 다음이 마지막 칸 — 위젯은 판 화면을 연다 */
+  remaining: number | null;
+  placed: number;
+  total: number;
+};
+export type WidgetSnapshot = { today: DateKey; goals: WidgetGoal[]; defaultGoalId: string | null };
 
-/** 적립판 중간 크기에 보이는 칸 수. 실제 위젯 크기에 렌더해 보고 정한다 (위젯 설계). */
-export const TALLY_CHUNK = 30;
+/** 적립판 위젯의 10칸 묶음(5×2, PRD 4.10). */
+export const TALLY_CHUNK = 10;
+
+/** 완성까지 남은 칸 수 (PRD 4.3·4.7). 종료일 없는 달력판은 붙여서 완성되지 않는다. */
+function remainingOf(goal: Goal, placedAll: number): number | null {
+  if (goal.boardType === 'tally') return Math.max(0, (goal.totalSlots ?? 0) - placedAll);
+  if (goal.endDate === null) return null;
+  return Math.max(0, daysInclusive(startDate(goal), goal.endDate) - placedAll);
+}
 
 function calendarMini(goal: Goal, placed: ReadonlySet<DateKey>, now: Date): WidgetMini {
   const year = now.getFullYear();
@@ -43,19 +63,26 @@ function tallyMini(goal: Goal, slotIndexes: readonly number[], chunk: number): W
 export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, chunk = TALLY_CHUNK): WidgetSnapshot {
   const byId = new Map(inputs.map((i) => [i.goal.id, i]));
   const { active } = orderGoals(inputs.map((i) => i.goal));
-  const goals = active.map((goal): WidgetGoalView => {
+  const goals = active.map((goal): WidgetGoal => {
     const input = byId.get(goal.id)!;
     const basis = progressBasis(goal, now);
     const placed = basis.kind === 'all'
       ? input.placedAll
       : input.placedDates.filter((d) => d.startsWith(`${basis.year}-${String(basis.month).padStart(2, '0')}-`)).length;
+    const progress = progressOf(goal, placed, now);
+    const placedToday = input.todaySticker?.dateKey === localDateKey(now.getTime());
     return {
       id: goal.id,
       name: goal.name,
       sticker: safeStickerId(goal.defaultStickerId),
       kind: kindLabel(goal),
       progressLabel: percentLabel(goal, placed, now),
-      percent: progressOf(goal, placed, now).percent,
+      percent: progress.percent,
+      placed: progress.value,
+      total: progress.total,
+      placedToday,
+      undoable: placedToday && input.todaySticker?.hasRecord === false,
+      remaining: remainingOf(goal, input.placedAll),
       mini: goal.boardType === 'calendar'
         ? calendarMini(goal, new Set(input.placedDates), now)
         : tallyMini(goal, input.slotIndexes, chunk),

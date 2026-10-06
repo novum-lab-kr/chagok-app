@@ -1,5 +1,6 @@
 import { createGoal } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
+import { upsertRecord } from '../src/repositories/recordRepository';
 import { loadWidgetSnapshot } from '../src/widgets/loadSnapshot';
 import { withFreshDb } from './support/setup';
 
@@ -18,5 +19,13 @@ describe('loadWidgetSnapshot', () => {
     const tally = snap.goals.find((g) => g.id === t.id)!;
     expect(tally.mini).toMatchObject({ type: 'tally', placed: 2, total: 5, cells: ['filled', 'empty', 'filled', 'empty', 'empty'] });
     expect(snap.defaultGoalId).toBe(t.id);
+  });
+
+  it('오늘 붙인 스티커의 기록 여부를 읽는다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
+    const s = await placeSticker(g.id, new Date().getDate() - 1);
+    await upsertRecord(s.id, { memo: '메모', photoUri: null });
+    const snap = await loadWidgetSnapshot(new Date());
+    expect(snap.goals.find((x) => x.id === g.id)).toMatchObject({ placedToday: true, undoable: false });
   });
 });

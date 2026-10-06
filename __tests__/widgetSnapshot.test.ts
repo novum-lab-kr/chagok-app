@@ -57,10 +57,10 @@ describe('위젯 스냅샷 · 적립판 묶음 (Review Focus 5)', () => {
 
   it('다음 빈칸이 든 묶음을 보여준다', () => {
     const mini = buildWidgetSnapshot([tally(100, range(45))], at(2026, 9, 6)).goals[0].mini;
-    expect(mini).toMatchObject({ type: 'tally', from: 31, placed: 45, total: 100 });
+    expect(mini).toMatchObject({ type: 'tally', from: 41, placed: 45, total: 100 });
     if (mini.type !== 'tally') throw new Error('tally expected');
-    expect(mini.cells).toHaveLength(30);
-    expect(mini.cells.slice(13, 16)).toEqual(['filled', 'filled', 'empty']);
+    expect(mini.cells).toHaveLength(10);
+    expect(mini.cells.slice(3, 6)).toEqual(['filled', 'filled', 'empty']);
   });
   it('마지막 묶음은 남은 칸만큼만', () => {
     const mini = buildWidgetSnapshot([tally(35, range(31))], at(2026, 9, 6)).goals[0].mini;
@@ -74,7 +74,7 @@ describe('위젯 스냅샷 · 적립판 묶음 (Review Focus 5)', () => {
   });
   it('빈칸이 없으면 마지막 묶음', () => {
     const mini = buildWidgetSnapshot([tally(60, range(60))], at(2026, 9, 6)).goals[0].mini;
-    expect(mini).toMatchObject({ from: 31 });
+    expect(mini).toMatchObject({ from: 51 });
   });
 });
 
@@ -93,5 +93,43 @@ describe('위젯 스냅샷 · 목록', () => {
   it('목록 카드와 같은 문구 함수를 쓴다', () => {
     const snap = buildWidgetSnapshot([cal({ goal: goal({ boardType: 'tally', totalSlots: 10 }), placedAll: 4 })], at(2026, 9, 6));
     expect(snap.goals[0]).toMatchObject({ kind: '적립판', progressLabel: '40%', percent: 40, sticker: 'sprout' });
+  });
+});
+
+describe('위젯 스냅샷 · 위젯이 판단할 값', () => {
+  const tallyInput = (totalSlots: number, placed: number): WidgetInput => ({
+    goal: goal({ boardType: 'tally', totalSlots }), placedAll: placed, placedDates: [], slotIndexes: [...Array(placed).keys()],
+  });
+
+  it('오늘 붙였고 기록이 없으면 다시 눌러 뗄 수 있다', () => {
+    const input = cal({ placedDates: ['2026-09-06'], placedAll: 1, todaySticker: { dateKey: '2026-09-06', hasRecord: false } });
+    expect(buildWidgetSnapshot([input], at(2026, 9, 6)).goals[0]).toMatchObject({ placedToday: true, undoable: true });
+  });
+
+  it('기록이 있으면 뗄 수 없다 (Review Focus 6)', () => {
+    const input = cal({ placedDates: ['2026-09-06'], placedAll: 1, todaySticker: { dateKey: '2026-09-06', hasRecord: true } });
+    expect(buildWidgetSnapshot([input], at(2026, 9, 6)).goals[0]).toMatchObject({ placedToday: true, undoable: false });
+  });
+
+  it('자정 타임라인에서는 어제 붙인 것을 오늘 붙임으로 보지 않는다', () => {
+    const input = cal({ placedDates: ['2026-09-06'], placedAll: 1, todaySticker: { dateKey: '2026-09-06', hasRecord: false } });
+    expect(buildWidgetSnapshot([input], at(2026, 9, 7, 0, 0)).goals[0]).toMatchObject({ placedToday: false, undoable: false });
+  });
+
+  it('완성까지 남은 칸 수를 준다 (종료일 없는 달력판은 null)', () => {
+    expect(buildWidgetSnapshot([tallyInput(3, 2)], at(2026, 9, 6)).goals[0].remaining).toBe(1);
+    const ended = cal({ goal: goal({ endDate: '2026-09-10' }), placedAll: 5 });
+    expect(buildWidgetSnapshot([ended], at(2026, 9, 6)).goals[0].remaining).toBe(5); // 9/1~9/10 10일 - 5
+    expect(buildWidgetSnapshot([cal()], at(2026, 9, 6)).goals[0].remaining).toBeNull();
+  });
+
+  it('적립판은 다음 빈칸이 든 10칸 묶음을 보여 준다', () => {
+    const mini = buildWidgetSnapshot([tallyInput(25, 12)], at(2026, 9, 6)).goals[0].mini;
+    expect(mini).toMatchObject({ type: 'tally', from: 11, placed: 12, total: 25 });
+    if (mini.type === 'tally') expect(mini.cells).toHaveLength(10);
+  });
+
+  it('진행 수(placed/total)를 함께 준다', () => {
+    expect(buildWidgetSnapshot([tallyInput(20, 5)], at(2026, 9, 6)).goals[0]).toMatchObject({ placed: 5, total: 20, percent: 25 });
   });
 });
