@@ -1,0 +1,52 @@
+import type { DateKey } from '../domain/dates';
+import type { Goal, Sticker } from '../domain/types';
+import { completesBoard, inPeriod, isCompleted, nextEmptySlot, stickerDate } from '../domain/board';
+
+/**
+ * 위젯이 "눌렀다"고 남긴 요청 (위젯 설계 「위젯에서 붙이기」). 위젯 타임라인 props.requests에 쌓인다.
+ * dateKey는 누른 순간의 기기 날짜다 — 다음 날 처리해도 누른 날에 붙인다.
+ */
+export type WidgetRequest = { id: string; goalId: string; kind: 'add' | 'undo'; at: number; dateKey: DateKey };
+
+export type RequestPlan =
+  | { action: 'place'; slotIndex: number; placedAt: number }
+  | { action: 'remove'; stickerId: string }
+  | { action: 'skip'; reason: 'gone' | 'completed' | 'done' | 'outside' | 'full' | 'last' | 'nothing' | 'record' };
+
+export function isWidgetRequest(v: unknown): v is WidgetRequest {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return typeof r.id === 'string' && typeof r.goalId === 'string'
+    && (r.kind === 'add' || r.kind === 'undo')
+    && typeof r.at === 'number' && typeof r.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.dateKey);
+}
+
+/**
+ * 요청 하나를 어떻게 처리할지 정한다. 판단은 모두 여기서 하고 저장은 applyWidgetRequests가 한다.
+ * 마지막 칸은 붙이지 않는다 — 위젯은 그 칸을 앱의 판 화면으로 열어 완성 확인을 받는다 (2026-10-06 결정, PRD 4.7).
+ * 기록(사진·메모)이 있는 스티커는 떼지 않는다 — 위젯은 그때 판 화면을 연다.
+ */
+export function planRequest(goal: Goal | null, stickers: readonly Sticker[], recorded: ReadonlySet<string>, req: WidgetRequest): RequestPlan {
+  if (!goal) return { action: 'skip', reason: 'gone' };
+  if (isCompleted(goal)) return { action: 'skip', reason: 'completed' };
+  const that = stickers.filter((s) => stickerDate(s) === req.dateKey);
+
+  if (req.kind === 'undo') {
+    if (that.length === 0) return { action: 'skip', reason: 'nothing' };
+    const latest = that.reduce((a, b) => (b.placedAt > a.placedAt ? b : a));
+    if (recorded.has(latest.id)) return { action: 'skip', reason: 'record' };
+    return { action: 'remove', stickerId: latest.id };
+  }
+
+  if (stickers.some((s) => s.id === req.id)) return { action: 'skip', reason: 'done' };
+  if (goal.boardType === 'calendar') {
+    if (!inPeriod(goal, req.dateKey)) return { action: 'skip', reason: 'outside' };
+    if (that.length > 0) return { action: 'skip', reason: 'done' };
+    if (completesBoard(goal, stickers.length)) return { action: 'skip', reason: 'last' };
+    return { action: 'place', slotIndex: Number(req.dateKey.slice(8, 10)) - 1, placedAt: req.at };
+  }
+  const slot = nextEmptySlot(goal, stickers);
+  if (slot === null) return { action: 'skip', reason: 'full' };
+  if (completesBoard(goal, stickers.length)) return { action: 'skip', reason: 'last' };
+  return { action: 'place', slotIndex: slot, placedAt: req.at };
+}
