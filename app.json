@@ -126,7 +126,8 @@
         }
           ]
         }
-      ]
+      ],
+      "./plugins/widget-goal"
     ],
     "experiments": {
       "typedRoutes": true
