@@ -73,6 +73,27 @@ describe('stickerRepository', () => {
   });
 });
 
+describe('이미 붙인 칸 (위젯 요청과 겹칠 때)', () => {
+  it('적립판: 같은 칸에 두 번 붙이지 않는다', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 3);
+    await expect(placeSticker(g.id, 3)).rejects.toThrow('이미 붙인 칸입니다.');
+    expect(await listStickers(g.id)).toHaveLength(1);
+    await expect(placeSticker(g.id, 4)).resolves.toMatchObject({ slotIndex: 4 });
+  });
+
+  it('달력판: 같은 날에 두 번 붙이지 않는다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
+    const morning = new Date(2026, 9, 6, 8).getTime();
+    await placeSticker(g.id, 5, 'sprout', { placedAt: morning });
+    await expect(placeSticker(g.id, 5, 'sprout', { placedAt: new Date(2026, 9, 6, 21).getTime() }))
+      .rejects.toThrow('이미 붙인 칸입니다.');
+    expect(await listStickers(g.id)).toHaveLength(1);
+    // 다른 날은 붙는다 (다음 날 0시, 같은 달 다른 날짜)
+    await expect(placeSticker(g.id, 6, 'sprout', { placedAt: new Date(2026, 9, 7, 0).getTime() })).resolves.toMatchObject({ slotIndex: 6 });
+  });
+});
+
 describe('누적 총계 (PRD 4.3)', () => {
   it('그 목표에 현재 붙어 있는 스티커 수를 센다', async () => {
     const g = await goal();

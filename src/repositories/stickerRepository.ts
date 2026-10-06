@@ -23,12 +23,21 @@ function toSticker(r: StickerRow): Sticker {
 }
 
 const COMPLETED = '완성한 판은 고칠 수 없습니다.';
+const TAKEN = '이미 붙인 칸입니다.';
+
+/** placedAt이 속한 로컬 날짜의 0시부터 다음 날 0시 전까지 */
+function localDayRange(at: number): [number, number] {
+  const d = new Date(at);
+  return [new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime()];
+}
 
 /**
  * 붙인다. 목표의 마지막으로 붙인 시각도 함께 바꾼다 (PRD 4.1) — 더 늦은 시각일 때만.
  * complete면 같은 트랜잭션에서 완성한다. 마지막 칸 확인을 받은 뒤에만 쓴다 (PRD 4.7).
  * 완성한 판이면 거부한다. 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt으로 정한다.
  * id·placedAt은 위젯 요청을 처리할 때 준다: 요청 id를 스티커 id로 써서 두 번 붙지 않게 하고, 누른 시각으로 붙인다.
+ * 이미 붙인 칸이면 거부한다 — 적립판은 같은 칸 번호, 달력판은 placedAt과 같은 로컬 날짜(달력판의 칸은 날짜다).
+ * 화면이 위젯 요청을 반영하기 전의 목록으로 계산해도 두 장이 붙지 않게 하는 마지막 방어다.
  */
 export async function placeSticker(
   goalId: string,
@@ -46,9 +55,13 @@ export async function placeSticker(
     stickerType,
   };
   await db.transaction(async (tx) => {
-    const goal = await tx.first<{ completed_at: number | null }>('SELECT completed_at FROM goals WHERE id = ?', goalId);
+    const goal = await tx.first<{ completed_at: number | null; board_type: string }>('SELECT completed_at, board_type FROM goals WHERE id = ?', goalId);
     if (!goal) throw new Error('목표가 없습니다.');
     if (goal.completed_at !== null) throw new Error(COMPLETED);
+    const taken = goal.board_type === 'tally'
+      ? await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND slot_index = ?', goalId, slotIndex)
+      : await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND placed_at >= ? AND placed_at < ?', goalId, ...localDayRange(sticker.placedAt));
+    if (taken) throw new Error(TAKEN);
     await tx.run(
       'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
       sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType, now,
