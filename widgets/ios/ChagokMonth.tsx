@@ -69,7 +69,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
   const placedToday = todayState ?? g.placedToday;
   const undoable = todayState ?? g.undoable;
   const placed = Math.max(0, g.placed + net);
-  const remaining = g.remaining === null ? null : g.remaining - net;
+  const remaining = g.remaining == null ? null : g.remaining - net;
   const lastSlot = remaining !== null && remaining <= 1;
   // 이번 달 칸: 이 달 요청을 반영한다. 오늘 칸은 이 항목의 날짜 기준.
   const days = g.days.slice();

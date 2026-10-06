@@ -44,7 +44,7 @@ function run(): void {
     },
     now: () => new Date(),
   })
-    .catch(() => { /* 다음 계기에 다시 한다. 위젯은 이전 화면을 보여 준다 */ })
+    .catch((e) => { console.warn('widget sync failed', e); /* 다음 계기에 다시 한다. 위젯은 이전 화면을 보여 준다 */ })
     .finally(() => { running = null; if (again) { again = false; run(); } });
 }
 

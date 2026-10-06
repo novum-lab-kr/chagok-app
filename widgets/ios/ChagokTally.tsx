@@ -69,7 +69,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const placedToday = todayState ?? g.placedToday;
   const undoable = todayState ?? g.undoable;
   const placed = Math.max(0, g.placed + net);
-  const remaining = g.remaining === null ? null : g.remaining - net;
+  const remaining = g.remaining == null ? null : g.remaining - net;
   const lastSlot = remaining !== null && remaining <= 1;
   // 칸 위치는 어림이다(앱이 열리면 맞춘다). 처리 안 된 요청만큼 앞의 빈 칸을 채우고, 음수면 뒤의 찬 칸을 비운다.
   const cells = g.cells.slice();

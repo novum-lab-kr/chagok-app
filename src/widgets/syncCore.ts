@@ -19,6 +19,14 @@ export type SyncDeps = {
 /** 지금 말고 앞으로 채울 자정 개수 */
 const MIDNIGHTS_AHEAD = 7;
 
+/**
+ * 위젯 저장소(UserDefaults)는 null을 못 담는다 — 들어 있으면 updateTimeline이 예외를 던져 위젯이 갱신되지 않는다.
+ * (목표가 하나도 없을 때의 defaultId, 종료일 없는 달력판의 remaining.) null인 키는 빼고 쓴다.
+ */
+export function withoutNulls<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value, (_k, v) => (v === null ? undefined : v))) as T;
+}
+
 const uniq = (list: unknown[]): WidgetRequest[] => {
   const seen = new Map<string, WidgetRequest>();
   for (const v of list) if (isWidgetRequest(v) && !seen.has(v.id)) seen.set(v.id, v);
@@ -43,6 +51,6 @@ export async function syncWidgetsOnce(deps: SyncDeps): Promise<void> {
   const props = await Promise.all(dates.map((d) => deps.props(d)));
   for (const k of kinds) {
     const left = uniq(await deps.widgets[k].readRequests()).filter((q) => !done.has(q.id));
-    deps.widgets[k].write(dates.map((date, i) => ({ date, props: { ...props[i][k], requests: left } })));
+    deps.widgets[k].write(dates.map((date, i) => ({ date, props: withoutNulls({ ...props[i][k], requests: left }) })));
   }
 }

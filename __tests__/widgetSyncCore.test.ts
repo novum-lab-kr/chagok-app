@@ -48,4 +48,12 @@ describe('syncWidgetsOnce', () => {
     await syncWidgetsOnce(deps(goal, applied));
     expect(applied).toEqual([['a']]);
   });
+  it('null은 빼고 쓴다 — UserDefaults가 null을 못 담아 updateTimeline이 던진다 (목표 0개의 defaultId, 종료일 없는 판의 remaining)', async () => {
+    const goal = port([[]]);
+    const d = deps(goal);
+    d.props = async () => ({ goal: { defaultId: null, goals: { a: { remaining: null, placed: 1 } }, requests: [] }, month: { requests: [] }, tally: { requests: [] } });
+    await syncWidgetsOnce(d);
+    expect(goal.written[0][0].props).toEqual({ goals: { a: { placed: 1 } }, requests: [] });
+    expect('defaultId' in goal.written[0][0].props).toBe(false);
+  });
 });
