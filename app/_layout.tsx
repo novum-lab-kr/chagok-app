@@ -14,6 +14,7 @@ import { recoverInterruptedConnect, rememberAccount } from '../src/sync/connectM
 import { pushOnce } from '../src/sync/push';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
+import { startWidgetSync } from '../src/widgets/syncWidgets';
 
 // OS 스플래시(윤곽선만 있는 차곡이)를 앱이 그릴 때까지 잡아 둔다. 같은 자리의 애니메이션 첫 장면이
 // 그려지는 순간 페이드 없이 내려서 끊김 없이 이어지게 한다 (docs/design/character/README.md 「스플래시」).
@@ -30,6 +31,11 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const finishSplash = useCallback(() => setSplashDone(true), []);
   const handOff = useCallback(() => { SplashScreen.hideAsync().catch(() => {}); }, []);
+  // 위젯에서 누른 스티커를 기록에 반영하고 위젯을 맞춘다 (위젯 설계 「위젯에서 붙이기」). DB 준비가 끝난 뒤.
+  useEffect(() => {
+    if (!splashDone) return;
+    return startWidgetSync();
+  }, [splashDone]);
   // 로그인해 있는 동안만 백업을 올린다 (계정·백업 설계 ②). 서버 설정이 없으면 기기에서만 쓴다.
   useEffect(() => {
     const supabase = getSupabase();
