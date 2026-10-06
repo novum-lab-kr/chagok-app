@@ -31,7 +31,8 @@ const hasPlaceLink = (root: unknown) => JSON.stringify(all(root).map((e) => e.pr
 const t = (d: number, h = 12, m = 0) => new Date(2026, 9, d, h, m).getTime();
 const shared = { order: [{ id: 'run', name: '런닝' }], defaultId: 'run', today: '2026-10-06', mascotYet: 'y', mascotDone: 'd', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' } };
 const card = { id: 'run', name: '런닝', placed: 5, total: 31, placedToday: false, undoable: false, remaining: null as number | null, sticker: 's' };
-const env = (ts: number) => ({ timestamp: ts, configuration: { background: 'ivory' } });
+// expo-widgets는 항목 시각을 env.date(Date)로 넘긴다(timestamp는 지운다).
+const env = (ts: number) => ({ date: new Date(ts), configuration: { background: 'ivory' } });
 const lateTap = { id: 'w1', goalId: 'run', kind: 'add' as const, at: t(6, 23, 50), dateKey: '2026-10-06' };
 
 describe('위젯 화면 로직', () => {
@@ -74,5 +75,12 @@ describe('위젯 화면 로직', () => {
     const novTap = { id: 'w2', goalId: 'run', kind: 'add' as const, at: new Date(2026, 10, 1, 0, 3).getTime(), dateKey: '2026-11-01' };
     const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [novTap] } as MonthWidgetProps, env(new Date(2026, 10, 1, 0, 5).getTime()));
     expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(0);
+  });
+
+  it('시스템이 자정 항목을 자정 전에 미리 그려도 그 항목 날짜로 그린다', () => {
+    jest.setSystemTime(t(6, 23, 56)); // 지금은 아직 10/6 — iOS는 자정 항목을 이때 미리 그려 둔다
+    const root = ChagokGoal({ ...shared, goals: { run: card }, requests: [lateTap] }, env(t(7, 0, 0)));
+    expect(texts(root)).toContain('Ready?');
+    expect(texts(root)).not.toContain('Nice!');
   });
 });

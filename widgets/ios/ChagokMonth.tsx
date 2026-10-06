@@ -55,8 +55,9 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
   }
 
   // 그릴 값 = 앱이 준 값 + 아직 처리 안 된 요청. 날짜는 이 타임라인 항목의 시각(자정 항목이면 다음 날).
-  // env.timestamp는 실행 때 expo-widgets가 넣어 주지만 타입에는 없다(EntryView.swift).
-  const day = new Date((env as { timestamp?: number }).timestamp ?? Date.now());
+  // 이 타임라인 항목의 시각. expo-widgets는 timestamp를 env.date(Date)로 바꿔 넘긴다(expo-widgets/bundle/index.ts).
+  // 시스템이 자정 항목을 미리(자정 전에) 그려 두므로 지금 시각(Date.now)을 쓰면 안 된다.
+  const day = env.date ? new Date(env.date) : new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const todayKey = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
   const mine = (props.requests ?? []).filter((r) => r.goalId === g.id).sort((a, b) => a.at - b.at);
