@@ -1,5 +1,6 @@
 import { getDb } from '../db/client';
 import { setSetting } from '../repositories/appSettingsRepository';
+import { notifyLocalChange } from './changes';
 import { enqueue } from './outbox';
 import type { GoalRow, PhotoStore, RecordRow, StickerRow, SyncServer } from './contract';
 
@@ -71,6 +72,7 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
   });
   await setSetting('syncCursor', String(snap.cursor));
   await setSetting('lastSyncedAt', String(Date.now()));
+  notifyLocalChange(); // 위젯을 맞춘다 (복원은 outbox를 거치지 않는다)
 
   const photos = snap.records
     .filter((r) => r.photo_remote_path)
