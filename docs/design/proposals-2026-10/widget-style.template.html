@@ -1,0 +1,283 @@
+<title>차곡차곡 위젯 스타일</title>
+<style>
+/* 레이아웃: 설명·보기 설정 → 위젯 종류마다 실제 크기 홈 화면 + 설명 + 넣기·메모. 큰 픽셀 숫자 · 큰 컬러 스티커 · 판 칸 선 · 차곡이 */
+@font-face{font-family:"NeoDunggeunmo";src:url(data:font/ttf;base64,__FONT__) format("truetype");font-display:block}
+:root{
+  --ink:#06261C;--apricot:#FD855F;--ivory:#FEF1D1;--mint:#AFE1CB;--lcd:#C7DE94;
+  --bg:#EEF5EF;--fg:#0F2A21;--muted:#4C6359;--line:#C9D9CF;--card:#FFFFFF;--pick:#FD855F;
+  --pixel:"NeoDunggeunmo","Apple SD Gothic Neo",system-ui,sans-serif;
+  --body:"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A16;--fg:#E3EFE8;--muted:#9FB5AA;--line:#2A3D35;--card:#16241E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1A16;--fg:#E3EFE8;--muted:#9FB5AA;--line:#2A3D35;--card:#16241E;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:flex;flex-direction:column;gap:28px}
+h1{font-family:var(--pixel);font-weight:400;font-size:28px;margin:0;text-wrap:balance}
+h2{font-family:var(--pixel);font-weight:400;font-size:21px;margin:0}
+p{margin:0;line-height:1.6;max-width:68ch}
+.lede{color:var(--muted)}
+.learn{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.learn div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card);font-size:13px;line-height:1.5}
+.learn b{display:block;font-family:var(--pixel);font-weight:400;font-size:15px;margin-bottom:2px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.bar label{display:flex;gap:6px;align-items:center;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:transparent;color:var(--fg);padding:6px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+button:focus-visible,textarea:focus-visible,.zone:focus-visible{outline:2px solid var(--pick);outline-offset:2px}
+.opt{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:20px;align-items:start;padding-block:20px;border-top:1px solid var(--line)}
+@media (max-width:860px){.opt{grid-template-columns:minmax(0,1fr)}}
+.opt.picked .home{box-shadow:0 0 0 3px var(--pick)}
+.meta{display:flex;flex-direction:column;gap:10px;min-width:0}
+.meta ul{margin:0;padding-left:18px;line-height:1.55}
+.meta h3{font-size:13px;margin:6px 0 0;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.pickrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pickbtn{font:inherit;font-size:14px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+.opt.picked .pickbtn{background:var(--pick);border-color:var(--pick);color:#1D0B04}
+textarea{width:100%;box-sizing:border-box;min-height:64px;font:inherit;font-size:14px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+.save{font-size:12px;color:var(--muted)}
+.home{overflow-x:auto;max-width:100%;box-sizing:border-box;border-radius:28px;padding:22px;display:grid;grid-template-columns:repeat(2,170px);gap:24px;justify-content:start;align-content:start;
+  background:linear-gradient(160deg,#F7C9C2 0%,#F2A3A0 35%,#7FA7B8 70%,#1F4E6B 100%)}
+.home.dark{background:linear-gradient(160deg,#2B3A4A 0%,#18222E 60%,#0B1118 100%)}
+.home .wide{grid-column:1/-1}
+.cap{font-size:12px;color:#fff;text-shadow:0 1px 2px #0006;text-align:center;margin-top:6px;font-family:var(--body)}
+.w{position:relative;border-radius:22px;overflow:hidden;color:var(--ink);font-family:var(--pixel);box-sizing:border-box}
+.w.s{width:170px;height:170px}.w.m{width:364px;height:170px}
+.big{font-size:38px;line-height:38px;letter-spacing:-1px}
+.sub{font-size:12px;line-height:14px;opacity:.55}
+.nm{font-size:16px;line-height:19px}
+.zone{cursor:pointer}
+.zones .zone.stick{outline:2px dashed var(--apricot);outline-offset:-2px;background:#FD855F18}
+.zones .zone.open{outline:2px dashed #2F6FDB;outline-offset:-5px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:10px;vertical-align:-1px;margin-right:4px;border:2px dashed}
+.toast{grid-column:1/-1;min-height:18px;font-size:13px;color:#fff;text-shadow:0 1px 2px #0008}
+svg.px{display:block;shape-rendering:crispEdges}
+.ghost{opacity:.22;filter:grayscale(1)}
+.w{background:var(--wbg);color:var(--wink)}
+.w.glass{backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.m-clear svg.px{filter:grayscale(1) brightness(1.7)}
+.m-tint svg.px{filter:grayscale(1) brightness(1.5) sepia(.4) hue-rotate(180deg)}
+.m-dark .ghost{opacity:.3}
+.m-clear .ghost,.m-tint .ghost{opacity:.35}
+.cell{position:absolute;box-sizing:border-box;border:2px solid #06261C;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#FFFDF2}
+.cell.next{border-color:#FD855F;box-shadow:inset 0 0 0 2px #FD855F}
+button,.seg,.zone,.w,.home,.cap,.pickbtn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.axis{display:flex;flex-direction:column;gap:12px;padding-top:12px;border-top:2px solid var(--line)}
+.copy{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.copy button{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card);font-size:13px;line-height:1.5}
+.copy button[aria-pressed="true"]{border-color:var(--pick);box-shadow:0 0 0 2px var(--pick)}
+.copy b{display:block;font-family:var(--pixel);font-weight:400;font-size:15px;margin-bottom:2px}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .3s ease-out}@keyframes pop{0%{transform:scale(.7)}70%{transform:scale(1.12)}100%{transform:scale(1)}}}
+</style>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>홈 화면 위젯 11차 — 고른 안 정리</h1>
+    <p class="lede"><b>11차 (2026-10-05 고른 것):</b> 위젯 세 종류 모두(목표 하나 · 이번 달 · 적립판), 말풍선 마3(Ready? / Nice!), 색은 P2(아이보리 / 먹색)와 P3(흰색 / 먹색) 둘 다 제공(위젯 설정에서 고름). 목표 없음 위젯은 차곡이와 문구·버튼 사이를 넓혔습니다. 남은 것: 긴 이름 처리(4번).</p><p class="lede" style="opacity:.8"><b>10차:</b> 9차 메모 반영 — 모든 위젯에서 차곡이를 목표 이름 바로 위(8pt 띄움)에 두고, 말풍선은 차곡이 오른쪽 위 대각선으로 올렸습니다(꼬리는 왼쪽 아래 차곡이를 향함). 작은 위젯 스티커는 72 → 48pt로 줄이고 모서리 안으로 넣었습니다. 문구는 고르신 마3(Ready? / Nice!)으로 그립니다.</p><p class="lede" style="opacity:.8"><b>9차:</b> Not Yet 대신 쓸 말 6가지(마1~마4 영어, 바1~바2 한글)를 더했고, 말풍선 꼬리를 작은 픽셀 꼬리(3칸)로 줄였습니다. 작은 위젯은 말풍선이 스티커와 겹치지 않게 차곡이 줄을 % 바로 아래로 올렸습니다. 지금은 <b>마2(Stick it! / Stuck!)</b>로 그립니다 — 2번에서 카드를 눌러 바꿔 보세요.</p><p class="lede" style="opacity:.8"><b>8차:</b> 7차 메모 반영 — 오늘 문구 자리에 차곡이 + 말풍선(라1~라4)을 넣었고, 지금은 <b>라1(Not Yet / Good)</b>로 모든 위젯을 그립니다. 2번 「오늘 문구」에서 다른 안으로 바꿔 볼 수 있습니다. 차곡이는 아직 = 갸웃, 붙임 = 신남 표정입니다.</p><p class="lede" style="opacity:.8">5차 뼈대(왼쪽 위 큰 % · 오늘 문구 두 줄 · 큰 이름 · 오른쪽 스티커나 판)를 기준으로, 고를 수 있는 축을 모두 펼쳤습니다. 축마다 하나씩 고르고 메모를 남겨 주세요. iPhone 16 Pro 실제 크기, 흐린 스티커·판을 누르면 붙습니다.</p>
+    <nav class="learn" aria-label="고를 것">
+      <div><b>1 · 색 조합</b>라이트·다크 한 쌍. 6가지 중 하나.</div>
+      <div><b>2 · 오늘 문구</b>3가지 중 하나(또는 직접).</div>
+      <div><b>3 · 넣을 위젯</b>목표 하나 · 이번 달 · 적립판 중 여러 개.</div>
+      <div><b>4 · 상태·모드 확인</b>0%, 완성, 목표 없음, 긴 이름, 투명·틴트 — 보고 메모만.</div>
+    </nav>
+  </header>
+
+  <div class="bar" role="group" aria-label="보기 설정">
+    <label>스티커 <span class="seg" data-k="art"><button data-v="color">컬러(새 자산)</button><button data-v="mono">흑백(지금 앱)</button></span></label>
+    <label>누르는 곳 <span class="seg" data-k="zones"><button data-v="off">숨김</button><button data-v="on">보기</button></span></label>
+    <span class="save" id="save-all" aria-live="polite"></span>
+  </div>
+
+  <section class="axis" aria-labelledby="h1x">
+    <h2 id="h1x">1 · 색 조합 — 라이트 / 다크</h2>
+    <p class="lede">홈 화면이 라이트면 위 줄, 다크면 아래 줄처럼 보입니다. 앱은 다크 모드가 없지만 위젯은 홈 화면에 있어서 다크에서 혼자 밝게 튀지 않게 맞춥니다(P6은 비교용 — 다크에서도 그대로).</p>
+    <div id="palettes"></div>
+  </section>
+
+  <section class="axis" aria-labelledby="h2x">
+    <h2 id="h2x">2 · 오늘 문구</h2>
+    <p class="lede">가 안은 PRD 「재촉·평가 문구를 넣지 않는다」(2절, 4.10)를 위젯에서 바꾸는 결정이 됩니다. 누르면 이 페이지의 모든 위젯 문구가 바뀝니다.</p>
+    <div class="copy" id="copy"></div>
+  </section>
+
+  <section class="axis" aria-labelledby="h3x">
+    <h2 id="h3x">3 · 넣을 위젯</h2>
+    <p class="lede">고른 색 조합으로 그립니다. 여러 개 고를 수 있습니다.</p>
+    <div id="opts"></div>
+  </section>
+
+  <section class="axis" aria-labelledby="h4x">
+    <h2 id="h4x">4 · 상태별로 보기</h2>
+    <p class="lede">고른 색 조합·문구로, 실제로 생길 수 있는 경우를 모았습니다. 이상한 곳이 있으면 메모해 주세요.</p>
+    <div class="bar" role="group" aria-label="상태 보기 모드"><label>홈 화면 <span class="seg" data-k="smode"><button data-v="light">라이트</button><button data-v="dark">다크</button></span></label><label>긴 이름 <span class="seg" data-k="longname"><button data-v="clip">A · 17pt 두 줄 + 말줄임</button><button data-v="shrink">B · 길면 14pt 세 줄</button></span></label></div>
+    <div id="states"></div>
+    <label for="note-states" style="font-size:13px;color:var(--muted)">상태 메모</label><textarea id="note-states" data-note="states"></textarea>
+  </section>
+
+  <section class="axis" aria-labelledby="h5x">
+    <h2 id="h5x">5 · 투명 · 틴트 (리퀴드 글라스)</h2>
+    <p class="lede">사용자가 홈 화면을 투명·틴트로 바꾸면 시스템이 바탕을 유리로 바꾸고 글자·스티커 색을 정합니다. 우리는 고를 수 없고, 이 모드에서도 읽히는지만 확인합니다. 브라우저 흉내라 실제 iPhone과 다를 수 있습니다(실기기 확인 예정).</p>
+    <div id="glass" style="display:flex;flex-wrap:wrap;gap:16px"></div>
+    <label for="note-glass" style="font-size:13px;color:var(--muted)">투명·틴트 메모</label><textarea id="note-glass" data-note="glass"></textarea>
+  </section>
+</div>
+<script>
+const DATA=__DATA__;
+const PAL=[
+ {id:'p1',name:'P1 · 아이보리 / 진녹',desc:'앱 색을 그대로 뒤집음. 다크는 진한 녹색 바탕에 연두 글자.',light:['#FEF1D1','#06261C','#C2451F','#FD855F','#FFF8E8'],dark:['#10261F','#E4F0C4','#FD9B7A','#FD855F','#1B3A2F']},
+ {id:'p2',name:'P2 · 아이보리 / 먹색',desc:'다크는 거의 검정에 아이보리 글자. iOS 기본 위젯과 가장 비슷하게 어울림.',light:['#FEF1D1','#06261C','#C2451F','#FD855F','#FFF8E8'],dark:['#1A1A1C','#FEF1D1','#FD9B7A','#FD855F','#26262A']},
+ {id:'p3',name:'P3 · 흰색 / 먹색',desc:'가장 중립. 스티커 색이 가장 또렷하지만 앱 느낌(아이보리·민트)은 약함.',light:['#FFFFFF','#1C2321','#D2502A','#FD855F','#F4F4F2'],dark:['#1C1C1E','#F2F2F2','#FD9B7A','#FD855F','#2A2A2D']},
+ {id:'p4',name:'P4 · 민트 / 진녹',desc:'앱 화면 바탕색(민트). 다크는 P1과 같음.',light:['#AFE1CB','#06261C','#B23D1A','#FD855F','#D6F0E4'],dark:['#10261F','#AFE1CB','#FD9B7A','#FD855F','#1B3A2F']},
+ {id:'p5',name:'P5 · LCD / 어두운 LCD',desc:'레트로 게임기 화면 느낌. 다크는 백라이트 꺼진 LCD처럼 올리브 바탕에 연두 글자.',light:['#C7DE94','#06261C','#B23D1A','#FD855F','#DCEBB6'],dark:['#26321C','#C7DE94','#FD9B7A','#FD855F','#334226']},
+ {id:'p6',name:'P6 · 아이보리 고정',desc:'비교용 — 다크 홈 화면에서도 라이트 그대로. 가장 단순하지만 다크에서 혼자 밝음.',light:['#FEF1D1','#06261C','#C2451F','#FD855F','#FFF8E8'],dark:['#FEF1D1','#06261C','#C2451F','#FD855F','#FFF8E8']},
+];
+const COPY={
+ user:{title:'가 · 메모 그대로',note:'동기부여·칭찬. PRD 원칙을 위젯에서 바꾸는 결정.',yet:'오늘은\n아직이에요',done:'오늘도\n잘했어요'},
+ warm:{title:'나 · 사실 + 따뜻하게',note:'평가 없이 칸 이야기로.',yet:'오늘 칸이\n비어 있어요',done:'오늘 칸을\n채웠어요'},
+ face:{title:'다 · 짧은 사실 + 차곡이 표정',note:'문구는 사실만, 감정은 차곡이 표정(갸웃 → 신남).',yet:'오늘\n아직',done:'오늘\n붙였어요'},
+ b1:{title:'라1 · Not Yet / Good!',note:'7차 메모안.',bubble:1,yet:'Not Yet',done:'Good!'},
+ e1:{title:'마1 · Today? / Good!',note:'아직을 질문으로 — "오늘은?" 하고 묻는 느낌. 재촉보다 가벼움.',bubble:1,yet:'Today?',done:'Good!'},
+ e2:{title:'마2 · Stick it! / Stuck!',note:'스티커 말장난. 붙여 볼래 → 붙었다! 평가 없이 행동만.',bubble:1,yet:'Stick it!',done:'Stuck!'},
+ e3:{title:'마3 · Ready? / Nice!',note:'짧고 밝음. Nice는 Good처럼 칭찬.',bubble:1,yet:'Ready?',done:'Nice!'},
+ e4:{title:'마4 · Hmm? / Yay!',note:'차곡이 혼잣말처럼. 갸웃·신남 표정과 가장 잘 맞음. 평가 없음.',bubble:1,yet:'Hmm?',done:'Yay!'},
+ k1:{title:'바1 · 오늘은? / 차곡!',note:'한글. 붙이면 앱 이름 「차곡」을 소리처럼. 평가 없음.',bubble:1,yet:'오늘은?',done:'차곡!'},
+ k2:{title:'바2 · 콕! / 차곡!',note:'한글 소리말. 아직은 "콕 붙여 봐", 붙이면 "차곡".',bubble:1,yet:'콕!',done:'차곡!'},
+ b2:{title:'라2 · 차곡이 말풍선 아직! / 좋아!',note:'같은 구조, 한글 한 단어.',bubble:1,yet:'아직!',done:'좋아!'},
+ b3:{title:'라3 · 차곡이 말풍선 기다려 / 붙였다!',note:'평가 대신 행동을 말함(PRD 원칙에 가장 가까운 말풍선).',bubble:1,yet:'기다려',done:'붙였다!'},
+ b4:{title:'라4 · 차곡이만 (말풍선 없음)',note:'표정만으로: 아직 = 갸웃, 붙임 = 신남.',bubble:2,yet:'',done:''},
+};
+const OPTS=[
+ {id:'one',title:'작은 · 목표 하나',desc:'큰 % · 차곡이 · 이름, 오른쪽 아래 48pt 스티커. 스티커를 누르면 붙음.'},
+ {id:'month',title:'중간 · 이번 달 (달력판)',desc:'왼쪽은 목표 하나와 같은 뼈대, 오른쪽 이번 달 달력(붙인 날 = 스티커). 달력을 누르면 오늘 칸에 붙음.'},
+ {id:'tally',title:'중간 · 적립판',desc:'왼쪽 같은 뼈대, 오른쪽 10칸 묶음(5×2, 바탕 없는 번호 칸). 누르면 다음 빈칸에 붙음.'},
+];
+let view={art:'color',zones:'off',smode:'light',longname:'clip'};
+const state={palette:'',copy:'',choice:{one:false,month:false,tally:false},notes:{palette:'',copy:'',one:'',month:'',tally:'',states:'',glass:''}};
+let cur={pal:PAL[0],dark:false,glass:''};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct=g=>Math.floor(g.done/g.total*100);
+let copyView='e3';const copyKey=()=>copyView;
+function vars(){
+  if(cur.glass==='clear')return '--wbg:rgba(255,255,255,.14);--wink:#FFFFFF;--wacc:#FFFFFF;--wring:#FFFFFF;--wdisc:rgba(255,255,255,.12);--wdisc2:#E9DDE6';
+  if(cur.glass==='tint')return '--wbg:rgba(40,90,170,.30);--wink:#D6E6FF;--wacc:#D6E6FF;--wring:#D6E6FF;--wdisc:rgba(214,230,255,.12);--wdisc2:#7C8FB5';
+  const [bg,ink,acc,ring,disc]=cur.dark?cur.pal.dark:cur.pal.light;return `--wbg:${bg};--wink:${ink};--wacc:${acc};--wring:${ring};--wdisc:${disc};--wdisc2:${disc}`;
+}
+function art(c,m,size,ghost){
+  const cls=`px${ghost?' ghost':''}`;
+  if(view.art==='color'){const L=DATA.color[c];return `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">${L.map(l=>`<path d="${l.d}" fill="${l.color}"/>`).join('')}</svg>`;}
+  return `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 56 56" aria-hidden="true"><path d="${DATA.mono[m]}" fill="currentColor"/></svg>`;
+}
+const MP={'#':'#06261C',g:'#C7DE94',o:'#FD855F',w:'#FEF1D1',m:'#AFE1CB'};
+function mascot(face,size){let r='';DATA.faces[face].forEach((row,y)=>{for(let x=0;x<row.length;){const ch=row[x];if(ch==='.'){x++;continue;}let w=1;while(row[x+w]===ch)w++;r+=`<rect x="${x}" y="${y}" width="${w}" height="1" fill="${MP[ch]}"/>`;x+=w;}});return `<svg class="px" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">${r}</svg>`;}
+const z=(kind,act,label)=>`class="zone ${kind}" data-act="${act}" role="button" tabindex="0" aria-label="${esc(label)}"`;
+const W=(cls,inner)=>`<div class="w ${cls}${cur.glass?' glass m-'+cur.glass:''}${cur.dark&&!cur.glass?' m-dark':''}" style="${vars()}">${inner}</div>`;
+function left(g,width,nameMax){
+  const c=COPY[copyKey()];
+  if(c.bubble){const full=g.done>=g.total,txt=full?'Done!':g.today?c.done:c.yet,happy=g.today||full;
+   const tail=`<svg aria-hidden="true" width="8" height="8" viewBox="0 0 4 4" style="position:absolute;left:6px;bottom:-6px;shape-rendering:crispEdges"><rect x="1" y="0" width="2" height="1" fill="var(--wdisc2)"/><rect x="1" y="1" width="1" height="1" fill="var(--wdisc2)"/><rect x="0" y="0" width="1" height="4" fill="var(--wink)"/><rect x="3" y="0" width="1" height="1" fill="var(--wink)"/><rect x="2" y="1" width="1" height="1" fill="var(--wink)"/><rect x="1" y="2" width="1" height="1" fill="var(--wink)"/></svg>`;
+   const bub=c.bubble===1?`<div style="position:absolute;left:30px;top:-20px;padding:3px 7px;border:2px solid var(--wink);border-radius:8px;font-size:12px;line-height:13px;white-space:nowrap;background:var(--wdisc2);color:${happy?'var(--wacc)':'var(--wink)'}">${esc(txt)}${tail}</div>`:'';
+   return `<div ${z('open','open',g.name+' 판 열기')} style="position:absolute;left:0;top:0;bottom:0;width:${width}px;padding:16px 16px 14px;display:flex;flex-direction:column;box-sizing:border-box">
+   <div class="big">${pct(g)}<span style="font-size:20px">%</span></div><div style="flex:1"></div>
+   <div style="position:relative;width:36px;height:36px;margin:0 0 8px -4px">${mascot(happy?'excited':'curious',36)}${bub}</div>
+   ${nameHtml(g,nameMax||width-32,!!nameMax)}</div>`;}
+  const face=copyKey()==='face'?`<div style="position:absolute;left:${width-48}px;top:12px;pointer-events:none">${mascot(g.today?'excited':'curious',32)}</div>`:'';
+  return `<div ${z('open','open',g.name+' 판 열기')} style="position:absolute;left:0;top:0;bottom:0;width:${width}px;padding:16px 16px 14px;display:flex;flex-direction:column;box-sizing:border-box">
+   <div class="big">${pct(g)}<span style="font-size:20px">%</span></div><div style="flex:1"></div>
+   <div style="font-size:13px;line-height:16px;margin-bottom:6px;white-space:pre-line;color:${g.today?'var(--wacc)':'var(--wink)'};opacity:${g.today?1:.65}">${esc(g.done>=g.total?'다 채웠어요':g.today?c.done:c.yet)}</div>
+   <div class="nm" style="font-size:17px;line-height:20px;max-width:${nameMax||width-32}px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(g.name)}</div></div>${face}`;
+}
+function nameHtml(g,maxw,small){
+  const long=g.name.length>(small?10:16),shrink=view.longname==='shrink'&&long;
+  return `<div class="nm" style="font-size:${shrink?14:17}px;line-height:${shrink?17:20}px;max-width:${maxw}px;display:-webkit-box;-webkit-line-clamp:${shrink?3:2};-webkit-box-orient:vertical;overflow:hidden">${esc(g.name)}</div>`;
+}
+const R={
+ one(g){return W('s',`${left(g,170,88)}<div ${z('stick','stick',g.name+' 오늘 스티커 붙이기')} data-gid="${g.id}" style="position:absolute;right:6px;bottom:6px;width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:12px">${art(g.c,g.m,48,!g.today)}</div>`)},
+ month(g){
+  const cs=24,gap=2,x0=364-14-7*(cs+gap)+gap,M=g.month,filled=new Set(M.placed);let cells='';
+  for(let d=1;d<=M.days;d++){const p=M.first+d-1,cx=x0+(p%7)*(cs+gap),cy=24+Math.floor(p/7)*(cs+3);const isT=d===M.today,fut=d>M.today;
+   const inner=filled.has(d)?art(g.c,g.m,cs,false):`<span style="font-size:10px;line-height:10px;opacity:${fut?.3:.7}">${d}</span>`;
+   cells+=`<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cs}px;height:${cs}px;display:flex;align-items:center;justify-content:center;pointer-events:none;${isT?'box-shadow:0 0 0 2px var(--wring);border-radius:3px;':''}">${inner}</div>`;}
+  return W('m',`${left(g,x0-8)}<div style="position:absolute;left:${x0}px;top:8px;font-size:11px;opacity:.6;pointer-events:none">${M.label}</div><div ${z('stick','stick',g.name+' 오늘 스티커 붙이기')} data-gid="${g.id}" style="position:absolute;left:${x0-6}px;top:6px;right:8px;bottom:6px;border-radius:10px"></div>${cells}`);
+ },
+ tally(g){
+  const slot=36,gap=2,cols=5,x0=364-14-cols*(slot+gap)+gap,per=10,base=Math.min(Math.floor(g.done/per)*per,Math.max(0,g.total-per)),end=Math.min(g.total,base+per);let cells='';
+  for(let n=base+1;n<=end;n++){const k=n-base-1,cx=x0+(k%cols)*(slot+gap),cy=40+Math.floor(k/cols)*(slot+8),isF=n<=g.done,isN=n===g.done+1;
+   const inner=isF?art(g.c,g.m,24,false):`<span style="font-size:12px;line-height:12px;opacity:${isN?.9:.45}">${n}</span>`;
+   cells+=`<div style="position:absolute;left:${cx}px;top:${cy}px;width:${slot}px;height:${slot}px;display:flex;align-items:center;justify-content:center;pointer-events:none;${isN?'box-shadow:0 0 0 2px var(--wring);border-radius:4px;':''}">${inner}</div>`;}
+  return W('m',`${left(g,x0-8)}<div style="position:absolute;left:${x0}px;top:14px;font-size:11px;opacity:.6;pointer-events:none">${base+1}–${end}번 칸 · 전체 ${g.total}칸</div><div ${z('stick','stick',g.name+' 다음 칸에 붙이기')} data-gid="${g.id}" style="position:absolute;left:${x0-6}px;top:30px;right:8px;bottom:12px;border-radius:10px"></div>${cells}`);
+ },
+ empty(size){return W(size,`<div ${z('open','open','새 목표 만들기')} style="position:absolute;inset:0;display:flex;flex-direction:${size==='s'?'column':'row'};align-items:center;justify-content:center;gap:${size==='s'?12:24}px;padding:14px;text-align:center">${mascot('sleepy',size==='s'?64:72)}<div style="display:flex;flex-direction:column;gap:12px;align-items:center"><div style="font-size:15px;line-height:19px">첫 목표를<br>만들어 보세요</div>${size==='m'?'<div style="font-size:13px;padding:6px 12px;border:2px solid var(--wink);border-radius:8px">목표 만들기</div>':''}</div></div>`)},
+};
+let seq=0;const mk=(o)=>Object.assign({id:'g'+(seq++),today:false},o);
+const month=(placed,today=18,label='10월')=>({first:3,days:31,today,placed,label});
+const G={
+ water:mk({name:'물 마시기',c:'sports.bottle',m:'star',done:9,total:15,month:month([1,2,3,5,6,8,9,10,12,13,15,16,17])}),
+ run:mk({name:'런닝 30분',c:'basic.shoe',m:'shoe',done:6,total:20,today:true,month:month([2,4,6,9,11,13,16,18])}),
+ book:mk({name:'책 20쪽 읽기',c:'basic.book',m:'book',done:12,total:40}),
+};
+const ST=[
+ ['목표 하나 · 0% (첫날)',mk({name:'물 마시기',c:'sports.bottle',m:'star',done:0,total:30}),'one'],
+ ['목표 하나 · 다 채움',mk({name:'런닝 30분',c:'basic.shoe',m:'shoe',done:20,total:20,today:true}),'one'],
+ ['목표 하나 · 긴 이름',mk({name:'아침마다 스트레칭하고 동네 한 바퀴 산책하기',c:'sports.yoga',m:'flower',done:5,total:31}),'one'],
+ ['목표 하나 · 큰 판(120칸)',mk({name:'영어 단어 외우기',c:'objects.notebook',m:'book',done:87,total:120,today:true}),'one'],
+ ['목표 하나 · 긴 이름 + 붙임',mk({name:'퇴근하고 집 앞 공원에서 30분 걷고 오기',c:'basic.shoe',m:'shoe',done:12,total:30,today:true}),'one'],
+ ['목표 하나 · 띄어쓰기 없는 긴 이름',mk({name:'영어원서읽기프로젝트시즌2',c:'basic.book',m:'book',done:3,total:20}),'one'],
+ ['목표 없음 · 작은',null,'emptyS'],
+ ['이번 달 · 긴 이름',mk({name:'아침마다 스트레칭하고 동네 한 바퀴 산책하기',c:'sports.yoga',m:'flower',done:9,total:31,month:month([1,2,4,5,8,9,11,12,15])}),'month',1],
+ ['적립판 · 긴 이름',mk({name:'자기 전에 감사한 일 세 가지 적어 보기',c:'emotions.love',m:'sprout',done:14,total:50,today:true}),'tally',1],
+ ['이번 달 · 1일(아직 없음)',mk({name:'물 마시기',c:'sports.bottle',m:'star',done:0,total:30,month:month([],1,'11월')}),'month',1],
+ ['이번 달 · 오늘 붙임 · 거의 다',mk({name:'감사 한 줄 쓰기',c:'emotions.love',m:'sprout',done:29,total:31,today:true,month:{first:3,days:31,today:30,placed:Array.from({length:30},(_,i)=>i+1).filter(x=>x!==14),label:'10월'}}),'month',1],
+ ['적립판 · 처음(1–10)',mk({name:'책 20쪽 읽기',c:'basic.book',m:'book',done:0,total:40}),'tally',1],
+ ['적립판 · 묶음 넘어감(21–30)',mk({name:'책 20쪽 읽기',c:'basic.book',m:'book',done:20,total:40,today:true}),'tally',1],
+ ['적립판 · 7칸짜리 판',mk({name:'일주일 금주',c:'snack.milk',m:'cat',done:3,total:7}),'tally',1],
+ ['목표 없음 · 중간',null,'emptyM',1],
+];
+const ALL=[...Object.values(G),...ST.map(s=>s[1]).filter(Boolean)];
+function home(dark,items,cols=2){
+  const prev=cur.dark;cur.dark=dark;const html=`<div class="home${dark?' dark':''}${view.zones==='on'?' zones':''}" style="grid-template-columns:repeat(${cols},170px)">${items.map(([fn,cap,wide])=>`<figure ${wide?'class="wide" ':''}style="margin:0">${fn()}<figcaption class="cap">${cap}</figcaption></figure>`).join('')}</div>`;cur.dark=prev;return html;
+}
+const SET=[[()=>R.one(G.water),'목표 하나 · 아직'],[()=>R.one(G.run),'목표 하나 · 붙임'],[()=>R.month(G.water),'이번 달',1],[()=>R.tally(G.book),'적립판',1]];
+function palHtml(){
+  return PAL.map(p=>{cur.pal=p;
+   return `<section class="opt${state.palette===p.id?' picked':''}"><div style="display:flex;flex-direction:column;gap:12px;min-width:0">${home(false,SET)}${home(true,SET)}</div>
+   <div class="meta"><h3 style="font-family:var(--pixel);font-size:19px;color:var(--fg);margin:0;font-weight:400">${p.name}</h3><p class="lede">${p.desc}</p><p class="lede" style="font-size:12px">위: 라이트 홈 화면 · 아래: 다크 홈 화면</p>
+   <div class="pickrow"><button type="button" class="pickbtn" data-palette="${p.id}" aria-pressed="${state.palette===p.id}">${state.palette===p.id?'이 색으로 고름':'이 색 고르기'}</button></div></div></section>`;}).join('')+`<label for="note-palette" style="font-size:13px;color:var(--muted)">색 메모</label><textarea id="note-palette" data-note="palette">${esc(state.notes.palette)}</textarea>`;
+}
+function chosenPal(){return PAL.find(p=>p.id===state.palette)||PAL[0];}
+function render(){
+  for(const seg of document.querySelectorAll('.seg'))for(const b of seg.querySelectorAll('button'))b.setAttribute('aria-pressed',String(view[seg.dataset.k]===b.dataset.v));
+  document.getElementById('palettes').innerHTML=palHtml();
+  document.getElementById('copy').innerHTML=Object.entries(COPY).map(([k,c])=>`<button type="button" data-copy="${k}" aria-pressed="${copyKey()===k}"><b>${c.title}${state.copy===k?' · 고름':''}</b>${c.bubble===2?'아직: 갸웃한 차곡이<br>붙임: 신난 차곡이':`아직: ${esc(c.yet.replace('\n',' '))}<br>붙임: ${esc(c.done.replace('\n',' '))}`}<br><span style="color:var(--muted)">${c.note}</span></button>`).join('')+`<p class="lede" style="grid-column:1/-1;font-size:12px">카드를 누르면 그 문구로 보이고 「고름」으로 저장됩니다. 같은 카드를 한 번 더 누르면 고름이 풀립니다.</p><label for="note-copy" style="grid-column:1/-1;font-size:13px;color:var(--muted)">문구 메모 (직접 써 보고 싶은 문구가 있으면)</label><textarea id="note-copy" data-note="copy" style="grid-column:1/-1">${esc(state.notes.copy)}</textarea>`;
+  cur.pal=chosenPal();
+  document.getElementById('opts').innerHTML=OPTS.map(o=>{
+   const items=(t)=>o.id==='one'?[[()=>R.one(G.water),t+' · 아직'],[()=>R.one(G.run),t+' · 붙임']]:[[()=>R[o.id](o.id==='month'?G.water:G.book),t,1]];
+   return `<section class="opt${state.choice[o.id]?' picked':''}"><div style="display:flex;flex-direction:column;gap:12px;min-width:0">${home(false,items('라이트'))}${home(true,items('다크'))}</div><div class="meta"><h3 style="font-family:var(--pixel);font-size:19px;color:var(--fg);margin:0;font-weight:400">${o.title}</h3><p class="lede">${o.desc}</p><p class="lede" style="font-size:12px">색: ${esc(chosenPal().name)}${state.palette?'':' (아직 안 고름 — P1로 표시)'}</p>
+   <div class="pickrow"><button type="button" class="pickbtn" data-pick="${o.id}" aria-pressed="${state.choice[o.id]}">${state.choice[o.id]?'넣을 위젯으로 고름':'이 위젯 넣기'}</button></div><label for="note-${o.id}" style="font-size:13px;color:var(--muted)">메모</label><textarea id="note-${o.id}" data-note="${o.id}">${esc(state.notes[o.id])}</textarea></div></section>`;}).join('');
+  document.getElementById('states').innerHTML=home(view.smode==='dark',ST.map(([cap,g,kind,w])=>[()=>kind==='emptyS'?R.empty('s'):kind==='emptyM'?R.empty('m'):R[kind](g),cap,w]));
+  let gl='';for(const m of ['clear','tint']){cur.glass=m;const n=m==='clear'?'투명':'틴트';gl+=home(false,[[()=>R.one(G.water),n+' · 아직'],[()=>R.one(G.run),n+' · 붙임'],[()=>R.month(G.water),n+' · 이번 달',1],[()=>R.tally(G.book),n+' · 적립판',1]]);}cur.glass='';
+  document.getElementById('glass').innerHTML=gl;
+}
+document.addEventListener('click',e=>{
+  const seg=e.target.closest('.seg button');if(seg){view[seg.parentElement.dataset.k]=seg.dataset.v;try{localStorage.setItem('chagok-widget-style7-view',JSON.stringify(view))}catch(_){}render();return;}
+  const pl=e.target.closest('[data-palette]');if(pl){state.palette=state.palette===pl.dataset.palette?'':pl.dataset.palette;render();persist();return;}
+  const cp=e.target.closest('[data-copy]');if(cp){const k=cp.dataset.copy;if(copyView!==k){copyView=k;state.copy=k;}else{state.copy=state.copy===k?'':k;}render();persist();return;}
+  const pick=e.target.closest('[data-pick]');if(pick){state.choice[pick.dataset.pick]=!state.choice[pick.dataset.pick];render();persist();return;}
+  const zone=e.target.closest('.zone.stick');if(zone){const g=ALL.find(x=>x.id===zone.dataset.gid);if(g){if(g.month){if(!g.month.placed.includes(g.month.today)){g.month.placed.push(g.month.today);g.done=Math.min(g.total,g.done+1);}}else if(g.total&&!g.month&&g.c==='basic.book'){g.done=Math.min(g.total,g.done+1);}else if(!g.today){g.done=Math.min(g.total,g.done+1);}g.today=true;render();}}
+});
+// 버튼·위젯을 빠르게 두 번 누르면 글자가 선택돼 뷰어의 선택 메뉴가 뜬다 — 선택과 우클릭 메뉴를 막는다
+document.addEventListener('mousedown',e=>{if(e.detail>1&&e.target.closest('button,.zone,.w'))e.preventDefault();});
+document.addEventListener('contextmenu',e=>{if(e.target.closest('button,.zone,.w,.seg'))e.preventDefault();});
+let db=null,timer=null;
+document.addEventListener('input',e=>{const id=e.target.dataset&&e.target.dataset.note;if(!id)return;state.notes[id]=e.target.value;clearTimeout(timer);timer=setTimeout(persist,600);});
+async function persist(){
+  try{localStorage.setItem('chagok-widget-style7',JSON.stringify(state))}catch(_){}
+  const s=document.getElementById('save-all');
+  if(!db){if(s)s.textContent='이 브라우저에만 저장됨';return;}
+  try{await db.doc('choices/widget-style-7').set(JSON.parse(JSON.stringify(state)));if(s)s.textContent='저장됨';}catch(err){if(s)s.textContent='저장하지 못했어요 — 다시 고르거나 입력하면 다시 시도해요';}
+}
+function load(d){if(!d)return;if(typeof d.palette==='string')state.palette=d.palette;if(typeof d.copy==='string')state.copy=d.copy;for(const k of Object.keys(state.choice))if(d.choice&&typeof d.choice[k]==='boolean')state.choice[k]=d.choice[k];for(const k of Object.keys(state.notes))if(d.notes&&typeof d.notes[k]==='string')state.notes[k]=d.notes[k];}
+try{const v=JSON.parse(localStorage.getItem('chagok-widget-style7-view')||'null');if(v)Object.assign(view,v);}catch(_){}
+try{load(JSON.parse(localStorage.getItem('chagok-widget-style7')||'null'));}catch(_){}
+render();
+(async()=>{try{db=await window.claude?.use?.('db');if(!db)return;const snap=await db.doc('choices/widget-style-7').get();if(snap.exists){load(snap.data());}else{const prev=await db.doc('choices/widget-style-3').get();if(prev.exists){const p=prev.data();if(p.choice)for(const k of Object.keys(state.choice))if(typeof p.choice[k]==='boolean')state.choice[k]=p.choice[k];}}render();}catch(_){}})();
+</script>
