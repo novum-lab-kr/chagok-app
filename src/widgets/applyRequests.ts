@@ -7,6 +7,10 @@ import { planRequest } from './requests';
 import type { WidgetRequest } from './requests';
 
 const HANDLED_LIMIT = 200;
+/** 같은 요청이 이만큼 실패하면 처리한 것으로 넘긴다 — 영영 실패하는 요청 하나가 뒤 요청을 모두 막지 않게. */
+const MAX_FAILURES = 3;
+/** 요청 id별 실패 횟수. 앱을 다시 켜면 처음부터 센다. */
+const failures = new Map<string, number>();
 
 async function readHandledIds(): Promise<string[]> {
   try {
@@ -24,6 +28,7 @@ async function readHandledIds(): Promise<string[]> {
  * 처리한 요청 id는 최근 200개를 설정에 남겨 같은 요청을 두 번 처리하지 않는다 —
  * 되돌리기는 다시 처리하면 같은 날의 다른 스티커를 뗄 수 있기 때문이다.
  * 되돌리기는 id를 먼저 남긴 뒤 떼고(앱이 꺼지면 되돌리기만 사라지고 기록은 남는다), 나머지는 처리한 뒤에 남긴다.
+ * 같은 요청이 앱을 켠 동안 세 번 실패하면 그 탭은 버리고(처리한 것으로 남기고) 뒤 요청으로 넘어간다.
  */
 export async function applyWidgetRequests(requests: readonly WidgetRequest[]): Promise<{ handled: string[]; changed: boolean }> {
   const handled: string[] = [];
@@ -57,8 +62,14 @@ export async function applyWidgetRequests(requests: readonly WidgetRequest[]): P
         await remember(req.id);
       }
       handled.push(req.id);
-    } catch {
-      break;
+    } catch (e) {
+      const count = (failures.get(req.id) ?? 0) + 1;
+      failures.set(req.id, count);
+      if (count < MAX_FAILURES) break; // 잠깐의 실패일 수 있다 — 다음 계기에 이 요청부터 다시 한다
+      failures.delete(req.id);
+      if (typeof __DEV__ !== 'undefined' && __DEV__) console.warn(`widget request ${req.id} failed ${count} times — skipped`, e);
+      try { await remember(req.id); } catch { /* 위젯에서는 지워지므로 다시 오지 않는다 */ }
+      handled.push(req.id);
     }
   }
   return { handled, changed };

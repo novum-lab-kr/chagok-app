@@ -32,8 +32,10 @@ export function planRequest(goal: Goal | null, stickers: readonly Sticker[], rec
   const that = stickers.filter((s) => stickerDate(s) === req.dateKey);
 
   if (req.kind === 'undo') {
-    if (that.length === 0) return { action: 'skip', reason: 'nothing' };
-    const latest = that.reduce((a, b) => (b.placedAt > a.placedAt ? b : a));
+    // 위젯에서 누른 뒤 앱에서 붙인 스티커는 떼지 않는다 — 되돌리기는 누른 순간까지 붙어 있던 것만 대상이다.
+    const before = that.filter((s) => s.placedAt <= req.at);
+    if (before.length === 0) return { action: 'skip', reason: 'nothing' };
+    const latest = before.reduce((a, b) => (b.placedAt > a.placedAt ? b : a));
     if (recorded.has(latest.id)) return { action: 'skip', reason: 'record' };
     return { action: 'remove', stickerId: latest.id };
   }

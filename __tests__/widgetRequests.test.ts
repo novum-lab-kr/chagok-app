@@ -63,7 +63,14 @@ describe('planRequest · 되돌리기', () => {
 
   it('적립판은 그날 마지막으로 붙인 스티커를 뗀다', () => {
     const list = [st('old', t(2026, 10, 5), 0), st('a', t(2026, 10, 6, 8), 1), st('b', t(2026, 10, 6, 10), 2)];
-    expect(planRequest(tally(), list, none, req({ kind: 'undo' }))).toEqual({ action: 'remove', stickerId: 'b' });
+    expect(planRequest(tally(), list, none, req({ kind: 'undo', at: t(2026, 10, 6, 11) }))).toEqual({ action: 'remove', stickerId: 'b' });
+  });
+
+  it('위젯에서 누른 뒤 앱에서 붙인 스티커는 떼지 않는다', () => {
+    const list = [st('a', t(2026, 10, 6, 8), 0), st('app', t(2026, 10, 6, 10), 1)];
+    expect(planRequest(tally(), list, none, req({ kind: 'undo', at: t(2026, 10, 6, 9) }))).toEqual({ action: 'remove', stickerId: 'a' });
+    expect(planRequest(goal(), [st('app', t(2026, 10, 6, 10), 5)], none, req({ kind: 'undo', at: t(2026, 10, 6, 9) })))
+      .toEqual({ action: 'skip', reason: 'nothing' });
   });
 
   it('기록이 있으면 떼지 않는다 (Review Focus 6)', () => {

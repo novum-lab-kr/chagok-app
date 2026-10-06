@@ -1,4 +1,5 @@
 import { createGoal, deleteGoal } from '../src/repositories/goalRepository';
+import * as stickers from '../src/repositories/stickerRepository';
 import { listStickers, placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
 import { localDateKey } from '../src/domain/dates';
@@ -44,7 +45,7 @@ describe('applyWidgetRequests', () => {
     const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
     const s = await placeSticker(g.id, new Date(now).getDate() - 1);
     await upsertRecord(s.id, { memo: '좋았다', photoUri: null });
-    await applyWidgetRequests([undo(g.id, 'w1')]);
+    await applyWidgetRequests([undo(g.id, 'w1', Date.now())]);
     expect(await listStickers(g.id)).toHaveLength(1);
   });
 
@@ -52,9 +53,10 @@ describe('applyWidgetRequests', () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
     await placeSticker(g.id, 0);
     await placeSticker(g.id, 1);
-    expect(await applyWidgetRequests([undo(g.id, 'u1')])).toEqual({ handled: ['u1'], changed: true });
+    const tap = Date.now(); // 되돌리기는 누른 순간까지 붙은 스티커만 본다
+    expect(await applyWidgetRequests([undo(g.id, 'u1', tap)])).toEqual({ handled: ['u1'], changed: true });
     expect(await listStickers(g.id)).toHaveLength(1);
-    expect(await applyWidgetRequests([undo(g.id, 'u1')])).toEqual({ handled: ['u1'], changed: false });
+    expect(await applyWidgetRequests([undo(g.id, 'u1', tap)])).toEqual({ handled: ['u1'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(1);
   });
 
@@ -65,5 +67,23 @@ describe('applyWidgetRequests', () => {
     expect(await listStickers(g.id)).toHaveLength(0);
     await applyWidgetRequests(reqs);
     expect(await listStickers(g.id)).toHaveLength(0);
+  });
+
+  it('저장이 잠깐 실패하면 멈추고 다음에 다시 한다. 같은 요청이 세 번 실패하면 처리한 것으로 넘기고 뒤 요청을 처리한다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
+    const real = stickers.placeSticker;
+    const spy = jest.spyOn(stickers, 'placeSticker').mockImplementation((goalId, slot, type, opts) =>
+      (opts?.id === 'bad' ? Promise.reject(new Error('저장 실패')) : real(goalId, slot, type, opts)));
+    try {
+      const reqs = [add(g.id, 'bad'), add(g.id, 'next', now + 1)];
+      expect(await applyWidgetRequests(reqs)).toEqual({ handled: [], changed: false });
+      expect(await applyWidgetRequests(reqs)).toEqual({ handled: [], changed: false });
+      expect(await applyWidgetRequests(reqs)).toEqual({ handled: ['bad', 'next'], changed: true });
+      expect((await listStickers(g.id)).map((s) => s.id)).toEqual(['next']);
+      // 넘긴 요청은 다시 오지 않는다
+      expect(await applyWidgetRequests(reqs)).toEqual({ handled: ['bad', 'next'], changed: false });
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
