@@ -1,0 +1,65 @@
+import { getGoal } from '../repositories/goalRepository';
+import { listRecordedStickerIds } from '../repositories/recordRepository';
+import { getSetting, setSetting } from '../repositories/appSettingsRepository';
+import { listStickers, placeSticker, removeSticker } from '../repositories/stickerRepository';
+import { safeStickerId } from '../app-data/pocketAdapter';
+import { planRequest } from './requests';
+import type { WidgetRequest } from './requests';
+
+const HANDLED_LIMIT = 200;
+
+async function readHandledIds(): Promise<string[]> {
+  try {
+    const parsed: unknown = JSON.parse((await getSetting('widgetHandledRequests')) ?? '[]');
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 위젯 요청을 누른 시각 순서대로 기록에 반영한다 (위젯 설계 ③).
+ * 저장에 실패하면 거기서 멈춘다 — 그 요청과 뒤 요청은 handled에 넣지 않아 다음에 다시 시도한다.
+ * 스티커 id가 요청 id라 처리 도중 앱이 꺼져 다시 처리해도 두 번 붙지 않는다.
+ * 처리한 요청 id는 최근 200개를 설정에 남겨 같은 요청을 두 번 처리하지 않는다 —
+ * 되돌리기는 다시 처리하면 같은 날의 다른 스티커를 뗄 수 있기 때문이다.
+ * 되돌리기는 id를 먼저 남긴 뒤 떼고(앱이 꺼지면 되돌리기만 사라지고 기록은 남는다), 나머지는 처리한 뒤에 남긴다.
+ */
+export async function applyWidgetRequests(requests: readonly WidgetRequest[]): Promise<{ handled: string[]; changed: boolean }> {
+  const handled: string[] = [];
+  let changed = false;
+  const done = await readHandledIds();
+  const remember = async (id: string) => {
+    done.push(id);
+    if (done.length > HANDLED_LIMIT) done.splice(0, done.length - HANDLED_LIMIT);
+    await setSetting('widgetHandledRequests', JSON.stringify(done));
+  };
+  const ordered = [...requests].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+  for (const req of ordered) {
+    try {
+      if (done.includes(req.id)) {
+        handled.push(req.id);
+        continue;
+      }
+      const goal = await getGoal(req.goalId);
+      const stickers = goal ? await listStickers(goal.id) : [];
+      const recorded = goal ? await listRecordedStickerIds(goal.id) : new Set<string>();
+      const plan = planRequest(goal, stickers, recorded, req);
+      if (plan.action === 'remove') {
+        await remember(req.id);
+        await removeSticker(plan.stickerId);
+        changed = true;
+      } else {
+        if (plan.action === 'place' && goal) {
+          await placeSticker(goal.id, plan.slotIndex, safeStickerId(goal.defaultStickerId), { id: req.id, placedAt: plan.placedAt });
+          changed = true;
+        }
+        await remember(req.id);
+      }
+      handled.push(req.id);
+    } catch {
+      break;
+    }
+  }
+  return { handled, changed };
+}
