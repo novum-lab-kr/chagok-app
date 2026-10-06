@@ -56,4 +56,9 @@ describe('syncWidgetsOnce', () => {
     expect(goal.written[0][0].props).toEqual({ goals: { a: { placed: 1 } }, requests: [] });
     expect('defaultId' in goal.written[0][0].props).toBe(false);
   });
+
+  it('기록을 바꿨는지 돌려준다', async () => {
+    expect(await syncWidgetsOnce(deps(port([[r('a')], []])))).toEqual({ changed: true });
+    expect(await syncWidgetsOnce(deps(port([[]])))).toEqual({ changed: false });
+  });
 });

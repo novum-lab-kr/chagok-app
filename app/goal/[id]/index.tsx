@@ -12,13 +12,16 @@ import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
 import {
-  canPlace, canRemove, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, nextEmptySlot,
+  canPlace, canRemove, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm,
   pendingCompletion, progressOf, stickerDate,
 } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Sticker } from '../../../src/domain/types';
 import { placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
 import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
+import { subscribeWidgetApplied } from '../../../src/widgets/applied';
+import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
+import { syncWidgetsNow } from '../../../src/widgets/syncWidgets';
 
 /** [완성] 스티커 붙이기 모션이 끝나고 다이얼로그를 띄우기까지 */
 const COMPLETION_DIALOG_DELAY_MS = 700;
@@ -56,6 +59,9 @@ export default function Board() {
     })();
     return () => { alive = false; };
   }, [id, shown.year, shown.month]));
+
+  // 앱이 앞으로 올 때 위젯 탭이 기록에 반영되면, 이미 열려 있던 이 화면도 다시 읽는다 — 이전 목록으로 같은 칸에 또 붙지 않게.
+  useEffect(() => subscribeWidgetApplied(() => { void reload(); }), [reload]);
 
   const goal = data?.goal;
   const pending = goal ? pendingCompletion(goal) : false;
@@ -98,22 +104,28 @@ export default function Board() {
   }, [goal, pending]);
 
   // 위젯에서 마지막 칸을 눌러 열렸다 → 평소처럼 완성을 확인받고 붙인다 (2026-10-06 결정, PRD 4.7).
+  // 앱이 꺼져 있었다면 아직 반영하지 않은 위젯 탭이 있을 수 있다 — 먼저 반영하고 다시 읽은 뒤 붙일 곳과 완성 여부를 정한다.
   const placeHandled = useRef(false);
   useEffect(() => {
-    if (placeParam !== '1' || placeHandled.current || !data || !goal || isCompleted(goal)) return;
+    if (placeParam !== '1') { placeHandled.current = false; return; } // 다음 위젯 링크도 받는다
+    if (placeHandled.current || !data) return;
     placeHandled.current = true;
     router.setParams({ place: undefined });
-    const at = new Date();
-    if (goal.boardType === 'tally') {
-      const slot = nextEmptySlot(goal, data.stickers);
-      if (slot !== null) void place(slot, { slot: slot + 1 });
-    } else {
-      const date = localDateKey(at.getTime());
-      if (canPlace(goal, data.stickers, { date }, at)) void place(at.getDate() - 1, { date });
-    }
-    // place는 매 렌더 새로 만들어진다. 데이터가 처음 준비될 때 한 번만 본다.
+    void actOnce(async () => {
+      await syncWidgetsNow();
+      const at = new Date();
+      const year = at.getFullYear();
+      const month = at.getMonth() + 1;
+      const fresh = await loadBoard(id, year, month, at);
+      if (!fresh) { goBackOrHome(); return; }
+      setShown((s) => (s.year === year && s.month === month ? s : { year, month }));
+      setData(fresh);
+      const target = placementFromWidgetLink(fresh.goal, fresh.stickers, at);
+      if (target) await place(target.slotIndex, target.at, fresh);
+    });
+    // place·actOnce·router는 매 렌더 새로 만들어지거나 바뀌지 않는다. 링크 값과 처음 데이터가 준비될 때만 본다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placeParam, data, goal]);
+  }, [placeParam, data]);
 
   if (!data || !goal) {
     return (
@@ -124,26 +136,30 @@ export default function Board() {
       </RetroScreen>
     );
   }
-  const { stickers, placedAll, placedInBasis, recordedIds } = data;
+  const { stickers, placedInBasis, recordedIds } = data;
   const done = isCompleted(goal);
   const sticker = safeStickerId(goal.defaultStickerId);
   const now = new Date();
   const progress = progressOf(goal, placedInBasis, now);
 
-  /** 붙인다. 마지막 칸이면 먼저 완성을 확인받는다. 저장이 끝난 뒤에만 모션·햅틱·갱신 (PRD 4.5, 4.7, 7절). */
-  async function place(slotIndex: number, at: { slot?: number; date?: string }) {
-    if (!goal) return;
-    const complete = completesBoard(goal, placedAll);
+  /**
+   * 붙인다. 마지막 칸이면 먼저 완성을 확인받는다. 저장이 끝난 뒤에만 모션·햅틱·갱신 (PRD 4.5, 4.7, 7절).
+   * from: 판단에 쓸 판 데이터. 위젯 링크는 방금 다시 읽은 것을 넘긴다. 기본은 지금 보이는 판.
+   */
+  async function place(slotIndex: number, at: { slot?: number; date?: string }, from: BoardData | null = data) {
+    if (!from) return;
+    const target = from.goal;
+    const complete = completesBoard(target, from.placedAll);
     if (complete && !(await confirm({
       title: '이 판을 완성할까요?',
-      description: goal.boardType === 'tally'
+      description: target.boardType === 'tally'
         ? '마지막 칸이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요.'
         : '기간의 마지막 빈 날이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요.',
       secondaryLabel: '취소',
       primaryLabel: '완성하기',
     }))) return;
     const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
-      await placeSticker(goal.id, slotIndex, sticker, { complete });
+      await placeSticker(target.id, slotIndex, safeStickerId(target.defaultStickerId), { complete });
     });
     if (!ok) return;
     setJustPlaced(at);

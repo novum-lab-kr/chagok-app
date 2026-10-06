@@ -2,3 +2,8 @@
 export function startWidgetSync(): () => void {
   return () => {};
 }
+
+/** 반영할 위젯 요청이 없으니 바로 풀린다. */
+export function syncWidgetsNow(): Promise<void> {
+  return Promise.resolve();
+}
