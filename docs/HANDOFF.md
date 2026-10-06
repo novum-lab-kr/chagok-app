@@ -312,7 +312,11 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 개
   - 시작·동의·복원 분기·로그아웃·계정 삭제 화면은 개발 로그인으로 연결해 두었다. 연결 화면의 [개발 계정으로 계속] 자리에 Apple·Google 버튼을 끼운다.
   - 재동의 화면은 두지 않는다(약관 변경 안내로 대신).
 - **서버**: 개발 서버는 Supabase 클라우드 `chagok-dev`(서울). 남은 것은 **운영 서버 결정**(0절 6)과 `apple-link`·**Apple 토큰 폐기**.
-- **위젯**: spike가 끝났다(2026-10-05, `spike/widgets` 결과 문서). 본 구현은 0절 1의 결정 뒤에 한다.
+- **위젯 (iOS 구현됨, 2026-10-06)**: 세 종류(목표 하나 · 이번 달 · 적립판), 위젯 편집으로 바탕·목표 고르기, 위젯에서 붙이기·떼기, 마지막 칸은 앱의 완성 확인으로. 설계는 [위젯 설계 「2026-10-06 본 구현」](superpowers/specs/2026-09-30-home-widget-design.md), 시뮬레이터 스크린샷은 `docs/design/widgets/`. 코드는 `src/widgets/`, `widgets/ios/`, 설정 플러그인 `plugins/widget-goal/`.
+  - **아직 안 한 것:** 자정 넘김 실기기 확인(시뮬레이터 시각을 못 바꾼다), Android, 판 화면을 연 채 앱을 뒤로 보냈다가 위젯에서 붙이고 돌아오면, 그 화면은 이전 값 그대로라 나갔다 다시 들어가야 바뀐다(시뮬레이터에서 본 것, 원인은 확인 전), 다른 위젯 종류에는 요청이 앱을 열기 전까지 보이지 않는다(요청은 누른 위젯의 타임라인에만 쌓인다).
+  - **expo-widgets를 올릴 때:** `npx expo prebuild --platform ios --clean` → iOS 빌드 → 위젯 편집 「목표」 확인. prebuild가 `widget-goal: … 자리를 못 찾았어요`로 멈추면 expo-widgets가 만드는 Swift 모양이 바뀐 것이니 `plugins/widget-goal/patch.js`와 fixture를 새 모양에 맞춘다.
+  - 위젯 props에 `null`을 넣지 않는다 — UserDefaults가 못 담아 `updateTimeline`이 던진다(`syncCore`의 `withoutNulls`가 막는다).
+  - (spike 기록) 옛 메모:
   - iOS `expo-widgets`: Swift는 필요 없다. 글꼴은 로컬 설정 플러그인으로 넣는다. 위젯마다 목표 고르기는 결정이 필요하다.
   - Android `react-native-android-widget`: 앱이 꺼져 있으면 첫 탭이 사라진다.
 - **스토어 빌드**: EAS Build를 쓰고, 빌드 번호는 EAS 원격 자동 증가다.
