@@ -133,7 +133,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
         <Spacer />
         <ZStack alignment="topLeading" modifiers={[frame({ width: 110, height: 36, alignment: 'topLeading' }), padding({ bottom: 8 })]}>
           <Image
-            uiImage={happy ? props.mascotDone : props.mascotYet}
+            uiImage={full ? props.mascotFull : placedToday ? props.mascotDone : props.mascotYet}
             modifiers={[resizable(), frame({ width: 36, height: 36 }), offset({ x: -4 })]}
           />
           <ZStack modifiers={[frame({ width: 64, height: 28 }), offset({ x: 30, y: -10 })]}>

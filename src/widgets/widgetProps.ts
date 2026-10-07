@@ -4,14 +4,14 @@ import type { WidgetGoal, WidgetSnapshot } from './snapshot';
 import type { WidgetRequest } from './requests';
 
 // 위젯 3종이 받는 props (PRD 4.10). 위젯 파일(widgets/ios/*)은 이 파일의 타입만 가져간다.
-export type WidgetArt = { mascotYet: string; mascotDone: string; mascotSleepy: string; bubbles: { ivory: string; white: string; ink: string }; stickers: Record<string, string> };
+export type WidgetArt = { mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: { ivory: string; white: string; ink: string }; stickers: Record<string, string> };
 export type CardBase = { id: string; name: string; placed: number; total: number; placedToday: boolean; undoable: boolean; remaining: number | null; sticker: string };
 export type GoalCard = CardBase;
 export type MonthCard = CardBase & { monthLabel: string; days: WidgetCalendarCell[]; firstWeekday: number; todayIndex: number };
 export type TallyCard = CardBase & { from: number; cells: WidgetTallyCell[] };
 type Shared = {
   order: { id: string; name: string }[]; defaultId: string | null; today: DateKey;
-  mascotYet: string; mascotDone: string; mascotSleepy: string; bubbles: WidgetArt['bubbles']; requests: WidgetRequest[];
+  mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: WidgetArt['bubbles']; requests: WidgetRequest[];
 };
 export type GoalWidgetProps = Shared & { goals: Record<string, GoalCard> };
 export type MonthWidgetProps = Shared & { goals: Record<string, MonthCard> };
@@ -28,7 +28,7 @@ function shared(goals: readonly WidgetGoal[], s: WidgetSnapshot, art: WidgetArt)
   const defaultId = goals.some((g) => g.id === s.defaultGoalId) ? s.defaultGoalId : goals[0]?.id ?? null;
   return {
     order: goals.map((g) => ({ id: g.id, name: g.name })), defaultId, today: s.today,
-    mascotYet: art.mascotYet, mascotDone: art.mascotDone, mascotSleepy: art.mascotSleepy, bubbles: art.bubbles, requests: [],
+    mascotYet: art.mascotYet, mascotDone: art.mascotDone, mascotFull: art.mascotFull, mascotSleepy: art.mascotSleepy, bubbles: art.bubbles, requests: [],
   };
 }
 

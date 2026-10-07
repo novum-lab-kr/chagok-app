@@ -10,7 +10,7 @@ const goal = (over: Partial<Goal>): Goal => ({
   lastPlacedAt: null, initialSlots: null, ...over,
 });
 const art: WidgetArt = {
-  mascotYet: 'y', mascotDone: 'd', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' },
+  mascotYet: 'y', mascotDone: 'd', mascotFull: 'f', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' },
   stickers: { sprout: 'file:///sprout.png', shoe: 'file:///shoe.png', book: 'file:///book.png' },
 };
 const snap = (now: Date) => buildWidgetSnapshot([

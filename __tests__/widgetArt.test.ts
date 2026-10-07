@@ -26,7 +26,9 @@ describe('widgetArt', () => {
     const { widgetArt } = require('../src/widgets/widgetArt.ios') as typeof import('../src/widgets/widgetArt.ios');
     await expect(widgetArt()).rejects.toThrow('일시 오류');
     const art = await widgetArt();
-    expect(art.mascotYet).toBe('file:///widgets/mascot-curious.png');
+    expect(art.mascotYet).toBe('file:///widgets/mascot-basic.png');
+    expect(art.mascotDone).toBe('file:///widgets/mascot-smile.png');
+    expect(art.mascotFull).toBe('file:///widgets/mascot-excited.png');
     expect(Object.keys(art.stickers)).toHaveLength(6);
   });
 });

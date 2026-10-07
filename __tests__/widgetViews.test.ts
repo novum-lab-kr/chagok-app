@@ -29,7 +29,7 @@ const button = (root: unknown) => all(root).find((e) => e.type === 'Button')!;
 const hasPlaceLink = (root: unknown) => JSON.stringify(all(root).map((e) => e.props)).includes('?place=1');
 
 const t = (d: number, h = 12, m = 0) => new Date(2026, 9, d, h, m).getTime();
-const shared = { order: [{ id: 'run', name: '런닝' }], defaultId: 'run', today: '2026-10-06', mascotYet: 'y', mascotDone: 'd', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' } };
+const shared = { order: [{ id: 'run', name: '런닝' }], defaultId: 'run', today: '2026-10-06', mascotYet: 'y', mascotDone: 'd', mascotFull: 'f', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' } };
 const card = { id: 'run', name: '런닝', placed: 5, total: 31, placedToday: false, undoable: false, remaining: null as number | null, sticker: 's' };
 // expo-widgets는 항목 시각을 env.date(Date)로 넘긴다(timestamp는 지운다).
 const env = (ts: number) => ({ date: new Date(ts), configuration: { background: 'ivory' } });
@@ -82,5 +82,12 @@ describe('위젯 화면 로직', () => {
     const root = ChagokGoal({ ...shared, goals: { run: card }, requests: [lateTap] }, env(t(7, 0, 0)));
     expect(texts(root)).toContain('Ready?');
     expect(texts(root)).not.toContain('Nice!');
+  });
+
+  it('차곡이 표정: 아직 = 기본, 붙임 = 미소, 다 채움 = 신남', () => {
+    const face = (root: unknown) => all(root).filter((e) => e.type === 'Image').map((e) => e.props.uiImage).find((u) => u === 'y' || u === 'd' || u === 'f');
+    expect(face(ChagokGoal({ ...shared, goals: { run: card }, requests: [] }, env(t(7, 9))))).toBe('y');
+    expect(face(ChagokGoal({ ...shared, goals: { run: { ...card, placedToday: true, undoable: true } }, requests: [] }, env(t(7, 9))))).toBe('d');
+    expect(face(ChagokGoal({ ...shared, goals: { run: { ...card, placed: 31, total: 31 } }, requests: [] }, env(t(7, 9))))).toBe('f');
   });
 });

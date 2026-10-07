@@ -11,7 +11,8 @@ const ART = {
   'color-flower': require('../../assets/widget-art/color-flower.png'),
   'color-star': require('../../assets/widget-art/color-star.png'),
   'color-cat': require('../../assets/widget-art/color-cat.png'),
-  'mascot-curious': require('../../assets/widget-art/mascot-curious.png'),
+  'mascot-basic': require('../../assets/widget-art/mascot-basic.png'),
+  'mascot-smile': require('../../assets/widget-art/mascot-smile.png'),
   'mascot-excited': require('../../assets/widget-art/mascot-excited.png'),
   'mascot-sleepy': require('../../assets/widget-art/mascot-sleepy.png'),
   'bubble-ivory': require('../../assets/widget-art/bubble-ivory.png'),
@@ -33,8 +34,10 @@ async function uri(key: keyof typeof ART): Promise<string> {
 let cached: Promise<WidgetArt> | null = null;
 export function widgetArt(): Promise<WidgetArt> {
   cached ??= (async () => ({
-    mascotYet: await uri('mascot-curious'),
-    mascotDone: await uri('mascot-excited'),
+    // 차곡이 표정 (2026-10-07): 아직 = 기본, 붙임 = 미소, 다 채움 = 신남
+    mascotYet: await uri('mascot-basic'),
+    mascotDone: await uri('mascot-smile'),
+    mascotFull: await uri('mascot-excited'),
     mascotSleepy: await uri('mascot-sleepy'),
     bubbles: { ivory: await uri('bubble-ivory'), white: await uri('bubble-white'), ink: await uri('bubble-ink') },
     stickers: Object.fromEntries(await Promise.all(

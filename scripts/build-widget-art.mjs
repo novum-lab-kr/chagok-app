@@ -59,7 +59,7 @@ for (const s of src.stickers.filter((s) => s.theme === 'free')) {
 // 차곡이
 const PAL = { '#': '#06261C', g: '#C7DE94', o: '#FD855F', w: '#FEF1D1', m: '#AFE1CB' };
 const faces = JSON.parse(fs.readFileSync('docs/design/character/character-data.json', 'utf8')).faces;
-for (const f of ['curious', 'excited', 'sleepy']) png(`mascot-${f}`, 24, 24, (x, y) => PAL[faces[f][y][x]] ?? null);
+for (const f of ['basic', 'smile', 'excited', 'sleepy']) png(`mascot-${f}`, 24, 24, (x, y) => PAL[faces[f][y][x]] ?? null);
 
 // 말풍선 틀: 몸통 32×11칸(둥근 픽셀 모서리) + 왼쪽 아래 꼬리 3칸
 const BUBBLE = {
