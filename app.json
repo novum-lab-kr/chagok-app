@@ -44,7 +44,90 @@
           "imageWidth": 168,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+        {
+          "name": "ChagokGoal",
+          "displayName": "목표 하나",
+          "description": "목표 하나의 진행과 오늘 스티커",
+          "android": null,
+          "ios": {
+            "supportedFamilies": ["systemSmall"],
+            "contentMarginsDisabled": true,
+            "configuration": {
+              "title": "목표 하나",
+              "parameters": {
+                "background": {
+                  "title": "바탕",
+                  "type": "enum",
+                  "default": "ivory",
+                  "values": [
+                    { "name": "아이보리", "value": "ivory" },
+                    { "name": "흰색", "value": "white" },
+                    { "name": "먹색", "value": "ink" }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ChagokMonth",
+          "displayName": "이번 달",
+          "description": "달력판 목표의 이번 달",
+          "android": null,
+          "ios": {
+            "supportedFamilies": ["systemMedium"],
+            "contentMarginsDisabled": true,
+            "configuration": {
+              "title": "이번 달",
+              "parameters": {
+                "background": {
+                  "title": "바탕",
+                  "type": "enum",
+                  "default": "ivory",
+                  "values": [
+                    { "name": "아이보리", "value": "ivory" },
+                    { "name": "흰색", "value": "white" },
+                    { "name": "먹색", "value": "ink" }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ChagokTally",
+          "displayName": "적립판",
+          "description": "적립판 목표의 다음 10칸",
+          "android": null,
+          "ios": {
+            "supportedFamilies": ["systemMedium"],
+            "contentMarginsDisabled": true,
+            "configuration": {
+              "title": "적립판",
+              "parameters": {
+                "background": {
+                  "title": "바탕",
+                  "type": "enum",
+                  "default": "ivory",
+                  "values": [
+                    { "name": "아이보리", "value": "ivory" },
+                    { "name": "흰색", "value": "white" },
+                    { "name": "먹색", "value": "ink" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+          ]
+        }
+      ],
+      "./plugins/widget-goal"
     ],
     "experiments": {
       "typedRoutes": true

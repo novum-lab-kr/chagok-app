@@ -1,4 +1,5 @@
 import { getDb } from '../db/client';
+import { notifyLocalChange } from './changes';
 
 /**
  * 로그아웃·계정 삭제 뒤 기기를 새로 설치한 것처럼 비운다 (계정·백업 설계 ①). 서버 쪽 일이 성공한 뒤에만 부른다.
@@ -11,4 +12,5 @@ export async function wipeDevice(removePhotoFiles: () => void): Promise<void> {
     await tx.exec("DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox; DELETE FROM app_settings WHERE key <> 'deviceId';");
   });
   removePhotoFiles();
+  notifyLocalChange(); // 위젯을 비운다
 }

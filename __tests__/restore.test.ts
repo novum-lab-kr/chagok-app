@@ -3,6 +3,7 @@ import { createGoal, listGoals } from '../src/repositories/goalRepository';
 import { listStickers, placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
 import { getSetting } from '../src/repositories/appSettingsRepository';
+import { subscribeLocalChange } from '../src/sync/changes';
 import { pendingCount, takeBatch } from '../src/sync/outbox';
 import { pushOnce } from '../src/sync/push';
 import { applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, restoreAll, summarizeDevice, summarizeSnapshot } from '../src/sync/restore';
@@ -104,5 +105,15 @@ describe('복원', () => {
     await upsertRecord(st.id, { photoUri: 'record-photo:old.jpg', memo: null });
     const { oldPhotoUris } = await applyRestore(await pullAll(server));
     expect(oldPhotoUris).toEqual(['record-photo:old.jpg']);
+  });
+
+  it('끝나면 로컬 변경 신호를 보낸다 (위젯 갱신)', async () => {
+    const { server } = await seedServer();
+    const snap = await pullAll(server);
+    let n = 0;
+    const off = subscribeLocalChange(() => { n += 1; });
+    await applyRestore(snap);
+    off();
+    expect(n).toBe(1);
   });
 });

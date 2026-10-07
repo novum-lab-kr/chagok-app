@@ -1,4 +1,4 @@
-import { createGoal } from '../src/repositories/goalRepository';
+import { createGoal, getGoal } from '../src/repositories/goalRepository';
 import { placeSticker, listStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { withFreshDb } from './support/setup';
 
@@ -53,6 +53,44 @@ describe('stickerRepository', () => {
     const { deleteGoal } = await import('../src/repositories/goalRepository');
     await deleteGoal(g.id);
     expect(await getSticker(s.id)).toBeNull();
+  });
+
+  it('id와 붙인 시각을 정해 붙일 수 있다 (위젯 요청)', async () => {
+    const g = await goal();
+    const at = new Date(2026, 9, 5, 23, 59).getTime();
+    const s = await placeSticker(g.id, 0, 'sprout', { id: 'req-1', placedAt: at });
+    expect(s.id).toBe('req-1');
+    expect(s.placedAt).toBe(at);
+    expect((await getSticker('req-1'))?.placedAt).toBe(at);
+  });
+
+  it('예전 시각으로 붙여도 마지막으로 붙인 시각은 뒤로 가지 않는다', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    const before = (await getGoal(g.id))!.lastPlacedAt!;
+    await placeSticker(g.id, 1, 'sprout', { placedAt: before - 60_000 });
+    expect((await getGoal(g.id))!.lastPlacedAt).toBe(before);
+  });
+});
+
+describe('이미 붙인 칸 (위젯 요청과 겹칠 때)', () => {
+  it('적립판: 같은 칸에 두 번 붙이지 않는다', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 3);
+    await expect(placeSticker(g.id, 3)).rejects.toThrow('이미 붙인 칸입니다.');
+    expect(await listStickers(g.id)).toHaveLength(1);
+    await expect(placeSticker(g.id, 4)).resolves.toMatchObject({ slotIndex: 4 });
+  });
+
+  it('달력판: 같은 날에 두 번 붙이지 않는다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
+    const morning = new Date(2026, 9, 6, 8).getTime();
+    await placeSticker(g.id, 5, 'sprout', { placedAt: morning });
+    await expect(placeSticker(g.id, 5, 'sprout', { placedAt: new Date(2026, 9, 6, 21).getTime() }))
+      .rejects.toThrow('이미 붙인 칸입니다.');
+    expect(await listStickers(g.id)).toHaveLength(1);
+    // 다른 날은 붙는다 (다음 날 0시, 같은 달 다른 날짜)
+    await expect(placeSticker(g.id, 6, 'sprout', { placedAt: new Date(2026, 9, 7, 0).getTime() })).resolves.toMatchObject({ slotIndex: 6 });
   });
 });
 

@@ -1,6 +1,7 @@
 import { getDb } from '../src/db/client';
 import { createGoal } from '../src/repositories/goalRepository';
 import { getDeviceId, getFlag, getSetting, setFlag, setSetting } from '../src/repositories/appSettingsRepository';
+import { subscribeLocalChange } from '../src/sync/changes';
 import { pendingCount } from '../src/sync/outbox';
 import { wipeDevice } from '../src/sync/wipe';
 import { withFreshDb } from './support/setup';
@@ -22,4 +23,12 @@ it('기록·outbox·설정을 지우고 deviceId만 남긴 뒤 사진 파일을 
   expect(await getFlag('startDone')).toBe(false);
   expect(await getDeviceId()).toBe(device);
   expect(removed).toBe(1);
+});
+
+it('끝나면 로컬 변경 신호를 보낸다 (위젯 갱신)', async () => {
+  let n = 0;
+  const off = subscribeLocalChange(() => { n += 1; });
+  await wipeDevice(() => {});
+  off();
+  expect(n).toBe(1);
 });
