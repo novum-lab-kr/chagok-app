@@ -159,7 +159,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
                     modifiers={[
                       font({ family: F, size: 10 }),
                       foregroundStyle(ink),
-                      opacity(c.day === 0 || c.state === 'outside' ? 0 : c.state === 'future' ? 0.3 : 0.7),
+                      opacity(c.day === 0 || c.state === 'outside' ? 0 : c.state === 'future' ? 0.55 : 0.7),
                       frame({ width: 22, height: 20 }),
                       ...(c.day === todayDay ? [border({ color: '#FD855F', width: 2 })] : []),
                     ]}>
