@@ -136,7 +136,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
             uiImage={happy ? props.mascotDone : props.mascotYet}
             modifiers={[resizable(), frame({ width: 36, height: 36 }), offset({ x: -4 })]}
           />
-          <ZStack modifiers={[frame({ width: 64, height: 28 }), offset({ x: 30, y: -22 })]}>
+          <ZStack modifiers={[frame({ width: 64, height: 28 }), offset({ x: 30, y: -10 })]}>
             <Image uiImage={bubble} modifiers={[resizable(), frame({ width: 64, height: 28 })]} />
             <Text modifiers={[font({ family: F, size: 12 }), foregroundStyle(happy ? acc : ink), offset({ x: 0.5, y: -1.5 })]}>{word}</Text>
           </ZStack>
