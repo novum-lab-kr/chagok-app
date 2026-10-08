@@ -53,7 +53,8 @@
    - 위젯은 컬러 스티커로 그렸다. 앱 스티커도 모두 컬러로 정했다(2026-10-07, 2번).
 2. **스티커 화면 — 설계 확정 (2026-10-08), 다음은 반영 계획.** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
    - 정한 것: 모두 컬러(48pt, 스키마 v6 마이그레이션), 묶음 10종·2,200원, 여는 길 세 가지(사기 · 광고 보고 24시간 · 붙인 날 누적 7·14·이후 30일마다 3일 체험), 광고 제거 구매자는 하루 체험 없음, 「기본 스티커」 화면 · 묶음 화면 · 앱 설정 「구매」 블럭, 구매 복원은 앱 설정에만.
-   - 다음: Storybook 컴포넌트·화면 흐름도(`Flows/앱 전체`에 「기본 스티커」·「묶음 화면」) 반영 계획 → 사용자 확인 뒤 구현. 시안 캡처용 임시 스토리 `stories/_proposal/StickerScreens.stories.tsx`는 커밋하지 않았고, 반영할 때 실제 컴포넌트로 옮긴 뒤 지운다.
+   - Storybook 반영 끝(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-storybook.md`): `Screens/Sticker Shop`, 앱 설정 「구매」 블럭, 홈 광고 자리(`GoalListScreen` `footer`), 흐름도 줄 5. 시안 캡처용 임시 스토리는 치웠다.
+   - 다음: 앱 연결 계획 — 「기본 스티커」·묶음 화면 라우트와 `onChooseSticker`, 스키마 v6 마이그레이션(`toColorStickerId`), RevenueCat 구매·복원, AdMob 배너(`footer`)·보상형 광고, 체험 만료 시각과 붙인 날 수 저장, 위젯 체험 종료 처리.
    - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 같은 묶음 보상 재체험, 위젯에서 체험이 끝난 묶음 처리(앱을 열어 안내 — 위젯 설계에 추가), 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤).
 3. **수익화 기반**
    - 권한 계층(RevenueCat entitlements): 팩은 구매 또는 구독이면 쓸 수 있고, 광고는 광고 제거 구매 또는 구독이면 꺼진다.
@@ -219,7 +220,7 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 
 [추가·수정 절차](../src/stickers/pocket/README.md), [자산 검수](design/retro-pocket-v1/review-set-02/asset-review/README.md).
 
-**컬러 스티커 (2026-10-05, 화면에는 아직 쓰지 않음).** `src/stickers/color/`는 흑백과 별도인 24×24 도트 컬러 스티커 66종이다.
+**컬러 스티커 (2026-10-05, 디자인 시스템·Storybook은 컬러, 앱은 스키마 v6 전까지 흑백).** `src/stickers/color/`는 흑백과 별도인 24×24 도트 컬러 스티커 66종이다.
 
 - 묶음: 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10.
 - ID는 `묶음.이름`(예: `snack.cheese`)이다. 흑백 ID와 겹치지 않는다.
@@ -271,7 +272,7 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 
 ## 8. 현재 앱 상태
 
-Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 개발 빌드로 실행한다(2026-10-05~, [DEV-SETUP](DEV-SETUP.md) 「개발 빌드」). Expo Go도 `--go`로 아직 돈다.
+Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 디자인 시스템은 `StickerId`(흑백 + 컬러)를 받지만 앱은 아직 흑백 ID만 넘긴다(2026-10-08). 개발 빌드로 실행한다(2026-10-05~, [DEV-SETUP](DEV-SETUP.md) 「개발 빌드」). Expo Go도 `--go`로 아직 돈다.
 
 | 라우트 | 동작 |
 | --- | --- |
