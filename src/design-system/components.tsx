@@ -132,11 +132,20 @@ export function FieldError({message}: {message?: string}) {
   if (!message) return null;
   return <View accessible accessibilityRole="alert"><PixelText variant="caption" style={{color:c.buttonText}}>{message}</PixelText></View>;
 }
-export function PixelInput({label, error, style, onFocus, onBlur, ...props}: TextInputProps & {label: string; /** 입력칸 아래 검사 문구 */error?: string}) {
+/**
+ * 한도를 넘긴 글자를 자른다. iOS는 한글을 조합하는 중인 글자에는 maxLength를 적용하지 않아 (2026-10-08)
+ * 받은 글자를 한 번 더 자른다. 이모지처럼 두 칸짜리 글자는 반으로 가르지 않는다.
+ */
+export function clampLength(text: string, max?: number): string {
+  if (max === undefined || text.length <= max) return text;
+  const code = text.charCodeAt(max - 1);
+  return text.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 1 : max);
+}
+export function PixelInput({label, error, style, onFocus, onBlur, onChangeText, ...props}: TextInputProps & {label: string; /** 입력칸 아래 검사 문구 */error?: string}) {
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
     <PixelFrame variant="input" fill={c.secondary} focused={focused}>
-      <TextInput {...props} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
+      <TextInput {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
         returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
         style={[{minHeight:48,paddingHorizontal:12,paddingVertical:Platform.OS==='web'?10:0,color:c.ink,...(props.multiline?retro.typography.body:singleLineText)},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
