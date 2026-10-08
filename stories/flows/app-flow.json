@@ -300,13 +300,12 @@
         "label": "기록 (사진·메모)",
         "tags": [
           "PRD 4.5",
-          "app/sticker/[id]",
-          "편집 상태 스토리 없음"
+          "app/sticker/[id]"
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--record-readonly",
-            "label": "읽기 전용 · 완성한 판"
+            "id": "screens-home-structure-·-proposals--record-completed",
+            "label": "완성한 판에서 연 기록"
           }
         ],
         "scenarios": [

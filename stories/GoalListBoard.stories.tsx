@@ -65,7 +65,7 @@ function PeriodDemo({initialEnd, lastPlacedDate}: {initialEnd?: string; lastPlac
 export const PeriodWithEnd: Story = {name: '기간 · 종료일 있음', render: () => <PeriodDemo initialEnd="2026-10-31" lastPlacedDate="2026-09-29"/>};
 export const PeriodOpen: Story = {name: '기간 · 종료일 없음', render: () => <PeriodDemo/>};
 export const Delete: Story = {name: '삭제 영역', render: () => <DeleteSection onDelete={() => {}}/>};
-export const NoticeEmphasis: Story = {name: '강조 안내 (완성한 판 설정 맨 위)', render: () => <ShortNotice emphasis title="완성한 판은 고칠 수 없어요" detail="9월 24일에 완성했어요. 기록은 볼 수 있고, 목표는 삭제만 할 수 있어요."/>};
+export const NoticeEmphasis: Story = {name: '강조 안내 (완성한 판 설정 맨 위)', render: () => <ShortNotice emphasis title="완성한 판이에요" detail="9월 24일에 완성했어요. 판의 칸과 기록은 고칠 수 있고, 목표는 삭제만 할 수 있어요."/>};
 
 function CellGestureDemo({readonly = false}: {readonly?: boolean}) {
   const [log, setLog] = useState('칸을 눌러 보세요');

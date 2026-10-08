@@ -33,6 +33,11 @@ describe('planRequest · 붙이기', () => {
     expect(planRequest(tally(), [st('r1', t(2026, 10, 6, 9), 0)], none, req())).toEqual({ action: 'skip', reason: 'done' });
   });
 
+  it('지난 날짜를 누른 요청은 그 날짜에, 누른 시각의 시·분으로 붙인다 (2026-10-08)', () => {
+    const r = req({ at: t(2026, 10, 8, 9, 30), dateKey: '2026-10-03' });
+    expect(planRequest(goal(), [], none, r)).toEqual({ action: 'place', slotIndex: 2, placedAt: t(2026, 10, 3, 9, 30) });
+  });
+
   it('기간 밖 날짜는 건너뛴다', () => {
     expect(planRequest(goal({ endDate: '2026-10-05' }), [], none, req())).toEqual({ action: 'skip', reason: 'outside' });
   });

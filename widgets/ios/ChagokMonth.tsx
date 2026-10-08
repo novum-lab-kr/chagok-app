@@ -101,24 +101,29 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
   const bubble = props.bubbles[pal];
   const pct = Math.floor((placed / Math.max(1, g.total)) * 100);
 
-  // 누르는 곳: 마지막 칸은 완성 확인 화면, 기록이 있으면 판 상세, 그 밖에는 위젯 안에서 붙이고 뗀다.
-  const tap = (label: React.ReactElement) => {
-    if (lastSlot && !placedToday) return <Link destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
-    if (placedToday && !undoable) return <Link destination={`chagok://goal/${g.id}`}>{label}</Link>;
+  // 칸마다 누르는 곳 (2026-10-08 — 지난 날짜도 위젯에서 붙이기, PRD 4.10): 지난 빈 날·오늘 빈 칸은 그 날짜에 붙이고
+  // (마지막 칸이면 완성 확인 화면), 오늘 붙인 칸은 떼고(기록 있으면 판 상세), 그 밖에 붙인 칸은 판 상세를 연다. 앞날·기간 밖은 누르지 않는다.
+  const tap = (key: string, c: { day: number; state: string }, label: React.ReactElement) => {
+    if (c.day === 0 || !sameMonth) return label;
+    const isToday = c.day === todayDay;
+    const filled = c.state === 'filled';
+    if (!filled && !isToday && c.state !== 'missed') return label;
+    if (!filled && lastSlot) return <Link key={key} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
+    if (filled && !(isToday && undoable)) return <Link key={key} destination={`chagok://goal/${g.id}`}>{label}</Link>;
+    const dateKey = `${todayKey.slice(0, 8)}${String(c.day).padStart(2, '0')}`;
     return (
       <Button
-        target="place"
+        key={key}
+        target={`day-${c.day}`}
         modifiers={[buttonStyle('plain')]}
         onPress={() => {
-          const kind = placedToday ? 'undo' : 'add';
           const now = new Date();
-          const p2 = (n: number) => String(n).padStart(2, '0');
           const req = {
             id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
             goalId: g.id,
-            kind,
+            kind: filled ? 'undo' : 'add',
             at: now.getTime(),
-            dateKey: `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`,
+            dateKey,
           };
           return { requests: [...(props.requests ?? []), req] };
         }}>
@@ -151,32 +156,35 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
           {g.name}
         </Text>
       </VStack>
-      {tap(
-        <VStack alignment="leading" spacing={2} modifiers={[frame({ maxHeight: 10000 }), contentShape(shapes.rectangle()), padding({ trailing: 12 })]}>
-          <Text modifiers={[font({ family: F, size: 11 }), foregroundStyle(ink), opacity(0.6)]}>{g.monthLabel}</Text>
-          {weeks.map((week, w) => (
-            <HStack key={`w${w}`} spacing={2}>
-              {week.map((c, i) =>
+      <VStack alignment="leading" spacing={2} modifiers={[frame({ maxHeight: 10000 }), padding({ trailing: 12 })]}>
+        <Text modifiers={[font({ family: F, size: 11 }), foregroundStyle(ink), opacity(0.6)]}>{g.monthLabel}</Text>
+        {weeks.map((week, w) => (
+          <HStack key={`w${w}`} spacing={2}>
+            {week.map((c, i) =>
+              tap(
+                `c${w}-${i}`,
+                c,
                 c.state === 'filled' ? (
-                  <Image key={`c${w}-${i}`} uiImage={g.sticker} modifiers={[resizable(), frame({ width: 20, height: 20 }), frame({ width: 22, height: 20 })]} />
+                  <Image key={`c${w}-${i}`} uiImage={g.sticker} modifiers={[resizable(), frame({ width: 20, height: 20 }), frame({ width: 22, height: 20 }), contentShape(shapes.rectangle())]} />
                 ) : (
                   <Text
                     key={`c${w}-${i}`}
                     modifiers={[
                       font({ family: F, size: 10 }),
                       foregroundStyle(ink),
-                      opacity(c.day === 0 || c.state === 'outside' ? 0 : c.state === 'future' ? 0.55 : 0.7),
+                      opacity(c.day === 0 || c.state === 'outside' ? 0 : c.state === 'future' && c.day !== todayDay ? 0.55 : 0.7),
                       frame({ width: 22, height: 20 }),
+                      contentShape(shapes.rectangle()),
                       ...(c.day === todayDay ? [border({ color: '#FD855F', width: 2 })] : []),
                     ]}>
                     {c.day === 0 || c.state === 'outside' ? ' ' : String(c.day)}
                   </Text>
                 ),
-              )}
-            </HStack>
-          ))}
-        </VStack>,
-      )}
+              ),
+            )}
+          </HStack>
+        ))}
+      </VStack>
     </HStack>
   );
 };

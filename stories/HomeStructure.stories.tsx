@@ -116,22 +116,22 @@ function Home({list, initialTab = 'active'}: {list: ListedGoal[]; initialTab?: G
 const filledStickers = (goal: ListedGoal) => Object.fromEntries(goal.filled.map(n => [n, goal.sticker])) as Record<number, PocketStickerId>;
 /**
  * 판 조작: 빈칸 한 번 누름 = 붙이기, 붙인 칸 한 번 누름 = 기록 열기,
- * 붙인 칸 꾹 누름 = 떼기(사진·메모가 있으면 확인). 완성한 판은 readonly라 기록 열기만 된다 (2026-10-05 변경).
+ * 붙인 칸 꾹 누름 = 떼기(사진·메모가 있으면 확인). 완성한 판도 같게 고친다 — 완성 표시는 그대로 (2026-10-08 변경).
  */
 function Detail({goal, month = MONTH, overlay, recorded}: {goal: ListedGoal; month?: number; overlay?: ReactNode; /** 사진 또는 메모가 있는 칸 */recorded?: ReadonlySet<number>}) {
   const {value, total} = progressOf(goal), done = isDone(goal);
   const start = dateOf(goal.createdAt);
   const monthKey = `${YEAR}-${String(month).padStart(2, '0')}`;
-  return <Stage><BoardDetailScreen name={goal.name} sticker={goal.sticker} completed={done} progress={{value, total, percentLabel: percentLabel(goal)}} onBack={noop} onSettings={noop}
+  return <Stage><BoardDetailScreen name={goal.name} sticker={goal.sticker} completed={done} editable progress={{value, total, percentLabel: percentLabel(goal)}} onBack={noop} onSettings={noop}
     board={goal.kind === 'calendar'
       ? {kind: 'calendar', year: YEAR, month, records: goal.calendarRecords, selectedDate: done ? undefined : TODAY, onSelect: noop, onMonthChange: noop, onOpenRecord: noop,
-        isDateEnabled: done ? date => Boolean(goal.calendarRecords[date]) : inPeriod(goal), canGoPrev: monthKey > start.slice(0, 7), canGoNext: !goal.endDate || monthKey < goal.endDate.slice(0, 7)}
+        isDateEnabled: date => Boolean(goal.calendarRecords[date]) || inPeriod(goal)(date), canGoPrev: monthKey > start.slice(0, 7), canGoNext: !goal.endDate || monthKey < goal.endDate.slice(0, 7)}
       : {kind: 'tally', total: goal.total, filled: filledStickers(goal), recorded, onPress: noop, onOpenRecord: noop}}/>{overlay}</Stage>;
 }
-/** 완성한 판의 기록 보기. 사진·메모를 보여주기만 하고 저장·떼기 동작은 두지 않는다. */
-function ReadonlyRecord() {
+/** 완성한 판에서 연 기록. 완성한 판도 사진·메모를 고치고 스티커를 뗄 수 있다 (2026-10-08). */
+function CompletedRecord() {
   const goal = byId('stretch');
-  return <Stage><RecordScreen readonly goal={goal} date="2026년 9월 12일" initialMemo="오늘은 허리까지 쭉 펴졌다." photoActionsInFrame
+  return <Stage><RecordScreen goal={goal} date="2026년 9월 12일" initialMemo="오늘은 허리까지 쭉 펴졌다." photoActionsInFrame
     photoPreview={<View style={{alignItems: 'center', gap: 8}}><ActionSymbol name="photo" size={40}/><Small>사진</Small></View>}
     onChoosePhoto={noop} onRemovePhoto={noop} onBack={noop} onSave={noop} onRemoveSticker={noop}/></Stage>;
 }
@@ -174,7 +174,7 @@ function NewCalendarGoal({withEnd}: {withEnd: boolean}) {
 }
 
 const almostDone: ListedGoal = {...byId('reading'), filled: range(14)};
-const confirmLast = <Overlay title="이 판을 완성할까요?" description="마지막 칸이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요." secondaryLabel="취소" primaryLabel="완성하기"/>;
+const confirmLast = <Overlay title="이 판을 완성할까요?" description="마지막 칸이에요. 완성한 뒤에도 칸과 기록은 고칠 수 있어요." secondaryLabel="취소" primaryLabel="완성하기"/>;
 
 export const HomeActive: Story = {name: '목록 · 내 목표', render: () => <Home list={goals}/>};
 export const HomeCompleted: Story = {name: '목록 · 완성한 판', render: () => <Home list={goals} initialTab="completed"/>};
@@ -190,7 +190,7 @@ const manualDone: ListedGoal = {...byId('walk'), completedAt: '2026-09-29T10:00'
 function ContinueDialog({goal}: {goal: ListedGoal}) {
   const how = goal.kind === 'tally' ? '칸을 늘려' : goal.endDate ? '종료일을 늘려' : '완성을 풀고';
   const title = goal.kind === 'calendar' && goal.endDate ? '기간을 마쳤어요!' : '판을 완성했어요!';
-  return <Detail goal={goal} overlay={<Overlay title={title} description={`${how} 이 판에 계속 붙일 수 있어요. 닫으면 완성한 판으로 보관되고 더 고칠 수 없어요.`} secondaryLabel="닫기" primaryLabel="계속하기"/>}/>;
+  return <Detail goal={goal} overlay={<Overlay title={title} description={`${how} 이 판에 계속 붙일 수 있어요. 닫으면 완성한 판으로 보관돼요.`} secondaryLabel="닫기" primaryLabel="계속하기"/>}/>;
 }
 export const FlowContinueTally: Story = {name: '완성 흐름 2 · 계속하기 · 적립판', render: () => <ContinueDialog goal={byId('stretch')}/>};
 export const FlowContinuePeriod: Story = {name: '완성 흐름 2 · 계속하기 · 종료일 지남', render: () => <ContinueDialog goal={byId('vitamin')}/>};
@@ -199,7 +199,7 @@ export const FlowExtendEndDate: Story = {name: '완성 흐름 3 · 달력판 종
 export const FlowExtendSlots: Story = {name: '완성 흐름 3 · 적립판 칸 늘리기', render: () => <ExtendSlots/>};
 export const DetailTallyDone: Story = {name: '완성한 판 · 적립판', render: () => <Detail goal={byId('stretch')}/>};
 export const DetailPeriodEnded: Story = {name: '완성한 판 · 달력판 9월 23일 종료', render: () => <Detail goal={byId('vitamin')}/>};
-export const RecordReadonly: Story = {name: '완성한 판 · 기록 보기', render: () => <ReadonlyRecord/>};
+export const RecordCompleted: Story = {name: '완성한 판 · 기록', render: () => <CompletedRecord/>};
 export const SettingsCompleted: Story = {name: '완성한 판 · 목표 설정 (삭제만)', render: () => <CompletedSettings goal={byId('vitamin')}/>};
 /** 삭제 확인. 지금 쓰는 basic 다이얼로그 그대로이며, 함께 지워지는 스티커·기록 수를 알린다 (PRD 4.4). */
 const deleteConfirm = (stickers: number, notes: number) => <Overlay title="목표를 삭제할까요?" description={`붙인 스티커 ${stickers}개와 기록 ${notes}개가 함께 지워지고, 되돌릴 수 없어요.`} secondaryLabel="취소" primaryLabel="삭제하기"/>;
@@ -210,7 +210,7 @@ export const SettingsTally: Story = {name: '목표 설정 · 적립판', render:
 export const SettingsTally30: Story = {name: '목표 설정 · 적립판 30칸 (늘리기만)', render: () => <GoalSettings goal={{...byId('reading'), total: 30}}/>};
 export const SettingsPeriod: Story = {name: '목표 설정 · 종료일 바꾸기', render: () => <GoalSettings goal={byId('water')} picking/>};
 export const SettingsOpenEnded: Story = {name: '목표 설정 · 종료일 없음과 완성', render: () => <GoalSettings goal={byId('walk')}/>};
-export const SettingsManualConfirm: Story = {name: '목표 설정 · 수동 완성 확인', render: () => <GoalSettings goal={byId('walk')} overlay={<Overlay title="이 판을 완성할까요?" description="완성하면 되돌릴 수 없고, 스티커를 붙이거나 기록을 고칠 수 없어요." secondaryLabel="취소" primaryLabel="완성하기"/>}/>};
+export const SettingsManualConfirm: Story = {name: '목표 설정 · 수동 완성 확인', render: () => <GoalSettings goal={byId('walk')} overlay={<Overlay title="이 판을 완성할까요?" description="완성한 뒤에도 칸과 기록은 고칠 수 있어요. 계속하기로 다시 이어 쓸 수도 있어요." secondaryLabel="취소" primaryLabel="완성하기"/>}/>};
 export const NewWithoutEnd: Story = {name: '새 목표 · 달력판 종료일 없음', render: () => <NewCalendarGoal withEnd={false}/>};
 export const NewWithEnd: Story = {name: '새 목표 · 달력판 종료일 고르기', render: () => <NewCalendarGoal withEnd/>};
 export const Tutorial1: Story = {name: '첫 실행 튜토리얼 1 · 목표 만들기', render: (_, {viewMode}) => <FirstRunTutorial index={0} autoFocus={viewMode !== 'docs'}><TutorialListExample/></FirstRunTutorial>};
