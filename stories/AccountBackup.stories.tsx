@@ -3,7 +3,7 @@ import {View,useWindowDimensions} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
 import {
   AccountBackupPanel,AccountDeletedScreen,AccountStartScreen,AppHeader,ConsentScreen,DeleteAccountScreen,GoalListHeader,GoalSummaryCard,
-  PixelBusyDialog,PixelButton,PixelDialog,PixelPanel,PixelText,RestoreConflictScreen,RetroScreen,ScreenHeader,SettingRow,accountDialogs,retro,
+  PixelBusyDialog,PixelButton,PixelDialog,PixelPanel,PixelText,PurchasePanel,RestoreConflictScreen,RetroScreen,ScreenHeader,SettingRow,accountDialogs,retro,stickerShopDialogs,
   type AccountBackupStatus,type AccountStartChoice,type RestoreSide,
 } from '../src/design-system';
 
@@ -35,9 +35,10 @@ function Start({initial='account'}:{initial?:AccountStartChoice}) {
   const [value,setValue]=useState(initial);
   return <AccountStartScreen value={value} onChange={setValue} onContinue={noop}/>;
 }
-function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'}}:{status?:AccountBackupStatus}) {
+function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false}:{status?:AccountBackupStatus;adFree?:boolean}) {
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title="앱 설정" onBack={noop}/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
+    <PurchasePanel adFree={adFree} onRemoveAds={noop} onRestore={noop}/>
     <PixelPanel title="도움말"><SettingRow label="사용법 다시 보기" onPress={noop}/></PixelPanel>
     <PixelPanel title="정보"><SettingRow label="약관과 라이선스" onPress={noop}/></PixelPanel>
   </RetroScreen>;
@@ -45,8 +46,8 @@ function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:
 function Home() {
   return <RetroScreen style={{gap:16}} header={<AppHeader onSettings={noop}/>}>
     <GoalListHeader tab="active" counts={{active:2,completed:1}} onTab={noop} onAdd={noop}/>
-    <GoalSummaryCard name="매일 산책하기" sticker="shoe" kind="달력판" percent={40} status={['이번 달 40% 채웠어요']} onPress={noop}/>
-    <GoalSummaryCard name="책 20권 읽기" sticker="book" kind="적립판" percent={35} status={['35% 채웠어요']} onPress={noop}/>
+    <GoalSummaryCard name="매일 산책하기" sticker="basic.shoe" kind="달력판" percent={40} status={['이번 달 40% 채웠어요']} onPress={noop}/>
+    <GoalSummaryCard name="책 20권 읽기" sticker="basic.book" kind="적립판" percent={35} status={['35% 채웠어요']} onPress={noop}/>
   </RetroScreen>;
 }
 function Conflict() {
@@ -98,6 +99,11 @@ export const DeleteFailed:Story={name:'6 계정 삭제 · 실패',render:()=><St
 export const DeleteDone:Story={name:'6 계정 삭제 · 완료',render:()=><Stage><AccountDeletedScreen onDone={noop}/></Stage>};
 
 // 7. 약관 변경 안내 · 만 14세 미만
+// 8. 구매 (2026-10-08 스티커 화면 시안 확정, PRD 4.9·4.12)
+export const SettingsAdFree:Story={name:'8 구매 · 광고 제거를 산 뒤',render:()=><Stage><Settings adFree/></Stage>};
+export const RestoreDone:Story={name:'8 구매 복원 · 찾음',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreDone(['동물 묶음','간식 묶음','광고 제거'])}/></Stage>};
+export const RestoreNone:Story={name:'8 구매 복원 · 없음',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreNone}/></Stage>};
+
 export const TermsChanged:Story={name:'7 약관 변경 안내',render:()=><Stage><Home/><Dialog {...accountDialogs.termsChanged('10월 15일')}/></Stage>};
 export const Under14:Story={name:'7 만 14세 미만 안내',render:()=><Stage>
   <ConsentScreen ageChecked={false} termsChecked={false} onToggleAge={noop} onToggleTerms={noop} onViewTerms={noop} onViewPrivacy={noop} onUnder14={noop} onBack={noop}

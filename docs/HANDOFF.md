@@ -48,14 +48,12 @@
    - **탭 반응 속도 개선 (2026-10-07~08, main `perf/widget-tap-speed`).** 시뮬레이터 로그로 단계별로 잼(방법: 메모리 `widget-tap-timing`). 누를 때마다 시스템이 타임라인 항목 전부 × 라이트·다크 × 일반·틴트를 다시 그리는 것이 원인이었다. ① expo-widgets 패치(`patches/`, patch-package): 버튼 처리 뒤 같은 종류 위젯 전부를 다시 그리던 호출을 뺌 ② 타임라인을 지금 + 다음 자정 2개로(8개 → 2개) ③ 마지막 항목이 지난 뒤(앱을 며칠 안 염) 위젯은 지금 날짜를 오늘로 쓴다. Release 빌드 기준 목표 하나 0.5 → 0.2초, 이번 달 2.5 → 0.7초, 적립판 1.6~3.3 → 0.5초. `invalidatableContent`(흐리게 표시)와 Toggle(즉시 반응, Swift 필요)은 쓰지 않았다 — 사용자가 이 속도로 괜찮다고 함(2026-10-08).
    - 다음 1: 실기기 확인 — 자정 넘김(2026-10-07 시뮬레이터에서 날짜 버그를 찾아 고쳤다 `7fa7656`; 고친 뒤 자정은 아직 다시 안 봤다), 탭 속도, 앱을 이틀 넘게 안 열었을 때 위젯 탭(③은 테스트로만 확인). 실기기 설치 준비: Xcode에 Apple 계정 추가, iPhone 연결·개발자 모드 켜기(재시동), `npx expo run:ios --device`. Expo Go로는 위젯을 볼 수 없다.
    - 다음 2: Android 위젯(계획 2) — 새 모양·목표 고르기·앱이 꺼졌을 때 첫 탭 유실(시험 구현 결과 A7).
-   - 위젯은 컬러 스티커로 그렸다. 앱 스티커를 컬러로 바꿀지(2번)와 함께 정한다.
-2. **스티커 화면 다시 설계.** 사용자가 요청할 때 시작한다(2026-10-05 "스토리북 에셋이 다 확인되면 화면 설계 다시 하자고 할게").
-   - 대상: 묶음별 스티커 선택기, 잠긴 묶음, 묶음 상세·구매, 구매 복원, 광고 제거 진입, 구독이 끝난 뒤 보이는 모습.
-   - 먼저 정할 것:
-     - 출시 때 낼 유료 묶음(후보 6개 중)과 팩당 개수 — 처음 정한 「6종 팩 3개」를 다시 정한다
-     - 10개 묶음의 가격
-     - 흑백 스티커를 컬러로 바꿀지(바꾸면 저장된 `stickerType` 마이그레이션이 필요하다)
-     - 판 칸 스티커 크기: 지금 44px이다. 컬러 24칸 그림은 24의 정수배인 48px이어야 선명하다.
+   - 위젯은 컬러 스티커로 그렸다. 앱 스티커도 모두 컬러로 정했다(2026-10-07, 2번).
+2. **스티커 화면 — 설계 확정·Storybook 반영 (2026-10-08), 다음은 앱 연결.** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
+   - 정한 것: 모두 컬러(48pt, 스키마 v6 마이그레이션), 묶음 10종·2,200원, 여는 길 세 가지(사기 · 광고 보고 24시간 · 붙인 날 누적 7·14·이후 30일마다 3일 체험), 광고 제거 구매자는 하루 체험 없음, 「기본 스티커」 화면 · 묶음 화면 · 앱 설정 「구매」 블럭, 구매 복원은 앱 설정에만.
+   - Storybook 반영 끝(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-storybook.md`): `Screens/Sticker Shop`, 앱 설정 「구매」 블럭, 홈 광고 자리(`GoalListScreen` `footer`), 흐름도 줄 5. 시안 캡처용 임시 스토리는 치웠다.
+   - 다음: 앱 연결 계획 — 「기본 스티커」·묶음 화면 라우트와 `onChooseSticker`, 스키마 v6 마이그레이션(`toColorStickerId`), RevenueCat 구매·복원, AdMob 배너(`footer`)·보상형 광고, 체험 만료 시각과 붙인 날 수 저장, 위젯 체험 종료 처리.
+   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 같은 묶음 보상 재체험, 위젯에서 체험이 끝난 묶음 처리(앱을 열어 안내 — 위젯 설계에 추가), 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤).
 3. **수익화 기반**
    - 권한 계층(RevenueCat entitlements): 팩은 구매 또는 구독이면 쓸 수 있고, 광고는 광고 제거 구매 또는 구독이면 꺼진다.
    - 카탈로그에 팩 정보 연결
@@ -223,13 +221,13 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 
 [추가·수정 절차](../src/stickers/pocket/README.md), [자산 검수](design/retro-pocket-v1/review-set-02/asset-review/README.md).
 
-**컬러 스티커 (2026-10-05, 화면에는 아직 쓰지 않음).** `src/stickers/color/`는 흑백과 별도인 24×24 도트 컬러 스티커 66종이다.
+**컬러 스티커 (2026-10-05, 디자인 시스템·Storybook은 컬러, 앱은 스키마 v6 전까지 흑백).** `src/stickers/color/`는 흑백과 별도인 24×24 도트 컬러 스티커 66종이다.
 
 - 묶음: 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10.
 - ID는 `묶음.이름`(예: `snack.cheese`)이다. 흑백 ID와 겹치지 않는다.
 - 원본은 `source/sticker-packs-24.json`이다. 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다.
 - `ColorStickerArtwork`는 색별 path로 그린다. 크기는 24의 정수배를 쓴다.
-- 검토는 Storybook `Stickers / Color Assets`. 화면 적용은 0절 2(스티커 화면 다시 설계)에서 한다. [README](../src/stickers/color/README.md).
+- 검토는 Storybook `Stickers / Color Assets`. 화면 적용은 0절 2(스티커 화면, 2026-10-08 설계 확정 — 모두 컬러)에서 한다. [README](../src/stickers/color/README.md).
 
 아래 명령은 **추가 5종 파일을 덮어쓴다.** 자산 재생성 때만 실행한다. 새싹은 바꾸지 않는다.
 
@@ -275,7 +273,7 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 
 ## 8. 현재 앱 상태
 
-Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 개발 빌드로 실행한다(2026-10-05~, [DEV-SETUP](DEV-SETUP.md) 「개발 빌드」). Expo Go도 `--go`로 아직 돈다.
+Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 디자인 시스템은 `StickerId`(흑백 + 컬러)를 받지만 앱은 아직 흑백 ID만 넘긴다(2026-10-08). 개발 빌드로 실행한다(2026-10-05~, [DEV-SETUP](DEV-SETUP.md) 「개발 빌드」). Expo Go도 `--go`로 아직 돈다.
 
 | 라우트 | 동작 |
 | --- | --- |

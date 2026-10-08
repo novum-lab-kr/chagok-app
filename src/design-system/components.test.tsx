@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe,it,expect,afterEach,vi } from 'vitest';
 import { render,screen,fireEvent,cleanup } from '@testing-library/react';
-import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro } from './index';
+import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro,StickerGlyph,stickerLabel,toColorStickerId,ActionSymbol } from './index';
 afterEach(cleanup);
 describe('공통 컴포넌트 동작',()=>{
   it('픽셀 틀 SVG는 크기를 재기 전부터 있다 — 크기가 바뀌면 key로 새로 만든다(iOS는 만든 뒤 크기만 바꾸면 다시 그리지 않는다, 2026-10-04)',()=>{
@@ -98,5 +98,21 @@ describe('로딩 표시',()=>{
     const before=dots();expect(before).toHaveLength(3);
     await act(async()=>{vi.advanceTimersByTime(260);});
     expect(dots()).not.toEqual(before);
+  });
+  it('컬러 스티커는 색별 층으로, 흑백 스티커는 잉크 한 색으로 그리고 컬러는 24의 배수로 맞춘다',()=>{
+    const {container,rerender}=render(<StickerGlyph id="basic.sprout" size={44}/>);
+    expect(container.querySelector('svg')!.getAttribute('width')).toBe('24');
+    expect(new Set([...container.querySelectorAll('path')].map(p=>p.getAttribute('fill'))).size).toBeGreaterThan(1);
+    rerender(<StickerGlyph id="sprout" size={44}/>);
+    expect(new Set([...container.querySelectorAll('path')].map(p=>p.getAttribute('fill')))).toEqual(new Set([retro.color.ink]));
+  });
+  it('스티커 이름은 흑백·컬러 모두 읽고, 흑백 ID는 같은 그림의 기본 묶음 컬러 ID로 바꾼다',()=>{
+    expect(stickerLabel('book')).toBe('책');
+    expect(stickerLabel('animals.dog')).toBe('강아지');
+    expect(toColorStickerId('sprout')).toBe('basic.sprout');
+  });
+  it('자물쇠와 재생 기호를 그린다',()=>{
+    const {container}=render(<><ActionSymbol name="lock"/><ActionSymbol name="play"/></>);
+    expect([...container.querySelectorAll('path')].every(p=>(p.getAttribute('d')??'').length>0)).toBe(true);
   });
 });

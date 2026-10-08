@@ -18,6 +18,8 @@ const grid: Record<string, [row: number, col: number]> = {
   'app-settings': [3, 2], replay: [3, 3], policies: [3, 4], license: [3, 5], 'policy-web': [3, 6], mail: [3, 7],
   // 4 계정 삭제
   'account-delete': [4, 3], deleted: [4, 4],
+  // 5 스티커 묶음·구매
+  'sticker-chooser': [5, 3], pack: [5, 4], 'store-pay': [5, 5], 'rewarded-ad': [5, 6],
 };
 
 export const appFlow = {

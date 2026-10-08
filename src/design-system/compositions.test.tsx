@@ -3,7 +3,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {GoalStickerCell,exampleGoals} from './screen-compositions';
-import {ExtendSlotsScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
+import {ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 afterEach(cleanup);
@@ -179,5 +179,15 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChangeSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
     expect(screen.getByText('지금 30칸 · 늘리기만 할 수 있어요')).toBeTruthy();
     expect(screen.getByText('지금 30칸보다 줄일 수 없어요.')).toBeTruthy();
+  });
+  it('[바꾸기]는 onChooseSticker가 있으면 화면 안 고르기를 열지 않고 그것을 부른다',()=>{
+    const choose=vi.fn();
+    render(<NewGoalScreen name="책 읽기" onChangeName={vi.fn()} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="basic.book" onChangeSticker={vi.fn()} onChooseSticker={choose} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={vi.fn()}/>);
+    fireEvent.click(screen.getByRole('button',{name:'바꾸기'}));
+    expect(choose).toHaveBeenCalled();expect(screen.queryByRole('button',{name:'선택 완료'})).toBeNull();
+  });
+  it('홈 목록은 footer를 스크롤 밖 맨 아래에 둔다',()=>{
+    render(<GoalListScreen tab="active" onTab={vi.fn()} active={[]} completed={[]} onOpen={vi.fn()} onAdd={vi.fn()} footer={<PixelText>광고 자리</PixelText>}/>);
+    expect(screen.getByText('광고 자리')).toBeTruthy();
   });
 });

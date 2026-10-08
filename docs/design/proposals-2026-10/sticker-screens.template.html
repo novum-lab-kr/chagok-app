@@ -1,0 +1,355 @@
+<title>차곡차곡 컬러 스티커 화면 시안</title>
+<style>
+/* 배치: 맨 위에 지금 화면 분석, 그 아래 정할 것마다 묶음 하나. 묶음 안은 안마다 한 띠(왼쪽 설명·고르기·메모, 오른쪽 줄인 앱 화면). 아래 고정 막대에 고른 안. */
+@font-face { font-family: "NeoDGM"; src: url(data:font/ttf;base64,__FONT__) format("truetype"); font-display: block; }
+:root {
+  --bg: #f3f6f2; --surface: #ffffff; --line: #d3ddd5; --fg: #0e2a20; --muted: #4f6559;
+  --accent: #c8532c; --ok: #2f6b4a; --stage: #e4ebe5;
+  --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --pixel: "NeoDGM", var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* 앱 팔레트 — 디자인 시스템 토큰 그대로. 화면 미리보기 안에서만 쓴다 */
+  --mint: #AFE1CB; --lcd: #C7DE94; --ink: #06261C; --btn-ink: #01241C; --apricot: #FD855F; --ivory: #FEF1D1;
+  --ad-bg: #f1f1f1; --ad-line: #c9c9c9; --ad-fg: #3c3c3c;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4;
+  --accent: #ff9a76; --ok: #9fd8b4; --stage: #1c2a23; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 48px; }
+h1 { font-family: var(--pixel); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h2 { font-size: 19px; line-height: 1.3; margin: 0; text-wrap: balance; }
+h3 { font-size: 13px; line-height: 1.35; margin: 0; color: var(--muted); font-weight: 600; letter-spacing: 0.03em; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 78ch; }
+header.top { display: flex; flex-direction: column; gap: 10px; }
+
+/* 분석 */
+.analysis { display: flex; flex-direction: column; gap: 18px; }
+.analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel a { color: var(--ok); }
+.panel ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 14px; width: 100%; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--mono); font-size: 13px; }
+td.num b { color: var(--ok); }
+td.num s { color: var(--muted); }
+.tag-ok { color: var(--ok); font-weight: 600; }
+.tag-open { color: var(--accent); font-weight: 600; }
+
+.bundle { display: flex; flex-direction: column; gap: 16px; }
+.bundle-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--fg); padding-bottom: 8px; }
+.bundle-head h2 { font-family: var(--pixel); font-weight: 400; font-size: 26px; }
+.bundle-head .picked { font-size: 13px; color: var(--muted); }
+.bundle-note { font-size: 14px; color: var(--muted); max-width: 90ch; }
+
+section.group { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 18px; background: var(--surface); border: 1px solid var(--line); padding: 18px; }
+section.group.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+section.group.ref { background: transparent; border-style: dashed; }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.like { font-size: 13px; color: var(--muted); }
+.flow { margin: 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+ul.pc { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+ul.pc li { padding-left: 10px; border-left: 2px solid var(--line); }
+ul.pc li.pro { border-color: var(--ok); }
+ul.pc li.con { border-color: var(--accent); }
+.review { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ok-btn { align-self: flex-start; font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--ok); background: transparent; color: var(--ok); border-radius: 4px; cursor: pointer; }
+section.group.ok .ok-btn { background: var(--ok); color: var(--surface); }
+.ok-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.review textarea { width: 100%; box-sizing: border-box; min-height: 72px; resize: vertical; font: inherit; font-size: 14px; line-height: 1.5; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.review textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.review textarea::placeholder { color: var(--muted); }
+.save-state { font-size: 12px; color: var(--muted); min-height: 18px; }
+.save-state.bad { color: var(--accent); }
+
+.shots { display: flex; gap: 16px; overflow-x: auto; min-width: 0; align-items: flex-start; background: var(--stage); padding: 14px; }
+figure { margin: 0; flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+figcaption { font-size: 12px; color: var(--muted); max-width: 250px; }
+
+.shot { display: block; width: 242px; height: auto; max-width: 100%; outline: 1px solid var(--line); }
+.shot.tall { width: 242px; }
+.newmark { font-size: 12px; color: var(--accent); }
+
+.notes { display: flex; flex-direction: column; gap: 8px; }
+.notes ul { margin: 0; padding-left: 20px; max-width: 86ch; }
+.notes li { margin-block: 4px; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
+.bar-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.bar-label { font-size: 13px; color: var(--muted); }
+#summary { font-family: var(--mono); font-size: 13px; min-width: 0; overflow-wrap: anywhere; flex: 1 1 300px; }
+.bar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+.bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 800px) {
+  section.group { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 24px; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>차곡차곡 컬러 스티커 화면 시안</h1>
+    <p class="lede">컬러 스티커를 화면에 넣는 설계의 <b>최종 흐름</b>입니다(2026-10-07 확정). <b>정한 것</b>: 모두 컬러(A1) · 가림막 카드(L5, 「눌러서 미리 보기」) · 묶음 10종, 가진 묶음은 고른 묶음만 펼침(Q3-3) · 잠긴 묶음 → 묶음 화면(C2), 산 뒤 자동으로 고르기로 · 앱 설정 「구매」 블럭(광고 제거 + 구매 복원) · 보상은 붙인 날 7·14·이후 30일마다 3일 체험 · 체험이 끝나면 다음에 붙일 때 안내. <b>미룬 것</b>: 스티커 그림 품질(<a href="https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq" target="_blank" rel="noopener">품질 점검</a>), 출시 세 주제. 장면마다 메모를 남길 수 있습니다.</p>
+    <p class="lede"><b>그린 방법.</b> 앱 화면은 실제 디자인 시스템 컴포넌트(머리글, 패널, 버튼, 필터, 판 칸, 다이얼로그, 설정 줄)로 조합해 Storybook에서 iPhone 16 Pro 크기(390pt)로 렌더한 캡처입니다. 안은 지금 화면 구조 안에서만 바꿨고, 디자인 시스템에 없는 새 요소(자물쇠·재생 표시 아이콘, 보상 안내 상자, 아래 고정 줄 등)는 안마다 밝혔습니다. 회색 광고 배너와 App Store 결제창은 앱 밖에서 오는 것이라 예시로만 넣었습니다.</p>
+  </header>
+
+  <section class="analysis" aria-labelledby="an-h">
+    <div class="bundle-head"><h2 id="an-h">지금 화면 분석</h2><span class="picked">2026-10-08 main 기준 · 15판</span></div>
+    <div class="analysis-grid">
+      <div class="panel">
+        <h2>스티커가 보이는 곳과 크기</h2>
+        <p class="bundle-note">컬러 스티커는 24칸 도트라서 24의 배수(24·48·72·96)에서만 칸이 또렷합니다. 지금 크기는 56칸 흑백 그림에 맞춰져 있습니다. 아래 크기는 다섯 묶음 모두에 똑같이 적용했습니다.</p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>화면</th><th>지금</th><th>컬러</th></tr></thead>
+          <tbody>
+            <tr><td>홈 목록 카드</td><td class="num"><s>40</s></td><td class="num"><b>48</b></td></tr>
+            <tr><td>판 상세 · 적립판 칸 (84×64)</td><td class="num"><s>44</s></td><td class="num"><b>48</b></td></tr>
+            <tr><td>판 상세 · 달력판 칸</td><td class="num"><s>≤28</s></td><td class="num"><b>24</b></td></tr>
+            <tr><td>스티커 고르기 · 위 큰 그림</td><td class="num"><s>64</s></td><td class="num"><b>72</b></td></tr>
+            <tr><td>스티커 고르기 · 목록 / 목표 설정 요약</td><td class="num">48</td><td class="num"><b>48</b></td></tr>
+            <tr><td>기록 화면 요약</td><td class="num"><s>56</s></td><td class="num"><b>48</b></td></tr>
+            <tr><td>[완성] 표시 옆</td><td class="num"><s>36</s></td><td class="num"><b>48</b></td></tr>
+            <tr><td>위젯</td><td class="num">48</td><td class="num">48 (이미 컬러)</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>결제·광고가 닿는 곳</h2>
+        <ul>
+          <li><span class="tag-ok">정함</span> 광고는 홈(내 목표·완성한 판) 맨 아래 고정 배너뿐입니다. 판·스티커 고르기·기록·앱 설정에는 없습니다.</li>
+          <li><span class="tag-ok">정함</span> 묶음 2,200원, 광고 제거 5,500원. 따로 파는 상품이라 묶음을 사도 광고는 그대로입니다.</li>
+          <li><span class="tag-ok">정함</span> 잠긴 묶음의 스티커도 이미 붙인 칸에서는 그대로 보입니다. 새로 고를 때만 막습니다.</li>
+          <li><span class="tag-open">없음</span> 스티커를 고르는 곳은 새 목표와 목표 설정의 「기본 스티커」 하나입니다. 지금은 <code>전체/친구/모양/사물</code> 필터에 흑백 6종이 있고, 묶음이나 잠김 개념이 없습니다.</li>
+          <li><span class="tag-open">없음</span> 묶음을 사는 화면, 광고 제거를 사는 곳, [구매 복원]이 없습니다. App Store 심사는 [구매 복원]을 요구합니다.</li>
+          <li><span class="tag-open">없음</span> 판에 붙일 때 종류를 고르지 않습니다(한 판 = 한 스티커). 그래서 묶음을 사도 바로 쓰는 곳은 기본 스티커를 바꾸는 순간입니다.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>지금 흐름에서 묶음이 들어갈 자리</h2>
+        <ul>
+          <li>홈 → [+] 새 목표 → <b>기본 스티커</b> → 만들기</li>
+          <li>판 상세 → 톱니바퀴 → 목표 설정 → <b>기본 스티커</b> → 저장</li>
+          <li>홈 → 톱니바퀴 → 앱 설정 → (새 구역) <b>스티커·광고</b></li>
+          <li>잠긴 묶음을 누르면 → 묶음 열기(구매) → 고르던 화면으로 돌아와 바로 고름</li>
+        </ul>
+        <p class="bundle-note">흐름도(Storybook <code>Flows/앱 전체</code>)에는 고른 안에 맞춰 화면과 이동을 더합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="analysis" aria-labelledby="rs-h">
+    <div class="bundle-head"><h2 id="rs-h">비슷한 앱의 결제 구조와 가격</h2><span class="picked">2026-10-07 웹 조사 · 가격은 스토어·지역에 따라 다를 수 있음</span></div>
+    <div class="panel">
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>앱</th><th>파는 것</th><th>가격</th><th>무료로 얻는 길</th></tr></thead>
+        <tbody>
+          <tr><td>카카오톡 이모티콘</td><td>세트 개별 구매 + 구독(이모티콘 플러스)</td><td class="num">개별 2,500원(앱)·2,000원(웹)<br>구독 월 6,900원(App Store)·5,700원(Google)·3,900원(웹)</td><td>없음(무료 이벤트 이모티콘 정도)</td></tr>
+          <tr><td>LINE 스티커</td><td>코인으로 세트 구매 + 구독(Stickers Premium)</td><td class="num">세트 보통 50코인 ≈ 150엔<br>구독 월 290엔·650엔 (신규 가입은 멈추고 LYP Premium으로 통합)</td><td>무료 이벤트 스티커</td></tr>
+          <tr><td>하루콩 (감정 기록, 국내)</td><td>테마 스토어(앱 화폐 「클로버」) + 프리미엄 구독·이용권</td><td class="num">클로버 100 = 1,800원, 300 = 4,800원<br>월 4,900원 · 연 18,000원 / 이용권 1개월 2,500원</td><td>기록 때 광고 노출</td></tr>
+          <tr><td>Finch (자기 돌봄 펫)</td><td>구독(꾸미기·모험 위주)</td><td class="num">월 $9.99 · 연 $69.99</td><td>무료 기능이 넉넉함</td></tr>
+          <tr><td>Forest (집중 타이머)</td><td>앱 한 번 구매(iOS) / 무료+광고(Android)</td><td class="num">iOS $3.99 · Android 광고 제거 $1.99</td><td><b>집중해서 번 코인으로 나무 종류 해금</b></td></tr>
+          <tr><td>Habitica (습관 RPG)</td><td>구독 + 보석</td><td class="num">월 $4.99 · 연 $47.99</td><td>게임 안 골드</td></tr>
+          <tr><td>Daylio (기분 기록)</td><td>프리미엄 구독</td><td class="num">월 $4.99 · 연 $35.99 · 7일 무료 체험</td><td>—</td></tr>
+          <tr><td>Streaks (습관)</td><td>앱 한 번 구매</td><td class="num">$5.99, 구독 없음</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <h3>차곡차곡에 비춰 본 것</h3>
+      <ul>
+        <li><b>국내 사용자는 "세트 하나 2,000~2,500원"에 익숙합니다.</b> 카카오 이모티콘이 기준점이라 묶음 2,200원은 낯설지 않은 가격입니다. 다만 E3는 6종이라 이모티콘 한 세트보다 개수가 적어 보일 수 있습니다. 가격을 유지할지, 묶음 크기를 키울지 함께 보면 좋습니다.</li>
+        <li><b>스토어 수수료 때문에 앱 안 가격이 웹보다 비쌉니다</b>(카카오 2,500 vs 2,000원, 구독 6,900 vs 3,900원). 차곡차곡은 웹 결제가 없으니 스토어 가격표 하나만 씁니다.</li>
+        <li><b>꾸미기 상품은 "화폐" 방식이 흔합니다</b>(하루콩 클로버, LINE 코인). 화폐가 있으면 광고 보상·누적 보상을 같은 단위로 줄 수 있지만 화면과 정산이 복잡해집니다. 지금 설계(묶음을 직접 사고, 보상은 묶음 하나)가 더 단순합니다.</li>
+        <li><b>해외 습관·기록 앱은 구독 중심</b>(월 $5~10, 연 $36~70)이고 연간 할인과 무료 체험을 붙입니다. 나중에 구독(모든 묶음 + 광고 제거)을 낼 때 참고할 범위입니다.</li>
+        <li><b>쓰면서 번 것으로 해금</b>하는 방식(Forest의 코인)이 우리 누적 보상(③)과 같은 결입니다. <b>광고를 보면 정해진 시간만 해금</b>하는 것도 흔한 보상형 광고 방식입니다(②).</li>
+      </ul>
+      <p class="bundle-note">출처:
+        <a href="https://pickle.plus/blog/kakao-emoticon-prices" target="_blank" rel="noopener">카카오 이모티콘 가격</a> ·
+        <a href="https://v.daum.net/v/pdYlprhLvZ" target="_blank" rel="noopener">이모티콘 플러스 결제별 가격</a> ·
+        <a href="https://help2.line.me/line/smartphone?contentId=20013665&lang=en" target="_blank" rel="noopener">LINE Stickers Premium 요금</a> ·
+        <a href="https://note.com/money30life/n/n3eec31d4b22c?hl=en" target="_blank" rel="noopener">LINE 코인 가치</a> ·
+        <a href="https://apps.apple.com/kr/app/%ED%95%98%EB%A3%A8%EC%BD%A9/id1553223828" target="_blank" rel="noopener">하루콩 App Store</a> ·
+        <a href="https://maily.so/indiehacker/posts/mjz63w51zwk" target="_blank" rel="noopener">하루콩 제품 분석</a> ·
+        <a href="https://help.finchcare.com/hc/en-us/articles/38755205001869-Finch-Plus-Pricing" target="_blank" rel="noopener">Finch Plus 요금</a> ·
+        <a href="https://calmevo.com/is-forest-app-worth-it/" target="_blank" rel="noopener">Forest 가격</a> ·
+        <a href="https://habitica.fandom.com/wiki/Subscription" target="_blank" rel="noopener">Habitica 구독</a> ·
+        <a href="https://www.choosingtherapy.com/daylio-app-review/" target="_blank" rel="noopener">Daylio 가격</a> ·
+        <a href="https://makeheadway.com/blog/streaks-app-review/" target="_blank" rel="noopener">Streaks 가격</a> ·
+        <a href="https://support.google.com/admanager/answer/7386053?hl=en" target="_blank" rel="noopener">보상형 광고(Google)</a>
+      </p>
+    </div>
+  </section>
+
+  <div id="bundles" style="display:flex;flex-direction:column;gap:56px"></div>
+
+  <section class="notes">
+    <h2>모든 안 공통</h2>
+    <ul>
+      <li>판 위 스티커 크기는 위 표를 따릅니다. 적립판 칸(84×64)은 그대로 두고 그림만 44 → 48로 키웁니다.</li>
+      <li>잠긴 묶음은 <b>자물쇠</b>와 흐린 그림으로 보여 줍니다. 묶음을 열면 고르던 화면으로 돌아와 그 스티커가 골라진 상태가 됩니다.</li>
+      <li>결제는 스토어 결제창(Apple·Google)이 띄웁니다. 앱은 그 앞뒤 화면만 그립니다. 결제 중에는 버튼에 로딩 점을 씁니다.</li>
+      <li>문구는 사용자 쪽에서 씁니다: "묶음을 열었어요", "산 적이 있으면 다시 불러올 수 있어요".</li>
+      <li>구독은 나중이라 이 시안에 넣지 않았습니다. 들어오면 같은 자리에 「모든 묶음 + 광고 제거」 줄이 하나 늘어납니다.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="bar" role="region" aria-label="고른 안">
+  <div class="bar-in">
+    <span class="bar-label">고른 안</span>
+    <span id="summary">아직 안 골랐어요</span>
+    <button type="button" id="copy">메모까지 복사</button>
+    <span class="bar-label" id="store-state">저장소 연결 중…</span>
+  </div>
+</div>
+
+<script>
+const SHOTS = __SHOTS__;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+
+const shot = (key, cap) => [`<img class="shot" alt="${esc(cap)}" src="${SHOTS[key]}">`, cap];
+
+const BUNDLES = [
+  {id: 'flow', tag: '최종', title: '화면 흐름 (2026-10-07 확정)', note: '모든 화면 결정을 반영한 최종 흐름입니다. 스티커 그림 품질은 결정을 미뤘고(품질 점검 페이지), 출시 세 주제는 아직 열려 있어 간식·동물·날씨를 예시로 그렸습니다. 기본 묶음은 지금 6종 그림이라 6개로 보입니다.',
+   groups: [
+    {id: 'flow-1', ref: true, title: '1. 홈과 판', like: 'A1 모두 컬러', layout: ['목록 카드·판 칸의 스티커를 컬러 48px로.', '홈 맨 아래 비맞춤 배너(광고 제거 전).'], shots: [shot('f-01-home', '홈'), shot('f-02-board', '판 상세')]},
+    {id: 'flow-2', ref: true, title: '2. 기본 스티커 고르기', like: 'L5 · 10종 · 가진 묶음 접기', layout: ['새 목표·목표 설정의 [바꾸기] → 「기본 스티커」 화면.', '위 [모든 묶음 · 내 스티커] 전환(구분선 없이 고른 쪽 채움만), 보상 안내.', '고른 스티커는 포커스 링과 체크 배지로 표시하고, 링은 그림에서 6pt 띄움.', '가진 묶음이 위: 지금 고른 스티커가 든 묶음만 펼치고(5개씩 두 줄), 다른 가진 묶음은 5개 + +n + 꺾쇠로 접음. 접힌 그림도 바로 고를 수 있음.', '잠긴 묶음이 아래: 그림 5개 + +5 위에 가림막 [🔒 눌러서 미리 보기], 머리글 [2,200원] [>].', '아래 고정 줄: 고른 스티커 + [선택 완료].'], shots: [shot('f-03-entry', '새 목표 → [바꾸기]'), shot('z-04-picker', '모든 묶음'), shot('z-05-mine', '내 스티커')]},
+    {id: 'flow-3', ref: true, title: '3. 묶음 열기', like: 'C2', layout: ['잠긴 카드 → 「동물 묶음」: 스티커 영역은 고르기 화면의 묶음 카드와 같은 모양(제목 없이 5개씩 두 줄, 이름 없음) + 「판에 붙이면」 예시(판 6칸에 묶음 안에서 아무렇게나 고른 5개를 붙인 모습. 판 크기는 더 늘리지 않음).', '버튼 순서 [2,200원에 열기](주 버튼) → [▶ 광고 보고 하루 써 보기] → [3일 무료로 써 보기]. 붙인 날이 아직 모자라면 이 버튼을 흐리게(누를 수 없게) 두고 아래에 「스티커 붙인 날이 2일 더 모이면 써 볼 수 있어요 (5/7일)」.', '[2,200원에 열기] → 스토어 결제 팝업 → "동물 묶음을 열었어요" → 기본 스티커 화면으로 자동으로 돌아가 그 묶음을 펼침.'], shots: [shot('z-06-pack', '묶음 화면'), shot('z-07-bought', '산 직후'), shot('z-07-b-after', '돌아온 고르기')]},
+    {id: 'flow-4', ref: true, title: '4. 광고 보고 하루', like: '본 때부터 24시간', layout: ['보상형 광고를 끝까지 본 때부터 24시간 쓸 수 있음. 밤 11시에 봐도 다음 날 밤 11시까지(자정에 끊기지 않음).', '확인 창 「하루 동안 써 볼 수 있어요 / 내일 밤 11:00까지 쓸 수 있어요.」(끝나는 시각을 그대로 보여 줌), 그 묶음은 가림막이 걷히고 [24시간 남음] 배지와 함께 펼쳐짐. 배지는 남은 시간으로 줄어듦(23시간 남음 …).', '24시간이 지나면 다시 잠기고, 그동안 붙인 스티커는 판에 남음.'], shots: [shot('z-08-trial-done', '광고를 다 본 뒤'), shot('z-09-trial', '써 보는 중')]},
+    {id: 'flow-5', ref: true, title: '5. 붙인 날 보상 (3일 체험)', like: '2026-10-07 결정', layout: ['스티커를 붙인 날 누적 7일·14일, 그 뒤 30일마다 → 잠긴 묶음 하나를 골라 3일 체험. 연속 아님, 하루 여러 개도 1일.', '보상이 차면 잠긴 카드마다 [3일 무료], 묶음 화면 맨 아래 [3일 무료로 써 보기](「보상」이라는 말은 쓰지 않음), 써 보는 중 [3일 남음].'], shots: [shot('z-10-ready', '보상이 찼을 때'), shot('z-11-pack-ready', '묶음 화면'), shot('z-09-b-reward-trial', '3일 써 보는 중')]},
+    {id: 'flow-5b', ref: true, title: '6. 체험이 끝난 뒤', like: '2026-10-07 결정', layout: ['광고 하루·보상 체험이 끝나면 다시 잠기고, 붙인 스티커는 남음.', '그 묶음 스티커가 기본인 목표의 빈칸을 누르면 「3일 체험이 끝났어요」(광고 하루는 「하루 체험이 끝났어요」) + 「붙인 스티커는 그대로 남아 있어요.」 → [다른 스티커] [묶음 열기].', '위젯에서는 그 목표를 누르면 붙이지 않고 앱을 열어 같은 안내.'], shots: [shot('z-15-trial-ended', '판에서 빈칸을 눌렀을 때')]},
+    {id: 'flow-6', ref: true, title: '7. 광고 제거와 구매 복원', like: '「구매」 블럭 · 복원은 앱 설정에만', layout: ['앱 설정 「구매」 블럭: 광고 제거(설명 + [5,500원에 광고 없애기]) + [구매 복원] 버튼(사기 전·후 같은 자리, 스티커 묶음과 광고 제거를 함께 되살림).', '산 뒤: 블럭은 「광고 제거 · 없이 쓰는 중」 + [구매 복원], 홈 배너가 사라지고, 묶음 화면에는 하루 체험 버튼이 없음(광고 제거는 배너만 없앰, 묶음은 [2,200원에 열기]나 붙인 날 3일 무료로).', '[구매 복원]은 버튼 하나입니다. 누르면 그 스토어 계정으로 산 것(스티커 묶음 전부 + 광고 제거)을 한 번에 찾아 되살립니다. 따로 고르는 기능은 없습니다. 버튼 아래 작은 글자 「구매한 스티커 묶음과 광고 제거를 되살려요」.', '결과: 찾으면 「구매 내역을 불러왔어요 / 동물 묶음, 간식 묶음, 광고 제거」(목록은 쉼표로 이음), 없으면 「이 계정으로 구매 내역이 없어요 / 구매한 스토어 계정으로 로그인했는지 확인해 주세요.」.'], shots: [shot('z-13-settings', '앱 설정'), shot('z-13-b-settings-bought', '산 뒤 앱 설정'), shot('f-14-home-no-ads', '산 뒤 홈'), shot('z-12-pack-ad-free', '광고 제거를 산 사람의 묶음 화면 (하루 체험 없음)'), shot('z-16-restore-done', '구매 복원 → 찾음'), shot('z-16-restore-none', '구매 복원 → 없음')]},
+  ]},
+];
+
+const state = {choice: {}, notes: {}};
+for (const b of BUNDLES) { state.choice[b.id] = ''; for (const g of b.groups) state.notes[g.id] = ''; }
+const LS = 'chagok-sticker-screens';
+try {
+  const local = JSON.parse(localStorage.getItem(LS) || '{}');
+  for (const b of BUNDLES) if (local.choice && typeof local.choice[b.id] === 'string') state.choice[b.id] = local.choice[b.id];
+  for (const k in state.notes) if (local.notes && typeof local.notes[k] === 'string') state.notes[k] = local.notes[k];
+} catch (e) {}
+let db = null;
+const writing = {}, queued = {}, timers = {};
+const allGroups = BUNDLES.flatMap(b => b.groups.map(g => ({...g, bundle: b.id})));
+
+function render() {
+  $('bundles').innerHTML = BUNDLES.map((b, bi) => `<section class="bundle">
+    <div class="bundle-head"><h2>${b.tag}. ${b.title}</h2><span class="picked" id="picked-${b.id}"></span></div>
+    <p class="bundle-note">${b.note}</p>
+    ${b.groups.map(g => `
+    <section class="group${g.ref ? ' ref' : ''}" id="g-${g.id}">
+      <div class="side">
+        <div class="head"><h2>${g.ref ? g.title : `${g.code}. ${g.title}`}</h2><span class="like">${esc(g.like)}</span></div>
+        <h3>배치</h3>
+        <ol class="flow">${g.layout.map(f => `<li>${f}</li>`).join('')}</ol>
+        ${g.ref ? '' : `<h3>좋은 점과 걸리는 점</h3>
+        <ul class="pc">${g.pro.map(p => `<li class="pro">${p}</li>`).join('')}${g.con.map(p => `<li class="con">${p}</li>`).join('')}</ul>`}
+        <div class="review">
+          ${g.ref ? '' : `<button type="button" class="ok-btn" id="ok-${g.id}" data-b="${b.id}" data-g="${g.id}" aria-pressed="false">이 안 고르기</button>`}
+          <textarea id="note-${g.id}" data-g="${g.id}" aria-label="${esc(g.title)} 메모" placeholder="${g.ref ? '남기고 싶은 점이 있으면 적어 주세요' : '고치고 싶은 점, 가져오고 싶은 부분을 적어 주세요'}"></textarea>
+          <span class="save-state" id="state-${g.id}" aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="shots">${g.shots.map(([html, cap]) => `<figure>${html}<figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>
+    </section>`).join('')}
+  </section>`).join('');
+  paint();
+}
+function label() {
+  return BUNDLES.map((b, bi) => { const g = b.groups.find(x => x.id === state.choice[b.id]); return `${b.tag} ${g ? g.code : '-'}`; }).join(' · ');
+}
+function paint() {
+  for (const b of BUNDLES) {
+    for (const g of b.groups) {
+      const picked = state.choice[b.id] === g.id;
+      $(`g-${g.id}`).classList.toggle('ok', picked);
+      const btn = $(`ok-${g.id}`);
+      if (btn) { btn.setAttribute('aria-pressed', String(picked)); btn.textContent = picked ? '고른 안' : '이 안 고르기'; }
+      const t = $(`note-${g.id}`);
+      if (document.activeElement !== t && t.value !== state.notes[g.id]) t.value = state.notes[g.id];
+    }
+    const g = b.groups.find(x => x.id === state.choice[b.id]);
+    $(`picked-${b.id}`).textContent = g ? `고른 안: ${g.code}. ${g.title}` : '아직 안 골랐어요';
+  }
+  const notes = allGroups.filter(x => state.notes[x.id].trim()).length;
+  $('summary').textContent = label() + (notes ? ` · 메모 ${notes}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-<묶음> {value}, review/note-<안> {note}. 한 문서에는 한 번에 한 번만 쓰고, 쓰는 중에 또 바뀌면 끝난 뒤 한 번 더 쓴다.
+async function persist(key, statusId) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[key]) { queued[key] = statusId; return; }
+  writing[key] = true; setStatus(statusId, '저장 중…');
+  try {
+    const data = key.startsWith('choice-') ? {value: state.choice[key.slice(7)]} : {note: state.notes[key.slice(5)]};
+    await db.doc(`review/${key}`).set({...data, updatedAt: new Date().toISOString()});
+    setStatus(statusId, '저장됨');
+  } catch (e) {
+    setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true);
+  } finally {
+    writing[key] = false;
+    if (queued[key]) { const s = queued[key]; queued[key] = null; persist(key, s); }
+  }
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn');
+  if (!b) return;
+  const bid = b.dataset.b, id = b.dataset.g;
+  state.choice[bid] = state.choice[bid] === id ? '' : id;
+  paint(); persist(`choice-${bid}`, id);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t) return;
+  const id = t.dataset.g;
+  state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-${id}`, id); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-g]');
+  if (!t || !timers[t.dataset.g]) return;
+  const id = t.dataset.g;
+  clearTimeout(timers[id]); timers[id] = null; persist(`note-${id}`, id);
+});
+$('copy').addEventListener('click', () => {
+  const text = '컬러 스티커 화면: ' + label() + '\n' + allGroups.filter(x => state.notes[x.id].trim()).map(x => `${x.code || x.title} 메모: ${state.notes[x.id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got;
+  $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data();
+      if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-')) { const bid = d.id.slice(7); if (bid in state.choice && typeof v.value === 'string') state.choice[bid] = v.value; continue; }
+      const id = d.id.replace(/^note-/, '');
+      if (!(id in state.notes)) continue;
+      const t = document.activeElement;
+      state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>

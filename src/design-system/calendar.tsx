@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import {View,Pressable,useWindowDimensions} from 'react-native';
 import {PixelFocusRing,PixelIcon,PixelText,StickMotion,useContentWidth,removeStickerAction} from './components';
 import {retro} from './tokens';
-import {ActionSymbol,StickerGlyph,type PocketStickerId} from './sticker-glyphs';
+import {ActionSymbol,StickerGlyph,type StickerId} from './sticker-glyphs';
 
 export function monthCells(year:number,month:number):(number|null)[] {
   const first=new Date(year,month-1,1).getDay();
@@ -21,7 +21,7 @@ export function MonthNavigation({year,month,onChange,canGoPrev=true,canGoNext=tr
     {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel="다음 달" onPress={()=>move(1)} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
   </View>;
 }
-export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,readonly=false,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,PocketStickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void;/** 완성한 판: 날짜를 눌러도 붙이거나 떼지 않고 기록 열기만 남긴다 */readonly?:boolean}) {
+export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,readonly=false,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void;/** 완성한 판: 날짜를 눌러도 붙이거나 떼지 않고 기록 열기만 남긴다 */readonly?:boolean}) {
   const [measured,setWidth]=useState<number|null>(null);
   const width=useContentWidth(measured);
   const border=retro.shape.cellBorder;
@@ -46,7 +46,7 @@ export function CalendarBoard({year,month,records={},recordedDates,selectedDate,
  * 손을 떼는 순간 React Native가 한 번 누르기로 보고 빈칸 붙이기가 불려 다시 붙었다 (2026-10-08 시뮬레이터 재현).
  */
 const ignoreLongPress=()=>{};
-function CalendarDay({day,month,date,sticker,recorded,selected,enabled,cellWidth,readonly,onSelect,onOpenRecord,popIn}:{day:number;month:number;date:string;sticker?:PocketStickerId;recorded:boolean;selected:boolean;enabled:boolean;cellWidth:number;readonly:boolean;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void;popIn:boolean}) {
+function CalendarDay({day,month,date,sticker,recorded,selected,enabled,cellWidth,readonly,onSelect,onOpenRecord,popIn}:{day:number;month:number;date:string;sticker?:StickerId;recorded:boolean;selected:boolean;enabled:boolean;cellWidth:number;readonly:boolean;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void;popIn:boolean}) {
   const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
   const select=readonly?undefined:()=>onSelect(date);
   const press=open??select;

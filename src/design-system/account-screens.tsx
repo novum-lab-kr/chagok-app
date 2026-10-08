@@ -2,7 +2,7 @@ import React,{useState,type ReactNode} from 'react';
 import {Pressable,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText} from './components';
-import {AppHeader,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
+import {AppHeader,InfoRow,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
 import {pixelOutline} from './geometry';
 import {retro} from './tokens';
 
@@ -97,9 +97,11 @@ export function AccountBackupPanel({status,onConnect,onLogin,onLogout,onDelete}:
     <View style={{paddingVertical:12}}><PixelText>지금은 이 기기에만 저장하고 있어요</PixelText></View>
     <View style={{paddingBottom:12}}><PixelButton label="계정 연결하기" onPress={onConnect}/></View>
   </PixelPanel>;
-  const lines:readonly string[]|undefined=status.state==='synced'?[`${status.backedUpAt}에 모두 백업했어요`]:status.state==='restoring'?undefined:backupLines[status.state];
+  const lines:readonly string[]|undefined=status.state==='synced'||status.state==='restoring'?undefined:backupLines[status.state];
+  // 연결된 계정은 「항목 · 값」으로 보인다 (2026-10-08 스티커 화면 시안 확정)
   return <PixelPanel title="계정과 백업" contentStyle={{gap:0}}>
-    <View style={{paddingVertical:12}}><PixelText>{`${status.provider} 계정으로 연결했어요`}</PixelText></View>
+    <InfoRow label="연결한 계정" value={status.provider}/>
+    {status.state==='synced'&&<><Rule/><InfoRow label="마지막 백업" value={status.backedUpAt}/></>}
     {lines&&<><Rule/><View style={{paddingVertical:12,gap:4}}><PixelText>{lines[0]}</PixelText>{lines[1]&&<Caption>{lines[1]}</Caption>}</View></>}
     {status.state==='needsLogin'&&<View style={{paddingBottom:12}}><PixelButton label="로그인" onPress={onLogin}/></View>}
     {status.state!=='restoring'&&<><Rule/><SettingRow label="로그아웃" onPress={onLogout}/><Rule/><SettingRow label="계정 삭제" onPress={onDelete}/></>}

@@ -23,7 +23,7 @@ export const Badges: Story = {name: '배지 · tone', render: () => <View style=
   <PixelText variant="caption">badge 12/18 · 새 배지는 badgeTones에 tone을 추가한다</PixelText>
 </View>};
 export const Completion: Story = {name: '완성 스티커', render: () => <View style={{gap: 16, alignItems: 'flex-start'}}>
-  <CompletionSticker sticker="star"/><CompletionSticker sticker="sprout"/><CompletionSticker sticker="shoe" tilted/>
+  <CompletionSticker sticker="basic.star"/><CompletionSticker sticker="basic.sprout"/><CompletionSticker sticker="basic.shoe" tilted/>
 </View>};
 function TabsDemo() {
   const [tab, setTab] = useState<GoalListTab>('active');
@@ -36,16 +36,16 @@ function ListHeaderDemo() {
 }
 export const ListHeader: Story = {name: '앱 헤더 + 목록 헤더', render: () => <ListHeaderDemo/>};
 export const SummaryCards: Story = {name: '목록 카드', render: () => <View style={{gap: 12}}>
-  <GoalSummaryCard name="책 읽기" sticker="sprout" kind="적립판" status={['40% 채웠어요']} percent={40}/>
-  <GoalSummaryCard name="물 여덟 잔 마시기" sticker="flower" kind="달력판" status={['17% 채웠어요']} percent={17}/>
-  <GoalSummaryCard name="매일 저녁 동네 한 바퀴 걷기" sticker="shoe" kind="달력판" status={['이번 달 30% 채웠어요']} percent={30}/>
-  <GoalSummaryCard name="자기 전 스트레칭 십 분" sticker="star" kind="적립판" status={['100%', '9/29 완성']} percent={100}/>
-  <GoalSummaryCard name="기타 코드 연습" sticker="book" kind="달력판" status={['9월 33%', '9/20 완성']} percent={33}/>
+  <GoalSummaryCard name="책 읽기" sticker="basic.sprout" kind="적립판" status={['40% 채웠어요']} percent={40}/>
+  <GoalSummaryCard name="물 여덟 잔 마시기" sticker="basic.flower" kind="달력판" status={['17% 채웠어요']} percent={17}/>
+  <GoalSummaryCard name="매일 저녁 동네 한 바퀴 걷기" sticker="basic.shoe" kind="달력판" status={['이번 달 30% 채웠어요']} percent={30}/>
+  <GoalSummaryCard name="자기 전 스트레칭 십 분" sticker="basic.star" kind="적립판" status={['100%', '9/29 완성']} percent={100}/>
+  <GoalSummaryCard name="기타 코드 연습" sticker="basic.book" kind="달력판" status={['9월 33%', '9/20 완성']} percent={33}/>
 </View>};
 export const ProgressRows: Story = {name: '판 상세 진행 줄', render: () => <View style={{gap: 8, backgroundColor: retro.color.lcd, padding: 12}}>
-  <BoardProgressRow value={6} total={15} percentLabel="40%" sticker="sprout"/>
-  <BoardProgressRow value={9} total={30} percentLabel="이번 달 30%" sticker="shoe"/>
-  <BoardProgressRow value={20} total={20} percentLabel="100%" completed sticker="star"/>
+  <BoardProgressRow value={6} total={15} percentLabel="40%" sticker="basic.sprout"/>
+  <BoardProgressRow value={9} total={30} percentLabel="이번 달 30%" sticker="basic.shoe"/>
+  <BoardProgressRow value={20} total={20} percentLabel="100%" completed sticker="basic.star"/>
 </View>};
 export const Empty: Story = {name: '빈 목록', render: () => <EmptyState title="아직 완성한 판이 없어요" description="판을 다 채우거나 달력판을 완성하면 여기에 모여요."/>};
 function OptionDemo() {
@@ -70,7 +70,7 @@ export const NoticeEmphasis: Story = {name: '강조 안내 (완성한 판 설정
 function CellGestureDemo({readonly = false}: {readonly?: boolean}) {
   const [log, setLog] = useState('칸을 눌러 보세요');
   return <View style={{gap: 12}}>
-    <View style={{backgroundColor: retro.color.lcd, padding: 8}}><StickerGrid>{[1, 2, 3].map(n => <GoalStickerCell key={n} number={n} sticker="star" state={n < 3 ? 'filled' : readonly ? 'empty' : 'available'} enabled hasRecord={n === 2} readonly={readonly}
+    <View style={{backgroundColor: retro.color.lcd, padding: 8}}><StickerGrid>{[1, 2, 3].map(n => <GoalStickerCell key={n} number={n} sticker="basic.star" state={n < 3 ? 'filled' : readonly ? 'empty' : 'available'} enabled hasRecord={n === 2} readonly={readonly}
       onPress={() => setLog(n < 3 ? `${n}번: 꾹 → 떼기` : `${n}번: 붙이기`)} onOpenRecord={() => setLog(`${n}번: 한 번 → 기록 열기`)}/>)}</StickerGrid></View>
     <PixelText variant="caption">{log}</PixelText>
   </View>;
@@ -80,7 +80,7 @@ export const CellGesturesReadonly: Story = {name: '칸 조작 · 완성한 판 (
 function CalendarDemo() {
   const [log, setLog] = useState('날짜를 눌러 보세요');
   return <View style={{gap: 12}}>
-    <CalendarBoard year={2026} month={9} records={{'2026-09-02': 'shoe', '2026-09-04': 'shoe'}} recordedDates={new Set(['2026-09-04'])} selectedDate="2026-09-29"
+    <CalendarBoard year={2026} month={9} records={{'2026-09-02': 'basic.shoe', '2026-09-04': 'basic.shoe'}} recordedDates={new Set(['2026-09-04'])} selectedDate="2026-09-29"
       onSelect={date => setLog(`${date}: 빈 날 한 번 → 붙이기 / 붙인 날 꾹 → 떼기`)} onOpenRecord={date => setLog(`${date}: 한 번 → 기록 열기`)} onMonthChange={() => {}}
       isDateEnabled={date => date <= '2026-09-23'} canGoNext={false}/>
     <PixelText variant="caption">{log}</PixelText>

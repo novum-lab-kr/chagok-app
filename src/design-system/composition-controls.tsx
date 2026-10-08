@@ -7,7 +7,7 @@ import {retro} from './tokens';
 import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
 import {pixelOutline} from './geometry';
-import {ActionSymbol,StickerGlyph,pocketStickers,stickerLabel,type PocketStickerId} from './sticker-glyphs';
+import {ActionSymbol,StickerGlyph,pocketStickers,stickerLabel,type PocketStickerId,type StickerId} from './sticker-glyphs';
 
 export function ScreenHeader({title,onBack,action}:{title:string;onBack?:()=>void;action?:ReactNode}) {
   return <View style={{flexDirection:'row',alignItems:'center',minHeight:48}}>
@@ -69,7 +69,7 @@ export function SlotCountPicker({value,onChange,label='칸 수',min=0}:{value:st
     <PixelButton label="직접 입력" variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
   </View>{custom&&<PixelInput label={`${label} 직접 입력`} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1)}/>}</View>;
 }
-export function StickerSummary({value,onChange}:{value:PocketStickerId;onChange?:()=>void}) {
+export function StickerSummary({value,onChange}:{value:StickerId;onChange?:()=>void}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',gap:12,alignItems:'center'}}>
     <StickerGlyph id={value} size={48}/><View style={{width:retro.shape.border,height:48,backgroundColor:retro.color.ink}}/>
     <PixelText style={{flex:1}}>{stickerLabel(value)}</PixelText>{onChange&&<PixelButton label="바꾸기" variant="secondary" onPress={onChange}/>}
@@ -88,7 +88,7 @@ export function StickerPicker({value,onChange,onSelectedLayout,selectedTargetRef
     </View>
   </View>;
 }
-export function RecordSummary({goalName,date,sticker}:{goalName:string;date:string;sticker:PocketStickerId}) {
+export function RecordSummary({goalName,date,sticker}:{goalName:string;date:string;sticker:StickerId}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',alignItems:'center',gap:16}}><StickerGlyph id={sticker} size={56}/><View style={{width:retro.shape.border,height:56,backgroundColor:retro.color.ink}}/><View style={{flex:1,gap:4}}><PixelText variant="title">{goalName}</PixelText><PixelText>{date}</PixelText></View></PixelFrame>;
 }
 export function PhotoAttachment({source,preview,onChoose,onRemove,onPhotoError,actionsInFrame=false,readonly=false}:{source?:ImageSourcePropType;preview?:ReactNode;onChoose:()=>void;onRemove:()=>void;onPhotoError?:()=>void;actionsInFrame?:boolean;/** 완성한 판의 기록: 사진을 보여주기만 하고 추가·바꾸기·지우기를 숨긴다 */readonly?:boolean}) {
@@ -114,6 +114,12 @@ export function SettingRow({label,value,onPress,navigates=true,disabled=false}:{
     {value&&<PixelText style={{fontSize:14,lineHeight:20}}>{value}</PixelText>}
     {navigates&&<PixelIcon name="chevron" size={14}/>}
   </Pressable>;
+}
+/** 누를 수 없는 「항목 · 값」 줄. SettingRow와 같은 높이 (앱 설정 계정과 백업, 2026-10-08). */
+export function InfoRow({label,value}:{label:string;value:string}) {
+  return <View style={{minHeight:56,flexDirection:'row',alignItems:'center',gap:8}}>
+    <PixelText style={{flex:1}}>{label}</PixelText><PixelText style={{fontSize:14,lineHeight:20}}>{value}</PixelText>
+  </View>;
 }
 export function ShortNotice({title,detail,emphasis=false}:{title:string;detail?:string;/** 제목을 크게 해 화면 맨 위 안내로 쓴다 (완성한 판 설정) */emphasis?:boolean}) {
   return <View accessible accessibilityRole="alert"><PixelFrame variant="dialog" fill={retro.color.dialog} contentStyle={{padding:emphasis?14:12,gap:emphasis?4:3}}>
@@ -249,11 +255,11 @@ export function GoalListHeader({tab,counts,onTab,onAdd,addTargetRef}:{tab:GoalLi
   </View>;
 }
 /** 목록 카드. 모든 판이 같은 모양: 스티커, 이름(최대 2줄), [판 종류 배지] 요약 글자, 진행 막대. */
-export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name:string;sticker:PocketStickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void}) {
+export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name:string;sticker:StickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={`${name}, ${kind}, ${status.join(', ')}`} onPress={onPress}>
     {({pressed})=><PixelFrame variant="button" fill={retro.color.secondary} pressed={pressed} contentStyle={{padding:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
-        <StickerGlyph id={sticker} size={40}/>
+        <StickerGlyph id={sticker} size={48}/>
         <View style={{flex:1,gap:4}}>
           <PixelText numberOfLines={2} style={{fontSize:20,lineHeight:26,color:retro.color.buttonText}}>{name}</PixelText>
           <View style={{flexDirection:'row',flexWrap:'wrap',alignItems:'center',columnGap:8,rowGap:4}}><PixelBadge label={kind}/>{status.map(text=><PixelText key={text} variant="caption" style={caption}>{text}</PixelText>)}</View>
@@ -265,7 +271,7 @@ export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name
   </Pressable>;
 }
 /** 판 상세 상단 한 줄: `n / nn [여백] m% 달성중`. 완성하면 오른쪽이 완성 스티커로 바뀐다. */
-export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:PocketStickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
+export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:StickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
   return <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:48}}>
     <PixelText variant="number">{value} / {total}</PixelText>
     {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 달성중</PixelText>}
