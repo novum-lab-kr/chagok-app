@@ -22,7 +22,6 @@ function toSticker(r: StickerRow): Sticker {
   };
 }
 
-const COMPLETED = '완성한 판은 고칠 수 없습니다.';
 const TAKEN = '이미 붙인 칸입니다.';
 
 /** placedAt이 속한 로컬 날짜의 0시부터 다음 날 0시 전까지 */
@@ -34,7 +33,7 @@ function localDayRange(at: number): [number, number] {
 /**
  * 붙인다. 목표의 마지막으로 붙인 시각도 함께 바꾼다 (PRD 4.1) — 더 늦은 시각일 때만.
  * complete면 같은 트랜잭션에서 완성한다. 마지막 칸 확인을 받은 뒤에만 쓴다 (PRD 4.7).
- * 완성한 판이면 거부한다. 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt으로 정한다.
+ * 완성한 판에도 붙인다(2026-10-08). 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt으로 정한다.
  * id·placedAt은 위젯 요청을 처리할 때 준다: 요청 id를 스티커 id로 써서 두 번 붙지 않게 하고, 누른 시각으로 붙인다.
  * 이미 붙인 칸이면 거부한다 — 적립판은 같은 칸 번호, 달력판은 placedAt과 같은 로컬 날짜(달력판의 칸은 날짜다).
  * 화면이 위젯 요청을 반영하기 전의 목록으로 계산해도 두 장이 붙지 않게 하는 마지막 방어다.
@@ -57,7 +56,6 @@ export async function placeSticker(
   await db.transaction(async (tx) => {
     const goal = await tx.first<{ completed_at: number | null; board_type: string }>('SELECT completed_at, board_type FROM goals WHERE id = ?', goalId);
     if (!goal) throw new Error('목표가 없습니다.');
-    if (goal.completed_at !== null) throw new Error(COMPLETED);
     const taken = goal.board_type === 'tally'
       ? await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND slot_index = ?', goalId, slotIndex)
       : await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND placed_at >= ? AND placed_at < ?', goalId, ...localDayRange(sticker.placedAt));
@@ -70,7 +68,7 @@ export async function placeSticker(
       'UPDATE goals SET last_placed_at = MAX(COALESCE(last_placed_at, 0), ?), updated_at = ? WHERE id = ?',
       sticker.placedAt, now, goalId,
     );
-    if (options.complete) {
+    if (options.complete && goal.completed_at === null) { // 완성은 한 번만 — 완성한 판에 붙여도 완성 시각은 그대로 (2026-10-08)
       await tx.run('UPDATE goals SET completed_at = ?, completion_seen = 0 WHERE id = ?', sticker.placedAt, goalId);
     }
     await enqueue(tx, 'sticker', sticker.id, now);
@@ -106,20 +104,18 @@ export async function getSticker(id: string): Promise<Sticker | null> {
 
 /**
  * 스티커와 그 기록을 뗀다. 트랜잭션 연결에서는 CASCADE가 꺼져 있을 수 있어 기록도 직접 지운다. 지운 기록의 사진 경로를 돌려준다. 파일은 호출자가 정리한다.
- * 완성한 판이면 거부한다 (PRD 4.7). 마지막으로 붙인 시각은 바꾸지 않는다.
+ * 완성한 판에서도 뗀다(2026-10-08) — 완성은 그대로다. 마지막으로 붙인 시각은 바꾸지 않는다.
  */
 export async function removeSticker(id: string): Promise<string | null> {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const row = await tx.first<{ completed_at: number | null; photo_uri: string | null; photo_remote_path: string | null; record_id: string | null }>(
-      `SELECT g.completed_at, r.photo_uri, r.photo_remote_path, r.id AS record_id FROM stickers s
-         JOIN goals g ON g.id = s.goal_id
+    const row = await tx.first<{ photo_uri: string | null; photo_remote_path: string | null; record_id: string | null }>(
+      `SELECT r.photo_uri, r.photo_remote_path, r.id AS record_id FROM stickers s
          LEFT JOIN records r ON r.sticker_id = s.id
         WHERE s.id = ?`,
       id,
     );
     if (!row) return null;
-    if (row.completed_at !== null) throw new Error(COMPLETED);
     await tx.run('DELETE FROM records WHERE sticker_id = ?', id);
     await tx.run('DELETE FROM stickers WHERE id = ?', id);
     // 기록은 서버가 스티커와 함께 표식한다. 사진 파일은 기록 id로 따로 지운다.

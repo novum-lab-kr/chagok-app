@@ -14,7 +14,7 @@ export const firstRunSteps:readonly {name:TutorialSpotName;title:string;descript
   {name:'sticker',title:'스티커 고르기',description:'목표마다 스티커를 정해요'},
   {name:'slot',title:'빈칸에 톡!',description:'어느 빈칸이든 누르면 스티커가 붙어요. 꾹 누르면 떼져요'},
   {name:'record',title:'기록 남기기',description:'붙인 스티커를 누르면 사진과 메모를 남길 수 있어요'},
-  {name:'done',title:'완성한 판',description:'판을 다 채우면 완성! 완성한 판은 고칠 수 없고, 붙인 칸을 누르면 기록을 볼 수 있어요'},
+  {name:'done',title:'완성한 판',description:'판을 다 채우면 완성! 완성한 뒤에도 빠진 칸과 기록을 고칠 수 있어요'},
 ];
 
 type Spot={name:TutorialSpotName;root:React.RefObject<View|null>;set:(rect:LayoutRectangle)=>void};

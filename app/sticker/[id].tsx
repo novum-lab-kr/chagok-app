@@ -13,7 +13,7 @@ import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../src/app-data/goBack';
-import { isCompleted, needsRemoveConfirm, stickerDate } from '../../src/domain/board';
+import { needsRemoveConfirm } from '../../src/domain/board';
 import { localDateKey, parseDateKey } from '../../src/domain/dates';
 import type { Goal, Sticker } from '../../src/domain/types';
 
@@ -36,8 +36,7 @@ export default function StickerRecord() {
   const [hasStoredRecord, setHasStoredRecord] = useState(false);
   const [saveOnce] = useState(createSingleFlight);
   const { ask, confirm, dialog: confirmDialog } = useDialog();
-  const readonly = goal !== null && isCompleted(goal);
-  const { goBack, dialog } = useUnsavedBack(!readonly && (draftMemo !== memo || photoUri !== savedPhotoUri));
+  const { goBack, dialog } = useUnsavedBack(draftMemo !== memo || photoUri !== savedPhotoUri);
 
   useEffect(() => {
     if (!id) return;
@@ -77,7 +76,6 @@ export default function StickerRecord() {
       </View>
     </RetroScreen>
   );
-  const currentGoal = goal, currentSticker = sticker;
 
   /** 권한을 거부해도 메모와 스티커는 계속 쓸 수 있어야 한다 (PRD 7절). */
   async function choosePhoto() {
@@ -123,14 +121,10 @@ export default function StickerRecord() {
     goBackOrHome();
   }
 
-  /** 떼기. 기록이 있거나 달력판의 지난 날이면 확인한다 (PRD 4.5, 2026-09-30). */
+  /** 떼기. 기록이 있으면 확인한다 (PRD 4.5). 완성한 판도 뗀다 (2026-10-08). */
   async function remove() {
-    if (needsRemoveConfirm(currentGoal, currentSticker, hasStoredRecord, new Date())) {
-      const past = currentGoal.boardType === 'calendar' && stickerDate(currentSticker) < localDateKey(Date.now());
-      const description = hasStoredRecord && past ? '지난 날은 다시 붙일 수 없고, 사진·메모도 함께 사라져요.'
-        : hasStoredRecord ? '사진·메모도 함께 사라져요.'
-        : '지난 날은 다시 붙일 수 없어요.';
-      if (!(await confirm({ title: '스티커를 뗄까요?', description, secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
+    if (needsRemoveConfirm(hasStoredRecord)) {
+      if (!(await confirm({ title: '스티커를 뗄까요?', description: '사진·메모도 함께 사라져요.', secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
     }
     let photo: string | null = null;
     const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(id); });
@@ -146,7 +140,6 @@ export default function StickerRecord() {
         sticker={stickerType}
         date={date}
         initialMemo={memo}
-        readonly={readonly}
         photo={photoUri && !photoMissing ? { uri: displayRecordPhotoUri(photoUri) } : undefined}
         photoPreview={photoMissing ? <View style={{ alignItems: 'center', gap: 12 }}><ActionSymbol name="photo" size={36}/><PixelText>사진을 불러올 수 없어요</PixelText></View> : undefined}
         onPhotoError={() => setPhotoMissing(true)}

@@ -48,3 +48,20 @@ describe('적립판 다시 그리기 (2026-10-04 최적화)',()=>{
     expect(first).not.toHaveBeenCalled();
   });
 });
+
+describe('완성한 판 고치기 (2026-10-08)',()=>{
+  const Done=({b,editable}:{b:TallyBoardView;editable?:boolean})=><BoardDetailScreen name="물 마시기" sticker="shoe" completed editable={editable}
+    progress={{value:Object.keys(b.filled).length,total:b.total,percentLabel:'90%'}} board={b} onBack={()=>{}} onSettings={()=>{}}/>;
+  it('editable이면 완성한 판의 빈칸을 눌러 붙인다',()=>{
+    const press=vi.fn();
+    render(<Done b={board(10,9,{onPress:press})} editable/>);
+    fireEvent.click(screen.getByRole('button',{name:/^10번 칸/}));
+    expect(press).toHaveBeenCalledWith(10);
+  });
+  it('editable이 없으면 지금처럼 빈칸을 막는다',()=>{
+    const press=vi.fn();
+    render(<Done b={board(10,9,{onPress:press})}/>);
+    fireEvent.click(screen.getByRole('button',{name:/^10번 칸/}));
+    expect(press).not.toHaveBeenCalled();
+  });
+});

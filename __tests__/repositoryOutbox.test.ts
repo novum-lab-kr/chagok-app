@@ -74,10 +74,10 @@ describe('저장소 → outbox', () => {
 
   it('쓰기가 실패하면 outbox도 되돌려진다', async () => {
     const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 1 });
-    const s = await placeSticker(g.id, 0, 'sprout', { complete: true });
+    await placeSticker(g.id, 0, 'sprout', { complete: true });
     await clear();
-    await expect(upsertRecord(s.id, { photoUri: null, memo: 'x' })).rejects.toThrow('완성한 판');
-    await expect(placeSticker(g.id, 0)).rejects.toThrow();
+    await expect(updateGoal(g.id, { totalSlots: 3 })).rejects.toThrow('완성한 판'); // 완성한 판의 칸 수는 목표 설정에서 바꾸지 않는다
+    await expect(placeSticker(g.id, 0)).rejects.toThrow(); // 이미 붙은 칸
     expect(await keys()).toEqual([]);
   });
 

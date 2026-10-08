@@ -17,7 +17,7 @@ export type SyncDeps = {
 };
 
 /** 지금 말고 앞으로 채울 자정 개수 */
-const MIDNIGHTS_AHEAD = 7;
+const MIDNIGHTS_AHEAD = 1;
 
 /**
  * 위젯 저장소(UserDefaults)는 null을 못 담는다 — 들어 있으면 updateTimeline이 예외를 던져 위젯이 갱신되지 않는다.
@@ -37,8 +37,8 @@ const uniq = (list: unknown[]): WidgetRequest[] => {
  * 위젯 요청 처리 + 스냅샷 쓰기 한 번 (위젯 설계 ③⑤).
  * 쓰기 직전에 요청을 다시 읽어, 처리하지 못했거나 그 사이 들어온 요청을 새 props에 남긴다 — 덮어써서 잃지 않게.
  *
- * 타임라인은 지금 + 앞으로 7번의 자정(8개 항목)을 쓴다. 위젯은 자기 항목의 시각을 "오늘"로 삼으므로,
- * 마지막 항목 뒤에는 그 날짜에 멈춘다. 앱을 이틀 넘게 열지 않아도 사흘째 탭이 "오늘"로 인식되도록 일주일 치를 미리 깐다.
+ * 타임라인은 지금 + 다음 자정(2개 항목)을 쓴다. 위젯을 누를 때마다 시스템이 항목 전부를 다시 그리므로 적을수록 빠르다
+ * (2026-10-07 측정: 8개일 때 이번 달 위젯 약 2.5초, 2개일 때 0.7초). 마지막 항목이 지난 뒤에는 위젯이 지금 날짜를 오늘로 쓴다(widgets/ios).
  */
 export async function syncWidgetsOnce(deps: SyncDeps): Promise<{ changed: boolean }> {
   const kinds = ['goal', 'month', 'tally'] as const;

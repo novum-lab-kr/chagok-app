@@ -1,6 +1,6 @@
 # 차곡차곡 디자인 시스템 인계
 
-갱신: 2026-10-05 · 프로젝트: `chagok-app` 저장소 루트 (로컬 경로는 레포 이전 때 바뀔 수 있다 — [migration/README.md](migration/README.md))
+갱신: 2026-10-08 · 프로젝트: `chagok-app` 저장소 루트 (로컬 경로는 레포 이전 때 바뀔 수 있다 — [migration/README.md](migration/README.md))
 
 구현 현황과 시각 기준의 단일 출처다. 제품 요구사항은 [PRD.md](PRD.md), 작업 방식은 [WORKING-AGREEMENT.md](WORKING-AGREEMENT.md)를 따른다. 이미 끝난 수정 이력은 git 기록과 [보관본](archive/HANDOFF-design-system-history-2026-09-23.md)에 있다.
 
@@ -45,13 +45,11 @@
 **다음에 할 일 — 우선순위 (2026-10-05 갱신, 위에서부터).** 실기기 테스트는 맨 뒤다(사용자 지시).
 
 1. **위젯** — iOS 본 구현을 마쳤다(2026-10-06~07, 계획 `docs/superpowers/plans/2026-10-06-home-widgets-ios.md`). 현황은 아래 「위젯 (iOS 구현됨)」.
-   - **다음 1: 위젯 탭 반응 속도 (2026-10-07 사용자 피드백 「너무 느리다」).** 누르면 화면이 바뀌기까지 눈에 띄게 걸린다. 위젯은 앱처럼 화면을 바로 바꿀 수 없어서(누름 → 위젯 확장이 JS로 요청을 만들어 저장 → 시스템에 다시 그리기 요청 → JS로 다시 그림) 「진짜 optimistic UI」는 안 된다. 할 일:
-     - 누르는 영역에 `invalidatableContent()`(`@expo/ui` 지원)를 붙여, 누르는 즉시 시스템이 흐리게 처리해 "누르고 있어요"를 보여 준다(Apple 공식 방법).
-     - 탭 → 다시 그리기 시간을 시뮬레이터 로그로 단계별로 잰다. 의심: 위젯 확장이 매번 JS 번들을 새로 불러옴(`expo-widgets` `WidgetsJSRuntime`), 타임라인 8개 항목(지금 + 자정 7번)을 다시 그릴 때마다 JS 실행, 모든 목표가 든 큰 props. 자정 항목 수를 줄이거나(7 → 2) props를 줄여 비교한다.
-   - 다음 2: 실기기 확인 — 자정 넘김(2026-10-07 시뮬레이터에서 날짜 버그를 찾아 고쳤다 `7fa7656`; 고친 뒤 자정은 아직 다시 안 봤다), 탭 속도. 실기기 설치 준비: Xcode에 Apple 계정 추가, iPhone 연결·개발자 모드 켜기(재시동), `npx expo run:ios --device`. Expo Go로는 위젯을 볼 수 없다.
-   - 다음 3: Android 위젯(계획 2) — 새 모양·목표 고르기·앱이 꺼졌을 때 첫 탭 유실(시험 구현 결과 A7).
+   - **탭 반응 속도 개선 (2026-10-07~08, main `perf/widget-tap-speed`).** 시뮬레이터 로그로 단계별로 잼(방법: 메모리 `widget-tap-timing`). 누를 때마다 시스템이 타임라인 항목 전부 × 라이트·다크 × 일반·틴트를 다시 그리는 것이 원인이었다. ① expo-widgets 패치(`patches/`, patch-package): 버튼 처리 뒤 같은 종류 위젯 전부를 다시 그리던 호출을 뺌 ② 타임라인을 지금 + 다음 자정 2개로(8개 → 2개) ③ 마지막 항목이 지난 뒤(앱을 며칠 안 염) 위젯은 지금 날짜를 오늘로 쓴다. Release 빌드 기준 목표 하나 0.5 → 0.2초, 이번 달 2.5 → 0.7초, 적립판 1.6~3.3 → 0.5초. `invalidatableContent`(흐리게 표시)와 Toggle(즉시 반응, Swift 필요)은 쓰지 않았다 — 사용자가 이 속도로 괜찮다고 함(2026-10-08).
+   - 다음 1: 실기기 확인 — 자정 넘김(2026-10-07 시뮬레이터에서 날짜 버그를 찾아 고쳤다 `7fa7656`; 고친 뒤 자정은 아직 다시 안 봤다), 탭 속도, 앱을 이틀 넘게 안 열었을 때 위젯 탭(③은 테스트로만 확인). 실기기 설치 준비: Xcode에 Apple 계정 추가, iPhone 연결·개발자 모드 켜기(재시동), `npx expo run:ios --device`. Expo Go로는 위젯을 볼 수 없다.
+   - 다음 2: Android 위젯(계획 2) — 새 모양·목표 고르기·앱이 꺼졌을 때 첫 탭 유실(시험 구현 결과 A7).
    - 위젯은 컬러 스티커로 그렸다. 앱 스티커도 모두 컬러로 정했다(2026-10-07, 2번).
-2. **스티커 화면 — 설계 확정 (2026-10-08), 다음은 반영 계획.** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
+2. **스티커 화면 — 설계 확정·Storybook 반영 (2026-10-08), 다음은 앱 연결.** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
    - 정한 것: 모두 컬러(48pt, 스키마 v6 마이그레이션), 묶음 10종·2,200원, 여는 길 세 가지(사기 · 광고 보고 24시간 · 붙인 날 누적 7·14·이후 30일마다 3일 체험), 광고 제거 구매자는 하루 체험 없음, 「기본 스티커」 화면 · 묶음 화면 · 앱 설정 「구매」 블럭, 구매 복원은 앱 설정에만.
    - Storybook 반영 끝(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-storybook.md`): `Screens/Sticker Shop`, 앱 설정 「구매」 블럭, 홈 광고 자리(`GoalListScreen` `footer`), 흐름도 줄 5. 시안 캡처용 임시 스토리는 치웠다.
    - 다음: 앱 연결 계획 — 「기본 스티커」·묶음 화면 라우트와 `onChooseSticker`, 스키마 v6 마이그레이션(`toColorStickerId`), RevenueCat 구매·복원, AdMob 배너(`footer`)·보상형 광고, 체험 만료 시각과 붙인 날 수 저장, 위젯 체험 종료 처리.
@@ -75,7 +73,7 @@
 5. **Apple 계정으로 이제 할 수 있는 것**
    - Apple 로그인, `apple-link`, Apple 토큰 폐기(그전에는 토큰이 있으면 계정 삭제가 멈춘다). 로그인 버튼은 연결 화면의 [개발 계정으로 계속] 자리에 끼운다.
    - TestFlight. EAS 클라우드 빌드 전에 서버 주소·키를 EAS 환경 변수로 넣는다.
-   - 위젯 본 구현(1번 결정 뒤): iOS `expo-widgets` + 글꼴 설정 플러그인, Android `react-native-android-widget`.
+   - 위젯 Android `react-native-android-widget` (iOS는 2026-10-06 구현).
 6. **사용자 결정 — 출시 전에 필요**
    - 앱 설정 배치: 시안 마무리의 마지막 항목. 3안(프레임 없는 목록 + `PixelBadge` 머리글)이 유력하고, 배지 크기는 12·14·18 중에서 고른다.
    - 운영 서버: Supabase 클라우드 서울 별도 프로젝트(1순위, 무료면 매일 DB 내보내기) 또는 VPS 셀프 호스팅(국외 이전 기재). 정해지면 처리방침 `[클라우드 사업자]`를 채운다.
@@ -132,6 +130,9 @@
 - 기간 없는 달력판은 미래 달로 이동할 수 있다.
 - 삭제·떼기 확인은 기존 `basic` 다이얼로그를 쓴다.
 - 판 조작: 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기(2026-10-05 변경).
+- 달력판은 시작일(만든 날)부터 오늘까지의 지난 날짜에도 붙인다. 미래·시작일 이전·종료일 이후는 안 된다. 떼기 확인은 기록이 있을 때만(2026-10-08, PRD 4.3·4.5).
+- 완성한 판도 칸과 기록을 고친다. 완성은 한 번 되면 그대로다 — 종료일 없는 판은 완성한 날까지(2026-10-08, PRD 4.7). 목표 설정은 삭제만.
+- 위젯: 적립판은 칸마다(빈칸 = 다음 빈칸, 오늘 붙인 칸 = 떼기), 이번 달은 날짜마다(지난 빈 날·오늘 = 그 날짜에 붙이기) 누른다(2026-10-07~08, PRD 4.10).
 - 튜토리얼 다시 보기: 앱 설정 → 도움말 → 사용법 다시 보기(`/tutorial`).
 - 수동 완성 확인 문구: "완성해도 계속하기로 다시 이어 쓸 수 있어요".
 - 앱 식별자: `com.novum.chagok`(2026-10-04, [RELEASE-DECISIONS](RELEASE-DECISIONS.md)).
@@ -281,7 +282,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 디
 | `/goal/[id]` | 판 상세. 붙이기(빈칸 한 번), 기록 열기(붙인 칸 한 번), 떼기(꾹), 완성 확인·모션·`닫기 / 계속하기`. 적립판은 열 때와 칸 수가 바뀌었을 때 다음 빈칸을 화면 가운데로 스크롤한다(붙일 때는 옮기지 않는다) |
 | `/goal/[id]/settings` | 이름 → 기본 스티커 → 기간, [삭제하기]. 완성한 판은 삭제만 |
 | `/goal/[id]/extend` | 칸 늘리기 |
-| `/sticker/[id]` | 사진·메모. 완성한 판이면 읽기 전용 |
+| `/sticker/[id]` | 사진·메모. 완성한 판도 고친다(2026-10-08) |
 | `/settings` | 이 기기 기록 안내, 약관과 라이선스 |
 | `/policies`, `/policies/[license]` | 이용약관·처리방침은 웹 시트(오프라인·실패 알림), 오픈소스 라이선스는 앱 내장 |
 | `/dev/sync` | **개발 전용(`__DEV__`).** 개발 계정 로그인, 올리기·전부 올리기·서버에서 복원. 실제 계정 화면이 붙으면 없앤다 |
@@ -315,6 +316,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 디
 - **위젯 (iOS 구현됨, 2026-10-06)**: 세 종류(목표 하나 · 이번 달 · 적립판), 위젯 편집으로 바탕·목표 고르기, 위젯에서 붙이기·떼기, 마지막 칸은 앱의 완성 확인으로. 설계는 [위젯 설계 「2026-10-06 본 구현」](superpowers/specs/2026-09-30-home-widget-design.md), 시뮬레이터 스크린샷은 `docs/design/widgets/`. 코드는 `src/widgets/`, `widgets/ios/`, 설정 플러그인 `plugins/widget-goal/`.
   - **아직 안 한 것:** 자정 넘김 실기기 확인(시뮬레이터 시각을 못 바꾼다), 판 화면을 연 채 위젯에서 붙이고 돌아오면 다시 읽도록 고친 것(2026-10-06, `subscribeWidgetApplied`)의 시뮬레이터 재확인, Android, 다른 위젯 종류에는 요청이 앱을 열기 전까지 보이지 않는다(요청은 누른 위젯의 타임라인에만 쌓인다). 앱이 위젯 요청을 다시 읽은 직후부터 새 타임라인을 쓰기까지의 아주 짧은 틈에 위젯에서 누른 탭은 덮여 사라질 수 있다(`syncCore`가 읽기와 쓰기 사이에 await를 두지 않아 틈을 최소로 했지만 위젯 확장과 잠금을 나눌 방법이 없다 — 사용자는 다시 누르면 된다).
   - **expo-widgets를 올릴 때:** `npx expo prebuild --platform ios --clean` → iOS 빌드 → 위젯 편집 「목표」 확인. prebuild가 `widget-goal: … 자리를 못 찾았어요`로 멈추면 expo-widgets가 만드는 Swift 모양이 바뀐 것이니 `plugins/widget-goal/patch.js`와 fixture를 새 모양에 맞춘다.
+  - **expo-widgets 패치 (2026-10-07):** `patches/expo-widgets+57.0.22.patch`가 `WidgetUserInteraction.perform`의 `reloadTimelines(ofKind:)`를 뺀다. expo-widgets 버전을 올리면 `postinstall`에서 patch-package가 실패하니, 새 버전 `ios/Widgets/AppIntent.swift`에서 같은 줄을 빼고 `npx patch-package expo-widgets`로 다시 만든다.
   - 위젯 props에 `null`을 넣지 않는다 — UserDefaults가 못 담아 `updateTimeline`이 던진다(`syncCore`의 `withoutNulls`가 막는다).
   - (spike 기록) 옛 메모:
   - iOS `expo-widgets`: Swift는 필요 없다. 글꼴은 로컬 설정 플러그인으로 넣는다. 위젯마다 목표 고르기는 결정이 필요하다.
@@ -349,6 +351,7 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 디
   - 고친 방법: 판 윗부분을 고정하고 칸만 판 안에서 스크롤한다(`RetroScreen scrollable={false}` + `CenteringScrollView`).
   - 자세한 기록은 [보관본](archive/HANDOFF-history-2026-10-05.md).
 - 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
+- **(재현됨 2026-10-08, 원인 미확인) 크기를 잰 뒤 그리는 테두리·판이 빠진 채 남음.** 2026-10-08 iPhone 16 Pro 시뮬레이터 Release 빌드에서 재현: 빌드를 막 설치한 뒤 첫 실행의 목록 화면에서 `PixelFrame` 테두리(카드·탭·배지·`+`)가 모두 빠졌고(2/2), 그 뒤 콜드 스타트 4번은 정상. 판 화면에 들어갔을 때 판 패널(`onLayout` 뒤에 보임)이 비어 있었던 적도 한 번 있다. JS 스레드는 멈추지 않았고(샘플링: 대기 중, CPU 1%) 탭은 동작했다 — 탭을 바꾸거나 화면을 다시 열면 정상으로 그려진다. `onLayout`으로 받은 크기가 화면에 반영되지 않는 것으로 보인다. 이전 메모:
 - **(낮음, 재현 대기) 기록 화면 첫 진입 시 스타일이 빠진 채 그려짐 (2026-09-30 사용자 보고).** 시뮬레이터 콜드 스타트와 09:34 녹화에서는 재현되지 않았다. 후보: ① Fast Refresh 잔상, ② `PixelFrame`이 `onLayout`으로 크기를 받은 뒤에만 테두리·채움을 그림, ③ 폰트 대체. 재현되면 스크린샷으로 가린다. ②면 크기 전에도 배경을 먼저 칠한다.
 - 복원 뒤 아직 받지 못한 사진(기기 경로 없음, 서버 경로만 있음)에 photo 항목이 생기면 서버의 하나뿐인 사본이 지워진다. 지금은 그런 경로가 없다. "사진 유실" 화면에 사진 지우기·바꾸기를 붙일 때 `src/sync/push.ts`의 `pushPhoto` 주석을 다시 본다.
 
