@@ -16,8 +16,8 @@ type Story = StoryObj<typeof meta>;
 
 const noop = () => {};
 const goals: GoalCardItem[] = [
-  {id: 'a', name: '매일 산책하기', sticker: 'shoe', kind: '달력판', percent: 40, status: ['이번 달 40% 채웠어요']},
-  {id: 'b', name: '책 20권 읽기', sticker: 'book', kind: '적립판', percent: 35, status: ['35% 채웠어요']},
+  {id: 'a', name: '매일 산책하기', sticker: 'basic.shoe', kind: '달력판', percent: 40, status: ['이번 달 40% 채웠어요']},
+  {id: 'b', name: '책 20권 읽기', sticker: 'basic.book', kind: '적립판', percent: 35, status: ['35% 채웠어요']},
 ];
 
 function Stage({children}: {children: ReactNode}) {

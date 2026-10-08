@@ -2,7 +2,7 @@ import React, {useState, type ReactNode} from 'react';
 import {View, useWindowDimensions} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {
-  PixelDialog, PixelText, RecordScreen, calendarDateKey, retro, type GoalListTab, type PocketGoal, type PocketStickerId,
+  PixelDialog, PixelText, RecordScreen, calendarDateKey, retro, type GoalListTab, type PocketGoal, type StickerId,
   GoalListScreen, BoardDetailScreen, GoalSettingsScreen, CompletedGoalSettingsScreen, NewGoalScreen, ExtendEndDateScreen, ExtendSlotsScreen,
   FirstRunTutorialFrame, TutorialListExample, TutorialNewGoalExample, TutorialBoardExample, TutorialCompletedExample,
 } from '../src/design-system';
@@ -28,15 +28,15 @@ const records = (month: number, list: number[], sticker: PocketGoal['sticker']) 
  */
 type ListedGoal = PocketGoal & {createdAt: string; lastPlacedAt?: string; endDate?: string; completedAt?: string};
 const goals: ListedGoal[] = [
-  {id: 'walk', name: '매일 저녁 동네 한 바퀴 걷기', kind: 'calendar', total: 30, sticker: 'shoe', filled: [], calendarRecords: records(9, [2, 4, 7, 10, 14, 17, 20, 23, 28], 'shoe'), createdAt: '2026-09-01T09:00', lastPlacedAt: '2026-09-28T21:10'},
-  {id: 'reading', name: '책 읽기', kind: 'tally', total: 15, sticker: 'sprout', filled: range(6), calendarRecords: {}, createdAt: '2026-08-20T10:00', lastPlacedAt: '2026-09-29T08:05'},
-  {id: 'water', name: '물 여덟 잔 마시기', kind: 'calendar', total: 30, sticker: 'flower', filled: [], calendarRecords: records(9, [10, 12, 15, 16, 19, 22, 25, 26, 29], 'flower'), createdAt: '2026-09-10T22:00', lastPlacedAt: '2026-09-29T07:30', endDate: '2026-10-31'},
-  {id: 'words', name: '영어 단어 외우기', kind: 'tally', total: 30, sticker: 'book', filled: range(22), calendarRecords: {}, createdAt: '2026-08-10T19:00', lastPlacedAt: '2026-09-25T22:40'},
-  {id: 'diary', name: '일기 쓰기', kind: 'calendar', total: 30, sticker: 'cat', filled: [], calendarRecords: {}, createdAt: '2026-09-29T09:00'},
-  {id: 'stretch', name: '자기 전 스트레칭 십 분', kind: 'tally', total: 20, sticker: 'star', filled: range(20), calendarRecords: {}, createdAt: '2026-09-05T23:00', lastPlacedAt: '2026-09-29T08:30', completedAt: '2026-09-29T08:30'},
-  {id: 'vitamin', name: '영양제 챙겨 먹기', kind: 'calendar', total: 30, sticker: 'star', filled: [], calendarRecords: records(9, [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18, 19, 21, 22], 'star'), createdAt: '2026-09-01T08:00', lastPlacedAt: '2026-09-22T08:10', endDate: '2026-09-23', completedAt: '2026-09-24T00:00'},
-  {id: 'guitar', name: '기타 코드 연습', kind: 'calendar', total: 30, sticker: 'book', filled: [], calendarRecords: records(9, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'book'), createdAt: '2026-09-01T20:00', lastPlacedAt: '2026-09-20T20:50', completedAt: '2026-09-20T21:00'},
-  {id: 'plank', name: '플랭크 1분 버티기', kind: 'tally', total: 15, sticker: 'star', filled: range(15), calendarRecords: {}, createdAt: '2026-07-01T07:00', lastPlacedAt: '2026-08-14T07:20', completedAt: '2026-08-14T07:20'},
+  {id: 'walk', name: '매일 저녁 동네 한 바퀴 걷기', kind: 'calendar', total: 30, sticker: 'basic.shoe', filled: [], calendarRecords: records(9, [2, 4, 7, 10, 14, 17, 20, 23, 28], 'basic.shoe'), createdAt: '2026-09-01T09:00', lastPlacedAt: '2026-09-28T21:10'},
+  {id: 'reading', name: '책 읽기', kind: 'tally', total: 15, sticker: 'basic.sprout', filled: range(6), calendarRecords: {}, createdAt: '2026-08-20T10:00', lastPlacedAt: '2026-09-29T08:05'},
+  {id: 'water', name: '물 여덟 잔 마시기', kind: 'calendar', total: 30, sticker: 'basic.flower', filled: [], calendarRecords: records(9, [10, 12, 15, 16, 19, 22, 25, 26, 29], 'basic.flower'), createdAt: '2026-09-10T22:00', lastPlacedAt: '2026-09-29T07:30', endDate: '2026-10-31'},
+  {id: 'words', name: '영어 단어 외우기', kind: 'tally', total: 30, sticker: 'basic.book', filled: range(22), calendarRecords: {}, createdAt: '2026-08-10T19:00', lastPlacedAt: '2026-09-25T22:40'},
+  {id: 'diary', name: '일기 쓰기', kind: 'calendar', total: 30, sticker: 'basic.cat', filled: [], calendarRecords: {}, createdAt: '2026-09-29T09:00'},
+  {id: 'stretch', name: '자기 전 스트레칭 십 분', kind: 'tally', total: 20, sticker: 'basic.star', filled: range(20), calendarRecords: {}, createdAt: '2026-09-05T23:00', lastPlacedAt: '2026-09-29T08:30', completedAt: '2026-09-29T08:30'},
+  {id: 'vitamin', name: '영양제 챙겨 먹기', kind: 'calendar', total: 30, sticker: 'basic.star', filled: [], calendarRecords: records(9, [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18, 19, 21, 22], 'basic.star'), createdAt: '2026-09-01T08:00', lastPlacedAt: '2026-09-22T08:10', endDate: '2026-09-23', completedAt: '2026-09-24T00:00'},
+  {id: 'guitar', name: '기타 코드 연습', kind: 'calendar', total: 30, sticker: 'basic.book', filled: [], calendarRecords: records(9, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'basic.book'), createdAt: '2026-09-01T20:00', lastPlacedAt: '2026-09-20T20:50', completedAt: '2026-09-20T21:00'},
+  {id: 'plank', name: '플랭크 1분 버티기', kind: 'tally', total: 15, sticker: 'basic.star', filled: range(15), calendarRecords: {}, createdAt: '2026-07-01T07:00', lastPlacedAt: '2026-08-14T07:20', completedAt: '2026-08-14T07:20'},
 ];
 const byId = (id: string) => goals.find(goal => goal.id === id)!;
 const noneCompleted = goals.filter(goal => !goal.completedAt);
@@ -106,14 +106,21 @@ function FirstRunTutorial({index, children, autoFocus = true}: {index: number; c
 // ── 목록 ──────────────────────────────────────────────────────────
 const cardOf = (goal: ListedGoal) => ({id: goal.id, name: goal.name, sticker: goal.sticker, kind: kindLabel(goal), percent: progressOf(goal).percent,
   status: isDone(goal) ? [percentLabel(goal), `${shortDate(goal.completedAt!)} 완성`] : [`${percentLabel(goal)} 채웠어요`]});
-function Home({list, initialTab = 'active'}: {list: ListedGoal[]; initialTab?: GoalListTab}) {
+/** 광고 자리: AdMob 배너가 들어갈 곳. 앱 밖에서 오는 그림이라 앱 팔레트를 쓰지 않는다(광고 위치 시안과 같은 회색 상자). */
+function AdSlot() {
+  return <View style={{height: 62, backgroundColor: '#f1f1f1', borderTopWidth: 1, borderColor: '#c9c9c9', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12}}>
+    <View style={{width: 36, height: 36, backgroundColor: '#d9d9d9'}}/>
+    <PixelText style={{fontFamily: 'system-ui', fontSize: 12, lineHeight: 16, color: '#3c3c3c'}}>{'광고 · 광고주 이름\n광고 문구가 여기에 들어갑니다'}</PixelText>
+  </View>;
+}
+function Home({list, initialTab = 'active', ads = true}: {list: ListedGoal[]; initialTab?: GoalListTab; /** 광고 제거를 샀으면 false (PRD 4.12) */ads?: boolean}) {
   const [tab, setTab] = useState<GoalListTab>(initialTab);
   const {active, completed} = orderGoals(list);
-  return <Stage><GoalListScreen tab={tab} onTab={setTab} onAdd={noop} onOpen={noop} onSettings={noop} active={active.map(cardOf)} completed={completed.map(cardOf)}/></Stage>;
+  return <Stage><GoalListScreen tab={tab} onTab={setTab} onAdd={noop} onOpen={noop} onSettings={noop} active={active.map(cardOf)} completed={completed.map(cardOf)} footer={ads ? <AdSlot/> : undefined}/></Stage>;
 }
 
 // ── 상세 ──────────────────────────────────────────────────────────
-const filledStickers = (goal: ListedGoal) => Object.fromEntries(goal.filled.map(n => [n, goal.sticker])) as Record<number, PocketStickerId>;
+const filledStickers = (goal: ListedGoal) => Object.fromEntries(goal.filled.map(n => [n, goal.sticker])) as Record<number, StickerId>;
 /**
  * 판 조작: 빈칸 한 번 누름 = 붙이기, 붙인 칸 한 번 누름 = 기록 열기,
  * 붙인 칸 꾹 누름 = 떼기(사진·메모가 있으면 확인). 완성한 판은 readonly라 기록 열기만 된다 (2026-10-05 변경).
@@ -169,7 +176,7 @@ function CompletedSettings({goal, overlay}: {goal: ListedGoal; overlay?: ReactNo
 }
 function NewCalendarGoal({withEnd}: {withEnd: boolean}) {
   const [mode, setMode] = useState<'none' | 'pick'>(withEnd ? 'pick' : 'none'), [end, setEnd] = useState<string | undefined>('2026-09-30');
-  return <Stage><NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker={byId('water').sticker} onChangeSticker={noop}
+  return <Stage><NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker={byId('water').sticker} onChangeSticker={noop} onChooseSticker={noop}
     endMode={mode} onChangeEndMode={setMode} endDate={end} onChangeEndDate={setEnd} today={TODAY} todayLabel={longDate(TODAY)} onSubmit={noop} onBack={noop}/></Stage>;
 }
 
@@ -177,6 +184,7 @@ const almostDone: ListedGoal = {...byId('reading'), filled: range(14)};
 const confirmLast = <Overlay title="이 판을 완성할까요?" description="마지막 칸이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요." secondaryLabel="취소" primaryLabel="완성하기"/>;
 
 export const HomeActive: Story = {name: '목록 · 내 목표', render: () => <Home list={goals}/>};
+export const HomeAdFree: Story = {name: '목록 · 광고 제거를 산 뒤', render: () => <Home list={goals} ads={false}/>};
 export const HomeCompleted: Story = {name: '목록 · 완성한 판', render: () => <Home list={goals} initialTab="completed"/>};
 export const HomeEmptyCompleted: Story = {name: '목록 · 완성한 판 없음', render: () => <Home list={noneCompleted} initialTab="completed"/>};
 export const DetailTally: Story = {name: '상세 · 적립판 진행중', render: () => <Detail goal={byId('reading')}/>};
