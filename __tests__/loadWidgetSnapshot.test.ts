@@ -21,6 +21,15 @@ describe('loadWidgetSnapshot', () => {
     expect(snap.defaultGoalId).toBe(t.id);
   });
 
+  it('적립판은 오늘 붙인 칸과 기록 없는 칸을 읽는다', async () => {
+    const t = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 5 });
+    await placeSticker(t.id, 0);
+    const s = await placeSticker(t.id, 1);
+    await upsertRecord(s.id, { memo: '메모', photoUri: null });
+    const snap = await loadWidgetSnapshot(new Date());
+    expect(snap.goals.find((x) => x.id === t.id)).toMatchObject({ todaySlots: [0, 1], removableSlots: [0] });
+  });
+
   it('오늘 붙인 스티커의 기록 여부를 읽는다', async () => {
     const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
     const s = await placeSticker(g.id, new Date().getDate() - 1);

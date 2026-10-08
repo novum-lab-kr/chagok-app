@@ -111,6 +111,13 @@ describe('위젯 스냅샷 · 위젯이 판단할 값', () => {
     expect(buildWidgetSnapshot([input], at(2026, 9, 6)).goals[0]).toMatchObject({ placedToday: true, undoable: false });
   });
 
+  it('적립판은 오늘 붙인 칸과 그중 위젯에서 뗄 수 있는 칸을 준다 (2026-10-07)', () => {
+    const input = { ...tallyInput(10, 3), todaySlots: { dateKey: '2026-09-06', slots: [1, 2], removable: [2] } };
+    expect(buildWidgetSnapshot([input], at(2026, 9, 6)).goals[0]).toMatchObject({ todaySlots: [1, 2], removableSlots: [2] });
+    expect(buildWidgetSnapshot([input], at(2026, 9, 7, 0, 0)).goals[0]).toMatchObject({ todaySlots: [], removableSlots: [] });
+    expect(buildWidgetSnapshot([tallyInput(10, 3)], at(2026, 9, 6)).goals[0]).toMatchObject({ todaySlots: [], removableSlots: [] });
+  });
+
   it('자정 타임라인에서는 어제 붙인 것을 오늘 붙임으로 보지 않는다', () => {
     const input = cal({ placedDates: ['2026-09-06'], placedAll: 1, todaySticker: { dateKey: '2026-09-06', hasRecord: false } });
     expect(buildWidgetSnapshot([input], at(2026, 9, 7, 0, 0)).goals[0]).toMatchObject({ placedToday: false, undoable: false });

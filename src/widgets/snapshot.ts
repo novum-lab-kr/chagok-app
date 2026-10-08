@@ -13,9 +13,15 @@ export type WidgetInput = {
   goal: Goal; placedAll: number; placedDates: DateKey[]; slotIndexes: number[];
   /** 그날 마지막으로 붙인 스티커. 날짜가 스냅샷 날짜와 다르면(자정 타임라인) 무시한다 */
   todaySticker?: { dateKey: DateKey; hasRecord: boolean } | null;
+  /** 적립판: 그날 붙인 칸 번호와 그중 기록이 없는 칸. 날짜가 스냅샷 날짜와 다르면 무시한다 */
+  todaySlots?: { dateKey: DateKey; slots: number[]; removable: number[] } | null;
 };
 export type WidgetGoal = WidgetGoalView & {
   placedToday: boolean;
+  /** 적립판: 오늘 붙인 칸 번호(0부터) */
+  todaySlots: number[];
+  /** 적립판: 위젯에서 눌러 뗄 수 있는 칸 — 오늘 붙였고 기록이 없는 칸 (2026-10-07) */
+  removableSlots: number[];
   /** 같은 곳을 다시 누르면 뗄 수 있는가 — 오늘 붙였고 기록이 없을 때 */
   undoable: boolean;
   /** 완성까지 남은 칸 수. 붙여서 완성되지 않는 판(종료일 없는 달력판)은 null. 1이면 다음이 마지막 칸 — 위젯은 판 화면을 연다 */
@@ -71,6 +77,7 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
       : input.placedDates.filter((d) => d.startsWith(`${basis.year}-${String(basis.month).padStart(2, '0')}-`)).length;
     const progress = progressOf(goal, placed, now);
     const placedToday = input.todaySticker?.dateKey === localDateKey(now.getTime());
+    const todaySlots = input.todaySlots?.dateKey === localDateKey(now.getTime()) ? input.todaySlots : null;
     return {
       id: goal.id,
       name: goal.name,
@@ -82,6 +89,8 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
       total: progress.total,
       placedToday,
       undoable: placedToday && input.todaySticker?.hasRecord === false,
+      todaySlots: todaySlots?.slots ?? [],
+      removableSlots: todaySlots?.removable ?? [],
       remaining: remainingOf(goal, input.placedAll),
       mini: goal.boardType === 'calendar'
         ? calendarMini(goal, new Set(input.placedDates), now)

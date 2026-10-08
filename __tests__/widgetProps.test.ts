@@ -38,6 +38,7 @@ describe('위젯 props', () => {
 
   it('적립판은 적립판만', () => {
     expect(Object.keys(tallyWidgetProps(snap(at(2026, 10, 6)), art).goals)).toEqual(['read']);
+    expect(tallyWidgetProps(snap(at(2026, 10, 6)), art).goals.read).toMatchObject({ todaySlots: [], removableSlots: [] });
   });
 
   it('고를 목표가 없으면 defaultId는 null', () => {
