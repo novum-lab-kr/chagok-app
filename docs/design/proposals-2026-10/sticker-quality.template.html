@@ -1,0 +1,225 @@
+<title>차곡차곡 스티커 품질 점검</title>
+<style>
+/* 배치: 맨 위 요약과 규칙, 그 아래 묶음마다 스티커 카드(확대 격자 + 실제 크기 + 판정), 끝에 다듬는 방법 고르기. 아래 고정 막대에 고른 방법. */
+@font-face { font-family: "NeoDGM"; src: url(data:font/ttf;base64,__FONT__) format("truetype"); font-display: block; }
+:root {
+  --bg: #f3f6f2; --surface: #ffffff; --line: #d3ddd5; --fg: #0e2a20; --muted: #4f6559;
+  --accent: #c8532c; --ok: #2f6b4a; --warn: #9a6a00; --stage: #e4ebe5;
+  --keep: #2f6b4a; --fix: #9a6a00; --redraw: #b23a1d;
+  --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+  --pixel: "NeoDGM", var(--sans);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --mint: #AFE1CB; --lcd: #C7DE94; --ivory: #FEF1D1; --ink: #06261C;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4; --accent: #ff9a76; --ok: #9fd8b4; --warn: #e6c36a; --stage: #1c2a23;
+  --keep: #9fd8b4; --fix: #e6c36a; --redraw: #ff9a76; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1814; --surface: #17231d; --line: #2b3d33; --fg: #e4efe8; --muted: #9bb1a4; --accent: #ff9a76; --ok: #9fd8b4; --warn: #e6c36a; --stage: #1c2a23;
+  --keep: #9fd8b4; --fix: #e6c36a; --redraw: #ff9a76; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 44px; }
+h1 { font-family: var(--pixel); font-weight: 400; font-size: 30px; line-height: 1.25; margin: 0; }
+h2 { font-family: var(--pixel); font-weight: 400; font-size: 24px; margin: 0; }
+h3 { font-size: 15px; margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 80ch; }
+.head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--fg); padding-bottom: 8px; }
+.sub { font-size: 13px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel ul, .panel ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.tally { display: flex; gap: 12px; flex-wrap: wrap; }
+.tally span { font-family: var(--mono); font-size: 14px; padding: 2px 8px; border: 1px solid currentColor; }
+.k { color: var(--keep); } .f { color: var(--fix); } .r { color: var(--redraw); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card.redraw { border-color: var(--redraw); }
+.card.fix { border-color: var(--fix); }
+.card .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card .nm { font-weight: 600; }
+.chip { font-size: 12px; font-weight: 600; border: 1px solid currentColor; padding: 0 6px; white-space: nowrap; }
+.big { background: var(--ivory); display: block; width: 100%; max-width: 192px; height: auto; align-self: center; }
+.real { display: flex; gap: 10px; align-items: center; background: var(--mint); padding: 6px; }
+.real .iv { background: var(--ivory); padding: 4px; display: flex; gap: 6px; align-items: center; }
+.why { font-size: 13px; line-height: 1.5; }
+.lint { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.pack-note textarea, .method textarea { width: 100%; box-sizing: border-box; min-height: 64px; resize: vertical; font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.methods { display: flex; flex-direction: column; gap: 12px; }
+.method { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 320px); gap: 16px; }
+.method.ok { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+.method ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.method li { padding-left: 10px; border-left: 2px solid var(--line); }
+.method li.pro { border-color: var(--ok); } .method li.con { border-color: var(--accent); }
+.side { display: flex; flex-direction: column; gap: 8px; }
+.ok-btn { align-self: flex-start; font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--ok); background: transparent; color: var(--ok); border-radius: 4px; cursor: pointer; }
+.method.ok .ok-btn { background: var(--ok); color: var(--surface); }
+.save { font-size: 12px; color: var(--muted); min-height: 18px; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
+.bar-in { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+#summary { font-family: var(--mono); font-size: 13px; flex: 1 1 260px; min-width: 0; }
+.bar button { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--fg); background: transparent; color: var(--fg); border-radius: 4px; cursor: pointer; }
+@media (max-width: 760px) { .method { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>차곡차곡 스티커 품질 점검</h1>
+    <p class="lede">컬러 스티커 66종을 처음 정한 도트 규칙(2026-10-05, 사용자가 PixelLab으로 만든 하트 기준)에 비춰 하나씩 봤습니다. 확대 그림(격자)과 실제 크기(48·24px)를 같이 보고, 자동 검사 결과를 붙였습니다. 아래에서 다듬는 방법을 고르고, 묶음마다 메모를 남겨 주세요.</p>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div class="head"><h2>요약</h2><span class="sub">2026-10-07</span></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>판정</h3>
+        <div class="tally" id="tally"></div>
+        <p class="why"><b>잘 된 쪽</b>은 Codex로 만든 그림을 칸 그대로 옮긴 <b>동물·감정·사물</b>입니다. 두꺼운 한 칸 윤곽, 색으로 채운 면, 2×2 눈 — 처음 기준(하트)과 같은 결입니다.</p>
+        <p class="why"><b>도트 느낌이 사라진 쪽</b>은 제가 생성기로 그린 <b>기본·운동·간식·날씨 일부</b>입니다. 다시 그릴 10종은 모두 이쪽입니다.</p>
+      </div>
+      <div class="panel">
+        <h3>도트 느낌을 잃게 한 다섯 가지</h3>
+        <ol>
+          <li><b>윤곽만 있는 선 그림</b> — 속이 비거나 흰색(식빵·커피·케이크).</li>
+          <li><b>1칸 굵기 선·대각선</b> — 작게 보면 아이콘처럼 보임(자전거·줄넘기·우산 손잡이).</li>
+          <li><b>떠 있는 점</b> — 본체와 이어지지 않은 칸(빗방울·김·눈·해 빛살·새싹 잎).</li>
+          <li><b>흰 몸</b> — 아이보리 카드·칸 바탕에 묻힘(새싹·구름·토끼·우유).</li>
+          <li><b>여백 없음</b> — 24칸을 꽉 채움(수영·꽃·비행기·눈송이).</li>
+        </ol>
+      </div>
+      <div class="panel">
+        <h3>규칙과 자동 검사</h3>
+        <ul>
+          <li>24×24, 그림은 20~22칸 안 → <code>여백</code> 1~2칸</li>
+          <li>바깥 윤곽은 잉크 한 칸, 끊김 없음 → <code>윤곽</code> 비율</li>
+          <li>면은 색으로 채움, 흰·아이보리 면이 넓으면 안 됨 → <code>밝은 면</code> 60% 이상 경고</li>
+          <li>1칸 굵기 잉크 선 금지 → <code>얇은 선</code> 칸 수</li>
+          <li>본체와 떨어진 칸 금지 → <code>떠 있는 칸</code> 수</li>
+          <li>빛은 왼쪽 위, 아래 그림자 한 칸, 얼굴은 2×2 눈 (눈으로 확인)</li>
+        </ul>
+        <p class="why">이 검사를 저장소 스크립트로 만들어 테스트에 넣으면, 새 그림이 규칙을 어기면 등록 전에 걸립니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="packs" style="display:flex;flex-direction:column;gap:40px"></div>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div class="head"><h2>다듬는 방법</h2><span class="sub" id="picked">아직 안 골랐어요</span></div>
+    <div class="methods" id="methods"></div>
+  </section>
+</div>
+
+<div class="bar" role="region" aria-label="고른 방법">
+  <div class="bar-in">
+    <span class="sub">고른 방법</span><span id="summary">아직 안 골랐어요</span>
+    <button type="button" id="copy">메모까지 복사</button>
+    <span class="sub" id="store-state">저장소 연결 중…</span>
+  </div>
+</div>
+
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+const LABEL = {keep: '그대로', fix: '손보기', redraw: '다시 그리기'};
+const CLS = {keep: 'k', fix: 'f', redraw: 'r'};
+const PACKS = [['basic', '기본 (무료)'], ['sports', '운동'], ['snack', '간식'], ['objects', '사물'], ['animals', '동물'], ['emotions', '감정'], ['weather', '날씨·계절']];
+function svg(layers, size, grid) {
+  let s = `<svg class="${grid ? 'big' : ''}" width="${size}" height="${size}" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">`;
+  for (const l of layers) s += `<path d="${l.d}" fill="${l.color}"/>`;
+  if (grid) for (let i = 1; i < 24; i++) s += `<path d="M${i} 0V24M0 ${i}H24" stroke="#06261C" stroke-opacity=".08" stroke-width=".05"/>`;
+  return s + '</svg>';
+}
+function lintLine(l) {
+  const w = [];
+  if (l.margin < 1) w.push(`여백 ${l.margin}칸`);
+  if (l.floating > 0) w.push(`떠 있는 칸 ${l.floating}`);
+  if (l.lightFill >= 0.6) w.push(`밝은 면 ${Math.round(l.lightFill * 100)}%`);
+  if (l.thin > 0) w.push(`얇은 선 ${l.thin}`);
+  if (l.inkRatio === 0) w.push('잉크 윤곽 없음');
+  return w.length ? '검사: ' + w.join(' · ') : '검사: 걸린 것 없음';
+}
+const count = {keep: 0, fix: 0, redraw: 0};
+for (const v of Object.values(D.verdicts)) count[v[0]]++;
+$('tally').innerHTML = ['keep', 'fix', 'redraw'].map(k => `<span class="${CLS[k]}">${LABEL[k]} ${count[k]}</span>`).join('');
+$('packs').innerHTML = PACKS.map(([p, title]) => {
+  const list = D.stickers.filter(s => s.key.startsWith(p + '.'));
+  const c = {keep: 0, fix: 0, redraw: 0}; list.forEach(s => c[D.verdicts[s.key][0]]++);
+  return `<section style="display:flex;flex-direction:column;gap:12px">
+    <div class="head"><h2>${title}</h2><span class="sub">${list.length}종 · <span class="k">그대로 ${c.keep}</span> · <span class="f">손보기 ${c.fix}</span> · <span class="r">다시 그리기 ${c.redraw}</span></span></div>
+    <div class="cards">${list.map(s => { const [v, why] = D.verdicts[s.key]; return `<div class="card ${v}">
+      <div class="top"><span class="nm">${esc(s.name)}</span><span class="chip ${CLS[v]}">${LABEL[v]}</span></div>
+      ${svg(s.layers, 192, true)}
+      <div class="real">${svg(s.layers, 48)}${svg(s.layers, 24)}<span class="iv">${svg(s.layers, 48)}${svg(s.layers, 24)}</span></div>
+      <p class="why">${esc(why)}</p><p class="lint">${esc(lintLine(D.lint[s.key]))}</p></div>`; }).join('')}</div>
+    <div class="pack-note"><textarea id="note-${p}" data-k="note-${p}" aria-label="${title} 메모" placeholder="${title} 묶음에서 고치고 싶은 그림, 판정이 다르다고 보는 그림을 적어 주세요"></textarea><span class="save" id="state-note-${p}"></span></div>
+  </section>`;
+}).join('');
+
+const METHODS = [
+  {id: 'm1', code: 'M1', title: '잘 된 경로로 통일', like: '추천',
+   body: ['다시 그릴 10종은 사용자가 PixelLab·Codex로 새로 만들고(동물·감정을 견본으로 보여 주며), 제가 24칸으로 옮겨 자동 검사합니다.', '손볼 19종은 제가 칸 단위로 고칩니다(떠 있는 점 붙이기, 여백 1칸, 흰 면에 그림자, 얇은 선 2칸).', '자동 검사를 저장소에 넣어 통과한 그림만 등록합니다.'],
+   pro: ['품질이 좋았던 쪽(동물·감정·사물)과 같은 경로라 화풍이 하나로 모입니다.', '제 손이 가는 일은 작은 수정뿐이라 품질 위험이 적습니다.'],
+   con: ['사용자 그림 작업 10종이 필요합니다(PixelLab 무료는 생성 횟수가 적음).']},
+  {id: 'm2', code: 'M2', title: '제가 전부 다시 찍기', like: '사용자 작업 없음',
+   body: ['손보기 19종 + 다시 그리기 10종을 모두 제가 칸 단위로 다시 찍습니다. 동물·감정을 견본으로 삼고 자동 검사를 통과시킵니다.'],
+   pro: ['사용자가 그림을 만들 필요가 없습니다.'],
+   con: ['도트 느낌이 사라진 그림이 바로 제가 그린 쪽이라, 다시 그려도 같은 문제가 남을 위험이 있습니다.', '한 장씩 확인받는 왕복이 많아집니다.']},
+  {id: 'm3', code: 'M3', title: '출시분만 먼저', like: '범위 줄이기',
+   body: ['출시 때 보이는 기본 6종 + 출시 3묶음(E3, 각 6종)만 M1 방식으로 먼저 다듬습니다.', '나머지는 업데이트로 낼 때 같은 검사를 통과시킵니다.'],
+   pro: ['출시 전 작업량이 가장 적습니다(최대 24종).'],
+   con: ['출시 세 주제를 먼저 정해야 합니다.', '나중 묶음의 품질이 다를 수 있어 검사 스크립트가 꼭 필요합니다.']},
+];
+$('methods').innerHTML = METHODS.map(m => `<div class="method" id="m-${m.id}">
+  <div style="display:flex;flex-direction:column;gap:8px"><h3>${m.code}. ${m.title} <span class="sub">${m.like}</span></h3>
+    <ul>${m.body.map(b => `<li>${esc(b)}</li>`).join('')}${m.pro.map(b => `<li class="pro">${esc(b)}</li>`).join('')}${m.con.map(b => `<li class="con">${esc(b)}</li>`).join('')}</ul></div>
+  <div class="side"><button type="button" class="ok-btn" data-m="${m.id}" aria-pressed="false">이 방법 고르기</button>
+    <textarea id="note-${m.id}" data-k="note-${m.id}" aria-label="${m.title} 메모" placeholder="이 방법에 대한 메모"></textarea><span class="save" id="state-note-${m.id}"></span></div>
+</div>`).join('');
+
+const state = {choice: '', notes: {}};
+const LS = 'chagok-sticker-quality';
+try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); if (typeof l.choice === 'string') state.choice = l.choice; if (l.notes) Object.assign(state.notes, l.notes); } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+function paint() {
+  for (const m of METHODS) { const on = state.choice === m.id; $(`m-${m.id}`).classList.toggle('ok', on); const b = document.querySelector(`[data-m="${m.id}"]`); b.textContent = on ? '고른 방법' : '이 방법 고르기'; b.setAttribute('aria-pressed', String(on)); }
+  for (const t of document.querySelectorAll('textarea[data-k]')) { const v = state.notes[t.dataset.k] || ''; if (document.activeElement !== t && t.value !== v) t.value = v; }
+  const m = METHODS.find(x => x.id === state.choice);
+  const label = m ? `${m.code}. ${m.title}` : '아직 안 골랐어요';
+  $('picked').textContent = label;
+  const n = Object.values(state.notes).filter(x => x && x.trim()).length;
+  $('summary').textContent = label + (n ? ` · 메모 ${n}개` : '');
+}
+function setStatus(k, t) { const el = $(`state-${k}`); if (el) el.textContent = t; }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+async function persist(k) {
+  saveLocal();
+  if (!db) { setStatus(k, '이 브라우저에만 저장됨'); return; }
+  if (writing[k]) { queued[k] = true; return; }
+  writing[k] = true; setStatus(k, '저장 중…');
+  try { await db.doc(`review/${k}`).set(k === 'choice-method' ? {value: state.choice, updatedAt: new Date().toISOString()} : {note: state.notes[k] || '', updatedAt: new Date().toISOString()}); setStatus(k, '저장됨'); }
+  catch (e) { setStatus(k, '저장하지 못했어요. 메모까지 복사로 보내 주세요.'); }
+  finally { writing[k] = false; if (queued[k]) { queued[k] = false; persist(k); } }
+}
+document.addEventListener('click', e => { const b = e.target.closest('.ok-btn'); if (!b) return; state.choice = state.choice === b.dataset.m ? '' : b.dataset.m; paint(); persist('choice-method'); });
+document.addEventListener('input', e => { const t = e.target.closest('textarea[data-k]'); if (!t) return; const k = t.dataset.k; state.notes[k] = t.value; setStatus(k, '적는 중…'); paint(); clearTimeout(timers[k]); timers[k] = setTimeout(() => persist(k), 800); });
+$('copy').addEventListener('click', () => {
+  const text = '스티커 품질 점검: ' + $('summary').textContent + '\n' + Object.entries(state.notes).filter(([, v]) => v && v.trim()).map(([k, v]) => `${k}: ${v.trim()}`).join('\n');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(() => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); }, fallback); } catch (err) { fallback(); }
+});
+paint();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) { const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id === 'choice-method') { if (typeof v.value === 'string') state.choice = v.value; continue; }
+      const t = document.activeElement; state.notes[d.id] = t && t.dataset && t.dataset.k === d.id ? t.value : String(v.note || ''); }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>
