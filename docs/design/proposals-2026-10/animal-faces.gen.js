@@ -139,7 +139,7 @@ function build(an) {
     const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const nx = x + dx, ny = y + dy; const n = nx < 0 || ny < 0 || nx >= N || ny >= N ? -1 : own[ny][nx]; return n === -1 || n > k; });
     g[y][x] = edge ? 'O' : an.regions[k][0];
   }
-  for (const [ch, f] of an.paints) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] === 'a' && (f(x + 0.5, y + 0.5) || (M && f(N - x - 0.5, y + 0.5)))) g[y][x] = ch;
+  for (const [ch, f, on = 'a'] of an.paints) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] === on && (f(x + 0.5, y + 0.5) || (M && f(N - x - 0.5, y + 0.5)))) g[y][x] = ch;
   for (const c of an.cells) for (let y = c.y; y < c.y + c.h; y++) for (let x = c.x; x < c.x + c.w; x++) { g[y][x] = c.ch; if (M) g[y][N - 1 - x] = c.ch; }
   return finish(an, g);
 }
@@ -158,8 +158,8 @@ function finish(an, g) {
   // 하이라이트: 왼쪽 위에서 처음 만나는, 위·왼쪽·오른쪽·아래가 모두 같은 면인 칸 + 오른쪽 + 아래.
   const hc = an.hlChar || 'a'; let best = null;
   for (let y = 1; y < N - 1; y++) for (let x = 1; x < 12; x++) if ([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1]].every(([dx, dy]) => g[y + dy][x + dx] === hc) && (!best || x + y < best[0] + best[1])) best = [x, y];
-  if (!best) throw new Error(`${an.id}: 하이라이트 자리 없음`);
-  for (const [x, y] of [[best[0], best[1]], [best[0] + 1, best[1]], [best[0], best[1] + 1]]) g[y][x] = 'h';
+  if (!best && !an.noHl) console.warn(`${an.id}: 하이라이트 자리 없음`);
+  if (best) for (const [x, y] of [[best[0], best[1]], [best[0] + 1, best[1]], [best[0], best[1] + 1]]) g[y][x] = 'h';
   const color = ch => {
     if (ch === 'O') return INK;
     if (ch === 'h') return lightOf(an.pal[hc]);
@@ -185,7 +185,7 @@ function finish(an, g) {
     return {color: c, d};
   });
   layers.sort((p, q) => (q.color === INK) - (p.color === INK));
-  return {theme: 'animals', id: an.id, base: an.base || an.id, name: an.name, layers, grid: g.map(r => r.join(''))};
+  return {theme: an.theme || 'animals', id: an.id, base: an.base || an.id, name: an.name, layers, grid: g.map(r => r.join(''))};
 }
 
 // 품질 점검과 같은 자동 검사: 여백 · 떠 있는 칸 · 밝은 면.
@@ -239,7 +239,11 @@ function sheet(list, scale, file) {
   fs.writeFileSync(file, png(w, h, buf));
 }
 
+module.exports = {N, INK, ell, poly, rect, build, lint, sheet, shadeOf, lightOf, mix};
+if (require.main === module) {
+
 const out = ANIMALS.map(build);
 for (const s of out) console.log(s.id.padEnd(8), JSON.stringify(lint(s)));
 fs.writeFileSync(process.argv[2] || 'animal-faces.json', JSON.stringify({stickers: out.map(({grid, ...s}) => s), lint: Object.fromEntries(out.map(s => [s.id, lint(s)]))}, null, 1));
 if (process.argv[3]) sheet(out, 8, process.argv[3]);
+}
