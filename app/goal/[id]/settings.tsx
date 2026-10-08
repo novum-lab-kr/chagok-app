@@ -12,7 +12,7 @@ import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { useUnsavedBack } from '../../../src/app-data/useUnsavedBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
-import { isCompleted, parseSlotCount, startDate } from '../../../src/domain/board';
+import { GOAL_NAME_MAX, goalNameError, isCompleted, parseSlotCount, startDate } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Goal } from '../../../src/domain/types';
 
@@ -135,6 +135,8 @@ export default function GoalSettings() {
       <GoalSettingsScreen
         name={name}
         onChangeName={setName}
+        nameMaxLength={GOAL_NAME_MAX}
+        nameError={goalNameError(name)}
         sticker={sticker}
         onChangeSticker={setSticker}
         period={calendar ? {

@@ -8,6 +8,7 @@ import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { longDate } from '../../src/app-data/pocketAdapter';
 import { localDateKey } from '../../src/domain/dates';
+import { GOAL_NAME_MAX, shownGoalNameError } from '../../src/domain/board';
 
 const DEFAULT_COUNT = '15';
 
@@ -15,6 +16,8 @@ const DEFAULT_COUNT = '15';
 export default function NewGoal() {
   const router = useRouter();
   const [name, setName] = useState('');
+  /** 이름을 썼다가 지웠거나 칸에서 비운 채 나왔으면 빈 이름 문구를 보인다 (2026-10-08). */
+  const [nameTouched, setNameTouched] = useState(false);
   const [kind, setKind] = useState<BoardKind>('tally');
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [sticker, setSticker] = useState<PocketStickerId>('sprout');
@@ -51,7 +54,11 @@ export default function NewGoal() {
   return (
     <>
       <NewGoalScreen
-        name={name} onChangeName={setName}
+        name={name}
+        onChangeName={(next) => { setName(next); if (next !== '') setNameTouched(true); }}
+        nameMaxLength={GOAL_NAME_MAX}
+        nameError={shownGoalNameError(name, nameTouched)}
+        onNameBlur={() => setNameTouched(true)}
         kind={kind} onChangeKind={setKind}
         count={count} onChangeCount={setCount}
         sticker={sticker} onChangeSticker={setSticker}
