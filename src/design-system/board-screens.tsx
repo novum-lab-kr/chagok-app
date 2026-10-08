@@ -155,9 +155,9 @@ export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:st
  * 진행 중인 목표의 설정: 이름 → 기본 스티커 → 기간(달력판) → [이 판 완성하기](종료일 없는 달력판) → 저장 → [삭제하기] (PRD 4.4).
  * 판 종류·칸 수 변경은 미확정이라 두지 않는다.
  */
-export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;sticker:StickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 */onChooseSticker?:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
+export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,sticker,onChangeSticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;sticker:StickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 */onChooseSticker?:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
-    <PixelInput label="목표 이름" value={name} onChangeText={onChangeName}/>
+    <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} maxLength={nameMaxLength} error={nameError}/>
     <StickerField value={sticker} onChange={onChangeSticker} onChoose={onChooseSticker}/>
     {period&&<PeriodField {...period}/>}
     {slots&&<View style={{gap:8}}>
@@ -190,9 +190,9 @@ export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel
 // ── 새 목표 ──────────────────────────────────────────────────────
 export type EndDateMode='none'|'pick';
 /** 새 목표: 이름 → 판 종류(적립판이면 칸 수) → 기본 스티커 → 종료일(달력판, 선택) (PRD 4.4). */
-export function NewGoalScreen({name,onChangeName,kind,onChangeKind,count,onChangeCount,sticker,onChangeSticker,onChooseSticker,endMode,onChangeEndMode,endDate,onChangeEndDate,today,todayLabel,error,onSubmit,submitDisabled=false,onBack,stickerTargetRef}:{name:string;onChangeName:(name:string)=>void;kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;sticker:StickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 */onChooseSticker?:()=>void;endMode:EndDateMode;onChangeEndMode:(mode:EndDateMode)=>void;endDate?:string;onChangeEndDate:(date:string)=>void;/** 오늘 날짜 키. 종료일은 오늘부터 고른다 */today:string;/** 예: '9월 29일' */todayLabel:string;error?:string;onSubmit:()=>void;submitDisabled?:boolean;onBack:()=>void;stickerTargetRef?:React.Ref<View>}) {
+export function NewGoalScreen({name,onChangeName,nameMaxLength,nameError,kind,onChangeKind,count,onChangeCount,sticker,onChangeSticker,onChooseSticker,endMode,onChangeEndMode,endDate,onChangeEndDate,today,todayLabel,error,onSubmit,submitDisabled=false,onBack,stickerTargetRef}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;sticker:StickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 */onChooseSticker?:()=>void;endMode:EndDateMode;onChangeEndMode:(mode:EndDateMode)=>void;endDate?:string;onChangeEndDate:(date:string)=>void;/** 오늘 날짜 키. 종료일은 오늘부터 고른다 */today:string;/** 예: '9월 29일' */todayLabel:string;error?:string;onSubmit:()=>void;submitDisabled?:boolean;onBack:()=>void;stickerTargetRef?:React.Ref<View>}) {
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="새 목표" onBack={onBack}/>}>
-    <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} placeholder="목표 이름"/>
+    <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} placeholder="목표 이름" maxLength={nameMaxLength} error={nameError}/>
     <BoardTypePicker value={kind} onChange={onChangeKind}/>
     {kind==='tally'&&<SlotCountPicker value={count} onChange={onChangeCount}/>}
     <StickerField value={sticker} onChange={onChangeSticker} onChoose={onChooseSticker} targetRef={stickerTargetRef}/>

@@ -5,6 +5,7 @@ import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
   canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
   endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, pendingCompletion, parseSlotCount,
+  GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
 
@@ -241,5 +242,23 @@ describe('목표 설정 칸 수 입력 (2026-09-30)', () => {
     expect(parseSlotCount('3.5', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
     expect(parseSlotCount('abc', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
     expect(parseSlotCount('0', 0)).toEqual({ ok: false, reason: '1칸 이상이어야 해요.' });
+  });
+});
+
+describe('입력 글자 수 (2026-10-08)', () => {
+  test('목표 이름: 비었거나 띄어쓰기만 있으면 입력해 달라고 한다', () => {
+    expect(goalNameError('')).toBe('목표 이름을 입력해주세요.');
+    expect(goalNameError('   ')).toBe('목표 이름을 입력해주세요.');
+  });
+  test('목표 이름: 20자에 닿으면 한도를 알린다', () => {
+    expect(GOAL_NAME_MAX).toBe(20);
+    expect(goalNameError('가'.repeat(19))).toBeUndefined();
+    expect(goalNameError('가'.repeat(20))).toBe('20자까지 입력할 수 있어요.');
+  });
+  test('메모: 비어도 괜찮고 500자에 닿으면 한도를 알린다', () => {
+    expect(MEMO_MAX).toBe(500);
+    expect(memoError('')).toBeUndefined();
+    expect(memoError('가'.repeat(499))).toBeUndefined();
+    expect(memoError('가'.repeat(500))).toBe('500자까지 입력할 수 있어요.');
   });
 });

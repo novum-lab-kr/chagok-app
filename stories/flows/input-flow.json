@@ -1,0 +1,337 @@
+{
+  "$schema": "https://zigbang.github.io/storybook-addon-story-flow/flow.schema.json",
+  "epic": "INPUT",
+  "title": "Flows/입력 검사",
+  "scenarios": [
+    {
+      "id": "name",
+      "label": "목표 이름"
+    },
+    {
+      "id": "memo",
+      "label": "메모"
+    },
+    {
+      "id": "slots",
+      "label": "칸 수"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "name-new--full",
+      "data": {
+        "label": "목표 이름 · 새 목표 · 20자",
+        "tags": [
+          "「20자까지 입력할 수 있어요.」",
+          "20자",
+          "PRD 4.4",
+          "app/goal/new"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--name-new-full",
+            "label": "20자까지 입력할 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "name-new--blank",
+      "data": {
+        "label": "목표 이름 · 새 목표 · 비움·띄어쓰기만",
+        "tags": [
+          "「목표 이름을 입력해주세요.」",
+          "20자",
+          "PRD 4.4",
+          "app/goal/new"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--name-new-blank",
+            "label": "목표 이름을 입력해주세요."
+          }
+        ],
+        "scenarios": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "name-new--typing",
+      "data": {
+        "label": "목표 이름 · 새 목표 · 쓰는 중",
+        "tags": [
+          "「문구 없음」",
+          "20자",
+          "PRD 4.4",
+          "app/goal/new"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--name-new-typing",
+            "label": "문구 없음"
+          }
+        ],
+        "scenarios": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "name-settings--full",
+      "data": {
+        "label": "목표 이름 · 목표 설정 · 20자",
+        "tags": [
+          "「20자까지 입력할 수 있어요.」",
+          "20자",
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--name-settings-full",
+            "label": "20자까지 입력할 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "name-settings--blank",
+      "data": {
+        "label": "목표 이름 · 목표 설정 · 비움",
+        "tags": [
+          "「목표 이름을 입력해주세요.」",
+          "20자",
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--name-settings-blank",
+            "label": "목표 이름을 입력해주세요."
+          }
+        ],
+        "scenarios": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "memo--full",
+      "data": {
+        "label": "메모 · 기록 · 500자",
+        "tags": [
+          "「500자까지 입력할 수 있어요.」",
+          "500자",
+          "PRD 4.5",
+          "app/sticker/[id]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--memo-full",
+            "label": "500자까지 입력할 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "memo"
+        ]
+      }
+    },
+    {
+      "id": "memo--typing",
+      "data": {
+        "label": "메모 · 기록 · 쓰는 중",
+        "tags": [
+          "「문구 없음」",
+          "500자",
+          "PRD 4.5",
+          "app/sticker/[id]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--memo-typing",
+            "label": "문구 없음"
+          }
+        ],
+        "scenarios": [
+          "memo"
+        ]
+      }
+    },
+    {
+      "id": "slots-new--empty",
+      "data": {
+        "label": "칸 수 · 새 목표 · 비움",
+        "tags": [
+          "「칸 수를 1 이상으로 입력해주세요.」",
+          "1칸 이상",
+          "PRD 4.4",
+          "app/goal/new"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-new-empty",
+            "label": "칸 수를 1 이상으로 입력해주세요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-new--zero",
+      "data": {
+        "label": "칸 수 · 새 목표 · 0",
+        "tags": [
+          "「칸 수를 1 이상으로 입력해주세요.」",
+          "1칸 이상",
+          "PRD 4.4",
+          "app/goal/new"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-new-zero",
+            "label": "칸 수를 1 이상으로 입력해주세요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-settings--fewer",
+      "data": {
+        "label": "칸 수 · 목표 설정 · 지금보다 적음",
+        "tags": [
+          "「지금 15칸보다 줄일 수 없어요.」",
+          "늘리기만",
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-settings-fewer",
+            "label": "지금 15칸보다 줄일 수 없어요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-settings--empty",
+      "data": {
+        "label": "칸 수 · 목표 설정 · 비움",
+        "tags": [
+          "「칸 수를 입력해 주세요.」",
+          "늘리기만",
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-settings-empty",
+            "label": "칸 수를 입력해 주세요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-settings--not-number",
+      "data": {
+        "label": "칸 수 · 목표 설정 · 숫자 아님",
+        "tags": [
+          "「숫자만 입력할 수 있어요.」",
+          "늘리기만",
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-settings-not-number",
+            "label": "숫자만 입력할 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-settings--zero",
+      "data": {
+        "label": "칸 수 · 목표 설정 · 0",
+        "tags": [
+          "「1칸 이상이어야 해요.」",
+          "늘리기만",
+          "PRD 4.4",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-settings-zero",
+            "label": "1칸 이상이어야 해요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-extend--empty",
+      "data": {
+        "label": "칸 수 · 칸 늘리기 · 비움",
+        "tags": [
+          "「더할 칸 수를 1 이상으로 입력해주세요.」",
+          "1칸 이상",
+          "PRD 4.7",
+          "app/goal/[id]/extend"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--extend-empty",
+            "label": "더할 칸 수를 1 이상으로 입력해주세요."
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    },
+    {
+      "id": "slots-extend--typing",
+      "data": {
+        "label": "칸 수 · 칸 늘리기 · 쓰는 중",
+        "tags": [
+          "「늘린 뒤 30칸」",
+          "1칸 이상",
+          "PRD 4.7",
+          "app/goal/[id]/extend"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--extend-typing",
+            "label": "늘린 뒤 30칸"
+          }
+        ],
+        "scenarios": [
+          "slots"
+        ]
+      }
+    }
+  ],
+  "edges": []
+}

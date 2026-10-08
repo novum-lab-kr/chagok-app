@@ -127,7 +127,12 @@ export function PixelPanel({ children, title, action, style, contentStyle }: {ch
 const singleLineText = Platform.OS === 'web'
   ? retro.typography.body
   : { fontSize: retro.typography.body.fontSize, textAlignVertical: 'center' as const, includeFontPadding: false };
-export function PixelInput({label, style, onFocus, onBlur, ...props}: TextInputProps & {label: string}) {
+/** 입력칸 아래 검사 문구: 한도·빈 값 (2026-10-08). 칸 수 오류 문구와 같은 작은 글자. */
+export function FieldError({message}: {message?: string}) {
+  if (!message) return null;
+  return <View accessible accessibilityRole="alert"><PixelText variant="caption" style={{color:c.buttonText}}>{message}</PixelText></View>;
+}
+export function PixelInput({label, error, style, onFocus, onBlur, ...props}: TextInputProps & {label: string; /** 입력칸 아래 검사 문구 */error?: string}) {
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
     <PixelFrame variant="input" fill={c.secondary} focused={focused}>
@@ -136,6 +141,7 @@ export function PixelInput({label, style, onFocus, onBlur, ...props}: TextInputP
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
         style={[{minHeight:48,paddingHorizontal:12,paddingVertical:Platform.OS==='web'?10:0,color:c.ink,...(props.multiline?retro.typography.body:singleLineText)},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
     </PixelFrame>
+    <FieldError message={error}/>
   </View>;
 }
 

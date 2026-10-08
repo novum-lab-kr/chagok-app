@@ -255,6 +255,14 @@
           {
             "id": "screens-home-structure-·-proposals--new-with-end",
             "label": "달력판 종료일 고르기"
+          },
+          {
+            "id": "rules-입력-검사--name-new-full",
+            "label": "이름 20자 (입력 검사)"
+          },
+          {
+            "id": "rules-입력-검사--name-new-blank",
+            "label": "이름 비움 (입력 검사)"
           }
         ],
         "scenarios": [
@@ -319,6 +327,14 @@
           {
             "id": "screens-home-structure-·-proposals--record-completed",
             "label": "완성한 판에서 연 기록"
+          },
+          {
+            "id": "rules-입력-검사--memo-typing",
+            "label": "기록 쓰는 중"
+          },
+          {
+            "id": "rules-입력-검사--memo-full",
+            "label": "메모 500자 (입력 검사)"
           }
         ],
         "scenarios": [
@@ -372,6 +388,10 @@
           {
             "id": "screens-home-structure-·-proposals--settings-completed",
             "label": "완성한 판 (삭제만)"
+          },
+          {
+            "id": "rules-입력-검사--name-settings-blank",
+            "label": "이름 비움 (입력 검사)"
           }
         ],
         "scenarios": [

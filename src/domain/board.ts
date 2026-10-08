@@ -172,4 +172,20 @@ export function parseSlotCount(input: string, current: number): { ok: true; valu
   return { ok: true, value };
 }
 
+/**
+ * 입력 글자 수 (2026-10-08). 입력칸은 maxLength로 한도를 넘지 못하게 하고, 이 문구는 입력칸 아래에 보여준다.
+ * 글자 수는 RN maxLength와 같은 기준(string.length)으로 센다.
+ */
+export const GOAL_NAME_MAX = 20;
+export const MEMO_MAX = 500;
+export function goalNameError(name: string): string | undefined {
+  if (name.trim() === '') return '목표 이름을 입력해주세요.';
+  if (name.length >= GOAL_NAME_MAX) return `${GOAL_NAME_MAX}자까지 입력할 수 있어요.`;
+  return undefined;
+}
+/** 메모는 비워 둬도 된다. */
+export function memoError(memo: string): string | undefined {
+  return memo.length >= MEMO_MAX ? `${MEMO_MAX}자까지 입력할 수 있어요.` : undefined;
+}
+
 export { dateKeyOf };
