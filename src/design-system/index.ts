@@ -12,3 +12,4 @@ export * from './account-screens';
 export * from './widget-preview';
 export * from './mascot';
 export * from './splash';
+export * from './sticker-shop';

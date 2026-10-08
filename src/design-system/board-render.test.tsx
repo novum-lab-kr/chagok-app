@@ -4,10 +4,10 @@ import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {BoardDetailScreen} from './board-screens';
 import type {TallyBoardView} from './board-screens';
 
-// 붙인 칸은 크기 44의 스티커 그림을 그린다. 그 그림이 몇 번 그려지는지 세어 칸이 다시 그려졌는지 본다.
+// 붙인 칸은 크기 48의 스티커 그림을 그린다(2026-10-08 44 → 48). 그 그림이 몇 번 그려지는지 세어 칸이 다시 그려졌는지 본다.
 const cellDraws=vi.hoisted(()=>({count:0}));
 vi.mock('../stickers/pocket/StickerArtwork',()=>({
-  StickerArtwork:({size}:{size:number})=>{if(size===44) cellDraws.count++;return null;},
+  StickerArtwork:({size}:{size:number})=>{if(size===48) cellDraws.count++;return null;},
 }));
 afterEach(cleanup);
 beforeEach(()=>{cellDraws.count=0;});

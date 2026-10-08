@@ -2,7 +2,7 @@ import React,{useCallback,useContext,useEffect,useMemo,useRef,useState,type Reac
 import {View,type LayoutRectangle,type StyleProp,type ViewStyle} from 'react-native';
 import {TutorialSpotlight} from './tutorial';
 import {BoardDetailScreen,GoalListScreen,NewGoalScreen} from './board-screens';
-import type {PocketStickerId} from './sticker-glyphs';
+import type {StickerId} from './sticker-glyphs';
 
 /**
  * 첫 실행 튜토리얼 5단계 (PRD 4.6). 예시 화면 위에 대상 하나를 재서 스포트라이트를 씌운다.
@@ -54,7 +54,7 @@ export function FirstRunTutorialFrame({index,children,onNext,onSkip,autoFocus=tr
 // ── 예시 화면 ──────────────────────────────────────────────────────
 const noop=()=>{};
 const range=(n:number)=>Array.from({length:n},(_,i)=>i+1);
-const filledWith=(n:number,sticker:PocketStickerId)=>Object.fromEntries(range(n).map(k=>[k,sticker])) as Record<number,PocketStickerId>;
+const filledWith=(n:number,sticker:StickerId)=>Object.fromEntries(range(n).map(k=>[k,sticker])) as Record<number,StickerId>;
 
 /** 1단계: 목록의 `+` */
 export function TutorialListExample() {

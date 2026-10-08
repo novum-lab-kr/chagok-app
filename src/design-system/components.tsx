@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { retro, type TextVariant } from './tokens';
 import { pixelOutline, progressRatio } from './geometry';
 import { sproutPath, sproutViewBox } from './assets/sprout';
-import { StickerGlyph, type PocketStickerId } from './sticker-glyphs';
+import { StickerGlyph, type StickerId } from './sticker-glyphs';
 import { gearPath, gearViewBox } from './assets/gear';
 
 const c = retro.color;
@@ -314,7 +314,7 @@ export function PixelBadge({label,tone='ink',large=false}:{label:string;tone?:Ba
   </PixelFrame>;
 }
 /** 판이 100%가 되면 붙는 완성 스티커: 그 판의 기본 스티커 + 「완성」 배지. */
-export function CompletionSticker({sticker,size=36,tilted=false,animate=false}:{sticker:PocketStickerId;size?:number;/** 스티커를 붙인 듯 비스듬히 (완성한 판 설정) */tilted?:boolean;/** 완성 순간: 붙이기 모션 한 번 (PRD 4.7) */animate?:boolean}) {
+export function CompletionSticker({sticker,size=36,tilted=false,animate=false}:{sticker:StickerId;size?:number;/** 스티커를 붙인 듯 비스듬히 (완성한 판 설정) */tilted?:boolean;/** 완성 순간: 붙이기 모션 한 번 (PRD 4.7) */animate?:boolean}) {
   const body=<View accessible accessibilityLabel="완성" style={{flexDirection:'row',alignItems:'center',gap:4,transform:tilted?[{rotate:'-10deg'}]:undefined}}>
     <StickerGlyph id={sticker} size={size}/><PixelBadge label="완성" tone="primary" large/>
   </View>;

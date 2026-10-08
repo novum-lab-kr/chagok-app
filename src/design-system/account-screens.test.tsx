@@ -47,8 +47,8 @@ describe('계정과 백업 칸',()=>{
   });
   it('연결되면 계정, 마지막 백업, 로그아웃·계정 삭제 순으로 보인다',()=>{
     render(<AccountBackupPanel status={{state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'}} {...handlers}/>);
-    expect(screen.getByText('Apple 계정으로 연결했어요')).toBeTruthy();
-    expect(screen.getByText('오늘 9:20에 모두 백업했어요')).toBeTruthy();
+    expect(screen.getByText('연결한 계정')).toBeTruthy();expect(screen.getByText('Apple')).toBeTruthy();
+    expect(screen.getByText('마지막 백업')).toBeTruthy();expect(screen.getByText('오늘 9:20')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'계정 삭제'}));expect(handlers.onDelete).toHaveBeenCalled();
   });
   it('로그인이 풀리면 로그인 버튼을 함께 보인다',()=>{
