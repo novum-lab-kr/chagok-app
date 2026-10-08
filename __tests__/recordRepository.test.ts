@@ -75,13 +75,13 @@ describe('recordRepository', () => {
 });
 
 describe('완성한 판 (PRD 4.7)', () => {
-  it('기록을 고칠 수 없다', async () => {
+  it('기록을 고칠 수 있다 (2026-10-08)', async () => {
     const { completeGoal } = await import('../src/repositories/goalRepository');
     const g = await createGoal({ name: '판', boardType: 'tally', totalSlots: 3 });
     const s = await placeSticker(g.id, 0);
     await upsertRecord(s.id, { photoUri: null, memo: '처음' });
     await completeGoal(g.id, 1);
-    await expect(upsertRecord(s.id, { photoUri: null, memo: '고침' })).rejects.toThrow();
-    expect((await getRecord(s.id))?.memo).toBe('처음');
+    await upsertRecord(s.id, { photoUri: null, memo: '고침' });
+    expect((await getRecord(s.id))?.memo).toBe('고침');
   });
 });

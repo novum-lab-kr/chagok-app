@@ -61,9 +61,18 @@ export function inPeriod(goal: Goal, date: DateKey): boolean {
   return date >= startDate(goal) && (goal.endDate === null || date <= goal.endDate);
 }
 
-/** 달력 날짜를 누를 수 있는가. 완성한 판은 기록을 열 수 있는 날(스티커가 있는 날)만. */
+/**
+ * 고칠 수 있는 기간. 완성한 판도 칸을 고칠 수 있다 (2026-10-08) — 종료일 없는 판은 완성한 날까지.
+ * 완성은 한 번 되면 그대로다. 칸을 떼도 진행 중으로 돌아가지 않는다.
+ */
+function inEditablePeriod(goal: Goal, date: DateKey): boolean {
+  if (!inPeriod(goal, date)) return false;
+  return goal.endDate !== null || goal.completedAt === null || date <= localDateKey(goal.completedAt);
+}
+
+/** 달력 날짜를 누를 수 있는가. 고칠 수 있는 기간 안이거나, 스티커가 붙어 있어 기록을 열 수 있는 날. */
 export function isDateEnabled(goal: Goal, date: DateKey, hasSticker: boolean): boolean {
-  return isCompleted(goal) ? hasSticker : inPeriod(goal, date);
+  return hasSticker || inEditablePeriod(goal, date);
 }
 
 /** 시작한 달에서는 이전 달, 종료일이 있는 달에서는 다음 달로 가지 않는다. 기간 없는 달력판은 미래로 계속 간다. */
@@ -77,8 +86,11 @@ export function monthNav(goal: Goal, year: number, month: number): { canGoPrev: 
 
 export const stickerDate = (s: Sticker): DateKey => localDateKey(s.placedAt);
 
+/**
+ * 붙일 수 있는가. 적립판은 빈칸 어디든, 달력판은 시작일부터 오늘까지의 빈 날 (2026-10-08 — 지난 날짜도, 미래는 안 됨).
+ * 완성한 판도 붙인다.
+ */
 export function canPlace(goal: Goal, stickers: readonly Sticker[], target: PlaceTarget, now: Date): boolean {
-  if (isCompleted(goal)) return false;
   if (goal.boardType === 'tally') {
     if (!('slot' in target)) return false;
     const { slot } = target;
@@ -87,8 +99,16 @@ export function canPlace(goal: Goal, stickers: readonly Sticker[], target: Place
   }
   if (!('date' in target)) return false;
   const { date } = target;
-  return date === localDateKey(now.getTime()) && inPeriod(goal, date)
+  return date <= localDateKey(now.getTime()) && inEditablePeriod(goal, date)
     && !stickers.some((s) => stickerDate(s) === date);
+}
+
+/** 달력판 스티커의 붙인 시각. 스티커 날짜는 붙인 시각에서 정해지므로, 지난 날짜면 그 날짜에 지금 시·분으로 둔다. */
+export function placedAtFor(date: DateKey, now: number): number {
+  if (date === localDateKey(now)) return now;
+  const t = new Date(now);
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d, t.getHours(), t.getMinutes(), t.getSeconds(), t.getMilliseconds()).getTime();
 }
 
 /**
@@ -101,16 +121,11 @@ export function completesBoard(goal: Goal, placedTotal: number): boolean {
   return placedTotal + 1 >= daysInclusive(startDate(goal), goal.endDate);
 }
 
-export const canRemove = (goal: Goal): boolean => !isCompleted(goal);
-
 /**
- * 떼기 전에 확인하는가. 기록(사진·메모)이 있으면 확인한다 (PRD 4.5).
- * 달력판의 지난 날은 다시 붙일 수 없으므로 기록이 없어도 확인한다 (2026-09-30).
+ * 떼기 전에 확인하는가. 기록(사진·메모)이 있을 때만 (PRD 4.5).
+ * 지난 날도 다시 붙일 수 있게 되어 지난 날 확인은 없앴다 (2026-10-08).
  */
-export function needsRemoveConfirm(goal: Goal, sticker: Sticker, hasRecord: boolean, now: Date): boolean {
-  if (hasRecord) return true;
-  return goal.boardType === 'calendar' && stickerDate(sticker) < localDateKey(now.getTime());
-}
+export const needsRemoveConfirm = (hasRecord: boolean): boolean => hasRecord;
 
 /** 번호가 가장 작은 빈칸(0부터). 기존 focus를 둘 칸이다 (PRD 4.2). */
 export function nextEmptySlot(goal: Goal, stickers: readonly Sticker[]): number | null {

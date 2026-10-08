@@ -225,11 +225,13 @@ export function StickerGrid({children}: {children:ReactNode}) {
 
 /** 붙인 칸의 스티커 떼기를 스크린리더에서도 쓸 수 있게 하는 접근성 동작 (꾹 누르기 대체). */
 export const removeStickerAction={name:'longpress',label:'스티커 떼기'} as const;
+const ignoreLongPress=()=>{};
 export function StickerSlot({number,state='empty',onPress,onLongPress,width=84,height=64,enabled=state!=='empty'}: {number:number;state?:'empty'|'available'|'filled';onPress?:()=>void;/** 붙인 칸을 꾹 눌렀을 때 (스티커 떼기) */onLongPress?:()=>void;width?:DimensionValue;height?:DimensionValue;enabled?:boolean}) {
   const [focused,setFocused]=useState(false);
   const [slotSize,setSlotSize]=useState({width:84,height:64});
   const sh=slotSize.height;
-  return <Pressable onLayout={e=>setSlotSize(e.nativeEvent.layout)} disabled={!enabled} onPress={onPress} onLongPress={onLongPress}
+  // 꾹 누르기 처리기는 빈칸에도 둔다 — 떼자마자 빈칸으로 다시 그려진 칸에서 손을 떼면 한 번 누르기(붙이기)로 처리됐다 (2026-10-08). 스크린리더 동작은 onLongPress가 있을 때만.
+  return <Pressable onLayout={e=>setSlotSize(e.nativeEvent.layout)} disabled={!enabled} onPress={onPress} onLongPress={onLongPress??ignoreLongPress}
     accessibilityActions={onLongPress?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===removeStickerAction.name)onLongPress?.()}} accessibilityRole="button"
     accessibilityLabel={`${number}번 칸, ${state==='filled'?'새싹이 스티커':enabled?'붙일 수 있음':'빈칸'}`}
     accessibilityState={{disabled:!enabled}} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} style={{width,height}}>

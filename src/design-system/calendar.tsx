@@ -41,13 +41,18 @@ export function CalendarBoard({year,month,records={},recordedDates,selectedDate,
   </View>;
 }
 /** 달력의 날짜 한 칸. 스티커가 붙은 날은 한 번 누르기 = 기록 열기(onOpenRecord), 꾹 누르기 = 떼기(onSelect)다. */
+/**
+ * 빈칸에도 꾹 누르기 처리기를 둔다. 붙은 칸을 꾹 눌러 떼면 칸이 바로 빈칸으로 다시 그려지는데, 그때 처리기가 없으면
+ * 손을 떼는 순간 React Native가 한 번 누르기로 보고 빈칸 붙이기가 불려 다시 붙었다 (2026-10-08 시뮬레이터 재현).
+ */
+const ignoreLongPress=()=>{};
 function CalendarDay({day,month,date,sticker,recorded,selected,enabled,cellWidth,readonly,onSelect,onOpenRecord,popIn}:{day:number;month:number;date:string;sticker?:PocketStickerId;recorded:boolean;selected:boolean;enabled:boolean;cellWidth:number;readonly:boolean;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void;popIn:boolean}) {
   const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
   const select=readonly?undefined:()=>onSelect(date);
   const press=open??select;
   const remove=open?select:undefined;
   const active=enabled&&(!readonly||!!open);
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${month}월 ${day}일${sticker?', 스티커 있음':''}${sticker&&recorded?', 사진 또는 메모 기록 있음':''}`} accessibilityState={{selected,disabled:!active}} aria-selected={selected} aria-disabled={!active} disabled={!active} onPress={press} onLongPress={remove}
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${month}월 ${day}일${sticker?', 스티커 있음':''}${sticker&&recorded?', 사진 또는 메모 기록 있음':''}`} accessibilityState={{selected,disabled:!active}} aria-selected={selected} aria-disabled={!active} disabled={!active} onPress={press} onLongPress={remove??ignoreLongPress}
     accessibilityActions={remove?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===removeStickerAction.name)remove?.()}} style={{flex:1,alignItems:'center',paddingTop:4,opacity:enabled?1:retro.opacity.disabled}}>
     <PixelText style={{fontSize:14,lineHeight:18}}>{day}</PixelText>{sticker&&(popIn?<StickMotion><StickerGlyph id={sticker} size={Math.min(28,cellWidth-6)}/></StickMotion>:<StickerGlyph id={sticker} size={Math.min(28,cellWidth-6)}/>)}{selected&&<PixelFocusRing/>}
     {sticker&&recorded&&<View pointerEvents="none" accessibilityLabel="사진 또는 메모 기록 있음" style={{position:'absolute',right:2,top:2,width:10,height:10,backgroundColor:retro.color.primary,borderColor:retro.color.ink,borderWidth:2}}/>}

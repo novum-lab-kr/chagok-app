@@ -39,10 +39,6 @@ export async function upsertRecord(
   const db = await getDb();
   const now = Date.now();
   return db.transaction(async (tx) => {
-    const goal = await tx.first<{ completed_at: number | null }>(
-      'SELECT g.completed_at FROM stickers s JOIN goals g ON g.id = s.goal_id WHERE s.id = ?', stickerId,
-    );
-    if (goal && goal.completed_at !== null) throw new Error('완성한 판은 고칠 수 없습니다.');
     const row = await tx.first<RecordRow>('SELECT * FROM records WHERE sticker_id = ?', stickerId);
     if (row) {
       await tx.run(

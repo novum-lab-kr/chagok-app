@@ -138,14 +138,23 @@ describe('붙이기·떼기와 목표 상태 (DEV-DESIGN 3절)', () => {
     expect(await getGoal(g.id)).toMatchObject({ completedAt: s.placedAt, completionSeen: false });
   });
 
-  it('완성한 판에는 붙이지 않고, 뗄 수도 없다', async () => {
-    const { completeGoal } = await import('../src/repositories/goalRepository');
+  it('완성한 판에도 붙이고 뗄 수 있고, 완성은 그대로다 (2026-10-08)', async () => {
+    const { completeGoal, getGoal } = await import('../src/repositories/goalRepository');
     const g = await goal();
     const s = await placeSticker(g.id, 0);
     await completeGoal(g.id, 1);
-    await expect(placeSticker(g.id, 1)).rejects.toThrow();
-    await expect(removeSticker(s.id)).rejects.toThrow();
-    expect(await listStickers(g.id)).toHaveLength(1);
+    await placeSticker(g.id, 1);
+    await removeSticker(s.id);
+    expect((await listStickers(g.id)).map((x) => x.slotIndex)).toEqual([1]);
+    expect(await getGoal(g.id)).toMatchObject({ completedAt: 1 });
+  });
+
+  it('이미 완성한 판에 complete로 붙여도 완성 시각을 바꾸지 않는다', async () => {
+    const { completeGoal, getGoal } = await import('../src/repositories/goalRepository');
+    const g = await goal();
+    await completeGoal(g.id, 1);
+    await placeSticker(g.id, 0, 'sprout', { complete: true });
+    expect(await getGoal(g.id)).toMatchObject({ completedAt: 1 });
   });
 
   it('떼면 그 기록의 사진 경로를 돌려준다', async () => {

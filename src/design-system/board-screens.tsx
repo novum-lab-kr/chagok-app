@@ -44,11 +44,12 @@ export type TallyBoardView={kind:'tally';total:number;/** 방금 붙인 칸 번�
 export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방금 붙인 날 */justPlaced?:string;records:Record<string,PocketStickerId>;recordedDates?:ReadonlySet<string>;/** 오늘 칸 강조. 완성한 판은 두지 않는다 */selectedDate?:string;isDateEnabled:(date:string)=>boolean;canGoPrev:boolean;canGoNext:boolean;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;onOpenRecord:(date:string)=>void};
 /**
  * 판 상세. 판 조작: 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기 (PRD 4.5).
- * 완성한 판은 readonly라 기록 열기만 남는다 (4.7).
+ * 완성한 판은 readonly라 기록 열기만 남는다 (4.7). editable이면 완성한 판도 진행 중인 판처럼 고친다(2026-10-08) — 완성 표시는 그대로.
  */
-export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false}:{/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:PocketStickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
+export function BoardDetailScreen({name,sticker,completed,editable=false,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false}:{/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:PocketStickerId;completed:boolean;/** 완성한 판도 붙이고 뗄 수 있다 */editable?:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
   // 판은 칸 크기를 재고 다음 빈칸으로 스크롤한 뒤에 보인다. 재기 전 프레임은 픽셀 테두리가 빠져 있어,
   // 칸이 많은 판을 열 때 화면이 넘어오는 동안 그대로 보였다 (2026-09-30 실기기 녹화).
+  const locked=completed&&!editable;
   const [ready,setReady]=useState(false);
   const reveal=useCallback(()=>setReady(true),[]);
   // 판 윗부분(테두리·제목·진행 줄)은 고정하고 칸만 판 안에서 스크롤한다. 빈칸으로 옮겨도 목표가 보인다 (2026-09-30 사용자 결정).
@@ -61,8 +62,8 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>
       {board.kind==='calendar'
         ?<CalendarSwipe board={board}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
-          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} readonly={completed} poppedDate={board.justPlaced}/></CalendarSwipe>
-        :<TallyGrid board={board} sticker={sticker} completed={completed} onSettled={reveal}/>}
+          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} readonly={locked} poppedDate={board.justPlaced}/></CalendarSwipe>
+        :<TallyGrid board={board} sticker={sticker} completed={locked} onSettled={reveal}/>}
       </CenteringScrollView>
     </PixelPanel>
     </View>
@@ -170,7 +171,7 @@ export function GoalSettingsScreen({name,onChangeName,sticker,onChangeSticker,pe
 export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel,completedLabel,onDelete,onBack}:{name:string;sticker:PocketStickerId;/** 예: '적립판 · 20칸', '달력판' */boardLabel:string;/** 달력판만. 예: '9월 1일 – 9월 23일', '9월 1일부터' */periodLabel?:string;/** 예: '9월 24일' */completedLabel:string;onDelete:()=>void;onBack:()=>void}) {
   const row=(label:string,value:string)=><View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:44,borderBottomWidth:retro.shape.cellBorder,borderColor:retro.color.ink}}><PixelText style={{width:108}}>{label}</PixelText><PixelText style={{flex:1}}>{value}</PixelText></View>;
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
-    <ShortNotice emphasis title="완성한 판은 고칠 수 없어요" detail={`${completedLabel}에 완성했어요. 기록은 볼 수 있고, 목표는 삭제만 할 수 있어요.`}/>
+    <ShortNotice emphasis title="완성한 판이에요" detail={`${completedLabel}에 완성했어요. 판의 칸과 기록은 고칠 수 있고, 목표는 삭제만 할 수 있어요.`}/>
     <View>
       {/* 정보 블록 오른쪽에 스티커를 붙이듯 비스듬히 올린다. 값 글자와 겹치지 않도록 짧은 값이 오는 줄 위에 둔다. */}
       <View pointerEvents="none" style={{position:'absolute',right:0,top:50,zIndex:1}}><CompletionSticker sticker={sticker} tilted/></View>

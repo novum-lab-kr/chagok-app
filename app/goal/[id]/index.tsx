@@ -12,7 +12,7 @@ import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
 import {
-  canPlace, canRemove, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm,
+  canPlace, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, placedAtFor,
   pendingCompletion, progressOf, stickerDate,
 } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
@@ -72,7 +72,7 @@ export default function Board() {
     const how = goal.boardType === 'tally' ? '칸을 늘려' : goal.endDate ? '종료일을 늘려' : '완성을 풀고';
     const choice = await ask({
       title: goal.boardType === 'calendar' && goal.endDate ? '기간을 마쳤어요!' : '판을 완성했어요!',
-      description: `${how} 이 판에 계속 붙일 수 있어요. 닫으면 완성한 판으로 보관되고 더 고칠 수 없어요.`,
+      description: `${how} 이 판에 계속 붙일 수 있어요. 닫으면 완성한 판으로 보관돼요.`,
       secondaryLabel: '닫기',
       primaryLabel: '계속하기',
     });
@@ -144,22 +144,24 @@ export default function Board() {
 
   /**
    * 붙인다. 마지막 칸이면 먼저 완성을 확인받는다. 저장이 끝난 뒤에만 모션·햅틱·갱신 (PRD 4.5, 4.7, 7절).
+   * 이미 완성한 판은 다시 완성하지 않는다 — 완성은 한 번만 (2026-10-08).
    * from: 판단에 쓸 판 데이터. 위젯 링크는 방금 다시 읽은 것을 넘긴다. 기본은 지금 보이는 판.
+   * placedAt: 달력판의 지난 날짜는 그 날짜의 시각으로 붙인다(placedAtFor). 없으면 지금.
    */
-  async function place(slotIndex: number, at: { slot?: number; date?: string }, from: BoardData | null = data) {
+  async function place(slotIndex: number, at: { slot?: number; date?: string }, from: BoardData | null = data, placedAt?: number) {
     if (!from) return;
     const target = from.goal;
-    const complete = completesBoard(target, from.placedAll);
+    const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
     if (complete && !(await confirm({
       title: '이 판을 완성할까요?',
       description: target.boardType === 'tally'
-        ? '마지막 칸이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요.'
-        : '기간의 마지막 빈 날이에요. 완성하면 스티커를 붙이거나 떼고, 기록을 고칠 수 없어요.',
+        ? '마지막 칸이에요. 완성한 뒤에도 칸과 기록은 고칠 수 있어요.'
+        : '기간의 마지막 빈 날이에요. 완성한 뒤에도 칸과 기록은 고칠 수 있어요.',
       secondaryLabel: '취소',
       primaryLabel: '완성하기',
     }))) return;
     const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
-      await placeSticker(target.id, slotIndex, safeStickerId(target.defaultStickerId), { complete });
+      await placeSticker(target.id, slotIndex, safeStickerId(target.defaultStickerId), { complete, placedAt });
     });
     if (!ok) return;
     setJustPlaced(at);
@@ -167,16 +169,10 @@ export default function Board() {
     await reload();
   }
 
-  /** 뗀다. 기록이 있거나 달력판의 지난 날이면 먼저 확인한다 (PRD 4.5, 2026-09-30). */
+  /** 뗀다. 기록이 있으면 먼저 확인한다 (PRD 4.5). 완성한 판에서도 뗀다 — 완성은 그대로 (2026-10-08). */
   async function remove(target: Sticker) {
-    if (!goal || !canRemove(goal)) return;
-    const hasRecord = recordedIds.has(target.id);
-    if (needsRemoveConfirm(goal, target, hasRecord, new Date())) {
-      const past = goal.boardType === 'calendar' && stickerDate(target) < localDateKey(Date.now());
-      const description = hasRecord && past ? '지난 날은 다시 붙일 수 없고, 이 칸의 사진·메모도 함께 사라져요.'
-        : hasRecord ? '이 칸의 사진·메모도 함께 사라져요.'
-        : '지난 날은 다시 붙일 수 없어요.';
-      if (!(await confirm({ title: '스티커를 뗄까요?', description, secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
+    if (needsRemoveConfirm(recordedIds.has(target.id))) {
+      if (!(await confirm({ title: '스티커를 뗄까요?', description: '이 칸의 사진·메모도 함께 사라져요.', secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
     }
     let photo: string | null = null;
     const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(target.id); });
@@ -201,12 +197,12 @@ export default function Board() {
     });
   }
 
-  /** 달력판: 오늘 칸만 붙는다 (PRD 4.3). 붙인 날을 한 번 누르면 뗀다. */
+  /** 달력판: 시작일부터 오늘까지의 빈 날에 붙는다 — 미래는 안 된다 (PRD 4.3, 2026-10-08). 붙인 날을 한 번 누르면 뗀다. */
   function onDateSelect(date: string) {
     void actOnce(async () => {
       const placed = byDate(date);
       if (placed) { await remove(placed); return; }
-      if (goal && canPlace(goal, stickers, { date }, new Date())) await place(new Date().getDate() - 1, { date });
+      if (goal && canPlace(goal, stickers, { date }, new Date())) await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
     });
   }
 
@@ -232,6 +228,7 @@ export default function Board() {
         name={goal.name}
         sticker={sticker}
         completed={done}
+        editable
         animateCompletion={pending}
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}

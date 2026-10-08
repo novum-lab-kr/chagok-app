@@ -62,7 +62,8 @@ describe('위젯 화면 로직', () => {
     const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [lateTap] } as MonthWidgetProps, env(t(7, 0, 0)));
     expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(1); // 10/6 칸
     expect(texts(root)).toContain('Ready?');
-    const out = (button(root).props.onPress as () => { requests: { kind: string; dateKey: string }[] })();
+    const todayButton = all(root).find((e) => e.type === 'Button' && e.props.target === 'day-7')!;
+    const out = (todayButton.props.onPress as () => { requests: { kind: string; dateKey: string }[] })();
     expect(out.requests[1]).toMatchObject({ kind: 'add', dateKey: '2026-10-07' });
   });
 
@@ -113,6 +114,16 @@ describe('위젯 화면 로직', () => {
       const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [todayTap] } as MonthWidgetProps, stale);
       expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(1);
       expect(texts(root)).toContain('Nice!');
+    });
+
+    it('이번 달은 지난 빈 날을 눌러 그 날짜에 붙이고, 앞날은 누르지 않는다 (2026-10-08)', () => {
+      const days = Array.from({ length: 31 }, (_, i) => (i < 6 ? 'missed' : 'future')) as MonthWidgetProps['goals'][string]['days'];
+      const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
+      const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [] } as MonthWidgetProps, env(t(7, 9)));
+      const day3 = all(root).find((e) => e.type === 'Button' && e.props.target === 'day-3')!;
+      const out = (day3.props.onPress as () => { requests: { kind: string; dateKey: string }[] })();
+      expect(out.requests[0]).toMatchObject({ kind: 'add', dateKey: '2026-10-03' });
+      expect(all(root).some((e) => e.type === 'Button' && e.props.target === 'day-8')).toBe(false);
     });
 
     it('적립판은 그날 붙인 칸을 오늘 칸으로 보지 않는다 — 누르면 판 화면', () => {

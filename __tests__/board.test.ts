@@ -3,7 +3,7 @@ import {
 } from '../src/domain/dates';
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
-  canPlace, completesBoard, canRemove, needsRemoveConfirm, isDateEnabled, monthNav,
+  canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
   endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, pendingCompletion, parseSlotCount,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
@@ -105,12 +105,18 @@ describe('기간', () => {
     expect(inPeriod(g, '2026-09-24')).toBe(false);
     expect(inPeriod(calendar({ createdAt: at(2026, 9, 10) }), '2030-01-01')).toBe(true);
   });
-  it('진행 중이면 기간 안 날짜만 누를 수 있고, 완성하면 스티커가 있는 날만 누를 수 있다', () => {
+  it('기간 안 날짜를 누를 수 있다. 완성한 판도 같다 (2026-10-08)', () => {
     expect(isDateEnabled(g, '2026-09-24', false)).toBe(false);
     expect(isDateEnabled(g, '2026-09-15', false)).toBe(true);
-    const done = { ...g, completedAt: 1 };
-    expect(isDateEnabled(done, '2026-09-15', false)).toBe(false);
-    expect(isDateEnabled(done, '2026-09-15', true)).toBe(true);
+    const done = { ...g, completedAt: at(2026, 9, 24, 0) };
+    expect(isDateEnabled(done, '2026-09-15', false)).toBe(true);
+    expect(isDateEnabled(done, '2026-09-24', false)).toBe(false);
+  });
+  it('종료일 없는 판은 완성한 날까지가 기간이다', () => {
+    const done = calendar({ createdAt: at(2026, 9, 10), completedAt: at(2026, 9, 25, 21) });
+    expect(isDateEnabled(done, '2026-09-25', false)).toBe(true);
+    expect(isDateEnabled(done, '2026-09-26', false)).toBe(false);
+    expect(isDateEnabled(done, '2026-09-26', true)).toBe(true); // 붙은 날은 기록을 열 수 있다
   });
   it('시작한 달에서는 이전 달, 종료일이 있는 달에서는 다음 달로 가지 않는다', () => {
     expect(monthNav(g, 2026, 9)).toEqual({ canGoPrev: false, canGoNext: false });
@@ -143,11 +149,14 @@ describe('붙이기 (PRD 4.2, 4.3)', () => {
   it('100칸이 넘는 적립판도 붙인다 (상한 없음)', () => {
     expect(canPlace(tally({ totalSlots: 300 }), [], { slot: 250 }, NOW)).toBe(true);
   });
-  it('달력판은 오늘 칸만, 기간 안에서, 한 번만 붙인다', () => {
+  it('달력판은 시작일부터 오늘까지, 기간 안에서, 하루 한 번 붙인다 (2026-10-08)', () => {
     const g = calendar({ createdAt: at(2026, 9, 10) });
     expect(canPlace(g, [], { date: '2026-09-29' }, NOW)).toBe(true);
-    expect(canPlace(g, [], { date: '2026-09-28' }, NOW)).toBe(false);
+    expect(canPlace(g, [], { date: '2026-09-28' }, NOW)).toBe(true);
+    expect(canPlace(g, [], { date: '2026-09-10' }, NOW)).toBe(true);
+    expect(canPlace(g, [], { date: '2026-09-09' }, NOW)).toBe(false);
     expect(canPlace(g, [], { date: '2026-09-30' }, NOW)).toBe(false);
+    expect(canPlace(g, [onDay(28)], { date: '2026-09-28' }, NOW)).toBe(false);
     expect(canPlace(g, [onDay(29)], { date: '2026-09-29' }, NOW)).toBe(false);
     expect(canPlace(calendar({ createdAt: at(2026, 9, 10), endDate: '2026-09-28' }), [], { date: '2026-09-29' }, NOW)).toBe(false);
   });
@@ -155,8 +164,16 @@ describe('붙이기 (PRD 4.2, 4.3)', () => {
     expect(canPlace(calendar(), [], { slot: 0 }, NOW)).toBe(false);
     expect(canPlace(tally(), [], { date: '2026-09-29' }, NOW)).toBe(false);
   });
-  it('완성한 판에는 붙이지 않는다', () => {
-    expect(canPlace(tally({ completedAt: 1 }), [], { slot: 0 }, NOW)).toBe(false);
+  it('완성한 판에도 붙인다 — 종료일 없는 판은 완성한 날까지 (2026-10-08)', () => {
+    expect(canPlace(tally({ completedAt: 1 }), [], { slot: 0 }, NOW)).toBe(true);
+    expect(canPlace(calendar({ createdAt: at(2026, 9, 10), endDate: '2026-09-23', completedAt: at(2026, 9, 24, 0) }), [], { date: '2026-09-20' }, NOW)).toBe(true);
+    const manual = calendar({ createdAt: at(2026, 9, 10), completedAt: at(2026, 9, 25, 21) });
+    expect(canPlace(manual, [], { date: '2026-09-24' }, NOW)).toBe(true);
+    expect(canPlace(manual, [], { date: '2026-09-26' }, NOW)).toBe(false);
+  });
+  it('지난 날짜에 붙이면 그 날짜에 지금 시·분으로 둔다 (스티커 날짜는 붙인 시각에서 정해진다)', () => {
+    expect(placedAtFor('2026-09-29', NOW.getTime())).toBe(NOW.getTime());
+    expect(placedAtFor('2026-09-20', NOW.getTime())).toBe(at(2026, 9, 20, 10));
   });
   it('다음 빈칸은 번호가 가장 작은 빈칸이다', () => {
     expect(nextEmptySlot(tally({ totalSlots: 3 }), [stk(0), stk(2)])).toBe(1);
@@ -180,18 +197,9 @@ describe('마지막 칸 확인 (PRD 4.7)', () => {
 });
 
 describe('떼기 (PRD 4.5, 4.7)', () => {
-  it('완성한 판에서는 뗄 수 없다', () => {
-    expect(canRemove(tally())).toBe(true);
-    expect(canRemove(tally({ completedAt: 1 }))).toBe(false);
-  });
-  it('기록이 있으면 확인한다', () => {
-    expect(needsRemoveConfirm(tally(), stk(0), true, NOW)).toBe(true);
-    expect(needsRemoveConfirm(tally(), stk(0), false, NOW)).toBe(false);
-  });
-  it('달력판의 지난 날은 기록이 없어도 확인한다. 오늘은 기록이 있을 때만', () => {
-    expect(needsRemoveConfirm(calendar(), onDay(28), false, NOW)).toBe(true);
-    expect(needsRemoveConfirm(calendar(), onDay(29), false, NOW)).toBe(false);
-    expect(needsRemoveConfirm(calendar(), onDay(29), true, NOW)).toBe(true);
+  it('기록이 있을 때만 확인한다 — 지난 날도 다시 붙일 수 있다 (2026-10-08)', () => {
+    expect(needsRemoveConfirm(true)).toBe(true);
+    expect(needsRemoveConfirm(false)).toBe(false);
   });
 });
 
