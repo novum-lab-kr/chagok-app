@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe,it,expect,afterEach,vi } from 'vitest';
 import { render,screen,fireEvent,cleanup } from '@testing-library/react';
-import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro,StickerGlyph,stickerLabel,toColorStickerId,ActionSymbol } from './index';
+import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro,StickerGlyph,stickerLabel,toColorStickerId,ActionSymbol,MemoEditor } from './index';
 afterEach(cleanup);
 describe('공통 컴포넌트 동작',()=>{
   it('픽셀 틀 SVG는 크기를 재기 전부터 있다 — 크기가 바뀌면 key로 새로 만든다(iOS는 만든 뒤 크기만 바꾸면 다시 그리지 않는다, 2026-10-04)',()=>{
@@ -24,6 +24,23 @@ describe('공통 컴포넌트 동작',()=>{
     expect(changed).toHaveBeenCalledWith('매일 책 읽기');expect(input.value).toBe('매일 책 읽기');
     expect(getComputedStyle(input).fontFamily).toContain('NeoDunggeunmo');
     expect(getComputedStyle(screen.getByText('차곡차곡')).fontFamily).toContain('NeoDunggeunmo');
+  });
+  it('한도를 넘긴 글자는 잘라서 전달한다 — iOS는 한글을 조합하는 중에는 maxLength를 거치지 않는다 (2026-10-08)',()=>{
+    const changed=vi.fn();render(<PixelInput label="목표 이름" value="" maxLength={5} onChangeText={changed}/>);
+    fireEvent.change(screen.getByRole('textbox',{name:'목표 이름'}),{target:{value:'ㅋㅋㅋㅋㅋㅋㅋ'}});
+    expect(changed).toHaveBeenLastCalledWith('ㅋㅋㅋㅋㅋ');
+  });
+  it('한도에서 자를 때 이모지를 반으로 가르지 않는다',()=>{
+    const changed=vi.fn();render(<PixelInput label="목표 이름" value="" maxLength={5} onChangeText={changed}/>);
+    fireEvent.change(screen.getByRole('textbox',{name:'목표 이름'}),{target:{value:'물한잔😀'}});
+    expect(changed).toHaveBeenLastCalledWith('물한잔😀');
+    fireEvent.change(screen.getByRole('textbox',{name:'목표 이름'}),{target:{value:'물한잔요😀'}});
+    expect(changed).toHaveBeenLastCalledWith('물한잔요');
+  });
+  it('기록 메모도 한도를 넘긴 글자는 잘라서 전달한다',()=>{
+    const changed=vi.fn();render(<MemoEditor value="" maxLength={3} onChange={changed}/>);
+    fireEvent.change(screen.getByRole('textbox',{name:'메모'}),{target:{value:'ㅇㄹㄴㅇ'}});
+    expect(changed).toHaveBeenLastCalledWith('ㅇㄹㄴ');
   });
   it('필터 선택을 전달하고 테두리를 만들지 않는다',()=>{
     const change=vi.fn();const {rerender}=render(<StickerFilters value="전체" onChange={change}/>);

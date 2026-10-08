@@ -2,7 +2,7 @@ import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
-import {GoalStickerCell,exampleGoals} from './screen-compositions';
+import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
 import {ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
@@ -40,6 +40,19 @@ describe('화면 구성 컴포넌트',()=>{
     rerender(<NewGoalScreen {...props} kind="calendar"/>);
     expect(screen.queryByText('칸 수')).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'날짜 고르기'}));expect(props.onChangeEndMode).toHaveBeenCalledWith('pick');
+  });
+  it('새 목표: 이름 칸은 한도와 문구를 받고, 칸에서 나오면 알린다',()=>{
+    const blur=vi.fn();
+    render(<NewGoalScreen name="" onChangeName={vi.fn()} nameMaxLength={20} nameError="목표 이름을 입력해주세요." onNameBlur={blur} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="sprout" onChangeSticker={vi.fn()} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={()=>{}}/>);
+    const input=screen.getByRole('textbox',{name:'목표 이름'});
+    expect(input.getAttribute('maxlength')).toBe('20');
+    expect(screen.getByRole('alert').textContent).toBe('목표 이름을 입력해주세요.');
+    fireEvent.focus(input);fireEvent.blur(input);expect(blur).toHaveBeenCalledTimes(1);
+  });
+  it('기록: 메모 칸은 한도와 문구를 받는다',()=>{
+    render(<RecordScreen goal={exampleGoals[0]} date="2026년 10월 8일" initialMemo="" memoMaxLength={500} memoError="500자까지 입력할 수 있어요." onChoosePhoto={()=>{}} onRemovePhoto={()=>{}} onBack={()=>{}} onSave={()=>{}} onRemoveSticker={()=>{}}/>);
+    expect(screen.getByRole('textbox',{name:'메모'}).getAttribute('maxlength')).toBe('500');
+    expect(screen.getByRole('alert').textContent).toBe('500자까지 입력할 수 있어요.');
   });
   it('칸 늘리기: 1 이상만 받고 늘린 뒤 칸 수를 보여준다. 상한은 없다',()=>{
     const submit=vi.fn();

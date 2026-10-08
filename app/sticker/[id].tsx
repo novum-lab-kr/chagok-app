@@ -13,7 +13,7 @@ import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../src/app-data/goBack';
-import { needsRemoveConfirm } from '../../src/domain/board';
+import { MEMO_MAX, memoError, needsRemoveConfirm } from '../../src/domain/board';
 import { localDateKey, parseDateKey } from '../../src/domain/dates';
 import type { Goal, Sticker } from '../../src/domain/types';
 
@@ -148,6 +148,8 @@ export default function StickerRecord() {
         onRemovePhoto={() => { setPhotoUri(null); setPhotoMissing(false); }}
         onBack={goBack}
         onMemoChange={setDraftMemo}
+        memoMaxLength={MEMO_MAX}
+        memoError={memoError(draftMemo)}
         onSave={(m) => { void saveOnce(() => save(m)); }}
         onRemoveSticker={() => { void saveOnce(remove); }}
       />

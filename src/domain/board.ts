@@ -187,5 +187,12 @@ export function goalNameError(name: string): string | undefined {
 export function memoError(memo: string): string | undefined {
   return memo.length >= MEMO_MAX ? `${MEMO_MAX}자까지 입력할 수 있어요.` : undefined;
 }
+/**
+ * 새 목표의 이름 문구. 처음 연 빈 칸에는 보이지 않고, 이름을 썼다가 지웠거나
+ * 칸을 눌렀다가 비운 채 나왔을 때(touched) 보인다. 띄어쓰기만 있으면 바로 보인다.
+ */
+export function shownGoalNameError(name: string, touched: boolean): string | undefined {
+  return name === '' && !touched ? undefined : goalNameError(name);
+}
 
 export { dateKeyOf };
