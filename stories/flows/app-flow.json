@@ -483,7 +483,8 @@
         "label": "앱 설정",
         "tags": [
           "PRD 4.9",
-          "app/settings"
+          "app/settings",
+          "배치 시안 중"
         ],
         "stories": [
           {
@@ -667,28 +668,28 @@
         "label": "홈 화면 위젯",
         "tags": [
           "PRD 4.10",
-          "RN 미리보기"
+          "RN 미리보기 (10월 4일 모양)"
         ],
         "stories": [
           {
-            "id": "widgets-preview--tally",
-            "label": "적립판"
+            "id": "widgets-preview--ring",
+            "label": "링 위젯"
           },
           {
-            "id": "widgets-preview--big-tally",
-            "label": "적립판 100칸"
+            "id": "widgets-preview--board",
+            "label": "달력 위젯"
           },
           {
-            "id": "widgets-preview--period",
-            "label": "달력판 종료일 있음"
-          },
-          {
-            "id": "widgets-preview--calendar",
-            "label": "달력판 종료일 없음"
+            "id": "widgets-preview--edge",
+            "label": "긴 이름 · 큰 적립판"
           },
           {
             "id": "widgets-preview--empty",
             "label": "목표 없음"
+          },
+          {
+            "id": "widgets-preview--try",
+            "label": "눌러 보기"
           }
         ],
         "scenarios": [
