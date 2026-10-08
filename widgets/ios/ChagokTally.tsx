@@ -57,9 +57,15 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   // 그릴 값 = 앱이 준 값 + 아직 처리 안 된 요청. 날짜는 이 타임라인 항목의 시각(자정 항목이면 다음 날).
   // 이 타임라인 항목의 시각. expo-widgets는 timestamp를 env.date(Date)로 바꿔 넘긴다(expo-widgets/bundle/index.ts).
   // 시스템이 자정 항목을 미리(자정 전에) 그려 두므로 지금 시각(Date.now)을 쓰면 안 된다.
-  const day = env.date ? new Date(env.date) : new Date();
+  // 단, 항목이 바닥나 지난날 항목을 다시 그릴 때(앱을 며칠 안 열고 위젯을 누름)는 지금 날짜를 오늘로 쓰고,
+  // 앱이 그날 기준으로 준 값(오늘 붙임 등)은 무시한다 (2026-10-08).
+  const now = new Date();
+  const entry = env.date ? new Date(env.date) : now;
   const pad = (n: number) => String(n).padStart(2, '0');
-  const todayKey = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+  const keyOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const late = keyOf(now) > keyOf(entry);
+  const day = late ? now : entry;
+  const todayKey = keyOf(day);
   const mine = (props.requests ?? []).filter((r) => r.goalId === g.id).sort((a, b) => a.at - b.at);
   let net = 0;
   let todayState: boolean | null = null; // 오늘 날짜 요청의 마지막 결과: true 붙임, false 뗌
@@ -67,8 +73,8 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
     net += r.kind === 'add' ? 1 : -1;
     if (r.dateKey === todayKey) todayState = r.kind === 'add';
   }
-  const placedToday = todayState ?? g.placedToday;
-  const undoable = todayState ?? g.undoable;
+  const placedToday = todayState ?? (late ? false : g.placedToday);
+  const undoable = todayState ?? (late ? false : g.undoable);
   const placed = Math.max(0, g.placed + net);
   const remaining = g.remaining == null ? null : g.remaining - net;
   const lastSlot = remaining !== null && remaining <= 1;

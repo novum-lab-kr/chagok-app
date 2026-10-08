@@ -1,0 +1,14 @@
+diff --git a/node_modules/expo-widgets/ios/Widgets/AppIntent.swift b/node_modules/expo-widgets/ios/Widgets/AppIntent.swift
+index 972fa4f..98b0d20 100644
+--- a/node_modules/expo-widgets/ios/Widgets/AppIntent.swift
++++ b/node_modules/expo-widgets/ios/Widgets/AppIntent.swift
+@@ -94,7 +94,8 @@ struct WidgetUserInteraction: AppIntent {
+       "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+     ])
+ 
+-    WidgetCenter.shared.reloadTimelines(ofKind: source)
++    // chagok: reloadTimelines(ofKind:) 제거. perform이 끝나면 시스템이 누른 위젯만 바로 다시 그린다(WWDC23 「Bring widgets to life」).
++    // 같은 종류 전부를 다시 그리게 하면 누르지 않은 위젯이 먼저 처리돼 0.6~0.7초를 기다렸다(2026-10-07 시뮬레이터 측정).
+ 
+     return .result()
+   }
