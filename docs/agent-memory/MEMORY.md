@@ -4,8 +4,11 @@
 - [Policy site pending](policy-site-pending.md) — draft live on Netlify chagok-app-terms (noindex); official publish waits on cloud provider
 - [Copy from user's side](copy-user-perspective.md) — UI text says what the user can do, not system state ("로그인이 필요해요")
 - [Server dev environment](server-dev-environment.md) — Supabase cloud dev project chagok-dev; keys in .secrets/, never .env.* names; prod hosting undecided
-- [Account readiness](no-account-work-first.md) — Apple paid 2026-10-05, approval pending; Google OAuth not ready; account-gated work only once ready
+- [Account readiness](no-account-work-first.md) — Apple approved 2026-10-05; Google OAuth not ready; account-gated work only once ready
 - [Proposals as artifact](proposals-as-artifact.md) — show 시안 as pick+memo artifact first; Storybook only after all are confirmed
 - [Sprout is not the mascot](sprout-not-mascot.md) — sprout is just a default sticker; never use it as app icon/brand without asking
 - [Branding & watch idea](branding-and-watch-idea.md) — mascot 「차곡이」 — name, faces, icon, splash confirmed 2026-10-04 (docs/design/character); watch idea vs PRD §2
 - [Repo migration](repo-migration.md) — moving repo soon: checklist docs/migration/README.md; keep docs/agent-memory/ in sync
+- [Plain words, not jargon](plain-words-not-jargon.md) — say 시험 구현 not spike; always flag test vs real implementation
+- [Worktree before writing](worktree-before-writing.md) — new worktree + branch before the first file write, even drafts; main checkout is shared with other sessions
+- [Widget tap timing](widget-tap-timing.md) — measure widget taps via chronod logs; month widget ~3s, 32 archives per reload
