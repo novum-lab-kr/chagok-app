@@ -9,4 +9,3 @@
 - [Sprout is not the mascot](sprout-not-mascot.md) — sprout is just a default sticker; never use it as app icon/brand without asking
 - [Branding & watch idea](branding-and-watch-idea.md) — mascot 「차곡이」 — name, faces, icon, splash confirmed 2026-10-04 (docs/design/character); watch idea vs PRD §2
 - [Repo migration](repo-migration.md) — moving repo soon: checklist docs/migration/README.md; keep docs/agent-memory/ in sync
-- [Worktree before writing](worktree-before-writing.md) — new worktree + branch before the first file write, even drafts; main checkout is shared with other sessions
