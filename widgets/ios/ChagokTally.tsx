@@ -1,4 +1,4 @@
-// 「적립판」 위젯(중간 크기) — PRD 4.10. 10칸(5×2)을 누르면 다음 빈칸에 붙이고 떼며, 마지막 칸이면 앱을 연다.
+// 「적립판」 위젯(중간 크기) — PRD 4.10. 10칸(5×2). 빈칸을 누르면 다음 빈칸에 붙이고, 오늘 붙인 칸을 누르면 그 칸을 뗀다.
 import { Button, HStack, Image, Link, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
   background,
@@ -58,7 +58,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   // 이 타임라인 항목의 시각. expo-widgets는 timestamp를 env.date(Date)로 바꿔 넘긴다(expo-widgets/bundle/index.ts).
   // 시스템이 자정 항목을 미리(자정 전에) 그려 두므로 지금 시각(Date.now)을 쓰면 안 된다.
   // 단, 항목이 바닥나 지난날 항목을 다시 그릴 때(앱을 며칠 안 열고 위젯을 누름)는 지금 날짜를 오늘로 쓰고,
-  // 앱이 그날 기준으로 준 값(오늘 붙임 등)은 무시한다 (2026-10-08).
+  // 앱이 그날 기준으로 준 값(오늘 붙임 등)은 무시한다 (2026-10-07 시험).
   const now = new Date();
   const entry = env.date ? new Date(env.date) : now;
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -67,28 +67,39 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const day = late ? now : entry;
   const todayKey = keyOf(day);
   const mine = (props.requests ?? []).filter((r) => r.goalId === g.id).sort((a, b) => a.at - b.at);
-  let net = 0;
-  let todayState: boolean | null = null; // 오늘 날짜 요청의 마지막 결과: true 붙임, false 뗌
-  for (const r of mine) {
-    net += r.kind === 'add' ? 1 : -1;
-    if (r.dateKey === todayKey) todayState = r.kind === 'add';
-  }
-  const placedToday = todayState ?? (late ? false : g.placedToday);
-  const undoable = todayState ?? (late ? false : g.undoable);
-  const placed = Math.max(0, g.placed + net);
-  const remaining = g.remaining == null ? null : g.remaining - net;
-  const lastSlot = remaining !== null && remaining <= 1;
-  // 칸 위치는 어림이다(앱이 열리면 맞춘다). 처리 안 된 요청만큼 앞의 빈 칸을 채우고, 음수면 뒤의 찬 칸을 비운다.
+  // 칸 위치는 어림이다(앱이 열리면 맞춘다). 칸 번호는 판 전체 번호(0부터), 위젯 칸 i는 g.from - 1 + i번.
   const cells = g.cells.slice();
-  for (let k = 0; k < Math.abs(net); k++) {
-    if (net > 0) {
+  const first = g.from - 1;
+  const today = new Set(late ? [] : g.todaySlots ?? []); // 오늘 붙인 칸
+  const removable = new Set(late ? [] : g.removableSlots ?? []); // 위젯에서 눌러 뗄 수 있는 칸
+  let placed = g.placed;
+  for (const r of mine) {
+    if (r.kind === 'add') {
       const i = cells.indexOf('empty');
-      if (i >= 0) cells[i] = 'filled';
+      if (i < 0) continue;
+      cells[i] = 'filled';
+      placed += 1;
+      if (r.dateKey === todayKey) { today.add(first + i); removable.add(first + i); }
+    } else if (r.kind === 'remove') {
+      const i = (r.slotIndex ?? -1) - first;
+      if (i < 0 || i >= cells.length || cells[i] !== 'filled' || !removable.has(first + i)) continue;
+      cells[i] = 'empty';
+      placed -= 1;
+      today.delete(first + i);
+      removable.delete(first + i);
     } else {
-      const i = cells.lastIndexOf('filled');
-      if (i >= 0) cells[i] = 'empty';
+      // 이전 버전 위젯이 남긴 되돌리기 — 오늘 붙인 칸 중 마지막을 뗀다
+      const last = [...today].filter((s) => s >= first && s < first + cells.length).sort((a, b) => b - a)[0];
+      if (last === undefined) continue;
+      cells[last - first] = 'empty';
+      placed -= 1;
+      today.delete(last);
+      removable.delete(last);
     }
   }
+  const placedToday = today.size > 0;
+  const remaining = g.remaining == null ? null : g.remaining - (placed - g.placed);
+  const lastSlot = remaining !== null && remaining <= 1;
   const nextEmpty = cells.indexOf('empty');
   const rows = [cells.slice(0, 5), cells.slice(5, 10)];
 
@@ -98,24 +109,29 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const bubble = props.bubbles[pal];
   const pct = Math.floor((placed / Math.max(1, g.total)) * 100);
 
-  // 누르는 곳: 마지막 칸은 완성 확인 화면, 기록이 있으면 판 상세, 그 밖에는 위젯 안에서 붙이고 뗀다.
-  const tap = (label: React.ReactElement) => {
-    if (lastSlot && !placedToday) return <Link destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
-    if (placedToday && !undoable) return <Link destination={`chagok://goal/${g.id}`}>{label}</Link>;
+  // 칸마다 누르는 곳 (2026-10-07 결정): 빈칸은 다음 빈칸에 붙이고(마지막 칸이면 완성 확인 화면),
+  // 오늘 붙였고 기록이 없는 칸은 그 칸을 떼고, 지난날 붙인 칸·기록이 있는 칸은 판 상세를 연다.
+  // 위젯은 확인 창을 띄울 수 없어 지난 기록은 위젯에서 떼지 않는다.
+  const tap = (i: number, label: React.ReactElement) => {
+    const slot = first + i;
+    const filled = cells[i] === 'filled';
+    if (!filled && lastSlot) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
+    if (filled && !removable.has(slot)) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}`}>{label}</Link>;
     return (
       <Button
-        target="place"
+        key={`t${i}`}
+        target={`cell-${i}`}
         modifiers={[buttonStyle('plain')]}
         onPress={() => {
-          const kind = placedToday ? 'undo' : 'add';
           const now = new Date();
           const p2 = (n: number) => String(n).padStart(2, '0');
           const req = {
             id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
             goalId: g.id,
-            kind,
+            kind: filled ? 'remove' : 'add',
             at: now.getTime(),
             dateKey: `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`,
+            ...(filled ? { slotIndex: slot } : {}),
           };
           return { requests: [...(props.requests ?? []), req] };
         }}>
@@ -148,32 +164,33 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
           {g.name}
         </Text>
       </VStack>
-      {tap(
-        <VStack spacing={4} modifiers={[frame({ maxHeight: 10000 }), contentShape(shapes.rectangle()), padding({ trailing: 12, leading: 4 })]}>
-          {rows.map((row, r) => (
-            <HStack key={`r${r}`} spacing={4}>
-              {row.map((state, c) => {
-                const i = r * 5 + c;
-                return state === 'filled' ? (
-                  <Image key={`t${i}`} uiImage={g.sticker} modifiers={[resizable(), frame({ width: 22, height: 22 }), frame({ width: 26, height: 26 })]} />
+      <VStack spacing={4} modifiers={[frame({ maxHeight: 10000 }), padding({ trailing: 12, leading: 4 })]}>
+        {rows.map((row, r) => (
+          <HStack key={`r${r}`} spacing={4}>
+            {row.map((state, c) => {
+              const i = r * 5 + c;
+              return tap(
+                i,
+                state === 'filled' ? (
+                  <Image uiImage={g.sticker} modifiers={[resizable(), frame({ width: 22, height: 22 }), frame({ width: 26, height: 26 }), contentShape(shapes.rectangle())]} />
                 ) : (
                   <Text
-                    key={`t${i}`}
                     modifiers={[
                       font({ family: F, size: 10 }),
                       foregroundStyle(ink),
                       opacity(0.7),
                       frame({ width: 26, height: 26 }),
+                      contentShape(shapes.rectangle()),
                       ...(i === nextEmpty ? [border({ color: '#FD855F', width: 2 })] : []),
                     ]}>
                     {String(g.from + i)}
                   </Text>
-                );
-              })}
-            </HStack>
-          ))}
-        </VStack>,
-      )}
+                ),
+              );
+            })}
+          </HStack>
+        ))}
+      </VStack>
     </HStack>
   );
 };

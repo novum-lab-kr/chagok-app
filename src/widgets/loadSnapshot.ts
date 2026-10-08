@@ -24,7 +24,9 @@ export async function loadWidgetInputs(now: Date): Promise<WidgetInput[]> {
     };
     if (goal.boardType === 'tally') {
       const stickers = await listStickers(goal.id);
-      inputs.push({ goal, placedAll: stickers.length, placedDates: [], slotIndexes: stickers.map((s) => s.slotIndex), todaySticker: todaySticker(stickers) });
+      const mine = stickers.filter((s) => localDateKey(s.placedAt) === today);
+      const todaySlots = { dateKey: today, slots: mine.map((s) => s.slotIndex), removable: mine.filter((s) => !recorded.has(s.id)).map((s) => s.slotIndex) };
+      inputs.push({ goal, placedAll: stickers.length, placedDates: [], slotIndexes: stickers.map((s) => s.slotIndex), todaySticker: todaySticker(stickers), todaySlots });
       continue;
     }
     const month = await listStickersInRange(goal.id, from, to);

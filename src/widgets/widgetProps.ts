@@ -8,7 +8,8 @@ export type WidgetArt = { mascotYet: string; mascotDone: string; mascotFull: str
 export type CardBase = { id: string; name: string; placed: number; total: number; placedToday: boolean; undoable: boolean; remaining: number | null; sticker: string };
 export type GoalCard = CardBase;
 export type MonthCard = CardBase & { monthLabel: string; days: WidgetCalendarCell[]; firstWeekday: number; todayIndex: number };
-export type TallyCard = CardBase & { from: number; cells: WidgetTallyCell[] };
+/** todaySlots·removableSlots는 판 전체 칸 번호(0부터)다. 위젯 칸 i는 from - 1 + i번 칸이다. */
+export type TallyCard = CardBase & { from: number; cells: WidgetTallyCell[]; todaySlots: number[]; removableSlots: number[] };
 type Shared = {
   order: { id: string; name: string }[]; defaultId: string | null; today: DateKey;
   mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: WidgetArt['bubbles']; requests: WidgetRequest[];
@@ -51,7 +52,7 @@ export function tallyWidgetProps(s: WidgetSnapshot, art: WidgetArt): TallyWidget
   const goals: Record<string, TallyCard> = {};
   for (const g of tal) {
     if (g.mini.type !== 'tally') continue;
-    goals[g.id] = { ...base(g, art), from: g.mini.from, cells: g.mini.cells };
+    goals[g.id] = { ...base(g, art), from: g.mini.from, cells: g.mini.cells, todaySlots: g.todaySlots, removableSlots: g.removableSlots };
   }
   return { ...shared(tal, s, art), goals };
 }

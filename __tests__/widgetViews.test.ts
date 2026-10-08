@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { GoalWidgetProps, MonthWidgetProps } from '../src/widgets/widgetProps';
+import type { GoalWidgetProps, MonthWidgetProps, TallyWidgetProps } from '../src/widgets/widgetProps';
 
 jest.mock('expo-widgets', () => ({ createWidget: (_name: string, fn: unknown) => fn }));
 jest.mock('@expo/ui/swift-ui', () => new Proxy({}, { get: (_t, name) => (name === '__esModule' ? true : String(name)) }));
@@ -13,6 +13,8 @@ jest.mock('@expo/ui/swift-ui/modifiers', () => new Proxy({}, {
 const ChagokGoal = require('../widgets/ios/ChagokGoal').default as (p: GoalWidgetProps, env: object) => ReactElement;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ChagokMonth = require('../widgets/ios/ChagokMonth').default as (p: MonthWidgetProps, env: object) => ReactElement;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ChagokTally = require('../widgets/ios/ChagokTally').default as (p: TallyWidgetProps, env: object) => ReactElement;
 
 type El = { type: unknown; props: Record<string, unknown> };
 function all(node: unknown, out: El[] = []): El[] {
@@ -111,6 +113,14 @@ describe('위젯 화면 로직', () => {
       const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [todayTap] } as MonthWidgetProps, stale);
       expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(1);
       expect(texts(root)).toContain('Nice!');
+    });
+
+    it('적립판은 그날 붙인 칸을 오늘 칸으로 보지 않는다 — 누르면 판 화면', () => {
+      const tally = { ...card, from: 1, cells: ['filled', 'filled', 'empty'], todaySlots: [1], removableSlots: [1], remaining: 10 };
+      const root = ChagokTally({ ...shared, goals: { run: tally }, requests: [] } as TallyWidgetProps, stale);
+      expect(texts(root)).toContain('Ready?');
+      const second = all(root).filter((e) => e.type === 'Link' || e.type === 'Button')[1];
+      expect(second.type).toBe('Link');
     });
   });
 

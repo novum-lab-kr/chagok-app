@@ -83,7 +83,36 @@ describe('planRequest · 되돌리기', () => {
   });
 });
 
+describe('planRequest · 칸 떼기 (적립판 위젯, 2026-10-07)', () => {
+  const remove = (slotIndex: number, over: Partial<WidgetRequest> = {}) => req({ kind: 'remove', slotIndex, at: t(2026, 10, 6, 11), ...over });
+
+  it('누른 칸의 스티커를 뗀다', () => {
+    const list = [st('a', t(2026, 10, 6, 8), 0), st('b', t(2026, 10, 6, 10), 1)];
+    expect(planRequest(tally(), list, none, remove(0))).toEqual({ action: 'remove', stickerId: 'a' });
+  });
+
+  it('요청 날짜가 아닌 날 붙인 칸은 떼지 않는다', () => {
+    expect(planRequest(tally(), [st('old', t(2026, 10, 5), 0)], none, remove(0))).toEqual({ action: 'skip', reason: 'nothing' });
+  });
+
+  it('누른 뒤 앱에서 붙인 칸은 떼지 않는다', () => {
+    expect(planRequest(tally(), [st('app', t(2026, 10, 6, 12), 0)], none, remove(0))).toEqual({ action: 'skip', reason: 'nothing' });
+  });
+
+  it('빈칸이면 건너뛰고, 기록이 있으면 떼지 않는다', () => {
+    expect(planRequest(tally(), [], none, remove(3))).toEqual({ action: 'skip', reason: 'nothing' });
+    expect(planRequest(tally(), [st('s', t(2026, 10, 6, 8), 0)], new Set(['s']), remove(0))).toEqual({ action: 'skip', reason: 'record' });
+  });
+});
+
 describe('isWidgetRequest', () => {
+  it('칸 떼기는 칸 번호가 있어야 한다', () => {
+    expect(isWidgetRequest(req({ kind: 'remove', slotIndex: 2 }))).toBe(true);
+    expect(isWidgetRequest(req({ kind: 'remove' }))).toBe(false);
+    expect(isWidgetRequest(req({ kind: 'remove', slotIndex: -1 }))).toBe(false);
+    expect(isWidgetRequest(req({ kind: 'remove', slotIndex: 1.5 }))).toBe(false);
+  });
+
   it('위젯이 쌓은 모양만 받는다', () => {
     expect(isWidgetRequest(req())).toBe(true);
     expect(isWidgetRequest({ ...req(), kind: 'move' })).toBe(false);
