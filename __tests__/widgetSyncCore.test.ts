@@ -24,12 +24,12 @@ function deps(goal: ReturnType<typeof port>, applied: string[][] = []): SyncDeps
 }
 
 describe('syncWidgetsOnce', () => {
-  it('요청을 반영하고 지금 + 앞으로 7번의 자정, 8개 항목을 쓴다 (항목마다 그 날짜의 props)', async () => {
+  it('요청을 반영하고 지금 + 다음 자정, 2개 항목을 쓴다 (항목마다 그 날짜의 props)', async () => {
     const goal = port([[r('a')], []]);
     const applied: string[][] = [];
     await syncWidgetsOnce(deps(goal, applied));
     expect(applied).toEqual([['a']]);
-    const expected = [new Date(2026, 9, 6, 12), ...[7, 8, 9, 10, 11, 12, 13].map((d) => new Date(2026, 9, d))];
+    const expected = [new Date(2026, 9, 6, 12), new Date(2026, 9, 7)];
     expect(goal.written[0].map((e) => e.date)).toEqual(expected);
     expect(goal.written[0].map((e) => e.props.at)).toEqual(expected.map((d) => d.getTime()));
     expect(goal.written[0][0].props.requests).toEqual([]);
@@ -38,7 +38,7 @@ describe('syncWidgetsOnce', () => {
   it('읽은 뒤 들어온 요청은 모든 항목에 남긴다 (Review Focus 5)', async () => {
     const goal = port([[r('a')], [r('a'), r('b')]]);
     await syncWidgetsOnce(deps(goal));
-    expect(goal.written[0]).toHaveLength(8);
+    expect(goal.written[0]).toHaveLength(2);
     for (const e of goal.written[0]) expect(e.props.requests).toEqual([r('b')]);
   });
 

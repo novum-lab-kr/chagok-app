@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { GoalWidgetProps, MonthWidgetProps } from '../src/widgets/widgetProps';
+import type { GoalWidgetProps, MonthWidgetProps, TallyWidgetProps } from '../src/widgets/widgetProps';
 
 jest.mock('expo-widgets', () => ({ createWidget: (_name: string, fn: unknown) => fn }));
 jest.mock('@expo/ui/swift-ui', () => new Proxy({}, { get: (_t, name) => (name === '__esModule' ? true : String(name)) }));
@@ -13,6 +13,8 @@ jest.mock('@expo/ui/swift-ui/modifiers', () => new Proxy({}, {
 const ChagokGoal = require('../widgets/ios/ChagokGoal').default as (p: GoalWidgetProps, env: object) => ReactElement;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ChagokMonth = require('../widgets/ios/ChagokMonth').default as (p: MonthWidgetProps, env: object) => ReactElement;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ChagokTally = require('../widgets/ios/ChagokTally').default as (p: TallyWidgetProps, env: object) => ReactElement;
 
 type El = { type: unknown; props: Record<string, unknown> };
 function all(node: unknown, out: El[] = []): El[] {
@@ -47,6 +49,7 @@ describe('위젯 화면 로직', () => {
   });
 
   it('같은 날 요청이 있으면 Nice!이고 다시 누르면 뗀다', () => {
+    jest.setSystemTime(t(6, 23, 52));
     const root = ChagokGoal({ ...shared, goals: { run: card }, requests: [lateTap] } as GoalWidgetProps, env(t(6, 23, 51)));
     expect(texts(root)).toContain('Nice!');
     const out = (button(root).props.onPress as () => { requests: { kind: string }[] })();
@@ -82,6 +85,43 @@ describe('위젯 화면 로직', () => {
     const root = ChagokGoal({ ...shared, goals: { run: card }, requests: [lateTap] }, env(t(7, 0, 0)));
     expect(texts(root)).toContain('Ready?');
     expect(texts(root)).not.toContain('Nice!');
+  });
+
+  describe('장면이 바닥난 뒤 (앱을 며칠 안 열어 마지막 항목이 지난날일 때)', () => {
+    beforeEach(() => { jest.setSystemTime(t(7, 9)); });
+    const stale = env(t(5, 0, 0)); // 마지막 항목은 10/5, 지금은 10/7
+
+    it('지금 날짜를 오늘로 쓰고, 그날 붙였다는 앱 값은 무시한다', () => {
+      const root = ChagokGoal({ ...shared, goals: { run: { ...card, placedToday: true, undoable: true } }, requests: [] }, stale);
+      expect(texts(root)).toContain('Ready?');
+      const out = (button(root).props.onPress as () => { requests: { kind: string; dateKey: string }[] })();
+      expect(out.requests[0]).toMatchObject({ kind: 'add', dateKey: '2026-10-07' });
+    });
+
+    it('오늘 누른 요청이 있으면 Nice!이고 다시 누르면 뗀다', () => {
+      const todayTap = { id: 'w3', goalId: 'run', kind: 'add' as const, at: t(7, 8), dateKey: '2026-10-07' };
+      const root = ChagokGoal({ ...shared, goals: { run: card }, requests: [todayTap] }, stale);
+      expect(texts(root)).toContain('Nice!');
+      const out = (button(root).props.onPress as () => { requests: { kind: string }[] })();
+      expect(out.requests[1].kind).toBe('undo');
+    });
+
+    it('이번 달은 오늘 칸에 요청을 합친다', () => {
+      const days = Array.from({ length: 31 }, (_, i) => (i < 4 ? 'missed' : 'future')) as MonthWidgetProps['goals'][string]['days'];
+      const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 4 };
+      const todayTap = { id: 'w3', goalId: 'run', kind: 'add' as const, at: t(7, 8), dateKey: '2026-10-07' };
+      const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [todayTap] } as MonthWidgetProps, stale);
+      expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(1);
+      expect(texts(root)).toContain('Nice!');
+    });
+
+    it('적립판은 그날 붙인 칸을 오늘 칸으로 보지 않는다 — 누르면 판 화면', () => {
+      const tally = { ...card, from: 1, cells: ['filled', 'filled', 'empty'], todaySlots: [1], removableSlots: [1], remaining: 10 };
+      const root = ChagokTally({ ...shared, goals: { run: tally }, requests: [] } as TallyWidgetProps, stale);
+      expect(texts(root)).toContain('Ready?');
+      const second = all(root).filter((e) => e.type === 'Link' || e.type === 'Button')[1];
+      expect(second.type).toBe('Link');
+    });
   });
 
   it('차곡이 표정: 아직 = 기본, 붙임 = 미소, 다 채움 = 신남', () => {

@@ -57,15 +57,21 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   // 그릴 값 = 앱이 준 값 + 아직 처리 안 된 요청. 날짜는 이 타임라인 항목의 시각(자정 항목이면 다음 날).
   // 이 타임라인 항목의 시각. expo-widgets는 timestamp를 env.date(Date)로 바꿔 넘긴다(expo-widgets/bundle/index.ts).
   // 시스템이 자정 항목을 미리(자정 전에) 그려 두므로 지금 시각(Date.now)을 쓰면 안 된다.
-  const day = env.date ? new Date(env.date) : new Date();
+  // 단, 항목이 바닥나 지난날 항목을 다시 그릴 때(앱을 며칠 안 열고 위젯을 누름)는 지금 날짜를 오늘로 쓰고,
+  // 앱이 그날 기준으로 준 값(오늘 붙임 등)은 무시한다 (2026-10-07 시험).
+  const now = new Date();
+  const entry = env.date ? new Date(env.date) : now;
   const pad = (n: number) => String(n).padStart(2, '0');
-  const todayKey = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+  const keyOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const late = keyOf(now) > keyOf(entry);
+  const day = late ? now : entry;
+  const todayKey = keyOf(day);
   const mine = (props.requests ?? []).filter((r) => r.goalId === g.id).sort((a, b) => a.at - b.at);
   // 칸 위치는 어림이다(앱이 열리면 맞춘다). 칸 번호는 판 전체 번호(0부터), 위젯 칸 i는 g.from - 1 + i번.
   const cells = g.cells.slice();
   const first = g.from - 1;
-  const today = new Set(g.todaySlots ?? []); // 오늘 붙인 칸
-  const removable = new Set(g.removableSlots ?? []); // 위젯에서 눌러 뗄 수 있는 칸
+  const today = new Set(late ? [] : g.todaySlots ?? []); // 오늘 붙인 칸
+  const removable = new Set(late ? [] : g.removableSlots ?? []); // 위젯에서 눌러 뗄 수 있는 칸
   let placed = g.placed;
   for (const r of mine) {
     if (r.kind === 'add') {
