@@ -6,6 +6,7 @@ import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
 import {ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
+import {retro} from './tokens';
 afterEach(cleanup);
 /** react-native-web은 누른 채 450ms가 지나면 onLongPress를 부른다. */
 function longPress(el:Element) {
@@ -96,6 +97,18 @@ describe('화면 구성 컴포넌트',()=>{
     expect(screen.getByRole('button',{name:'9월 2일, 스티커 있음'})).toBeTruthy();
     expect(screen.getByRole('button',{name:'9월 3일, 스티커 있음, 사진 또는 메모 기록 있음'})).toBeTruthy();
     expect(screen.getAllByLabelText('사진 또는 메모 기록 있음')).toHaveLength(1);
+  });
+  it('달력 오늘 칸의 포커스는 기존 크기 그대로 격자선 위에 겹쳐 그리고, 그 칸을 옆 칸 위로 올린다 (2026-10-09 D-2)',()=>{
+    expect(retro.focus).toEqual({cornerSize:15,cornerThickness:8,cornerCut:2,lineWidth:3,lineInset:2,gap:3});
+    render(<CalendarBoard year={2026} month={10} selectedDate="2026-10-09" onSelect={()=>{}} onMonthChange={()=>{}}/>);
+    const ring=screen.getByTestId('calendar-focus');
+    const offset=`-${retro.shape.cellBorder}px`;
+    expect(getComputedStyle(ring).left).toBe(offset);
+    expect(getComputedStyle(ring).top).toBe(offset);
+    expect(getComputedStyle(ring).right).toBe(offset);
+    expect(getComputedStyle(ring).bottom).toBe(offset);
+    const cell=screen.getByRole('button',{name:'10월 9일'}).parentElement!;
+    expect(getComputedStyle(cell).zIndex).toBe('1');
   });
 });
 describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
