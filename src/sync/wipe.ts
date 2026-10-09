@@ -9,7 +9,7 @@ import { notifyLocalChange } from './changes';
 export async function wipeDevice(removePhotoFiles: () => void): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    await tx.exec("DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox; DELETE FROM app_settings WHERE key <> 'deviceId';");
+    await tx.exec("DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox; DELETE FROM pack_access; DELETE FROM placed_days; DELETE FROM app_settings WHERE key <> 'deviceId';");
   });
   removePhotoFiles();
   notifyLocalChange(); // 위젯을 비운다

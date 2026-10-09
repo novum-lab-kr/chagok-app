@@ -2,15 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BoardDetailScreen, PixelLoadingIndicator, RetroScreen } from '../../../src/design-system';
-import type { PocketStickerId } from '../../../src/design-system';
+import { BoardDetailScreen, PixelLoadingIndicator, RetroScreen, stickerShopDialogs } from '../../../src/design-system';
+import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
-import { percentLabel, safeStickerId } from '../../../src/app-data/pocketAdapter';
+import { percentLabel } from '../../../src/app-data/pocketAdapter';
+import { normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
+import { checkPlaceGate } from '../../../src/app-data/placeGate';
 import {
   canPlace, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, placedAtFor,
   pendingCompletion, progressOf, stickerDate,
@@ -138,7 +140,7 @@ export default function Board() {
   }
   const { stickers, placedInBasis, recordedIds } = data;
   const done = isCompleted(goal);
-  const sticker = safeStickerId(goal.defaultStickerId);
+  const sticker = normalizeStickerId(goal.defaultStickerId);
   const now = new Date();
   const progress = progressOf(goal, placedInBasis, now);
 
@@ -151,6 +153,14 @@ export default function Board() {
   async function place(slotIndex: number, at: { slot?: number; date?: string }, from: BoardData | null = data, placedAt?: number) {
     if (!from) return;
     const target = from.goal;
+    // 기본 스티커 묶음의 체험이 끝났으면 붙이지 않고 안내한다. 붙은 칸은 그대로다 (2026-10-08).
+    const gate = await checkPlaceGate(target);
+    if (!gate.ok) {
+      const choice = await ask(stickerShopDialogs.trialEnded(gate.kind));
+      if (choice === 'primary') router.push({ pathname: '/stickers/pack/[packId]', params: { packId: gate.packId } });
+      if (choice === 'secondary') router.push({ pathname: '/stickers/choose', params: { current: target.defaultStickerId, goalId: target.id } });
+      return;
+    }
     const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
     if (complete && !(await confirm({
       title: '이 판을 완성할까요?',
@@ -161,7 +171,7 @@ export default function Board() {
       primaryLabel: '완성하기',
     }))) return;
     const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
-      await placeSticker(target.id, slotIndex, safeStickerId(target.defaultStickerId), { complete, placedAt });
+      await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt });
     });
     if (!ok) return;
     setJustPlaced(at);
@@ -206,12 +216,12 @@ export default function Board() {
     });
   }
 
-  const filled: Record<number, PocketStickerId> = {};
-  const records: Record<string, PocketStickerId> = {};
+  const filled: Record<number, StickerId> = {};
+  const records: Record<string, StickerId> = {};
   const recordedSlots = new Set<number>();
   const recordedDates = new Set<string>();
   for (const s of stickers) {
-    const type = safeStickerId(s.stickerType);
+    const type = normalizeStickerId(s.stickerType);
     if (goal.boardType === 'tally') {
       filled[s.slotIndex + 1] = type;
       if (recordedIds.has(s.id)) recordedSlots.add(s.slotIndex + 1);

@@ -48,7 +48,7 @@ describe('goalRepository', () => {
 
   it('기본 스티커를 안 주면 새싹이가 된다', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
-    expect(g.defaultStickerId).toBe('sprout');
+    expect(g.defaultStickerId).toBe('basic.sprout');
   });
 
   it('이름과 기본 스티커를 바꿀 수 있다', async () => {

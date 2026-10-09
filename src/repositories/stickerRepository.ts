@@ -1,7 +1,8 @@
 import { getDb } from '../db/client';
 import { newId } from './ids';
-import { STICKER_TYPE_DEFAULT } from '../domain/types';
-import type { Sticker, StickerType } from '../domain/types';
+import { DEFAULT_STICKER_ID } from '../domain/types';
+import type { Sticker } from '../domain/types';
+import { localDateKey } from '../domain/dates';
 import { enqueue } from '../sync/outbox';
 
 type StickerRow = {
@@ -41,8 +42,9 @@ function localDayRange(at: number): [number, number] {
 export async function placeSticker(
   goalId: string,
   slotIndex: number,
-  stickerType: StickerType = STICKER_TYPE_DEFAULT,
-  options: { complete?: boolean; id?: string; placedAt?: number } = {},
+  stickerType: string = DEFAULT_STICKER_ID,
+  /** pressedAt: 누른 시각(기본 지금). 붙인 날(placed_days)은 이 날짜로 남긴다 — 위젯 요청은 누른 때를 넘긴다 */
+  options: { complete?: boolean; id?: string; placedAt?: number; pressedAt?: number } = {},
 ): Promise<Sticker> {
   const db = await getDb();
   const now = Date.now();
@@ -68,6 +70,7 @@ export async function placeSticker(
       'UPDATE goals SET last_placed_at = MAX(COALESCE(last_placed_at, 0), ?), updated_at = ? WHERE id = ?',
       sticker.placedAt, now, goalId,
     );
+    await tx.run('INSERT OR IGNORE INTO placed_days (date_key) VALUES (?)', localDateKey(options.pressedAt ?? now));
     if (options.complete && goal.completed_at === null) { // 완성은 한 번만 — 완성한 판에 붙여도 완성 시각은 그대로 (2026-10-08)
       await tx.run('UPDATE goals SET completed_at = ?, completion_seen = 0 WHERE id = ?', sticker.placedAt, goalId);
     }

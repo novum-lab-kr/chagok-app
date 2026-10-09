@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { NewGoalScreen } from '../../src/design-system';
-import type { BoardKind, EndDateMode, PocketStickerId } from '../../src/design-system';
+import type { BoardKind, EndDateMode, StickerId } from '../../src/design-system';
 import { createGoal } from '../../src/repositories/goalRepository';
 import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { longDate } from '../../src/app-data/pocketAdapter';
 import { localDateKey } from '../../src/domain/dates';
+import { takeOfferedSticker } from '../../src/app-data/stickerChoice';
 import { GOAL_NAME_MAX, shownGoalNameError } from '../../src/domain/board';
 
 const DEFAULT_COUNT = '15';
@@ -20,14 +21,19 @@ export default function NewGoal() {
   const [nameTouched, setNameTouched] = useState(false);
   const [kind, setKind] = useState<BoardKind>('tally');
   const [count, setCount] = useState(DEFAULT_COUNT);
-  const [sticker, setSticker] = useState<PocketStickerId>('sprout');
+  const [sticker, setSticker] = useState<StickerId>('basic.sprout');
   const [endMode, setEndMode] = useState<EndDateMode>('none');
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
   const [submitOnce] = useState(createSingleFlight);
   const { ask, dialog: failure } = useDialog();
 
-  const dirty = name !== '' || kind !== 'tally' || count !== DEFAULT_COUNT || sticker !== 'sprout' || endMode !== 'none';
+  const dirty = name !== '' || kind !== 'tally' || count !== DEFAULT_COUNT || sticker !== 'basic.sprout' || endMode !== 'none';
   const { goBack, dialog } = useUnsavedBack(dirty);
+  // 「기본 스티커」에서 고르고 돌아오면 받는다 (PRD 4.12).
+  useFocusEffect(useCallback(() => {
+    const picked = takeOfferedSticker();
+    if (picked) setSticker(picked);
+  }, []));
 
   // 렌더 중에 시계를 읽지 않는다. 이 화면에 있는 동안의 오늘이다.
   const [today] = useState(() => localDateKey(Date.now()));
@@ -62,6 +68,7 @@ export default function NewGoal() {
         kind={kind} onChangeKind={setKind}
         count={count} onChangeCount={setCount}
         sticker={sticker} onChangeSticker={setSticker}
+        onChooseSticker={() => router.push({ pathname: '/stickers/choose', params: { current: sticker } })}
         endMode={endMode} onChangeEndMode={setEndMode}
         endDate={endDate} onChangeEndDate={setEndDate}
         today={today} todayLabel={longDate(today)}

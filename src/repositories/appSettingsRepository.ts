@@ -38,7 +38,11 @@ export type SettingKey =
   /** 개정 안내를 한 번 보여준 약관 판 번호 (약관 설계 「재동의」 2026-10-01 변경) */
   | 'termsNoticeSeen'
   /** 위젯 요청 중 이미 처리한 id 목록, JSON 배열, 최근 200개 — 같은 요청을 두 번 처리하지 않게 */
-  | 'widgetHandledRequests';
+  | 'widgetHandledRequests'
+  /** 붙인 날 3일 체험을 받은 횟수 — 같은 문턱을 두 번 받지 않게 (스티커 묶음, 2026-10-08) */
+  | 'dayTrialsClaimed'
+  /** '1'이면 광고 제거를 샀다. 하루 체험 버튼이 없다 */
+  | 'adFree';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();

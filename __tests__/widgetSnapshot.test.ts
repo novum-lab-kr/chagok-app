@@ -92,7 +92,7 @@ describe('위젯 스냅샷 · 목록', () => {
   });
   it('목록 카드와 같은 문구 함수를 쓴다', () => {
     const snap = buildWidgetSnapshot([cal({ goal: goal({ boardType: 'tally', totalSlots: 10 }), placedAll: 4 })], at(2026, 9, 6));
-    expect(snap.goals[0]).toMatchObject({ kind: '적립판', progressLabel: '40%', percent: 40, sticker: 'sprout' });
+    expect(snap.goals[0]).toMatchObject({ kind: '적립판', progressLabel: '40%', percent: 40, sticker: 'basic.sprout' });
   });
 });
 
@@ -138,5 +138,16 @@ describe('위젯 스냅샷 · 위젯이 판단할 값', () => {
 
   it('진행 수(placed/total)를 함께 준다', () => {
     expect(buildWidgetSnapshot([tallyInput(20, 5)], at(2026, 9, 6)).goals[0]).toMatchObject({ placed: 5, total: 20, percent: 25 });
+  });
+});
+
+describe('위젯 스냅샷 · 체험이 끝난 묶음 (2026-10-08)', () => {
+  it('쓸 수 있는 때가 지나면 locked — 자정 항목에서도 그 시각으로 판단한다', () => {
+    const until = at(2026, 9, 6, 18).getTime();
+    expect(buildWidgetSnapshot([cal({ usableUntil: until })], at(2026, 9, 6, 12)).goals[0].locked).toBe(false);
+    expect(buildWidgetSnapshot([cal({ usableUntil: until })], at(2026, 9, 7, 0, 0)).goals[0].locked).toBe(true);
+  });
+  it('기한이 없으면 locked가 아니다', () => {
+    expect(buildWidgetSnapshot([cal()], at(2026, 9, 6)).goals[0].locked).toBe(false);
   });
 });

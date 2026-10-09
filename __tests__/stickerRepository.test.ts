@@ -1,6 +1,8 @@
 import { createGoal, getGoal } from '../src/repositories/goalRepository';
 import { placeSticker, listStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { withFreshDb } from './support/setup';
+import { getDb } from '../src/db/client';
+import { localDateKey } from '../src/domain/dates';
 
 withFreshDb();
 
@@ -20,7 +22,7 @@ describe('stickerRepository', () => {
 
   it('종류를 안 주면 새싹이가 기본값이다', async () => {
     const g = await goal();
-    expect((await placeSticker(g.id, 0)).stickerType).toBe('sprout');
+    expect((await placeSticker(g.id, 0)).stickerType).toBe('basic.sprout');
   });
 
   it('한 판 안에서 종류를 섞어 쓸 수 있다', async () => {
@@ -174,5 +176,33 @@ describe('붙이기·떼기와 목표 상태 (DEV-DESIGN 3절)', () => {
     const s = await placeSticker(g.id, 0);
     expect(await listStickersInRange(g.id, s.placedAt, s.placedAt + 1)).toHaveLength(1);
     expect(await listStickersInRange(g.id, s.placedAt + 1, s.placedAt + 100)).toHaveLength(0);
+  });
+});
+
+describe('누른 날 기록 (placed_days, 2026-10-08)', () => {
+  const at = (day: number, h: number) => new Date(2026, 9, day, h).getTime();
+  async function days(): Promise<string[]> {
+    const db = await getDb();
+    return (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days ORDER BY date_key')).map((r) => r.date_key);
+  }
+
+  it('달력판 지난 칸을 몰아 채워도 누른 날 하루만 남는다', async () => {
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    await placeSticker(g.id, 0, 'basic.star', { placedAt: at(7, 12), pressedAt: at(8, 10) });
+    await placeSticker(g.id, 0, 'basic.star', { placedAt: at(8, 10), pressedAt: at(8, 10) });
+    expect(await days()).toEqual(['2026-10-08']);
+  });
+
+  it('떼도 누른 날은 남는다', async () => {
+    const g = await goal();
+    const s = await placeSticker(g.id, 0, 'basic.star', { pressedAt: at(8, 10) });
+    await removeSticker(s.id);
+    expect(await days()).toEqual(['2026-10-08']);
+  });
+
+  it('누른 시각을 안 주면 지금', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    expect(await days()).toEqual([localDateKey(Date.now())]);
   });
 });
