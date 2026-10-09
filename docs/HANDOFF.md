@@ -186,6 +186,7 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 - RN + react-native-svg 공통 컴포넌트를 Storybook RN Web에서 같은 소스로 렌더한다.
 - 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤/패널/칸 border와 패널 제목 구분선은 3px. 과거의 2px 수치는 폐기됐다.
 - `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3.
+- 달력판 오늘 칸 (2026-10-09 D-2): 같은 `PixelFocusRing`을 칸 밖으로 격자선 두께(3)만큼 넓혀 격자선 위에 겹쳐 그리고, 그 칸을 `zIndex: 1`로 올린다. 칸 안에 그리면 Pro Max 칸(약 48×58)을 3분의 1쯤 덮고 기록 표시와 겹쳤다. 작게 줄이거나(A안) 칸을 칠하는 안(B·C)은 [달력 포커스 시안](https://claude.ai/artifact/6QcCHwy2WZaMTz3vQojz4c)에서 비교했다.
 - 톱니바퀴는 v6 원본 윤곽을 추출한 `assets/gear.ts`를 쓴다. 임의 16×16 아이콘으로 되돌리지 않는다.
 - 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 20pt (2026-10-09, 390에서 넓힘 — Pro Max에서 양옆이 45pt로 비어 보였다). 더 넓은 화면은 가운데로 모은다.
 - `StickerGrid`: 3열, 좌우 안쪽 6px, 열 간격 15px, 행 간격 10px. 390px에서 칸 약 84×64px.
