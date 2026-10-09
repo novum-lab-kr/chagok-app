@@ -15,6 +15,7 @@ import { localDateKey } from '../src/domain/dates';
 import { fetchPolicyManifest } from '../src/policy/manifest';
 import { openPolicy } from '../src/policy/openPolicy';
 import { monthDayLabel, upcomingChange } from '../src/policy/versions';
+import { subscribeWidgetApplied } from '../src/widgets/applied';
 
 /** 홈 = 목표 목록 (PRD 4.1). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
 export default function GoalList() {
@@ -101,6 +102,11 @@ export default function GoalList() {
     })();
     return () => { alive = false; };
   }, []));
+
+  // 앱이 앞으로 올 때 위젯 탭이 기록에 반영되면 포커스가 바뀌지 않아도 다시 읽는다 — 진행률·오늘 붙임 표시가 이전 값으로 남지 않게.
+  useEffect(() => subscribeWidgetApplied(() => {
+    void listGoalSummaries(new Date()).then(setSummaries);
+  }), []);
 
   if (!summaries || showTutorial === undefined || showStart === undefined) {
     return (

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleSheet, Platform, Modal, AccessibilityInfo, Animated, useWindowDimensions,
   type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue,
@@ -31,7 +31,17 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
   const outline = (inset = 0) => pixelOutline(w, h, inset, unit);
   // Surface and shadow must share the same contour, including stroke joins.
   const surfaceOutline = outline(border / 2);
-  return <View style={[{ position: 'relative', paddingRight: raised ? 1 : 0, paddingBottom: depth }, style]}
+  // 처음 크기는 커밋 직후 직접 읽는다. 새 아키텍처는 뷰가 화면에 붙기 전에 layout 이벤트를 처리하면 그 이벤트를 버리고
+  // 같은 크기로는 다시 보내지 않아, 기기가 바쁠 때 앱을 켜면 틀이 빠진 채 남았다(2026-10-09 시뮬레이터에서 CPU 부하로 재현).
+  // 변형(scale) 없이는 onLayout과 같은 값이라 다시 그리지 않는다. 그 뒤 크기 변화는 onLayout이 맡는다.
+  const box = useRef<View>(null);
+  useLayoutEffect(() => {
+    const rect = box.current?.getBoundingClientRect?.();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    const { width, height } = rect;
+    setSize(s => s.width === width && s.height === height ? s : { width, height });
+  }, []);
+  return <View ref={box} style={[{ position: 'relative', paddingRight: raised ? 1 : 0, paddingBottom: depth }, style]}
     onLayout={e => { const { width, height } = e.nativeEvent.layout; setSize(s => s.width === width && s.height === height ? s : {width, height}); }}>
     {/* 크기가 바뀌면 Svg를 새로 만든다(key). iOS(react-native-svg 15 + 새 아키텍처)는 만든 뒤 width·height만 바꾸면
         다시 그리지 않아, 판 상세 → 목표 설정에서 틀이 통째로 빠졌다(2026-10-04 실기기, 시뮬레이터에서 재현·확인). */}

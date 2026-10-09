@@ -55,10 +55,12 @@ export function BoardDetailScreen({name,sticker,completed,editable=false,progres
   const locked=completed&&!editable;
   const [ready,setReady]=useState(false);
   const reveal=useCallback(()=>setReady(true),[]);
+  // 달력판은 가리지 않는다. 틀은 PixelFrame이 그리기 전에 재고, 가리면 첫 layout 이벤트가 버려질 때 판이 투명한 채 남는다.
+  const visible=board.kind==='calendar'||ready;
   // 판 윗부분(테두리·제목·진행 줄)은 고정하고 칸만 판 안에서 스크롤한다. 빈칸으로 옮겨도 목표가 보인다 (2026-09-30 사용자 결정).
   // 칸이 적으면 판은 내용 높이 그대로이고, 넘치면 남은 높이까지 줄어든다.
   return <RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?'완성한 판':'내 목표'} onBack={onBack}/>}>
-    <View testID="board-panel" style={{opacity:ready?1:0,flexShrink:1}} onLayout={board.kind==='calendar'?reveal:undefined}>
+    <View testID="board-panel" style={{opacity:visible?1:0,flexShrink:1}}>
     <PixelPanel style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel="목표 설정" onPress={onSettings} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
@@ -130,6 +132,8 @@ function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sti
     // 스크롤 영역과 내용 높이가 같은 레이아웃에서 들어오도록 한 프레임 미룬다.
     requestAnimationFrame(()=>{void scrollToCenter(node,animated).then(settle);});
   }
+  // 처음 layout 이벤트가 버려져도 판이 투명한 채 남지 않게 그린 직후에도 한 번 부른다(PixelFrame 참고). 이미 했으면 아무것도 하지 않는다.
+  useLayoutEffect(()=>{if(next!==undefined) centerNext(); else if(!settled.current) settle();});
   return <View onLayout={next===undefined?settle:undefined}><StickerGrid>{numbers.map(n=>{
     const filled=board.filled[n];
     const cell=<TallyCell key={n} n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'} enabled={Boolean(filled)||!completed} readonly={completed}
