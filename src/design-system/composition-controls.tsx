@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutChangeEvent, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
-import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,type StickerGroup} from './components';
+import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
@@ -18,14 +18,15 @@ export function ScreenHeader({title,onBack,action}:{title:string;onBack?:()=>voi
 }
 export type BoardKind='tally'|'calendar';
 function BoardMiniature({kind,selected}:{kind:BoardKind;selected:boolean}) {
-  const [width,setWidth]=useState(0);
+  const {ref,size,onLayout}=useLayoutSize();
+  const width=Math.floor(size.width);
   const calendar=kind==='calendar';
   const columns=calendar?7:3, inset=calendar?7:0;
   const cell=Math.max(0,Math.min(calendar?12:28,Math.floor((width-inset*2-(calendar?4:5)*(columns-1))/columns)));
   const gap=calendar?Math.max(4,Math.floor((width-inset*2-cell*7)/6)):5;
   const start=Math.floor((width-(cell*columns+gap*(columns-1)))/2);
   const height=96;
-  return <View accessible={false} aria-hidden style={{height,width:'100%'}} onLayout={e=>setWidth(Math.floor(e.nativeEvent.layout.width))}>
+  return <View ref={ref} accessible={false} aria-hidden style={{height,width:'100%'}} onLayout={onLayout}>
     {width>0&&<>
       {calendar&&<View style={{position:'absolute',top:8,left:start,width:cell*7+gap*6,flexDirection:'row',gap}}>{['일','월','화','수','목','금','토'].map(day=><PixelText key={day} style={{width:cell,textAlign:'center',fontSize:10,lineHeight:14}}>{day}</PixelText>)}</View>}
       <Svg key={`${width}x${height}`} width={width} height={height} style={{position:'absolute',left:0,top:0}}>
@@ -41,8 +42,8 @@ function BoardMiniature({kind,selected}:{kind:BoardKind;selected:boolean}) {
   </View>;
 }
 function BoardTypeCard({kind,selected}:{kind:BoardKind;selected:boolean}) {
-  const [size,setSize]=useState({width:0,height:0});
-  return <View onLayout={e=>setSize(e.nativeEvent.layout)} style={{padding:12,gap:8}}>
+  const {ref,size,onLayout}=useLayoutSize();
+  return <View ref={ref} onLayout={onLayout} style={{padding:12,gap:8}}>
     {size.width>0&&<Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={{position:'absolute',left:0,top:0}}>
       <Path d={pixelOutline(size.width,size.height,1.5,retro.shape.controlUnit)} fill={selected?retro.color.primary:retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>
       {selected&&<Path d={pixelOutline(size.width,size.height,7.5,retro.shape.controlUnit)} fill={retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>}
@@ -152,7 +153,10 @@ function useCenteringScroll() {
     const container=content.current;
     if(!container){resolve();return;}
     target.measureLayout(container,(_x,y,_width,height)=>{
-      const next=centeredScrollOffset({targetY:y,targetHeight:height,viewportHeight:viewportHeight.current,contentHeight:contentHeight.current});
+      // 높이는 layout 이벤트로 받는데, 새 아키텍처는 기기가 바쁠 때 첫 이벤트를 버린다(useLayoutSize 참고). 못 받았으면 직접 읽는다.
+      const viewport=viewportHeight.current||scroll.current?.getNativeScrollRef()?.getBoundingClientRect?.().height||0;
+      const contentSize=contentHeight.current||container.getBoundingClientRect?.().height||0;
+      const next=centeredScrollOffset({targetY:y,targetHeight:height,viewportHeight:viewport,contentHeight:contentSize});
       scroll.current?.scrollTo({y:next,animated});
       offset.current=next;
       resolve();

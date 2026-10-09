@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleSheet, Platform, Modal, AccessibilityInfo, Animated, useWindowDimensions,
-  type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue,
+  type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue, type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { retro, type TextVariant } from './tokens';
@@ -18,10 +18,28 @@ export function PixelText({ variant = 'body', style, ...props }: TextProps & { v
     { fontFamily: retro.fontFamily, fontWeight: '400', fontStyle: 'normal', letterSpacing: 0 }]} />;
 }
 
+/**
+ * 크기를 받아야 그리는 뷰의 크기. 돌려준 ref와 onLayout을 그 뷰에 단다.
+ * 처음 크기는 커밋 직후 직접 읽는다. 새 아키텍처는 뷰가 화면에 붙기 전에 layout 이벤트를 처리하면 그 이벤트를 버리고
+ * 같은 크기로는 다시 보내지 않아, 기기가 바쁠 때 앱을 켜면 틀이 빠진 채 남았다(2026-10-09 시뮬레이터에서 CPU 부하로 재현).
+ * 변형(scale) 없이는 onLayout과 같은 값이라 다시 그리지 않는다. 그 뒤 크기 변화는 onLayout이 맡는다.
+ */
+export function useLayoutSize() {
+  const ref = useRef<View>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const update = useCallback((width: number, height: number) => setSize(s => s.width === width && s.height === height ? s : { width, height }), []);
+  useLayoutEffect(() => {
+    const rect = ref.current?.getBoundingClientRect?.();
+    if (rect && rect.width > 0 && rect.height > 0) update(rect.width, rect.height);
+  }, [update]);
+  const onLayout = useCallback((e: LayoutChangeEvent) => update(e.nativeEvent.layout.width, e.nativeEvent.layout.height), [update]);
+  return { ref, size, onLayout };
+}
+
 export type FrameVariant = 'panel' | 'button' | 'input' | 'dialog' | 'slot' | 'selection';
 export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed = false, focused = false, style, contentStyle }:
   { children?: ReactNode; variant?: FrameVariant; fill?: string; pressed?: boolean; focused?: boolean; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle> }) {
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const { ref: box, size, onLayout } = useLayoutSize();
   const raised = variant === 'button' || variant === 'dialog';
   const depth = raised ? retro.shape.shadow : 0;
   const border = variant === 'selection' ? 0 : variant === 'slot' ? retro.shape.cellBorder : variant === 'panel' || variant === 'dialog' ? retro.shape.panelBorder : retro.shape.border;
@@ -31,18 +49,7 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
   const outline = (inset = 0) => pixelOutline(w, h, inset, unit);
   // Surface and shadow must share the same contour, including stroke joins.
   const surfaceOutline = outline(border / 2);
-  // 처음 크기는 커밋 직후 직접 읽는다. 새 아키텍처는 뷰가 화면에 붙기 전에 layout 이벤트를 처리하면 그 이벤트를 버리고
-  // 같은 크기로는 다시 보내지 않아, 기기가 바쁠 때 앱을 켜면 틀이 빠진 채 남았다(2026-10-09 시뮬레이터에서 CPU 부하로 재현).
-  // 변형(scale) 없이는 onLayout과 같은 값이라 다시 그리지 않는다. 그 뒤 크기 변화는 onLayout이 맡는다.
-  const box = useRef<View>(null);
-  useLayoutEffect(() => {
-    const rect = box.current?.getBoundingClientRect?.();
-    if (!rect || rect.width <= 0 || rect.height <= 0) return;
-    const { width, height } = rect;
-    setSize(s => s.width === width && s.height === height ? s : { width, height });
-  }, []);
-  return <View ref={box} style={[{ position: 'relative', paddingRight: raised ? 1 : 0, paddingBottom: depth }, style]}
-    onLayout={e => { const { width, height } = e.nativeEvent.layout; setSize(s => s.width === width && s.height === height ? s : {width, height}); }}>
+  return <View ref={box} style={[{ position: 'relative', paddingRight: raised ? 1 : 0, paddingBottom: depth }, style]} onLayout={onLayout}>
     {/* 크기가 바뀌면 Svg를 새로 만든다(key). iOS(react-native-svg 15 + 새 아키텍처)는 만든 뒤 width·height만 바꾸면
         다시 그리지 않아, 판 상세 → 목표 설정에서 틀이 통째로 빠졌다(2026-10-04 실기기, 시뮬레이터에서 재현·확인). */}
     <Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={StyleSheet.absoluteFill} pointerEvents="none" {...decorativeSvg}>{w > 0 && h > 0 && <>
@@ -183,7 +190,7 @@ export function SproutSticker({size=48}: {size?:number}) {
  * Corner dimensions stay fixed as the parent grows; only the straight lines extend.
  */
 export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
-  const [size,setSize]=useState({width:0,height:0});
+  const {ref,size,onLayout}=useLayoutSize();
   const w=Math.round(size.width), h=Math.round(size.height);
   const f=retro.focus;
   const arm=Math.min(f.cornerSize, Math.floor(Math.min(w,h)/3));
@@ -193,8 +200,7 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
   // Odd-width strokes need half-pixel centres to keep both edges on whole pixels.
   const inset=f.lineInset+(f.lineWidth%2)/2;
   const corner=`M${cut} 0H${arm}V${thickness}H${thickness}V${arm}H0V${cut}H${cut}Z`;
-  return <View pointerEvents="none" style={[StyleSheet.absoluteFill,style]}
-    onLayout={e=>{const {width,height}=e.nativeEvent.layout;setSize(previous=>previous.width===width&&previous.height===height?previous:{width,height});}}>
+  return <View ref={ref} pointerEvents="none" style={[StyleSheet.absoluteFill,style]} onLayout={onLayout}>
     {w>0&&h>0&&<Svg key={`${w}x${h}`} width={w} height={h} {...decorativeSvg}>
       <Path d={`M${start} ${inset}H${w-start} M${start} ${h-inset}H${w-start} M${inset} ${start}V${h-start} M${w-inset} ${start}V${h-start}`} stroke={c.ink} strokeWidth={f.lineWidth} fill="none"/>
       <Path d={corner} fill={c.ink}/>

@@ -22,6 +22,22 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 0, fade: false });
 
 /**
+ * 애니메이션 첫 장면이 그려지면 OS 스플래시를 내린다. 새 아키텍처는 기기가 바쁠 때 첫 layout 이벤트를 버리므로
+ * (useLayoutSize 참고) 다음 프레임에도 한 번 더 내린다 — 그러지 않으면 OS 스플래시가 내려가지 않는다.
+ */
+function SplashOverlay({ onShown, onDone }: { onShown: () => void; onDone: () => void }) {
+  useEffect(() => {
+    const id = requestAnimationFrame(onShown);
+    return () => cancelAnimationFrame(id);
+  }, [onShown]);
+  return (
+    <View style={StyleSheet.absoluteFill} onLayout={onShown}>
+      <SplashAnimation onDone={onDone} />
+    </View>
+  );
+}
+
+/**
  * 네비게이터 헤더는 끈다. 화면마다 레트로 헤더(`ScreenHeader`, 홈의 브랜드 줄)를 직접 그리기
  * 때문에, 켜두면 제목과 뒤로가기가 두 벌씩 나온다. 상단 여백은 `RetroScreen`이 세이프에어리어로
  * 처리한다. 픽셀 폰트를 불러오기 전에는 대체 폰트로 그리지 않는다 (DESIGN-SYSTEM.md).
@@ -116,9 +132,7 @@ export default function RootLayout() {
         </Stack>
         {/* 글꼴이 준비된 뒤에 그려야 "차곡차곡" 글자가 대체 글꼴로 나오지 않는다 — 그동안은 OS 스플래시가 남아 있다. */}
         {splashDone ? null : (
-          <View style={StyleSheet.absoluteFill} onLayout={handOff}>
-            <SplashAnimation onDone={finishSplash} />
-          </View>
+          <SplashOverlay onShown={handOff} onDone={finishSplash} />
         )}
       </RetroFontProvider>
     </SafeAreaProvider>

@@ -1,6 +1,7 @@
-import React,{useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+import React,{useCallback,useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {View,type LayoutRectangle,type StyleProp,type ViewStyle} from 'react-native';
 import {TutorialSpotlight} from './tutorial';
+import {useLayoutSize} from './components';
 import {BoardDetailScreen,GoalListScreen,NewGoalScreen} from './board-screens';
 import type {StickerId} from './sticker-glyphs';
 
@@ -36,23 +37,15 @@ export function useTutorialSpot(name:TutorialSpotName) {
  * 같은 좌표면 상태를 바꾸지 않고, context 값은 단계가 바뀔 때만 새로 만든다. 그러지 않으면 측정 → 렌더 → 측정이 끝없이 돈다.
  */
 export function FirstRunTutorialFrame({index,children,onNext,onSkip,autoFocus=true,style}:{index:number;children:ReactNode;onNext:()=>void;onSkip:()=>void;/** 한 페이지에 여러 개를 그리는 문서 화면에서는 끈다 */autoFocus?:boolean;style?:StyleProp<ViewStyle>}) {
-  const root=useRef<View>(null);
+  const {ref:root,size,onLayout}=useLayoutSize();
   const [target,setTarget]=useState<LayoutRectangle>();
-  const [size,setSize]=useState<{width:number;height:number}>();
   const step=firstRunSteps[index],last=index===firstRunSteps.length-1;
   const set=useCallback((rect:LayoutRectangle)=>setTarget(previous=>previous&&previous.x===rect.x&&previous.y===rect.y&&previous.width===rect.width&&previous.height===rect.height?previous:rect),[]);
-  const spot=useMemo(()=>({name:step.name,root,set}),[step.name,set]);
-  // 처음 크기는 그린 직후 직접 읽는다. 새 아키텍처가 처음 layout 이벤트를 버리면 스포트라이트와 [건너뛰기]가 뜨지 않는다(PixelFrame 참고).
-  useLayoutEffect(()=>{
-    const rect=root.current?.getBoundingClientRect?.();
-    if(!rect||rect.width<=0||rect.height<=0) return;
-    const {width,height}=rect;
-    setSize(previous=>previous?.width===width&&previous.height===height?previous:{width,height});
-  },[]);
+  const spot=useMemo(()=>({name:step.name,root,set}),[step.name,root,set]);
   return <SpotContext.Provider value={spot}>
-    <View ref={root} style={style} onLayout={e=>{const {width,height}=e.nativeEvent.layout;setSize(previous=>previous?.width===width&&previous.height===height?previous:{width,height});}}>
+    <View ref={root} style={style} onLayout={onLayout}>
       <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{flex:1}}>{children}</View>
-      {target&&size&&<TutorialSpotlight autoFocus={autoFocus} step={index===0?1:3} highlightFrame={index===0||last} target={target} width={size.width} height={size.height} onNext={onNext} onSkip={onSkip}
+      {target&&size.width>0&&<TutorialSpotlight autoFocus={autoFocus} step={index===0?1:3} highlightFrame={index===0||last} target={target} width={size.width} height={size.height} onNext={onNext} onSkip={onSkip}
         content={{step:`${index+1} / ${firstRunSteps.length}`,title:step.title,description:step.description,primaryLabel:last?'시작하기':'다음',secondaryLabel:'건너뛰기'}}/>}
     </View>
   </SpotContext.Provider>;
