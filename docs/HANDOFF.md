@@ -49,11 +49,12 @@
    - 다음 1: 실기기 확인 — 자정 넘김(2026-10-07 시뮬레이터에서 날짜 버그를 찾아 고쳤다 `7fa7656`; 고친 뒤 자정은 아직 다시 안 봤다), 탭 속도, 앱을 이틀 넘게 안 열었을 때 위젯 탭(③은 테스트로만 확인). 실기기 설치 준비: Xcode에 Apple 계정 추가, iPhone 연결·개발자 모드 켜기(재시동), `npx expo run:ios --device`. Expo Go로는 위젯을 볼 수 없다.
    - 다음 2: Android 위젯(계획 2) — 새 모양·목표 고르기·앱이 꺼졌을 때 첫 탭 유실(시험 구현 결과 A7).
    - 위젯은 컬러 스티커로 그렸다. 앱 스티커도 모두 컬러로 정했다(2026-10-07, 2번).
-2. **스티커 화면 — 설계 확정·Storybook 반영 (2026-10-08), 다음은 앱 연결.** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
+2. **스티커 화면 — 앱 연결 (2026-10-08, 결제·광고는 개발용 대역).** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
    - 정한 것: 모두 컬러(48pt, 스키마 v6 마이그레이션), 묶음 10종·2,200원, 여는 길 세 가지(사기 · 광고 보고 24시간 · 붙인 날 누적 7·14·이후 30일마다 3일 체험), 광고 제거 구매자는 하루 체험 없음, 「기본 스티커」 화면 · 묶음 화면 · 앱 설정 「구매」 블럭, 구매 복원은 앱 설정에만.
    - Storybook 반영 끝(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-storybook.md`): `Screens/Sticker Shop`, 앱 설정 「구매」 블럭, 홈 광고 자리(`GoalListScreen` `footer`), 흐름도 줄 5. 시안 캡처용 임시 스토리는 치웠다.
-   - 다음: 앱 연결 계획 — 「기본 스티커」·묶음 화면 라우트와 `onChooseSticker`, 스키마 v6 마이그레이션(`toColorStickerId`), RevenueCat 구매·복원, AdMob 배너(`footer`)·보상형 광고, 체험 만료 시각과 붙인 날 수 저장, 위젯 체험 종료 처리.
-   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 같은 묶음 보상 재체험, 위젯에서 체험이 끝난 묶음 처리(앱을 열어 안내 — 위젯 설계에 추가), 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤).
+   - 앱 연결(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-app.md`): 저장된 스티커를 모두 컬러 ID로(스키마 v6, 읽을 때 `normalizeStickerId`), 「기본 스티커」 `app/stickers/choose`·묶음 `app/stickers/pack/[packId]`, 묶음 권한 `pack_access`·누른 날 `placed_days`(기기에만), 판에서 체험이 끝난 묶음은 붙이지 않고 「n일 체험이 끝났어요」, 위젯은 컬러 스티커 66종 그림 + 체험이 끝난 목표는 앱 열기 링크, 앱 설정 「구매」 블럭. 결제·광고는 `src/purchases`의 개발용 대역(누르면 바로 성공).
+   - 다음: RevenueCat 구매·복원과 AdMob 보상형 광고·홈 배너(`footer`)를 `src/purchases`의 `Store`에 끼운다 — App Store Connect 상품 등록·AdMob 계정이 먼저. 결제 실패·광고를 못 불러올 때 문구도 이때 정한다.
+   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤).
 3. **수익화 기반**
    - 권한 계층(RevenueCat entitlements): 팩은 구매 또는 구독이면 쓸 수 있고, 광고는 광고 제거 구매 또는 구독이면 꺼진다.
    - 카탈로그에 팩 정보 연결
@@ -186,6 +187,7 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 - 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤/패널/칸 border와 패널 제목 구분선은 3px. 과거의 2px 수치는 폐기됐다.
 - `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3.
 - 톱니바퀴는 v6 원본 윤곽을 추출한 `assets/gear.ts`를 쓴다. 임의 16×16 아이콘으로 되돌리지 않는다.
+- 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 20pt (2026-10-09, 390에서 넓힘 — Pro Max에서 양옆이 45pt로 비어 보였다). 더 넓은 화면은 가운데로 모은다.
 - `StickerGrid`: 3열, 좌우 안쪽 6px, 열 간격 15px, 행 간격 10px. 390px에서 칸 약 84×64px.
 - 붙인 새싹 최대 54px, 아래 여백 2px. 기본 스티커 미리보기 32px. 칸 숫자 28px/32px.
 - 전체/친구/모양/사물 필터는 개별 테두리 없이 선택 채움과 세로 구분선만 쓴다.
