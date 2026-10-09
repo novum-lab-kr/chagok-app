@@ -142,3 +142,14 @@ describe('위젯 화면 로직', () => {
     expect(face(ChagokGoal({ ...shared, goals: { run: { ...card, placed: 31, total: 31 } }, requests: [] }, env(t(7, 9))))).toBe('f');
   });
 });
+
+describe('체험이 끝난 묶음 (2026-10-08)', () => {
+  beforeEach(() => { jest.useFakeTimers(); jest.setSystemTime(t(7, 9)); });
+  afterEach(() => jest.useRealTimers());
+  it('locked면 붙이는 버튼 대신 앱을 여는 링크', () => {
+    const locked = { ...card, locked: true };
+    expect(hasPlaceLink(ChagokGoal({ ...shared, goals: { run: locked }, requests: [] } as GoalWidgetProps, env(t(7, 9))))).toBe(true);
+    const tally = { ...locked, cells: Array(10).fill('empty'), from: 1 };
+    expect(hasPlaceLink(ChagokTally({ ...shared, goals: { run: tally }, requests: [] } as unknown as TallyWidgetProps, env(t(7, 9))))).toBe(true);
+  });
+});

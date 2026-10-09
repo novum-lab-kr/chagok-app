@@ -75,7 +75,8 @@ const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
 
   // 누르는 곳: 마지막 칸은 완성 확인 화면, 기록이 있으면 판 상세, 그 밖에는 위젯 안에서 붙이고 뗀다.
   const tap = (label: React.ReactElement) => {
-    if (lastSlot && !placedToday) return <Link destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
+    // 기본 스티커 묶음의 체험이 끝났으면 붙이지 않고 앱을 열어 안내한다 (2026-10-08).
+    if ((lastSlot || g.locked) && !placedToday) return <Link destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
     if (placedToday && !undoable) return <Link destination={`chagok://goal/${g.id}`}>{label}</Link>;
     return (
       <Button

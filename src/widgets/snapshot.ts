@@ -2,7 +2,8 @@ import type { Goal } from '../domain/types';
 import type { DateKey } from '../domain/dates';
 import { dateKeyOf, daysInclusive, daysInMonth, localDateKey } from '../domain/dates';
 import { inPeriod, orderGoals, progressBasis, progressOf, startDate } from '../domain/board';
-import { kindLabel, percentLabel, safeStickerId } from '../app-data/pocketAdapter';
+import { kindLabel, percentLabel } from '../app-data/pocketAdapter';
+import { normalizeStickerId } from '../stickers/stickerIds';
 import type { WidgetCalendarCell, WidgetGoalView, WidgetMini, WidgetTallyCell } from '../design-system/widget-preview';
 
 /**
@@ -15,6 +16,8 @@ export type WidgetInput = {
   todaySticker?: { dateKey: DateKey; hasRecord: boolean } | null;
   /** 적립판: 그날 붙인 칸 번호와 그중 기록이 없는 칸. 날짜가 스냅샷 날짜와 다르면 무시한다 */
   todaySlots?: { dateKey: DateKey; slots: number[]; removable: number[] } | null;
+  /** 기본 스티커를 새로 붙일 수 있는 마지막 시각. 없으면 기한 없음, 0이면 이미 잠김 (스티커 묶음 체험, 2026-10-08) */
+  usableUntil?: number | null;
 };
 export type WidgetGoal = WidgetGoalView & {
   placedToday: boolean;
@@ -28,6 +31,8 @@ export type WidgetGoal = WidgetGoalView & {
   remaining: number | null;
   placed: number;
   total: number;
+  /** 기본 스티커 묶음의 체험이 끝났다 — 위젯은 붙이지 않고 앱을 열어 안내한다 (RELEASE-DECISIONS 2026-10-08) */
+  locked: boolean;
 };
 export type WidgetSnapshot = { today: DateKey; goals: WidgetGoal[]; defaultGoalId: string | null };
 
@@ -81,7 +86,7 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
     return {
       id: goal.id,
       name: goal.name,
-      sticker: safeStickerId(goal.defaultStickerId),
+      sticker: normalizeStickerId(goal.defaultStickerId),
       kind: kindLabel(goal),
       progressLabel: percentLabel(goal, placed, now),
       percent: progress.percent,
@@ -92,6 +97,7 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
       todaySlots: todaySlots?.slots ?? [],
       removableSlots: todaySlots?.removable ?? [],
       remaining: remainingOf(goal, input.placedAll),
+      locked: input.usableUntil != null && now.getTime() >= input.usableUntil,
       mini: goal.boardType === 'calendar'
         ? calendarMini(goal, new Set(input.placedDates), now)
         : tallyMini(goal, input.slotIndexes, chunk),

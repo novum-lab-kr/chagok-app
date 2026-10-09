@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { CompletedGoalSettingsScreen, GoalSettingsScreen, PixelLoadingIndicator, RetroScreen } from '../../../src/design-system';
-import type { PocketStickerId } from '../../../src/design-system';
+import type { StickerId } from '../../../src/design-system';
 import {
   completeGoal, countGoalContents, deleteGoal, getGoal, settleExpiredPeriods, updateGoal,
 } from '../../../src/repositories/goalRepository';
-import { boardLabel, deleteDescription, longDate, periodLabel, safeStickerId } from '../../../src/app-data/pocketAdapter';
+import { boardLabel, deleteDescription, longDate, periodLabel } from '../../../src/app-data/pocketAdapter';
+import { normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { useUnsavedBack } from '../../../src/app-data/useUnsavedBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../../src/app-data/goBack';
+import { takeOfferedSticker } from '../../../src/app-data/stickerChoice';
 import { GOAL_NAME_MAX, goalNameError, isCompleted, parseSlotCount, startDate } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Goal } from '../../../src/domain/types';
@@ -25,7 +27,7 @@ export default function GoalSettings() {
   const router = useRouter();
   const [goal, setGoal] = useState<Goal | null>(null);
   const [name, setName] = useState('');
-  const [sticker, setSticker] = useState<PocketStickerId>('sprout');
+  const [sticker, setSticker] = useState<StickerId>('basic.sprout');
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
   /** 적립판 칸 수 입력. 문자열로 들고 저장할 때 parseSlotCount로 검사한다 (2026-09-30). */
   const [slotsText, setSlotsText] = useState('');
@@ -42,7 +44,7 @@ export default function GoalSettings() {
       if (!g) { goBackOrHome(); return; }
       setGoal(g);
       setName(g.name);
-      setSticker(safeStickerId(g.defaultStickerId));
+      setSticker(normalizeStickerId(g.defaultStickerId));
       setEndDate(g.endDate ?? undefined);
       setSlotsText(String(g.totalSlots ?? ''));
     })();
@@ -53,8 +55,13 @@ export default function GoalSettings() {
   // 칸 수는 숫자로 비교한다("030"과 30은 같다). 잘못된 입력도 저장하지 않은 입력으로 친다.
   const slotsChanged = slots !== null && (!slots.ok || slots.value !== goal?.totalSlots);
   const dirty = goal !== null && !isCompleted(goal)
-    && (name !== goal.name || sticker !== safeStickerId(goal.defaultStickerId) || (endDate ?? null) !== goal.endDate || slotsChanged);
+    && (name !== goal.name || sticker !== normalizeStickerId(goal.defaultStickerId) || (endDate ?? null) !== goal.endDate || slotsChanged);
   const { goBack, dialog } = useUnsavedBack(dirty);
+  // 「기본 스티커」에서 고르고 돌아오면 받는다 (PRD 4.12).
+  useFocusEffect(useCallback(() => {
+    const picked = takeOfferedSticker();
+    if (picked) setSticker(picked);
+  }, []));
 
   if (!goal) {
     return (
@@ -117,7 +124,7 @@ export default function GoalSettings() {
       <>
         <CompletedGoalSettingsScreen
           name={current.name}
-          sticker={safeStickerId(current.defaultStickerId)}
+          sticker={normalizeStickerId(current.defaultStickerId)}
           boardLabel={boardLabel(current)}
           periodLabel={current.boardType === 'calendar' ? periodLabel(current) : undefined}
           completedLabel={longDate(localDateKey(current.completedAt!))}
@@ -139,6 +146,7 @@ export default function GoalSettings() {
         nameError={goalNameError(name)}
         sticker={sticker}
         onChangeSticker={setSticker}
+        onChooseSticker={() => router.push({ pathname: '/stickers/choose', params: { current: sticker } })}
         period={calendar ? {
           startDate: startDate(current),
           endDate,

@@ -165,3 +165,50 @@ describe('마이그레이션 원자성 (리뷰 #7)', () => {
     expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
   });
 });
+
+/** v5까지만 적용한 DB. */
+async function driverAtV5(): Promise<DbDriver> {
+  const driver = createNodeDriver();
+  for (const sql of MIGRATIONS.slice(0, 5).flat()) await driver.exec(sql);
+  await driver.exec('PRAGMA user_version = 5');
+  return driver;
+}
+
+describe('v6 — 컬러 스티커·묶음 (스티커 화면 앱 연결)', () => {
+  it('흑백 스티커 id를 basic.*로 옮기고, 모르는 값과 updated_at·outbox는 그대로 둔다', async () => {
+    const driver = await driverAtV5();
+    await driver.exec(`
+      INSERT INTO goals (id, name, board_type, total_slots, created_at, default_sticker_id, updated_at) VALUES ('g1', '목표', 'tally', 3, 100, 'cat', 100);
+      INSERT INTO goals (id, name, board_type, total_slots, created_at, default_sticker_id, updated_at) VALUES ('g2', '목표', 'tally', 3, 100, 'stamp', 100);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES ('s1', 'g1', 200, 0, 'sprout', 200);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES ('s2', 'g1', 200, 1, 'animals.cat', 200);
+    `);
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+    const goals = await db.all<{ id: string; default_sticker_id: string; updated_at: number }>('SELECT id, default_sticker_id, updated_at FROM goals ORDER BY id');
+    expect(goals).toEqual([
+      { id: 'g1', default_sticker_id: 'basic.cat', updated_at: 100 },
+      { id: 'g2', default_sticker_id: 'stamp', updated_at: 100 },
+    ]);
+    const stickers = await db.all<{ sticker_type: string; updated_at: number }>('SELECT sticker_type, updated_at FROM stickers ORDER BY id');
+    expect(stickers).toEqual([{ sticker_type: 'basic.sprout', updated_at: 200 }, { sticker_type: 'animals.cat', updated_at: 200 }]);
+    expect(await db.all('SELECT * FROM outbox')).toEqual([]);
+    expect(await db.all('SELECT * FROM pack_access')).toEqual([]);
+  });
+
+  it('누른 날 기록을 지금 붙어 있는 스티커의 로컬 날짜로 채운다 — 같은 날 두 장은 한 줄', async () => {
+    const driver = await driverAtV5();
+    const at = (day: number, h: number) => new Date(2026, 9, day, h).getTime();
+    await driver.exec(`
+      INSERT INTO goals (id, name, board_type, total_slots, created_at) VALUES ('g', '목표', 'tally', 5, 100);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index) VALUES ('a', 'g', ${at(7, 9)}, 0);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index) VALUES ('b', 'g', ${at(7, 23)}, 1);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index) VALUES ('c', 'g', ${at(8, 1)}, 2);
+    `);
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    const days = await db.all<{ date_key: string }>('SELECT date_key FROM placed_days ORDER BY date_key');
+    expect(days.map((d) => d.date_key)).toEqual(['2026-10-07', '2026-10-08']);
+  });
+});

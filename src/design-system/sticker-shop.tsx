@@ -81,21 +81,24 @@ export function PackCard({pack,open,selected,rewardReady=false,onToggle,onSelect
     <PixelText variant="caption" style={caption}>{`${pack.stickers.length}종`}</PixelText><View style={{flex:1}}/>{right}
     {!locked&&<FoldToggle open={open} onPress={onToggle}/>}
   </View>;
-  if(locked) return <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
-    {head}
-    <View>
-      <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-        {pack.stickers.slice(0,5).map(id=><View key={id} style={{opacity:retro.opacity.disabled}}><StickerGlyph id={id} size={48}/></View>)}
-        {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
+  // 카드 어디를 눌러도 묶음 화면을 연다. 머리줄의 [>]도 눌리는 것처럼 보이므로 (2026-10-09)
+  if(locked) return <Pressable accessibilityRole="button" accessibilityLabel={`${pack.label} 묶음 미리 보기`} onPress={onOpenPack}>
+    <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
+      {head}
+      <View>
+        <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
+          {pack.stickers.slice(0,5).map(id=><View key={id} style={{opacity:retro.opacity.disabled}}><StickerGlyph id={id} size={48}/></View>)}
+          {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
+        </View>
+        <View style={{position:'absolute',left:-4,right:-4,top:-4,bottom:-4,alignItems:'center',justifyContent:'center'}}>
+          <View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:c.secondary,opacity:0.7}}/>
+          <PixelFrame variant="selection" fill={c.ink} contentStyle={{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:10,paddingVertical:4}}>
+            <ActionSymbol name="lock" size={14} color={c.lcd}/><PixelText style={{color:c.lcd,fontSize:15}}>눌러서 미리 보기</PixelText>
+          </PixelFrame>
+        </View>
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${pack.label} 묶음 미리 보기`} onPress={onOpenPack} style={{position:'absolute',left:-4,right:-4,top:-4,bottom:-4,alignItems:'center',justifyContent:'center'}}>
-        <View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:c.secondary,opacity:0.7}}/>
-        <PixelFrame variant="selection" fill={c.ink} contentStyle={{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:10,paddingVertical:4}}>
-          <ActionSymbol name="lock" size={14} color={c.lcd}/><PixelText style={{color:c.lcd,fontSize:15}}>눌러서 미리 보기</PixelText>
-        </PixelFrame>
-      </Pressable>
-    </View>
-  </PixelFrame>;
+    </PixelFrame>
+  </Pressable>;
   const shown=open?pack.stickers:pack.stickers.slice(0,5);
   return <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
     {head}
@@ -105,14 +108,19 @@ export function PackCard({pack,open,selected,rewardReady=false,onToggle,onSelect
   </PixelFrame>;
 }
 
+/** 묶음 하나를 접거나 펼친다. 다른 묶음은 그대로 둔다 (2026-10-09, 블럭마다 따로). */
+export function togglePack(open:readonly ColorStickerPackId[],id:ColorStickerPackId):ColorStickerPackId[] {
+  return open.includes(id)?open.filter(p=>p!==id):[...open,id];
+}
+
 /** 「기본 스티커」: 새 목표·목표 설정의 [바꾸기]에서 연다 (PRD 4.12). 가진 묶음·체험 중이 위, 잠긴 묶음이 아래. */
-export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,openPack,onToggle,reward,onOpenPack,onDone,onBack}:{packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;selected:StickerId;onSelect:(id:StickerId)=>void;/** 펼친 묶음. 처음에는 지금 고른 스티커가 든 묶음 */openPack:ColorStickerPackId;onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void;onDone:()=>void;onBack:()=>void}) {
+export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,openPacks,onToggle,reward,onOpenPack,onDone,onBack}:{packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;selected:StickerId;onSelect:(id:StickerId)=>void;/** 펼친 묶음들. 처음에는 지금 고른 스티커가 든 묶음 하나 */openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void;onDone:()=>void;onBack:()=>void}) {
   const order=[...packs.filter(p=>p.state!=='locked'),...(mine?[]:packs.filter(p=>p.state==='locked'))];
   const rewardReady=reward.days>=reward.goal;
   return <View style={{flex:1}}>
     <RetroScreen style={{gap:14}} header={<View style={{gap:12}}><ScreenHeader title="기본 스티커" onBack={onBack}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
       <RewardProgress days={reward.days} goal={reward.goal}/>
-      {order.map(p=><PackCard key={p.id} pack={p} open={p.id===openPack} selected={selected} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={onSelect} onOpenPack={()=>onOpenPack(p.id)}/>)}
+      {order.map(p=><PackCard key={p.id} pack={p} open={openPacks.includes(p.id)} selected={selected} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={onSelect} onOpenPack={()=>onOpenPack(p.id)}/>)}
     </RetroScreen>
     <PickedStickerBar sticker={selected} onDone={onDone}/>
   </View>;

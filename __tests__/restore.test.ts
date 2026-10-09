@@ -117,3 +117,15 @@ describe('복원', () => {
     expect(n).toBe(1);
   });
 });
+
+describe('누른 날 기록 (placed_days)', () => {
+  it('복원한 스티커의 날짜로 채운다', async () => {
+    const { server } = await seedServer();
+    const db = await getDb();
+    await db.exec('DELETE FROM placed_days;');
+    await restoreAll(server);
+    const days = (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days')).map((r) => r.date_key);
+    const { localDateKey } = await import('../src/domain/dates');
+    expect(days).toEqual([localDateKey(Date.now())]);
+  });
+});

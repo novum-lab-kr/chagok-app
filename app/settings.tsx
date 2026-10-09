@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import {
-  AccountBackupPanel, PixelDialogModal, PixelPanel, PixelText, RetroScreen, ScreenHeader, SettingRow, accountDialogs,
+  AccountBackupPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, ScreenHeader, SettingRow, accountDialogs,
+  stickerShopDialogs,
   type AccountBackupStatus,
 } from '../src/design-system';
 import { goBackOrHome } from '../src/app-data/goBack';
@@ -15,6 +16,10 @@ import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { pauseSync, resumeSync, subscribeSyncStatus } from '../src/sync/syncGate';
 import { wipeDevice } from '../src/sync/wipe';
 import { getSetting } from '../src/repositories/appSettingsRepository';
+import { loadPackState } from '../src/repositories/packRepository';
+import { buyAdFree, restorePurchases } from '../src/purchases';
+import { useDialog } from '../src/app-data/useDialog';
+import { createSingleFlight } from '../src/app-data/singleFlight';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
 
@@ -24,6 +29,23 @@ export default function AppSettings() {
   const supabase = getSupabase();
   const [status, setStatus] = useState<AccountBackupStatus | null>(null);
   const [logout, setLogout] = useState<Logout>(null);
+  /** 「구매」 블럭 (PRD 4.9·4.12). 결제·복원은 지금 개발용 대역이다 (스티커 화면 앱 연결 계획 A). */
+  const [adFree, setAdFree] = useState(false);
+  const [buyOnce] = useState(createSingleFlight);
+  const { ask, dialog: purchaseDialog } = useDialog();
+  useFocusEffect(useCallback(() => {
+    let alive = true;
+    void loadPackState().then((p) => { if (alive) setAdFree(p.adFree); });
+    return () => { alive = false; };
+  }, []));
+  async function removeAds() {
+    if ((await buyAdFree()).ok) setAdFree(true);
+  }
+  async function restore() {
+    const names = await restorePurchases();
+    if (names.includes('광고 제거')) setAdFree(true);
+    await ask(names.length > 0 ? stickerShopDialogs.restoreDone(names) : stickerShopDialogs.restoreNone);
+  }
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -114,6 +136,7 @@ export default function AppSettings() {
             <PixelText>지금은 이 기기에만 저장하고 있어요.</PixelText>
           </PixelPanel>
         )}
+        <PurchasePanel adFree={adFree} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
         <PixelPanel title="도움말">
           <SettingRow label="사용법 다시 보기" onPress={() => nav.push('/tutorial')} />
         </PixelPanel>
@@ -127,6 +150,7 @@ export default function AppSettings() {
         )}
       </RetroScreen>
       {logoutDialog && <PixelDialogModal visible {...logoutDialog} />}
+      {purchaseDialog}
     </>
   );
 }

@@ -2,7 +2,8 @@ import { getGoal } from '../repositories/goalRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
 import { getSetting, setSetting } from '../repositories/appSettingsRepository';
 import { listStickers, placeSticker, removeSticker } from '../repositories/stickerRepository';
-import { safeStickerId } from '../app-data/pocketAdapter';
+import { normalizeStickerId } from '../stickers/stickerIds';
+import { checkPlaceGate } from '../app-data/placeGate';
 import { planRequest } from './requests';
 import type { WidgetRequest } from './requests';
 
@@ -55,8 +56,9 @@ export async function applyWidgetRequests(requests: readonly WidgetRequest[]): P
         await removeSticker(plan.stickerId);
         changed = true;
       } else {
-        if (plan.action === 'place' && goal) {
-          await placeSticker(goal.id, plan.slotIndex, safeStickerId(goal.defaultStickerId), { id: req.id, placedAt: plan.placedAt });
+        // 기본 스티커 묶음의 체험이 끝났으면 붙이지 않는다. 위젯은 이미 앱 열기 링크로 바뀌어 있다 (2026-10-08).
+        if (plan.action === 'place' && goal && (await checkPlaceGate(goal, req.at)).ok) {
+          await placeSticker(goal.id, plan.slotIndex, normalizeStickerId(goal.defaultStickerId), { id: req.id, placedAt: plan.placedAt, pressedAt: req.at });
           changed = true;
         }
         await remember(req.id);

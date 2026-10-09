@@ -11,7 +11,7 @@ const goal = (over: Partial<Goal>): Goal => ({
 });
 const art: WidgetArt = {
   mascotYet: 'y', mascotDone: 'd', mascotFull: 'f', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' },
-  stickers: { sprout: 'file:///sprout.png', shoe: 'file:///shoe.png', book: 'file:///book.png' },
+  stickers: { 'basic.sprout': 'file:///sprout.png', 'basic.shoe': 'file:///shoe.png', 'basic.book': 'file:///book.png' },
 };
 const snap = (now: Date) => buildWidgetSnapshot([
   { goal: goal({ id: 'run' }), placedAll: 1, placedDates: ['2026-10-02'], slotIndexes: [] },

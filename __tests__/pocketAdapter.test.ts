@@ -24,19 +24,19 @@ describe('toPocketGoal - 적립판', () => {
     const p = toPocketGoal(tally, []);
     expect(p.kind).toBe('tally');
     expect(p.total).toBe(20);
-    expect(p.sticker).toBe('shoe');
+    expect(p.sticker).toBe('basic.shoe');
   });
   it('칸마다 실제로 붙은 스티커 종류를 담는다 (기본 스티커를 바꿔도 유지)', () => {
     const p = toPocketGoal(tally, [
       stk({ slotIndex: 0, stickerType: 'cat' }),
       stk({ slotIndex: 2, stickerType: 'star' }),
     ]);
-    expect(p.sticker).toBe('shoe');
-    expect(p.filledStickers).toEqual({ 1: 'cat', 3: 'star' });
+    expect(p.sticker).toBe('basic.shoe');
+    expect(p.filledStickers).toEqual({ 1: 'basic.cat', 3: 'basic.star' });
   });
   it('붙은 칸의 폐기된 종류는 대체한다', () => {
     const p = toPocketGoal(tally, [stk({ slotIndex: 0, stickerType: 'dot' })]);
-    expect(p.filledStickers).toEqual({ 1: 'sprout' });
+    expect(p.filledStickers).toEqual({ 1: 'basic.sprout' });
   });
   it('달력 기록은 비어 있다', () => {
     expect(toPocketGoal(tally, [stk({})]).calendarRecords).toEqual({});
@@ -47,7 +47,7 @@ describe('toPocketGoal - 달력판', () => {
   it('붙인 날짜를 키로 스티커 종류를 담는다', () => {
     const at = new Date(2026, 8, 3, 10).getTime();
     const p = toPocketGoal(cal, [stk({ goalId: 'g2', placedAt: at, stickerType: 'book' })]);
-    expect(p.calendarRecords).toEqual({ '2026-09-03': 'book' });
+    expect(p.calendarRecords).toEqual({ '2026-09-03': 'basic.book' });
   });
   it('filled는 쓰지 않는다', () => {
     const p = toPocketGoal(cal, [stk({ goalId: 'g2', placedAt: Date.now() })]);
@@ -58,12 +58,12 @@ describe('toPocketGoal - 달력판', () => {
 describe('알 수 없는 스티커 종류', () => {
   it('폐기된 id가 있어도 렌더 가능한 값으로 대체한다', () => {
     const p = toPocketGoal({ ...tally, defaultStickerId: 'stamp-good' }, []);
-    expect(p.sticker).toBe('sprout');
+    expect(p.sticker).toBe('basic.sprout');
   });
   it('붙은 스티커의 폐기된 종류도 대체한다', () => {
     const at = new Date(2026, 8, 3).getTime();
     const p = toPocketGoal(cal, [stk({ goalId: 'g2', placedAt: at, stickerType: 'dot' })]);
-    expect(p.calendarRecords['2026-09-03']).toBe('sprout');
+    expect(p.calendarRecords['2026-09-03']).toBe('basic.sprout');
   });
 });
 
@@ -78,7 +78,7 @@ describe('목록 카드와 진행 문구 (PRD 4.1)', () => {
 
   it('적립판 진행 중: m% 채웠어요', () => {
     const card = goalCard({ goal: { ...tally, totalSlots: 15 }, placedAll: 6, placedInBasis: 6 }, NOW);
-    expect(card).toMatchObject({ id: 'g1', name: '러닝', sticker: 'shoe', kind: '적립판', percent: 40, status: ['40% 채웠어요'] });
+    expect(card).toMatchObject({ id: 'g1', name: '러닝', sticker: 'basic.shoe', kind: '적립판', percent: 40, status: ['40% 채웠어요'] });
   });
 
   it('종료일 없는 달력판은 이번 달을 붙인다', () => {

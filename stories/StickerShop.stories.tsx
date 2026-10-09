@@ -1,7 +1,7 @@
 import React,{useState,type ReactNode} from 'react';
 import {View,useWindowDimensions} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
-import {BoardDetailScreen,PackScreen,PixelDialog,StickerChooserScreen,colorPack,retro,stickerShopDialogs,type PackView,type StickerId} from '../src/design-system';
+import {BoardDetailScreen,PackScreen,PixelDialog,StickerChooserScreen,colorPack,retro,stickerShopDialogs,togglePack,type PackView,type StickerId} from '../src/design-system';
 import type {ColorStickerPackId} from '../src/stickers/color/catalog';
 
 const meta={title:'Screens/Sticker Shop',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'스티커 묶음과 구매 (PRD 4.12, 2026-10-08 확정 시안 19판). 다이얼로그는 앱에서 PixelDialogModal이 같은 배치로 띄운다. 결제 팝업은 Apple·Google이, 보상형 광고는 AdMob이 그린다. 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
@@ -25,8 +25,8 @@ function Dialog(props:React.ComponentProps<typeof PixelDialog>) {
 function ChooserHost({packs,selected='basic.book',days=5,initialMine=false,initialOpen}:{packs:readonly PackView[];selected?:StickerId;days?:number;initialMine?:boolean;initialOpen?:ColorStickerPackId}) {
   const [mine,setMine]=useState(initialMine);
   const [value,setValue]=useState<StickerId>(selected);
-  const [open,setOpen]=useState<ColorStickerPackId>(initialOpen??(selected.split('.')[0] as ColorStickerPackId));
-  return <StickerChooserScreen packs={packs} mine={mine} onChangeMine={setMine} selected={value} onSelect={setValue} openPack={open} onToggle={setOpen} reward={{days,goal:7}} onOpenPack={noop} onDone={noop} onBack={noop}/>;
+  const [open,setOpen]=useState<readonly ColorStickerPackId[]>([initialOpen??(selected.split('.')[0] as ColorStickerPackId)]);
+  return <StickerChooserScreen packs={packs} mine={mine} onChangeMine={setMine} selected={value} onSelect={setValue} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days,goal:7}} onOpenPack={noop} onDone={noop} onBack={noop}/>;
 }
 const owned=[colorPack('basic','free'),colorPack('snack','owned'),colorPack('animals','locked'),colorPack('weather','locked')];
 const trying=(label:string)=>[colorPack('basic','free'),colorPack('snack','owned'),colorPack('animals','trial',label),colorPack('weather','locked')];
