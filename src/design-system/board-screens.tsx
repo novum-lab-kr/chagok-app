@@ -172,7 +172,8 @@ export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,st
 }
 /** 완성한 판의 설정. 읽기 전용이고 삭제만 할 수 있다 (PRD 4.4, 4.7). */
 export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel,completedLabel,onDelete,onBack}:{name:string;sticker:StickerId;/** 예: '적립판 · 20칸', '달력판' */boardLabel:string;/** 달력판만. 예: '9월 1일 – 9월 23일', '9월 1일부터' */periodLabel?:string;/** 예: '9월 24일' */completedLabel:string;onDelete:()=>void;onBack:()=>void}) {
-  const row=(label:string,value:string)=><View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:44,borderBottomWidth:retro.shape.cellBorder,borderColor:retro.color.ink}}><PixelText style={{width:108}}>{label}</PixelText><PixelText style={{flex:1}}>{value}</PixelText></View>;
+  // 마지막 줄은 밑줄을 두지 않는다. 바로 아래 [삭제하기] 구역의 윗줄과 겹쳐 빈 줄처럼 보인다 (2026-10-09)
+  const row=(label:string,value:string,last=false)=><View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:44,borderBottomWidth:last?0:retro.shape.cellBorder,borderColor:retro.color.ink}}><PixelText style={{width:108}}>{label}</PixelText><PixelText style={{flex:1}}>{value}</PixelText></View>;
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
     <ShortNotice emphasis title="완성한 판이에요" detail={`${completedLabel}에 완성했어요. 판의 칸과 기록은 고칠 수 있고, 목표는 삭제만 할 수 있어요.`}/>
     <View>
@@ -180,8 +181,8 @@ export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel
       <View pointerEvents="none" style={{position:'absolute',right:0,top:50,zIndex:1}}><CompletionSticker sticker={sticker} tilted/></View>
       {row('목표 이름',name)}
       {row('기본 스티커',stickerLabel(sticker))}
-      {row('판 종류',boardLabel)}
-      {periodLabel!==undefined&&row('기간',periodLabel)}
+      {row('판 종류',boardLabel,periodLabel===undefined)}
+      {periodLabel!==undefined&&row('기간',periodLabel,true)}
     </View>
     <DeleteSection onDelete={onDelete}/>
   </RetroScreen>;

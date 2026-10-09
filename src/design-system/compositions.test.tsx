@@ -3,7 +3,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
-import {ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
+import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 afterEach(cleanup);
@@ -198,6 +198,16 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     render(<NewGoalScreen name="책 읽기" onChangeName={vi.fn()} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="basic.book" onChangeSticker={vi.fn()} onChooseSticker={choose} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button',{name:'바꾸기'}));
     expect(choose).toHaveBeenCalled();expect(screen.queryByRole('button',{name:'선택 완료'})).toBeNull();
+  });
+  it('완성한 판 설정은 마지막 정보 줄에 밑줄이 없어 [삭제하기] 위 구분선과 겹치지 않는다',()=>{
+    const bottom=(label:string)=>parseFloat(getComputedStyle(screen.getByText(label).parentElement!).borderBottomWidth)||0;
+    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 · 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(bottom('기본 스티커')).toBeGreaterThan(0);
+    expect(bottom('판 종류')).toBe(0);
+    cleanup();
+    render(<CompletedGoalSettingsScreen name="산책" sticker="basic.shoe" boardLabel="달력판" periodLabel="9월 1일부터" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(bottom('판 종류')).toBeGreaterThan(0);
+    expect(bottom('기간')).toBe(0);
   });
   it('홈 목록은 footer를 스크롤 밖 맨 아래에 둔다',()=>{
     render(<GoalListScreen tab="active" onTab={vi.fn()} active={[]} completed={[]} onOpen={vi.fn()} onAdd={vi.fn()} footer={<PixelText>광고 자리</PixelText>}/>);
