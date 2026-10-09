@@ -54,7 +54,7 @@
    - Storybook 반영 끝(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-storybook.md`): `Screens/Sticker Shop`, 앱 설정 「구매」 블럭, 홈 광고 자리(`GoalListScreen` `footer`), 흐름도 줄 5. 시안 캡처용 임시 스토리는 치웠다.
    - 앱 연결(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-app.md`): 저장된 스티커를 모두 컬러 ID로(스키마 v6, 읽을 때 `normalizeStickerId`), 「기본 스티커」 `app/stickers/choose`·묶음 `app/stickers/pack/[packId]`, 묶음 권한 `pack_access`·누른 날 `placed_days`(기기에만), 판에서 체험이 끝난 묶음은 붙이지 않고 「n일 체험이 끝났어요」, 위젯은 컬러 스티커 66종 그림 + 체험이 끝난 목표는 앱 열기 링크, 앱 설정 「구매」 블럭. 결제·광고는 `src/purchases`의 개발용 대역(누르면 바로 성공).
    - 다음: RevenueCat 구매·복원과 AdMob 보상형 광고·홈 배너(`footer`)를 `src/purchases`의 `Store`에 끼운다 — App Store Connect 상품 등록·AdMob 계정이 먼저. 결제 실패·광고를 못 불러올 때 문구도 이때 정한다.
-   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤).
+   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤. 2026-10-08 동물 10종은 [동물 얼굴 스티커](https://claude.ai/artifact/PsPcaJT3TeV2sgRTkyRLS5) 4판으로 다시 그려 원본에 반영. 2026-10-09 [다시 그린 스티커](https://claude.ai/artifact/HWmo9Ae3tbEZSNfKvqVNty) 12판으로 「다시 그리기」(새싹·운동·커피·빵·케이크)와 손보기 중 비행기를 반영 — 손보기 나머지 14종은 사용자가 지금 그림이 낫다고 해 그대로).
 3. **수익화 기반**
    - 권한 계층(RevenueCat entitlements): 팩은 구매 또는 구독이면 쓸 수 있고, 광고는 광고 제거 구매 또는 구독이면 꺼진다.
    - 카탈로그에 팩 정보 연결
@@ -226,7 +226,7 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 
 **컬러 스티커 (2026-10-05, 디자인 시스템·Storybook은 컬러, 앱은 스키마 v6 전까지 흑백).** `src/stickers/color/`는 흑백과 별도인 24×24 도트 컬러 스티커 66종이다.
 
-- 묶음: 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10.
+- 묶음: 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10. 운동은 2026-10-09에 운동 종류로 다시 짰다: 덤벨·달리기·걷기·등산·요가·필라테스·수영·자전거·줄넘기·축구공(물병·농구공·테니스·스톱워치 뺌, 축구공은 새 그림).
 - ID는 `묶음.이름`(예: `snack.cheese`)이다. 흑백 ID와 겹치지 않는다.
 - 원본은 `source/sticker-packs-24.json`이다. 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다.
 - `ColorStickerArtwork`는 색별 path로 그린다. 크기는 24의 정수배를 쓴다.
