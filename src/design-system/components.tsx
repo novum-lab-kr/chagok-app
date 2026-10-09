@@ -214,7 +214,7 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
  * 화면 콘텐츠 폭의 기준값. 이보다 넓은 기기에서는 가운데로 모은다.
  * `RetroScreen`이 이 값으로 레이아웃하므로 측정 전 첫 프레임의 추정치도 여기서 나온다.
  */
-export const SCREEN_MAX_WIDTH=390;
+export const SCREEN_MAX_WIDTH=440; // 2026-10-09: 390 → 440. Pro Max(440pt)도 양옆 20pt만 남기고 채운다
 export const SCREEN_PADDING=20;
 /**
  * onLayout 이전 첫 프레임에 쓸 콘텐츠 폭. 실제 측정값과 같아 깜빡이지 않는다.
