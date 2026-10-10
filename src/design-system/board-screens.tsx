@@ -2,8 +2,8 @@ import React,{memo,useCallback,useLayoutEffect,useMemo,useRef,useState,type Reac
 import {PanResponder,Pressable,View} from 'react-native';
 import {retro} from './tokens';
 import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,StickerGrid} from './components';
-import {ActionSymbol,stickerLabel,type PocketStickerId,type StickerId} from './sticker-glyphs';
-import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
+import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
+import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 
@@ -47,12 +47,11 @@ export type TallyBoardView={kind:'tally';total:number;/** 방금 붙인 칸 번�
 export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방금 붙인 날 */justPlaced?:string;records:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;/** 오늘 칸 강조. 완성한 판은 두지 않는다 */selectedDate?:string;isDateEnabled:(date:string)=>boolean;canGoPrev:boolean;canGoNext:boolean;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;onOpenRecord:(date:string)=>void};
 /**
  * 판 상세. 판 조작: 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기 (PRD 4.5).
- * 완성한 판은 readonly라 기록 열기만 남는다 (4.7). editable이면 완성한 판도 진행 중인 판처럼 고친다(2026-10-08) — 완성 표시는 그대로.
+ * 완성한 판도 진행 중인 판처럼 붙이고 뗀다(2026-10-08) — 완성 표시는 그대로 (4.7).
  */
-export function BoardDetailScreen({name,sticker,completed,editable=false,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false}:{/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:StickerId;completed:boolean;/** 완성한 판도 붙이고 뗄 수 있다 */editable?:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
+export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false}:{/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:StickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
   // 판은 칸 크기를 재고 다음 빈칸으로 스크롤한 뒤에 보인다. 재기 전 프레임은 픽셀 테두리가 빠져 있어,
   // 칸이 많은 판을 열 때 화면이 넘어오는 동안 그대로 보였다 (2026-09-30 실기기 녹화).
-  const locked=completed&&!editable;
   const [ready,setReady]=useState(false);
   const reveal=useCallback(()=>setReady(true),[]);
   // 달력판은 가리지 않는다. 틀은 PixelFrame이 그리기 전에 재고, 가리면 첫 layout 이벤트가 버려질 때 판이 투명한 채 남는다.
@@ -67,8 +66,8 @@ export function BoardDetailScreen({name,sticker,completed,editable=false,progres
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>
       {board.kind==='calendar'
         ?<CalendarSwipe board={board}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
-          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} readonly={locked} poppedDate={board.justPlaced}/></CalendarSwipe>
-        :<TallyGrid board={board} sticker={sticker} completed={locked} onSettled={reveal}/>}
+          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} poppedDate={board.justPlaced}/></CalendarSwipe>
+        :<TallyGrid board={board} sticker={sticker} onSettled={reveal}/>}
       </CenteringScrollView>
     </PixelPanel>
     </View>
@@ -97,8 +96,8 @@ function assignRef<T>(ref:React.Ref<T>|undefined,value:T|null) {
  * 칸 수 상한이 없어 칸마다 새 함수를 넘기면 붙일 때마다 판 전체를 다시 그렸다(300칸 약 33ms → 측정은
  * board-render.perf.test.tsx, 2026-10-04).
  */
-const TallyCell=memo(function TallyCell({n,sticker,state,enabled,readonly,hasRecord,popIn,onPress,onOpenRecord}:{n:number;sticker:StickerId;state:'filled'|'available'|'empty';enabled:boolean;readonly:boolean;hasRecord:boolean;popIn:boolean;onPress:(n:number)=>void;onOpenRecord?:(n:number)=>void}) {
-  return <GoalStickerCell number={n} sticker={sticker} state={state} enabled={enabled} readonly={readonly} hasRecord={hasRecord} popIn={popIn}
+const TallyCell=memo(function TallyCell({n,sticker,state,hasRecord,popIn,onPress,onOpenRecord}:{n:number;sticker:StickerId;state:'filled'|'available'|'empty';hasRecord:boolean;popIn:boolean;onPress:(n:number)=>void;onOpenRecord?:(n:number)=>void}) {
+  return <GoalStickerCell number={n} sticker={sticker} state={state} enabled hasRecord={hasRecord} popIn={popIn}
     onPress={()=>onPress(n)} onOpenRecord={onOpenRecord?()=>onOpenRecord(n):undefined}/>;
 });
 /**
@@ -106,9 +105,9 @@ const TallyCell=memo(function TallyCell({n,sticker,state,enabled,readonly,hasRec
  * 붙일 때마다 옮기면 누르는 중에 판이 움직인다 (2026-09-30).
  * 옮긴 뒤(빈칸이 없으면 그리고 나서) onSettled를 부른다.
  */
-function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sticker:StickerId;completed:boolean;onSettled:()=>void}) {
+function TallyGrid({board,sticker,onSettled}:{board:TallyBoardView;sticker:StickerId;onSettled:()=>void}) {
   const numbers=Array.from({length:board.total},(_,i)=>i+1);
-  const next=completed?undefined:numbers.find(n=>!board.filled[n]);
+  const next=numbers.find(n=>!board.filled[n]);
   const lastFilled=Math.max(0,...Object.keys(board.filled).map(Number));
   const scrollToCenter=useScrollToCenter();
   const nextNode=useRef<View|null>(null);
@@ -136,7 +135,7 @@ function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sti
   useLayoutEffect(()=>{if(next!==undefined) centerNext(); else if(!settled.current) settle();});
   return <View onLayout={next===undefined?settle:undefined}><StickerGrid>{numbers.map(n=>{
     const filled=board.filled[n];
-    const cell=<TallyCell key={n} n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'} enabled={Boolean(filled)||!completed} readonly={completed}
+    const cell=<TallyCell key={n} n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'}
       hasRecord={board.recorded?.has(n)??false} popIn={n===board.justPlaced} onPress={press} onOpenRecord={filled?open:undefined}/>;
     // 튜토리얼 대상 칸은 감싸서 잰다. 감싸는 View는 칸을 그대로 채운다.
     if(n===next) return <View key={n} ref={setNextNode} onLayout={centerNext} style={{width:'100%',height:'100%'}}>{cell}</View>;
@@ -146,11 +145,9 @@ function TallyGrid({board,sticker,completed,onSettled}:{board:TallyBoardView;sti
 }
 
 // ── 기본 스티커 선택 ────────────────────────────────────────────────
-/** 기본 스티커 줄. [바꾸기]를 누르면 그 자리에서 선택기가 펼쳐진다. */
-function StickerField({value,onChange,onChoose,targetRef}:{value:StickerId;onChange:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 (PRD 4.12). 없으면 화면 안에서 고른다 — 앱은 스키마 v6 전까지 이쪽 */onChoose?:()=>void;targetRef?:React.Ref<View>}) {
-  const [choosing,setChoosing]=useState(false);
-  if(choosing) return <PixelPanel title="기본 스티커">{/* 화면 안 고르기는 흑백 6종 목록이다. 컬러 목표는 onChoose로 「기본 스티커」 화면을 쓴다 (PRD 4.12) */}<StickerPicker value={value as PocketStickerId} onChange={onChange}/><PixelButton label="선택 완료" variant="secondary" onPress={()=>setChoosing(false)}/></PixelPanel>;
-  return <View style={{gap:8}}><PixelText>기본 스티커</PixelText><View ref={targetRef}><StickerSummary value={value} onChange={onChoose??(()=>setChoosing(true))}/></View></View>;
+/** 기본 스티커 줄. [바꾸기]를 누르면 「기본 스티커」 화면을 연다 (PRD 4.12). */
+function StickerField({value,onChoose,targetRef}:{value:StickerId;onChoose:()=>void;targetRef?:React.Ref<View>}) {
+  return <View style={{gap:8}}><PixelText>기본 스티커</PixelText><View ref={targetRef}><StickerSummary value={value} onChange={onChoose}/></View></View>;
 }
 
 // ── 목표 설정 ──────────────────────────────────────────────────────
@@ -159,10 +156,10 @@ export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:st
  * 진행 중인 목표의 설정: 이름 → 기본 스티커 → 기간(달력판) → [이 판 완성하기](종료일 없는 달력판) → 저장 → [삭제하기] (PRD 4.4).
  * 판 종류·칸 수 변경은 미확정이라 두지 않는다.
  */
-export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,sticker,onChangeSticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;sticker:StickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 */onChooseSticker?:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
+export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,sticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;sticker:StickerId;/** [바꾸기]: 「기본 스티커」 화면을 연다 */onChooseSticker:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
     <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} maxLength={nameMaxLength} error={nameError}/>
-    <StickerField value={sticker} onChange={onChangeSticker} onChoose={onChooseSticker}/>
+    <StickerField value={sticker} onChoose={onChooseSticker}/>
     {period&&<PeriodField {...period}/>}
     {slots&&<View style={{gap:8}}>
       <SlotCountPicker value={slots.value} onChange={slots.onChange} min={slots.current}/>
@@ -195,12 +192,12 @@ export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel
 // ── 새 목표 ──────────────────────────────────────────────────────
 export type EndDateMode='none'|'pick';
 /** 새 목표: 이름 → 판 종류(적립판이면 칸 수) → 기본 스티커 → 종료일(달력판, 선택) (PRD 4.4). */
-export function NewGoalScreen({name,onChangeName,nameMaxLength,nameError,onNameBlur,kind,onChangeKind,count,onChangeCount,sticker,onChangeSticker,onChooseSticker,endMode,onChangeEndMode,endDate,onChangeEndDate,today,todayLabel,error,onSubmit,submitDisabled=false,onBack,stickerTargetRef}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;/** 이름 칸에서 나올 때: 빈 이름 문구를 보일지 정한다 */onNameBlur?:()=>void;kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;sticker:StickerId;onChangeSticker:(value:PocketStickerId)=>void;/** 있으면 [바꾸기]가 「기본 스티커」 화면을 연다 */onChooseSticker?:()=>void;endMode:EndDateMode;onChangeEndMode:(mode:EndDateMode)=>void;endDate?:string;onChangeEndDate:(date:string)=>void;/** 오늘 날짜 키. 종료일은 오늘부터 고른다 */today:string;/** 예: '9월 29일' */todayLabel:string;error?:string;onSubmit:()=>void;submitDisabled?:boolean;onBack:()=>void;stickerTargetRef?:React.Ref<View>}) {
+export function NewGoalScreen({name,onChangeName,nameMaxLength,nameError,onNameBlur,kind,onChangeKind,count,onChangeCount,sticker,onChooseSticker,endMode,onChangeEndMode,endDate,onChangeEndDate,today,todayLabel,error,onSubmit,submitDisabled=false,onBack,stickerTargetRef}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;/** 이름 칸에서 나올 때: 빈 이름 문구를 보일지 정한다 */onNameBlur?:()=>void;kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;sticker:StickerId;/** [바꾸기]: 「기본 스티커」 화면을 연다 */onChooseSticker:()=>void;endMode:EndDateMode;onChangeEndMode:(mode:EndDateMode)=>void;endDate?:string;onChangeEndDate:(date:string)=>void;/** 오늘 날짜 키. 종료일은 오늘부터 고른다 */today:string;/** 예: '9월 29일' */todayLabel:string;error?:string;onSubmit:()=>void;submitDisabled?:boolean;onBack:()=>void;stickerTargetRef?:React.Ref<View>}) {
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="새 목표" onBack={onBack}/>}>
     <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} placeholder="목표 이름" maxLength={nameMaxLength} error={nameError} onBlur={onNameBlur}/>
     <BoardTypePicker value={kind} onChange={onChangeKind}/>
     {kind==='tally'&&<SlotCountPicker value={count} onChange={onChangeCount}/>}
-    <StickerField value={sticker} onChange={onChangeSticker} onChoose={onChooseSticker} targetRef={stickerTargetRef}/>
+    <StickerField value={sticker} onChoose={onChooseSticker} targetRef={stickerTargetRef}/>
     {kind==='calendar'&&<View style={{gap:8}}>
       <PixelText>종료일 (선택)</PixelText>
       <OptionButtons options={[{key:'none',label:'정하지 않기'},{key:'pick',label:'날짜 고르기'}] as const} value={endMode} onChange={onChangeEndMode}/>

@@ -179,21 +179,6 @@ export function ProgressBar({value,total}: {value:number;total:number}) {
   </View>;
 }
 
-export const stickerGroups = ['전체','친구','모양','사물'] as const;
-export type StickerGroup = typeof stickerGroups[number];
-export function StickerFilters({value,onChange}: {value:StickerGroup;onChange:(value:StickerGroup)=>void}) {
-  return <View style={{flexDirection:'row',alignItems:'center'}}>
-    {stickerGroups.map((group,i)=><React.Fragment key={group}>
-      {i>0 && <View style={{width:1,height:24,backgroundColor:c.ink}}/>}
-      <Pressable accessibilityRole="tab" aria-selected={value===group} accessibilityState={{selected:value===group}} onPress={()=>onChange(group)}
-        style={{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',marginHorizontal:4}}>
-        <PixelFrame variant="selection" fill={value===group?c.ink:'transparent'} style={{width:'100%'}} contentStyle={{minHeight:44,alignItems:'center',justifyContent:'center'}}>
-        <PixelText style={{color:value===group?c.lcd:c.buttonText}}>{group}</PixelText></PixelFrame>
-      </Pressable>
-    </React.Fragment>)}
-  </View>;
-}
-
 export function SproutSticker({size=48}: {size?:number}) {
   return <Svg width={size} height={size} viewBox={sproutViewBox} {...sproutAccessibility}>
     <Path d={sproutPath} fill={c.ink}/>
@@ -353,7 +338,7 @@ export function CompletionSticker({sticker,size=36,tilted=false,animate=false}:{
   </View>;
   return animate?<StickMotion from={1.8}>{body}</StickMotion>:body;
 }
-/** 작은 채움 탭. 선택한 탭은 잉크로 채우고 LCD 글씨를 쓴다 (`StickerFilters`와 같은 표현). */
+/** 작은 채움 탭. 선택한 탭은 잉크로 채우고 LCD 글씨를 쓴다. */
 export function PixelTabs<K extends string>({items,value,onChange}:{items:readonly {key:K;label:string}[];value:K;onChange:(key:K)=>void}) {
   return <View accessibilityRole="tablist" style={{flexDirection:'row',alignItems:'center',gap:4}}>
     {items.map(item=>{const selected=item.key===value;return <Pressable key={item.key} accessibilityRole="tab" accessibilityState={{selected}} aria-selected={selected} onPress={()=>onChange(item.key)}>

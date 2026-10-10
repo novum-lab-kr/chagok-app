@@ -234,7 +234,6 @@ export default function Board() {
         name={goal.name}
         sticker={sticker}
         completed={done}
-        editable
         animateCompletion={pending}
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}

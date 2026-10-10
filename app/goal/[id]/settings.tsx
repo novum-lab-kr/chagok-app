@@ -139,7 +139,6 @@ export default function GoalSettings() {
         nameMaxLength={GOAL_NAME_MAX}
         nameError={goalNameError(name)}
         sticker={sticker}
-        onChangeSticker={setSticker}
         onChooseSticker={() => router.push({ pathname: '/stickers/choose', params: { current: sticker } })}
         period={calendar ? {
           startDate: startDate(current),

@@ -1,6 +1,5 @@
 import type { DateKey } from '../domain/dates';
-import type { WidgetCalendarCell, WidgetTallyCell } from '../design-system/widget-preview';
-import type { WidgetGoal, WidgetSnapshot } from './snapshot';
+import type { WidgetCalendarCell, WidgetGoal, WidgetSnapshot, WidgetTallyCell } from './snapshot';
 import type { WidgetRequest } from './requests';
 
 // 위젯 3종이 받는 props (PRD 4.10). 위젯 파일(widgets/ios/*)은 이 파일의 타입만 가져간다.

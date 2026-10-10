@@ -1,13 +1,13 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutChangeEvent, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
-import {clampLength,FieldError,PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,type StickerGroup} from './components';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
+import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
 import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
 import {pixelOutline} from './geometry';
-import {ActionSymbol,StickerGlyph,pocketStickers,stickerLabel,type PocketStickerId,type StickerId} from './sticker-glyphs';
+import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 
 export function ScreenHeader({title,onBack,action}:{title:string;onBack?:()=>void;action?:ReactNode}) {
   return <View style={{flexDirection:'row',alignItems:'center',minHeight:48}}>
@@ -76,35 +76,21 @@ export function StickerSummary({value,onChange}:{value:StickerId;onChange?:()=>v
     <PixelText style={{flex:1}}>{stickerLabel(value)}</PixelText>{onChange&&<PixelButton label="바꾸기" variant="secondary" onPress={onChange}/>}
   </PixelFrame>;
 }
-export function StickerPicker({value,onChange,onSelectedLayout,selectedTargetRef}:{value:PocketStickerId;onChange:(value:PocketStickerId)=>void;onSelectedLayout?:(layout:LayoutRectangle)=>void;selectedTargetRef?:React.Ref<View>}) {
-  const [group,setGroup]=useState<StickerGroup>('전체');
-  return <View style={{gap:12,paddingTop:12}}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:20,paddingBottom:12,borderBottomWidth:retro.shape.panelTitleBorder,borderColor:retro.color.ink}}><StickerGlyph id={value} size={64}/><PixelText variant="title">{stickerLabel(value)}</PixelText></View>
-    <StickerFilters value={group} onChange={setGroup}/>
-    <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-      {pocketStickers.filter(item=>group==='전체'||item.group===group).map(item=><Pressable key={item.id} accessibilityRole="radio" accessibilityLabel={item.label} aria-checked={value===item.id} accessibilityState={{checked:value===item.id}} onPress={()=>onChange(item.id)} onLayout={e=>{if(item.id===value)onSelectedLayout?.(e.nativeEvent.layout)}} style={{width:'30%',alignItems:'center',gap:8,paddingVertical:8}}>
-        <View ref={item.id===value?selectedTargetRef:undefined} style={{width:64,height:64,alignItems:'center',justifyContent:'center'}}><StickerGlyph id={item.id} size={48}/>{item.id===value&&<><PixelFocusRing/><View style={{position:'absolute',right:-2,top:-2}}><SelectionBadge/></View></>}</View>
-        <PixelText style={{fontSize:14,lineHeight:20}}>{item.label}</PixelText>
-      </Pressable>)}
-    </View>
-  </View>;
-}
 export function RecordSummary({goalName,date,sticker}:{goalName:string;date:string;sticker:StickerId}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',alignItems:'center',gap:16}}><StickerGlyph id={sticker} size={56}/><View style={{width:retro.shape.border,height:56,backgroundColor:retro.color.ink}}/><View style={{flex:1,gap:4}}><PixelText variant="title">{goalName}</PixelText><PixelText>{date}</PixelText></View></PixelFrame>;
 }
-export function PhotoAttachment({source,preview,onChoose,onRemove,onPhotoError,actionsInFrame=false,readonly=false}:{source?:ImageSourcePropType;preview?:ReactNode;onChoose:()=>void;onRemove:()=>void;onPhotoError?:()=>void;actionsInFrame?:boolean;/** 완성한 판의 기록: 사진을 보여주기만 하고 추가·바꾸기·지우기를 숨긴다 */readonly?:boolean}) {
+export function PhotoAttachment({source,preview,onChoose,onRemove,onPhotoError,actionsInFrame:inFrame=false}:{source?:ImageSourcePropType;preview?:ReactNode;onChoose:()=>void;onRemove:()=>void;onPhotoError?:()=>void;actionsInFrame?:boolean}) {
   const attached=!!source||!!preview;
-  const inFrame=actionsInFrame||readonly;
   return <View style={{gap:12}}>
     <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:586/494,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
-      {source?<Image source={source} onError={onPhotoError} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(readonly?<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>사진 없음</PixelText></View>:inFrame?<PixelButton label="사진 추가" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>:<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>사진을 남겨보세요</PixelText></View>)}
-      {inFrame&&attached&&!readonly&&<Pressable accessibilityRole="button" accessibilityLabel="사진 지우기" onPress={onRemove} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
+      {source?<Image source={source} onError={onPhotoError} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?<PixelButton label="사진 추가" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>:<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>사진을 남겨보세요</PixelText></View>)}
+      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel="사진 지우기" onPress={onRemove} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
     </View></PixelFrame>
     {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?'사진 바꾸기':'사진 추가'} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label="사진 지우기" variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
   </View>;
 }
-export function MemoEditor({value,onChange,readonly=false,maxLength,error}:{value:string;onChange:(value:string)=>void;/** 완성한 판의 기록: 고칠 수 없다 */readonly?:boolean;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
-  return <View style={{gap:8}}><PixelPanel title="메모"><TextInput accessibilityLabel="메모" value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} editable={!readonly} aria-readonly={readonly} multiline placeholder={readonly?'메모 없음':'오늘의 기록을 남겨보세요'} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
+export function MemoEditor({value,onChange,maxLength,error}:{value:string;onChange:(value:string)=>void;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
+  return <View style={{gap:8}}><PixelPanel title="메모"><TextInput accessibilityLabel="메모" value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder="오늘의 기록을 남겨보세요" placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;

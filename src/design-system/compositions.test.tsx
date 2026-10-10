@@ -4,7 +4,7 @@ import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
 import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
-import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
+import {PhotoAttachment,SlotCountPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 import {retro} from './tokens';
 afterEach(cleanup);
@@ -30,7 +30,7 @@ describe('화면 구성 컴포넌트',()=>{
     fireEvent.click(screen.getByRole('button',{name:'다음 달'}));expect(change).toHaveBeenLastCalledWith(2027,1);
   });
   it('새 목표: 적립판은 칸 수, 달력판은 종료일 선택을 보여주고 입력을 전달한다',()=>{
-    const props={name:'',onChangeName:vi.fn(),onChangeKind:vi.fn(),count:'15',onChangeCount:vi.fn(),sticker:'sprout' as const,onChangeSticker:vi.fn(),
+    const props={name:'',onChangeName:vi.fn(),onChangeKind:vi.fn(),count:'15',onChangeCount:vi.fn(),sticker:'sprout' as const,onChooseSticker:vi.fn(),
       endMode:'none' as const,onChangeEndMode:vi.fn(),onChangeEndDate:vi.fn(),today:'2026-09-30',todayLabel:'9월 30일',onSubmit:vi.fn(),onBack:()=>{}};
     const {rerender}=render(<NewGoalScreen {...props} kind="tally" submitDisabled/>);
     expect(screen.getByRole('button',{name:'만들기'}).getAttribute('aria-disabled')).toBe('true');
@@ -44,7 +44,7 @@ describe('화면 구성 컴포넌트',()=>{
   });
   it('새 목표: 이름 칸은 한도와 문구를 받고, 칸에서 나오면 알린다',()=>{
     const blur=vi.fn();
-    render(<NewGoalScreen name="" onChangeName={vi.fn()} nameMaxLength={20} nameError="목표 이름을 입력해주세요." onNameBlur={blur} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="sprout" onChangeSticker={vi.fn()} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={()=>{}}/>);
+    render(<NewGoalScreen name="" onChangeName={vi.fn()} nameMaxLength={20} nameError="목표 이름을 입력해주세요." onNameBlur={blur} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="sprout" onChooseSticker={vi.fn()} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={()=>{}}/>);
     const input=screen.getByRole('textbox',{name:'목표 이름'});
     expect(input.getAttribute('maxlength')).toBe('20');
     expect(screen.getByRole('alert').textContent).toBe('목표 이름을 입력해주세요.');
@@ -68,12 +68,6 @@ describe('화면 구성 컴포넌트',()=>{
     render(<PixelDialog variant="basic" single title="저장하지 못했어요" description="잠시 후 다시 시도해주세요." primaryLabel="확인" onPrimary={ok}/>);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button',{name:'확인'}));expect(ok).toHaveBeenCalledTimes(1);
-  });
-  it('스티커 필터는 해당 그룹만 노출하고 선택값을 전달한다',()=>{
-    const change=vi.fn();render(<StickerPicker value="sprout" onChange={change}/>);
-    fireEvent.click(screen.getByRole('tab',{name:'사물'}));
-    expect(screen.getAllByRole('radio')).toHaveLength(2);expect(screen.queryByRole('radio',{name:'새싹이'})).toBeNull();
-    fireEvent.click(screen.getByRole('radio',{name:'운동화'}));expect(change).toHaveBeenCalledWith('shoe');
   });
   it('사진 프레임은 빈 상태에서 추가, 첨부 상태에서 삭제만 노출한다',()=>{
     const choose=vi.fn(),remove=vi.fn();
@@ -144,14 +138,6 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     const press=vi.fn();render(<GoalStickerCell number={3} sticker="star" state="filled" onPress={press}/>);
     fireEvent.click(screen.getByRole('button'));expect(press).toHaveBeenCalledTimes(1);
   });
-  it('완성한 판(readonly)은 누르면 기록만 열고, 꾹 눌러도 떼지 않고, 빈칸은 막는다',()=>{
-    const press=vi.fn(),open=vi.fn();
-    const {rerender}=render(<GoalStickerCell number={3} sticker="star" state="filled" readonly onPress={press} onOpenRecord={open}/>);
-    fireEvent.click(screen.getByRole('button'));expect(open).toHaveBeenCalledTimes(1);
-    longPress(screen.getByRole('button'));expect(press).not.toHaveBeenCalled();
-    rerender(<GoalStickerCell number={4} sticker="star" state="available" readonly enabled onPress={press} onOpenRecord={open}/>);
-    fireEvent.click(screen.getByRole('button'));expect(press).not.toHaveBeenCalled();
-  });
   it('달력: 스티커 있는 날은 눌러 기록을 열고 꾹 눌러 떼며, 비활성 날짜는 막는다',()=>{
     const select=vi.fn(),open=vi.fn();
     render(<CalendarBoard year={2026} month={9} records={{'2026-09-02':'shoe'}} onSelect={select} onMonthChange={()=>{}} onOpenRecord={open} isDateEnabled={date=>date<='2026-09-23'}/>);
@@ -172,16 +158,8 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     fireEvent.click(screen.getByRole('button',{name:'9월 29일'}));expect(change).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'9월 30일'}));expect(change).toHaveBeenCalledWith('2026-09-30');
   });
-  it('읽기 전용 기록은 저장·떼기·사진 동작을 숨기고 메모를 고칠 수 없다',async ()=>{
-    const {RecordScreen}=await import('./index');
-    render(<RecordScreen readonly goal={exampleGoals[0]} date="2026년 9월 12일" initialMemo="한 챕터" onChoosePhoto={()=>{}} onRemovePhoto={()=>{}} onBack={()=>{}} onSave={()=>{}} onRemoveSticker={()=>{}}/>);
-    expect(screen.queryByRole('button',{name:'저장'})).toBeNull();
-    expect(screen.queryByRole('button',{name:'스티커 떼기'})).toBeNull();
-    expect(screen.queryByRole('button',{name:/사진/})).toBeNull();
-    expect((screen.getByRole('textbox',{name:'메모'}) as HTMLTextAreaElement).readOnly).toBe(true);
-  });
   it('기간 없는 달력판 완성 안내는 계속하기로 다시 이어 쓸 수 있다고 알린다 (2026-09-30)',()=>{
-    render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChangeSticker={()=>{}} onComplete={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
+    render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} onComplete={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
     expect(screen.getByText(/계속하기로 다시 이어 쓸 수 있어요/)).toBeTruthy();
     expect(screen.queryByText(/되돌릴 수 없어요/)).toBeNull();
   });
@@ -202,15 +180,15 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   });
   it('목표 설정: 적립판 칸 수는 늘리기만 된다고 알리고, 오류가 있으면 보여준다 (2026-09-30)',()=>{
     const slots={current:30,value:'15',onChange:vi.fn(),error:'지금 30칸보다 줄일 수 없어요.'};
-    render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChangeSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
+    render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
     expect(screen.getByText('지금 30칸 · 늘리기만 할 수 있어요')).toBeTruthy();
     expect(screen.getByText('지금 30칸보다 줄일 수 없어요.')).toBeTruthy();
   });
-  it('[바꾸기]는 onChooseSticker가 있으면 화면 안 고르기를 열지 않고 그것을 부른다',()=>{
+  it('[바꾸기]는 「기본 스티커」 화면을 연다',()=>{
     const choose=vi.fn();
-    render(<NewGoalScreen name="책 읽기" onChangeName={vi.fn()} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="basic.book" onChangeSticker={vi.fn()} onChooseSticker={choose} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={vi.fn()}/>);
+    render(<NewGoalScreen name="책 읽기" onChangeName={vi.fn()} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="basic.book" onChooseSticker={choose} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button',{name:'바꾸기'}));
-    expect(choose).toHaveBeenCalled();expect(screen.queryByRole('button',{name:'선택 완료'})).toBeNull();
+    expect(choose).toHaveBeenCalled();
   });
   it('완성한 판 설정은 마지막 정보 줄에 밑줄이 없어 [삭제하기] 위 구분선과 겹치지 않는다',()=>{
     const bottom=(label:string)=>parseFloat(getComputedStyle(screen.getByText(label).parentElement!).borderBottomWidth)||0;

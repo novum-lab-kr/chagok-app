@@ -67,7 +67,7 @@ export default function NewGoal() {
         onNameBlur={() => setNameTouched(true)}
         kind={kind} onChangeKind={setKind}
         count={count} onChangeCount={setCount}
-        sticker={sticker} onChangeSticker={setSticker}
+        sticker={sticker}
         onChooseSticker={() => router.push({ pathname: '/stickers/choose', params: { current: sticker } })}
         endMode={endMode} onChangeEndMode={setEndMode}
         endDate={endDate} onChangeEndDate={setEndDate}

@@ -67,7 +67,7 @@ export function TutorialListExample() {
 /** 2단계: 새 목표의 기본 스티커 */
 export function TutorialNewGoalExample() {
   const sticker=useTutorialSpot('sticker');
-  return <NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker="flower" onChangeSticker={noop}
+  return <NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker="flower" onChooseSticker={noop}
     endMode="none" onChangeEndMode={noop} onChangeEndDate={noop} today="2026-09-29" todayLabel="9월 29일" onSubmit={noop} onBack={noop} stickerTargetRef={sticker}/>;
 }
 /** 3·4단계: 진행 중인 적립판의 다음 빈칸과 붙인 칸 */
