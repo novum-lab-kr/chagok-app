@@ -51,7 +51,7 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 **알아 둘 것**
 
 - 개발 빌드와 Expo Go는 **다른 앱**이라 기록(SQLite)이 따로다. Expo Go에 쌓인 기록은 넘어오지 않는다.
-- Expo Go를 계속 쓰려면 `npx expo start --go`(실기기 iPhone은 아직 Expo Go로 본다 — Apple 승인 전).
+- Expo Go를 계속 쓰려면 `npx expo start --go`. 실기기 iPhone은 2026-10-10부터 개발 빌드로 본다(아래 「실기기 iPhone 개발 빌드」).
 - Android 첫 실행에서 `Can't perform a React state update on a component that hasn't mounted yet`
   (`expo-router` `useLinking.native.js`) 경고가 가끔 뜬다. 개발 빌드가 주소를 붙여 앱을 여는 타이밍 문제로,
   앱 코드 문제가 아니고 출시 빌드에는 없다. 닫으면 된다(2026-10-05, expo-router 57.0.22).
@@ -60,6 +60,17 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 `eas.json`: `development`(실기기 개발 빌드), `development-simulator`, `preview`(내부 배포), `production`(빌드 번호 자동 증가 —
 [버전 규칙](RELEASE-VERSIONING.md)). iOS 실기기·스토어 빌드는 Apple Developer Program 승인 뒤에 한다.
 **클라우드 빌드는 `.env.local`을 읽지 않는다** — `preview`·`production`을 빌드하기 전에 서버 주소·키를 EAS 환경 변수로 넣어야 한다.
+
+**실기기 iPhone 개발 빌드** (2026-10-10 설치, iPhone 15 Pro · iOS 26.6.2)
+
+- 빌드: `npx eas-cli@latest build --profile development --platform ios`. 전역 `eas`(16.17.4)는 오래돼서 Apple 로그인 단계가
+  「iTunes service key is empty」로 실패한다. Apple 로그인·인증서 질문이 대화형이라 **사용자의 터미널 앱에서** 돌린다(Claude의 `!`로는 안 된다).
+- 기기는 EAS에 등록돼 있고 배포 인증서도 있다. 네이티브 쪽(`app.json`·플러그인·네이티브 라이브러리)을 바꿨을 때만 다시 빌드한다.
+- 실행: Mac에서 `npx expo start --dev-client --port 8082`. 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8082`로 연다.
+  JS·위젯 레이아웃 변경은 Metro 리로드로 폰에 반영된다.
+- worktree에서 Metro를 띄우면 `.env.local`을 링크하고, 다른 worktree에서 띄웠던 직후라면 `--clear`를 붙인다
+  ([PITFALLS](PITFALLS.md)).
+- Metro를 다시 띄우면 폰 앱도 다시 불러와져 마지막 화면부터 열린다. 그때 이상하게 보이면 재시작 직후인지 먼저 본다.
 
 ---
 
