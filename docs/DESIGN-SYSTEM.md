@@ -108,6 +108,7 @@ npm run storybook
 | OptionButtons | 둘 이상 중 하나를 고르는 버튼 줄 |
 | EndDatePicker / PeriodField | 종료일 고르기(앞선 날짜 비활성) / 달력판 기간(시작일 고정, 종료일 정하기·바꾸기·지우기) |
 | DeleteSection | 화면 맨 아래 구분선 + [삭제하기] + 안내 |
+| LoadingScreen / ScreenFailed | 화면을 열 때 읽는 동안 로딩 점, 못 보여 주면 차곡이 갸웃 + 상황별 문구(`kind`: records·goals·stickers·screen) + [다시 시도] [홈으로]. 앱 대기 화면과 ErrorBoundary가 같이 쓴다. 다시 시도 상태는 `useLoadRetry` (2026-10-10) |
 
 다이얼로그는 **표면 컴포넌트**다. 일반 화면용 호스트는 `PixelDialog variant="basic"`을 화면의 가로·세로 중앙에 놓는다. 실제 Modal 호스트의 포커스 관리·배경 차단·Escape/뒤로가기 등은 화면 통합 단계에서 구현한다. 데모의 붙인 칸 재클릭은 데모 리셋이며 제품의 스티커 삭제 정책을 정의하지 않는다. 새싹 픽셀 원본은 공통화한 초안으로, 이미지 시안과 픽셀 단위 일치를 확정한 자산이 아니다.
 

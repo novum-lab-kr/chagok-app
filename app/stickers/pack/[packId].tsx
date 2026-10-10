@@ -1,11 +1,10 @@
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { PackScreen, PixelLoadingIndicator, RetroScreen, stickerShopDialogs } from '../../../src/design-system';
+import { LoadingScreen, PackScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import { endLabel, packViews, samplePlacement } from '../../../src/app-data/packViews';
 import { offerOpenPack } from '../../../src/app-data/stickerChoice';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
-import { goBackOrHome } from '../../../src/app-data/goBack';
+import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { AD_TRIAL_MS, dayTrialThreshold } from '../../../src/domain/packs';
 import { loadPackState, startDayTrial } from '../../../src/repositories/packRepository';
@@ -23,22 +22,22 @@ export default function Pack() {
   const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
   const [once] = useState(createSingleFlight);
   const { ask, dialog } = useDialog();
+  const { failed, attempt, fail, retry } = useLoadRetry();
 
   useFocusEffect(useCallback(() => {
     let alive = true;
-    void loadPackState().then((pack) => { if (alive) setState({ pack, now: Date.now() }); });
+    void loadPackState()
+      .then((pack) => { if (alive) setState({ pack, now: Date.now() }); })
+      .catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, []));
+  // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempt, fail]));
 
   const view = state ? packViews(state.pack.access, state.now).find((p) => p.id === packId) : undefined;
   if (!state || !view) {
-    return (
-      <RetroScreen>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelLoadingIndicator label="불러오는 중" />
-        </View>
-      </RetroScreen>
-    );
+    // 읽었는데 그런 묶음이 없으면(잘못된 링크) 기다려도 소용없으니 바로 안내한다.
+    return <LoadingScreen failed={failed || state !== null} kind="stickers" onRetry={retry} onHome={goHome} />;
   }
 
   const opened = () => { offerOpenPack(packId); goBackOrHome(); };

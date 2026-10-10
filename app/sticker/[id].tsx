@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSymbol, RecordScreen, RetroScreen, PixelLoadingIndicator, PixelText } from '../../src/design-system';
+import { ActionSymbol, LoadingScreen, RecordScreen, PixelText, useLoadRetry } from '../../src/design-system';
 import type { PocketGoal, StickerId } from '../../src/design-system';
 import { getSticker, listStickers, removeSticker } from '../../src/repositories/stickerRepository';
 import { getGoal } from '../../src/repositories/goalRepository';
@@ -13,7 +13,7 @@ import { displayRecordPhotoUri, preserveRecordPhoto, recordPhotoExists, removeMa
 import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
-import { goBackOrHome } from '../../src/app-data/goBack';
+import { goBackOrHome, goHome } from '../../src/app-data/goBack';
 import { MEMO_MAX, memoError, needsRemoveConfirm } from '../../src/domain/board';
 import { localDateKey, parseDateKey } from '../../src/domain/dates';
 import type { Goal, Sticker } from '../../src/domain/types';
@@ -38,6 +38,7 @@ export default function StickerRecord() {
   const [saveOnce] = useState(createSingleFlight);
   const { ask, confirm, dialog: confirmDialog } = useDialog();
   const { goBack, dialog } = useUnsavedBack(draftMemo !== memo || photoUri !== savedPhotoUri);
+  const { failed, attempt, fail, retry } = useLoadRetry();
 
   useEffect(() => {
     if (!id) return;
@@ -66,17 +67,11 @@ export default function StickerRecord() {
       setSavedPhotoUri(record?.photoUri ?? null);
       setPhotoMissing(!!record?.photoUri && !recordPhotoExists(record.photoUri));
       setHasStoredRecord(!!(record?.photoUri?.trim() || record?.memo?.trim()));
-    })();
+    })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, [id]);
+  }, [id, attempt, fail]);
 
-  if (!pocketGoal || !goal || !sticker) return (
-    <RetroScreen>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <PixelLoadingIndicator label="불러오는 중" />
-      </View>
-    </RetroScreen>
-  );
+  if (!pocketGoal || !goal || !sticker) return <LoadingScreen failed={failed} kind="records" onRetry={retry} onHome={goHome} />;
 
   /** 권한을 거부해도 메모와 스티커는 계속 쓸 수 있어야 한다 (PRD 7절). */
   async function choosePhoto() {

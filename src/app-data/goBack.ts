@@ -8,3 +8,8 @@ export function goBackOrHome() {
   if (router.canGoBack()) router.back();
   else router.replace('/');
 }
+
+/** 홈으로. 아래에 홈이 있으면 그 사이 화면을 모두 닫고, 없으면 홈을 연다(화면을 보여 주지 못했을 때의 [홈으로]). */
+export function goHome() {
+  router.dismissTo('/');
+}

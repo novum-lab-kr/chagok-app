@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { ExtendEndDateScreen, ExtendSlotsScreen, PixelLoadingIndicator, RetroScreen } from '../../../src/design-system';
+import { ExtendEndDateScreen, ExtendSlotsScreen, LoadingScreen, useLoadRetry } from '../../../src/design-system';
 import { extendEndDate, extendSlots, getGoal } from '../../../src/repositories/goalRepository';
 import { periodLabel } from '../../../src/app-data/pocketAdapter';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
-import { goBackOrHome } from '../../../src/app-data/goBack';
+import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { defaultExtraSlots, extendEndDateFloor, isCompleted } from '../../../src/domain/board';
 import type { Goal } from '../../../src/domain/types';
 
@@ -21,6 +20,7 @@ export default function ExtendBoard() {
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
   const [submitOnce] = useState(createSingleFlight);
   const { ask, dialog } = useDialog();
+  const { failed, attempt, fail, retry } = useLoadRetry();
 
   useEffect(() => {
     let alive = true;
@@ -31,18 +31,12 @@ export default function ExtendBoard() {
       if (!g || !isCompleted(g) || (g.boardType === 'calendar' && !g.endDate)) { goBackOrHome(); return; }
       setGoal(g);
       setAdd(String(defaultExtraSlots(g)));
-    })();
+    })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, [id]);
+  }, [id, attempt, fail]);
 
   if (!goal) {
-    return (
-      <RetroScreen>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelLoadingIndicator label="불러오는 중" />
-        </View>
-      </RetroScreen>
-    );
+    return <LoadingScreen failed={failed} kind="records" onRetry={retry} onHome={goHome} />;
   }
   const current = goal;
 
