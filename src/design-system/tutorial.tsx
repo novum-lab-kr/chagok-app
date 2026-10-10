@@ -1,6 +1,6 @@
-import React,{useEffect,useRef,useState} from 'react';
+import React,{useEffect,useRef} from 'react';
 import {Platform,View,StyleSheet,type LayoutRectangle} from 'react-native';
-import {PixelDialog,PixelFocusRing,SCREEN_MAX_WIDTH,SCREEN_PADDING} from './components';
+import {PixelDialog,PixelFocusRing,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
 import {retro} from './tokens';
 import Svg,{Path} from 'react-native-svg';
 
@@ -11,8 +11,9 @@ export type TutorialContent={step:string;title:string;description:string;primary
 /** Positioned overlay for screen compositions. Target coordinates are relative to its parent. */
 export function TutorialSpotlight({step,target,width,height,onNext,onSkip,highlightFrame=true,content,autoFocus=true}:{highlightFrame?:boolean;/** 웹에서 열릴 때 첫 버튼에 포커스를 줄지. 한 페이지에 여러 개를 그리는 문서 화면에서는 끈다 */autoFocus?:boolean;step:TutorialStep;target:LayoutRectangle;width:number;height:number;onNext:()=>void;onSkip:()=>void;content?:TutorialContent}) {
   const text=content??{step:`${step} / 3`,...copy[step],primaryLabel:step===3?'시작하기':'다음',secondaryLabel:'건너뛰기'};
-  const [dialogHeight,setDialogHeight]=useState(240);
-  const dialog=useRef<View>(null);
+  // 재기 전에는 대략 높이로 자리를 잡는다
+  const {ref:dialog,size:dialogSize,onLayout:onDialogLayout}=useLayoutSize();
+  const dialogHeight=dialogSize.height||240;
   // 호스트가 onSkip을 매 렌더 새로 만들어도 포커스를 다시 잡지 않도록 최신 값만 ref로 읽는다.
   // (Storybook Docs처럼 여러 튜토리얼이 함께 렌더되면 포커스 이동이 반복돼 페이지가 계속 스크롤됐다.)
   const skip=useRef(onSkip);
@@ -29,7 +30,7 @@ export function TutorialSpotlight({step,target,width,height,onNext,onSkip,highli
     };
     element?.addEventListener('keydown',handle);
     return()=>{element?.removeEventListener('keydown',handle);previous?.focus()};
-  },[step,text.step,autoFocus]);
+  },[step,text.step,autoFocus,dialog]);
   const x=Math.max(0,target.x-4), y=Math.max(0,target.y-4);
   const w=Math.min(target.width+8,width-x), h=Math.min(target.height+8,height-y);
   const below=y+h+16;
@@ -42,7 +43,7 @@ export function TutorialSpotlight({step,target,width,height,onNext,onSkip,highli
     <View style={[shade,{left:0,right:0,top:0,height:y}]}/><View style={[shade,{left:0,right:0,top:y+h,bottom:0}]}/><View style={[shade,{left:0,top:y,width:x,height:h}]}/><View style={[shade,{left:x+w,right:0,top:y,height:h}]}/>
     {highlightFrame&&<View style={{position:'absolute',left:x,top:y,width:w,height:h}}><PixelFocusRing/></View>}
     <View pointerEvents="none" style={{position:'absolute',left:Math.max(columnLeft+28,Math.min(columnLeft+columnWidth-60,x+w/2-16)),top:top===below?top-14:top+dialogHeight-2}}><Svg width={32} height={16} viewBox="0 0 32 16"><Path d="M14 0H18V4H22V8H26V12H30V16H2V12H6V8H10V4H14Z" fill={retro.color.dialog} transform={top===below?undefined:'translate(32,16) rotate(180)'}/></Svg></View>
-    <View ref={dialog} {...(Platform.OS==='web'?{role:'dialog' as const,'aria-modal':true,'aria-label':text.title}:{accessibilityLabel:text.title})} onLayout={e=>setDialogHeight(e.nativeEvent.layout.height)} style={{position:'absolute',left:columnLeft+SCREEN_PADDING,width:columnWidth-2*SCREEN_PADDING,top}}>
+    <View ref={dialog} {...(Platform.OS==='web'?{role:'dialog' as const,'aria-modal':true,'aria-label':text.title}:{accessibilityLabel:text.title})} onLayout={onDialogLayout} style={{position:'absolute',left:columnLeft+SCREEN_PADDING,width:columnWidth-2*SCREEN_PADDING,top}}>
       <PixelDialog step={text.step} title={text.title} description={text.description} primaryLabel={text.primaryLabel} secondaryLabel={text.secondaryLabel} onPrimary={onNext} onSecondary={onSkip}/>
     </View>
   </View>;

@@ -1,7 +1,7 @@
-import React,{useState,type ReactNode} from 'react';
+import React,{type ReactNode} from 'react';
 import {Pressable,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
-import {PixelButton,PixelIcon,PixelPanel,PixelText} from './components';
+import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
 import {AppHeader,InfoRow,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
 import {pixelOutline} from './geometry';
 import {retro} from './tokens';
@@ -41,9 +41,9 @@ function Rule() {
 
 /** 판 종류 카드와 같은 선택 표시: 고르면 주황 외곽 + 안쪽 LCD, 제목 옆 체크 배지. */
 function ChoiceCard({title,selected,onPress,children}:{title:string;selected:boolean;onPress:()=>void;children:ReactNode}) {
-  const [size,setSize]=useState({width:0,height:0});
+  const {ref,size,onLayout}=useLayoutSize();
   return <Pressable accessibilityRole="radio" accessibilityLabel={title} accessibilityState={{checked:selected}} aria-checked={selected} onPress={onPress}>
-    <View onLayout={e=>setSize(e.nativeEvent.layout)} style={{padding:16,gap:6}}>
+    <View ref={ref} onLayout={onLayout} style={{padding:16,gap:6}}>
       {size.width>0&&<Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={{position:'absolute',left:0,top:0}}>
         <Path d={pixelOutline(size.width,size.height,1.5,retro.shape.controlUnit)} fill={selected?retro.color.primary:retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>
         {selected&&<Path d={pixelOutline(size.width,size.height,7.5,retro.shape.controlUnit)} fill={retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>}

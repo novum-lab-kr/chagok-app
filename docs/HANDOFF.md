@@ -274,6 +274,8 @@ npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 - 달력 키는 로컬 시간으로 만든다. `toISOString()`은 자정 근처에서 하루를 민다.
 - **Storybook Docs는 한 파일의 스토리를 한 페이지에 모두 그린다.** 포커스를 옮기거나 위치를 재는 스토리는 Docs에서 반복 렌더링·스크롤 끌림을 일으킨다. 튜토리얼 스토리는 Docs에서 `autoFocus={false}`로 그리고, 측정 결과를 담는 context 값은 `useMemo`로 고정하고 같은 좌표면 상태를 바꾸지 않는다.
 - RN Web의 `AccessibilityInfo.addEventListener`는 구독 객체를 돌려주지 않는다. 정리할 때 `?.remove?.()`로 부른다.
+- **처음 크기를 `onLayout`에만 맡기지 않는다.** 새 아키텍처는 기기가 바쁠 때 처음 layout 이벤트를 버린다. 크기를 받아야 그리거나 보이는 것은 `useLayoutSize`를 쓴다. 확인은 CPU 부하를 건 채 콜드 스타트를 여러 번.
+- **Maestro로 iOS 위젯 추가:** 홈 화면 메뉴 글자가 잡히지 않는다. 길게 누르기(50%,85%) → 편집 → 18%,10% → "위젯 검색"을 기다리는 순서로 한다. home 키 뒤에는 두 번째 페이지에 서므로 오른쪽으로 넘긴 뒤 위젯을 누른다.
 
 ## 8. 현재 앱 상태
 
@@ -355,9 +357,10 @@ Expo Router 라우트가 SQLite 저장소(스키마 v5)에 연결돼 있다. 디
   - 고친 방법: 판 윗부분을 고정하고 칸만 판 안에서 스크롤한다(`RetroScreen scrollable={false}` + `CenteringScrollView`).
   - 자세한 기록은 [보관본](archive/HANDOFF-history-2026-10-05.md).
 - 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
-- **(재현됨 2026-10-08, 원인 미확인) 크기를 잰 뒤 그리는 테두리·판이 빠진 채 남음.** 2026-10-08 iPhone 16 Pro 시뮬레이터 Release 빌드에서 재현: 빌드를 막 설치한 뒤 첫 실행의 목록 화면에서 `PixelFrame` 테두리(카드·탭·배지·`+`)가 모두 빠졌고(2/2), 그 뒤 콜드 스타트 4번은 정상. 판 화면에 들어갔을 때 판 패널(`onLayout` 뒤에 보임)이 비어 있었던 적도 한 번 있다. JS 스레드는 멈추지 않았고(샘플링: 대기 중, CPU 1%) 탭은 동작했다 — 탭을 바꾸거나 화면을 다시 열면 정상으로 그려진다. `onLayout`으로 받은 크기가 화면에 반영되지 않는 것으로 보인다. 이전 메모:
-- **(낮음, 재현 대기) 기록 화면 첫 진입 시 스타일이 빠진 채 그려짐 (2026-09-30 사용자 보고).** 시뮬레이터 콜드 스타트와 09:34 녹화에서는 재현되지 않았다. 후보: ① Fast Refresh 잔상, ② `PixelFrame`이 `onLayout`으로 크기를 받은 뒤에만 테두리·채움을 그림, ③ 폰트 대체. 재현되면 스크린샷으로 가린다. ②면 크기 전에도 배경을 먼저 칠한다.
-- **(2026-10-08 발견) 위젯에서 붙인 뒤 홈 목록이 바로 바뀌지 않음.** 앱이 위젯 요청을 반영한 뒤 판 화면은 다시 읽지만(`subscribeWidgetApplied`), 홈 목록의 진행률·오늘 붙임 표시는 화면을 다시 열기 전까지 이전 값이다. 홈 목록도 같은 구독으로 다시 읽으면 된다.
+- **(2026-10-09 고침, `fix/home-widget-refresh`) 크기를 잰 뒤 그리는 테두리·판이 빠진 채 남음.** 원인: 새 아키텍처(Fabric)는 뷰가 화면에 붙기 전에 layout 이벤트를 처리하면 그 이벤트를 버리고(`UIManagerBinding::dispatchEvent`가 인스턴스 확인 전에 payload를 만들어 `wasDispatched`가 켜짐), 같은 크기로는 다시 보내지 않는다. 기기가 바쁠 때(빌드 직후 첫 실행 등) `onLayout`이 사라져 크기 0으로 남았다. 시뮬레이터에서 CPU 부하(`yes > /dev/null`를 코어 수만큼)로 재현(4번 중 1번, 모든 틀 0×0). 고친 방법: 크기를 받아야 그리는 뷰는 공통 훅 `useLayoutSize`(`components.tsx`)를 쓴다 — 처음 크기는 `useLayoutEffect`에서 `getBoundingClientRect()`로 직접 읽고, 그 뒤 변화는 `onLayout`이 맡는다. 쓰는 곳: `PixelFrame`, `PixelFocusRing`, 튜토리얼 틀·안내 상자, 판 종류 카드·미리보기, 시작 화면 선택 카드. 칸판(`TallyGrid`)은 그린 직후에도 다음 빈칸 옮기기·보이기를 한 번 부르고, 판 스크롤 영역은 높이를 못 받았으면 직접 읽는다. 달력판은 더 이상 가리지 않는다. OS 스플래시는 다음 프레임에도 한 번 더 내린다(`app/_layout.tsx` `SplashOverlay`). 확인: `first-layout.test.tsx`(이벤트 없이 크기만 읽히는 경우), 시뮬레이터 CPU 부하 콜드 스타트.
+  - 고치지 않은 곳: 칸 크기(`StickerSlot`), `StickerGrid`·달력 폭 — 이벤트가 없어도 기본값·추정값이 실제와 같다.
+  - 2026-09-30 「기록 화면 첫 진입 시 스타일이 빠진 채 그려짐」도 같은 원인(후보 ②)이었을 가능성이 높다.
+- **(2026-10-09 고침, `fix/home-widget-refresh`) 위젯에서 붙인 뒤 홈 목록이 바로 바뀌지 않음.** 홈 목록도 `subscribeWidgetApplied`로 다시 읽는다. 시뮬레이터에서 위젯 탭 → 앱 앞으로 → 진행률이 바로 바뀌는 것 확인.
 - 복원 뒤 아직 받지 못한 사진(기기 경로 없음, 서버 경로만 있음)에 photo 항목이 생기면 서버의 하나뿐인 사본이 지워진다. 지금은 그런 경로가 없다. "사진 유실" 화면에 사진 지우기·바꾸기를 붙일 때 `src/sync/push.ts`의 `pushPhoto` 주석을 다시 본다.
 
 **PRD 미확정인데 코드에 값이 들어간 것:** 튜토리얼 상태를 DB(사용자 범위)에 저장. (`userInterfaceStyle`은 2026-09-30 다크 모드 미지원 결정으로 `"light"`가 맞다 — `fix/light-mode-font-scale`에서 바꿨고 main에는 아직 `"automatic"`.)
