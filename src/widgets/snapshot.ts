@@ -65,9 +65,13 @@ function tallyMini(goal: Goal, slotIndexes: readonly number[], chunk: number): W
   while (next < total && taken.has(next)) next++;
   const anchor = next < total ? next : Math.max(total - 1, 0);
   const start = Math.floor(anchor / chunk) * chunk;
-  const cells: WidgetTallyCell[] = [];
-  for (let i = start; i < Math.min(start + chunk, total); i++) cells.push(taken.has(i) ? 'filled' : 'empty');
-  return { type: 'tally', from: start + 1, cells, placed: taken.size, total };
+  const cellsOf = (from: number) => {
+    const out: WidgetTallyCell[] = [];
+    for (let i = from; i < Math.min(from + chunk, total); i++) out.push(taken.has(i) ? 'filled' : 'empty');
+    return out;
+  };
+  // 다음 묶음도 넘긴다. 위젯은 앱을 열기 전까지 받은 칸 위에서만 붙이므로, 지금 묶음을 다 채우면 멈췄다 (2026-10-10 실기기).
+  return { type: 'tally', from: start + 1, cells: cellsOf(start), nextCells: cellsOf(start + chunk), placed: taken.size, total };
 }
 
 /** 앱이 만들어 위젯에 넘긴다. 내 목표 탭의 목표만, 목록과 같은 순서로 (위젯 설계). */

@@ -14,7 +14,7 @@ export type WidgetCalendarCell='filled'|'missed'|'future'|'outside';
 export type WidgetTallyCell='filled'|'empty';
 export type WidgetMini=
   |{type:'calendar';year:number;month:number;firstWeekday:number;days:WidgetCalendarCell[]}
-  |{type:'tally';from:number;cells:WidgetTallyCell[];placed:number;total:number};
+  |{type:'tally';from:number;cells:WidgetTallyCell[];/** 다음 묶음. 위젯에서 지금 묶음을 다 채우면 앱 없이 넘어간다 (2026-10-10) */nextCells?:WidgetTallyCell[];placed:number;total:number};
 export type WidgetGoalView={id:string;name:string;sticker:StickerId;kind:string;progressLabel:string;percent:number;mini:WidgetMini};
 
 /*

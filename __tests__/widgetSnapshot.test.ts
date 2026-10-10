@@ -62,6 +62,15 @@ describe('위젯 스냅샷 · 적립판 묶음 (Review Focus 5)', () => {
     expect(mini.cells).toHaveLength(10);
     expect(mini.cells.slice(3, 6)).toEqual(['filled', 'filled', 'empty']);
   });
+  it('다음 묶음도 함께 넘겨 위젯이 앱 없이 넘어갈 수 있다 (2026-10-10)', () => {
+    const mini = buildWidgetSnapshot([tally(30, range(19))], at(2026, 9, 6)).goals[0].mini;
+    if (mini.type !== 'tally') throw new Error('tally expected');
+    expect(mini.from).toBe(11);
+    expect(mini.nextCells).toEqual(Array(10).fill('empty'));
+    const last = buildWidgetSnapshot([tally(35, range(31))], at(2026, 9, 6)).goals[0].mini;
+    if (last.type !== 'tally') throw new Error('tally expected');
+    expect(last.nextCells).toEqual([]);
+  });
   it('마지막 묶음은 남은 칸만큼만', () => {
     const mini = buildWidgetSnapshot([tally(35, range(31))], at(2026, 9, 6)).goals[0].mini;
     expect(mini).toMatchObject({ from: 31 });

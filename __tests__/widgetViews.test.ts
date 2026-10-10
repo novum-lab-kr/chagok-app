@@ -143,6 +143,31 @@ describe('위젯 화면 로직', () => {
   });
 });
 
+describe('적립판 위젯 · 다음 묶음 (2026-10-10 실기기)', () => {
+  beforeEach(() => { jest.useFakeTimers(); jest.setSystemTime(t(10, 21)); });
+  afterEach(() => jest.useRealTimers());
+  // 30칸 판, 19칸 붙임: 11~20 묶음에 20번만 비어 있다
+  const tally = { ...card, placed: 19, total: 30, remaining: 11, from: 11, cells: [...Array(9).fill('filled'), 'empty'], nextCells: Array(10).fill('empty'), todaySlots: [], removableSlots: [] };
+  const add = (id: string, at: number) => ({ id, goalId: 'run', kind: 'add' as const, at, dateKey: '2026-10-10' });
+  // 칸 번호만. 맨 앞 숫자는 큰 %다
+  const numbers = (root: unknown) => texts(root).filter((s) => /^\d+$/.test(s)).slice(1);
+  it('위젯에서 묶음을 다 채우면 앱을 열지 않아도 다음 묶음을 그린다', () => {
+    const root = ChagokTally({ ...shared, goals: { run: tally }, requests: [add('a', t(10, 20))] } as TallyWidgetProps, env(t(10, 9)));
+    expect(numbers(root)).toEqual(['21', '22', '23', '24', '25', '26', '27', '28', '29', '30']);
+  });
+  it('다음 묶음의 빈칸을 누르면 붙이고, 그 칸을 다시 누르면 뗀다', () => {
+    const root = ChagokTally({ ...shared, goals: { run: tally }, requests: [add('a', t(10, 20)), add('b', t(10, 20, 1))] } as TallyWidgetProps, env(t(10, 9)));
+    expect(numbers(root)[0]).toBe('22');
+    const first = all(root).find((e) => e.type === 'Button' && e.props.target === 'cell-0')!;
+    const out = (first.props.onPress as () => { requests: { kind: string; slotIndex?: number }[] })();
+    expect(out.requests[2]).toMatchObject({ kind: 'remove', slotIndex: 20 });
+  });
+  it('아직 빈칸이 있으면 지금 묶음 그대로다', () => {
+    const root = ChagokTally({ ...shared, goals: { run: tally }, requests: [] } as TallyWidgetProps, env(t(10, 9)));
+    expect(numbers(root)).toEqual(['20']);
+  });
+});
+
 describe('체험이 끝난 묶음 (2026-10-08)', () => {
   beforeEach(() => { jest.useFakeTimers(); jest.setSystemTime(t(7, 9)); });
   afterEach(() => jest.useRealTimers());
