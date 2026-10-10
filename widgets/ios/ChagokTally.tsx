@@ -67,31 +67,32 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const day = late ? now : entry;
   const todayKey = keyOf(day);
   const mine = (props.requests ?? []).filter((r) => r.goalId === g.id).sort((a, b) => a.at - b.at);
-  // 칸 위치는 어림이다(앱이 열리면 맞춘다). 칸 번호는 판 전체 번호(0부터), 위젯 칸 i는 g.from - 1 + i번.
-  const cells = g.cells.slice();
+  // 칸 위치는 어림이다(앱이 열리면 맞춘다). 칸 번호는 판 전체 번호(0부터), all[i]는 g.from - 1 + i번.
+  // 요청은 지금 묶음과 다음 묶음을 이어 붙인 칸에 반영한다 — 지금 묶음을 다 채워도 앱 없이 다음 묶음에 붙인다 (2026-10-10 실기기).
+  const all = [...g.cells, ...(g.nextCells ?? [])];
   const first = g.from - 1;
   const today = new Set(late ? [] : g.todaySlots ?? []); // 오늘 붙인 칸
   const removable = new Set(late ? [] : g.removableSlots ?? []); // 위젯에서 눌러 뗄 수 있는 칸
   let placed = g.placed;
   for (const r of mine) {
     if (r.kind === 'add') {
-      const i = cells.indexOf('empty');
+      const i = all.indexOf('empty');
       if (i < 0) continue;
-      cells[i] = 'filled';
+      all[i] = 'filled';
       placed += 1;
       if (r.dateKey === todayKey) { today.add(first + i); removable.add(first + i); }
     } else if (r.kind === 'remove') {
       const i = (r.slotIndex ?? -1) - first;
-      if (i < 0 || i >= cells.length || cells[i] !== 'filled' || !removable.has(first + i)) continue;
-      cells[i] = 'empty';
+      if (i < 0 || i >= all.length || all[i] !== 'filled' || !removable.has(first + i)) continue;
+      all[i] = 'empty';
       placed -= 1;
       today.delete(first + i);
       removable.delete(first + i);
     } else {
       // 이전 버전 위젯이 남긴 되돌리기 — 오늘 붙인 칸 중 마지막을 뗀다
-      const last = [...today].filter((s) => s >= first && s < first + cells.length).sort((a, b) => b - a)[0];
+      const last = [...today].filter((s) => s >= first && s < first + all.length).sort((a, b) => b - a)[0];
       if (last === undefined) continue;
-      cells[last - first] = 'empty';
+      all[last - first] = 'empty';
       placed -= 1;
       today.delete(last);
       removable.delete(last);
@@ -100,6 +101,11 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const placedToday = today.size > 0;
   const remaining = g.remaining == null ? null : g.remaining - (placed - g.placed);
   const lastSlot = remaining !== null && remaining <= 1;
+  // 지금 묶음이 다 찼고 다음 묶음이 있으면 다음 묶음을 보인다
+  const size = g.cells.length;
+  const shift = all.length > size && !all.slice(0, size).includes('empty') ? size : 0;
+  const cells = all.slice(shift, shift + size);
+  const shown = first + shift; // 보이는 칸 i는 판 전체 shown + i번
   const nextEmpty = cells.indexOf('empty');
   const rows = [cells.slice(0, 5), cells.slice(5, 10)];
 
@@ -113,7 +119,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   // 오늘 붙였고 기록이 없는 칸은 그 칸을 떼고, 지난날 붙인 칸·기록이 있는 칸은 판 상세를 연다.
   // 위젯은 확인 창을 띄울 수 없어 지난 기록은 위젯에서 떼지 않는다.
   const tap = (i: number, label: React.ReactElement) => {
-    const slot = first + i;
+    const slot = shown + i;
     const filled = cells[i] === 'filled';
     if (!filled && (lastSlot || g.locked)) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
     if (filled && !removable.has(slot)) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}`}>{label}</Link>;
@@ -183,7 +189,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
                       contentShape(shapes.rectangle()),
                       ...(i === nextEmpty ? [border({ color: '#FD855F', width: 2 })] : []),
                     ]}>
-                    {String(g.from + i)}
+                    {String(shown + 1 + i)}
                   </Text>
                 ),
               );
