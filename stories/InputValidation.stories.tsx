@@ -31,7 +31,7 @@ function NewGoal({initialName, initialCount = '15'}: {initialName: string; initi
   const [name, setName] = useState(initialName), [count, setCount] = useState(initialCount);
   const countValid = /^\d+$/.test(count) && Number(count) > 0;
   return <Stage><NewGoalScreen name={name} onChangeName={setName} nameMaxLength={GOAL_NAME_MAX} nameError={goalNameError(name)}
-    kind="tally" onChangeKind={noop} count={count} onChangeCount={setCount} sticker={reading.sticker} onChangeSticker={noop} onChooseSticker={noop}
+    kind="tally" onChangeKind={noop} count={count} onChangeCount={setCount} sticker={reading.sticker} onChooseSticker={noop}
     endMode="none" onChangeEndMode={noop} onChangeEndDate={noop} today="2026-10-08" todayLabel="10월 8일"
     // 앱(app/goal/new.tsx)과 같은 조건: 이름이 있을 때만 칸 수 문구를 보인다.
     error={!countValid && name.trim().length > 0 ? '칸 수를 1 이상으로 입력해주세요.' : undefined}
@@ -41,7 +41,7 @@ function GoalSettings({initialName = reading.name, initialSlots = String(reading
   const [name, setName] = useState(initialName), [slotsText, setSlotsText] = useState(initialSlots);
   const slots = parseSlotCount(slotsText, reading.total);
   return <Stage><GoalSettingsScreen name={name} onChangeName={setName} nameMaxLength={GOAL_NAME_MAX} nameError={goalNameError(name)}
-    sticker={reading.sticker} onChangeSticker={noop} onChooseSticker={noop}
+    sticker={reading.sticker} onChooseSticker={noop}
     slots={{current: reading.total, value: slotsText, onChange: setSlotsText, error: slots.ok ? undefined : slots.reason}}
     saveDisabled={name.trim().length === 0 || !slots.ok} onSave={noop} onDelete={noop} onBack={noop}/></Stage>;
 }

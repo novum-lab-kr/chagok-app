@@ -3,8 +3,8 @@ import {View} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {
   AppHeader, BoardProgressRow, CalendarBoard, CompletionSticker, DeleteSection, EmptyState, EndDatePicker, GoalListHeader,
-  GoalStickerCell, GoalSummaryCard, OptionButtons, PeriodField, PixelBadge, PixelTabs, PixelText, RecordScreen, ShortNotice,
-  StickerGrid, badgeTones, exampleGoals, retro, type GoalListTab,
+  GoalStickerCell, GoalSummaryCard, OptionButtons, PeriodField, PixelBadge, PixelTabs, PixelText, ShortNotice,
+  StickerGrid, badgeTones, retro, type GoalListTab,
 } from '../src/design-system';
 
 /** 2026-09-29 홈 목록·판 상세 시안에서 추출한 공통 컴포넌트. 화면 조합은 `Screens / Home structure · proposals`. */
@@ -67,16 +67,15 @@ export const PeriodOpen: Story = {name: '기간 · 종료일 없음', render: ()
 export const Delete: Story = {name: '삭제 영역', render: () => <DeleteSection onDelete={() => {}}/>};
 export const NoticeEmphasis: Story = {name: '강조 안내 (완성한 판 설정 맨 위)', render: () => <ShortNotice emphasis title="완성한 판이에요" detail="9월 24일에 완성했어요. 판의 칸과 기록은 고칠 수 있고, 목표는 삭제만 할 수 있어요."/>};
 
-function CellGestureDemo({readonly = false}: {readonly?: boolean}) {
+function CellGestureDemo() {
   const [log, setLog] = useState('칸을 눌러 보세요');
   return <View style={{gap: 12}}>
-    <View style={{backgroundColor: retro.color.lcd, padding: 8}}><StickerGrid>{[1, 2, 3].map(n => <GoalStickerCell key={n} number={n} sticker="basic.star" state={n < 3 ? 'filled' : readonly ? 'empty' : 'available'} enabled hasRecord={n === 2} readonly={readonly}
+    <View style={{backgroundColor: retro.color.lcd, padding: 8}}><StickerGrid>{[1, 2, 3].map(n => <GoalStickerCell key={n} number={n} sticker="basic.star" state={n < 3 ? 'filled' : 'available'} enabled hasRecord={n === 2}
       onPress={() => setLog(n < 3 ? `${n}번: 꾹 → 떼기` : `${n}번: 붙이기`)} onOpenRecord={() => setLog(`${n}번: 한 번 → 기록 열기`)}/>)}</StickerGrid></View>
     <PixelText variant="caption">{log}</PixelText>
   </View>;
 }
 export const CellGestures: Story = {name: '칸 조작 · 한 번 / 꾹', render: () => <CellGestureDemo/>};
-export const CellGesturesReadonly: Story = {name: '칸 조작 · 완성한 판 (readonly)', render: () => <CellGestureDemo readonly/>};
 function CalendarDemo() {
   const [log, setLog] = useState('날짜를 눌러 보세요');
   return <View style={{gap: 12}}>
@@ -87,5 +86,3 @@ function CalendarDemo() {
   </View>;
 }
 export const CalendarPeriod: Story = {name: '달력 · 9월 23일 종료 + 기록 열기', render: () => <CalendarDemo/>};
-export const RecordReadonly: Story = {name: '기록 · 읽기 전용', decorators: [Story => <View style={{width: 390, maxWidth: '100%', height: 844}}><Story/></View>],
-  render: () => <RecordScreen readonly goal={exampleGoals[0]} date="2026년 9월 12일" initialMemo="오늘은 허리까지 쭉 펴졌다." photoActionsInFrame onChoosePhoto={() => {}} onRemovePhoto={() => {}} onBack={() => {}} onSave={() => {}} onRemoveSticker={() => {}}/>};

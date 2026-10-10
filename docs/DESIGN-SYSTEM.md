@@ -89,7 +89,6 @@ npm run storybook
 | PixelButton | primary/secondary, 눌림, 포커스, disabled, loading. loading은 원래 글자를 투명하게 남겨 폭을 유지하고 그 위에 움직이는 로딩 점을 겹친다. 접근성 이름은 `저장 중` |
 | PixelInput | Neo둥근모 입력·메모, 라벨, 포커스 |
 | ProgressBar | 진행 비율과 접근성 값 |
-| StickerFilters | 전체/친구/모양/사물, 외곽·개별 border 0, 세로 구분선 |
 | SproutSticker | 스티커 라이브러리의 56×56 새싹 경로, 투명 얼굴 |
 | StickerSlot | 빈칸/붙일 수 있음/붙임 |
 | PixelDialog | `tutorial`은 단계 숫자·구분선과 왼쪽 정렬 텍스트를, `basic`은 숫자·구분선 없는 중앙 정렬 텍스트를 사용. 제목·설명·버튼 스타일은 동일. `single`이면 버튼 하나(primary)가 다이얼로그 너비를 채운다 — 저장 실패 같은 알림용 (2026-09-30) |
@@ -199,9 +198,8 @@ npm run check:storybook
 | 컴포넌트 | 추가 props |
 | --- | --- |
 | `StickerSlot` | `onLongPress` |
-| `GoalStickerCell` | `onOpenRecord`, `readonly` (완성한 판: 붙이기·떼기 막고 기록 열기만) |
-| `CalendarBoard` | `isDateEnabled`, `canGoPrev`, `canGoNext` (기간 밖 날짜·달), `onOpenRecord`, `readonly` |
-| `RecordScreen` · `PhotoAttachment` · `MemoEditor` | `readonly` (저장·사진 바꾸기·떼기 숨김, 메모 읽기 전용) |
+| `GoalStickerCell` | `onOpenRecord` |
+| `CalendarBoard` | `isDateEnabled`, `canGoPrev`, `canGoNext` (기간 밖 날짜·달), `onOpenRecord` |
 | `ShortNotice` | `emphasis` (제목을 크게, 화면 맨 위 안내) |
 | `TutorialSpotlight` | `content` (첫 실행 1–3단계 밖 문구) |
 

@@ -129,7 +129,7 @@ function Detail({goal, month = MONTH, overlay, recorded}: {goal: ListedGoal; mon
   const {value, total} = progressOf(goal), done = isDone(goal);
   const start = dateOf(goal.createdAt);
   const monthKey = `${YEAR}-${String(month).padStart(2, '0')}`;
-  return <Stage><BoardDetailScreen name={goal.name} sticker={goal.sticker} completed={done} editable progress={{value, total, percentLabel: percentLabel(goal)}} onBack={noop} onSettings={noop}
+  return <Stage><BoardDetailScreen name={goal.name} sticker={goal.sticker} completed={done} progress={{value, total, percentLabel: percentLabel(goal)}} onBack={noop} onSettings={noop}
     board={goal.kind === 'calendar'
       ? {kind: 'calendar', year: YEAR, month, records: goal.calendarRecords, selectedDate: done ? undefined : TODAY, onSelect: noop, onMonthChange: noop, onOpenRecord: noop,
         isDateEnabled: date => Boolean(goal.calendarRecords[date]) || inPeriod(goal)(date), canGoPrev: monthKey > start.slice(0, 7), canGoNext: !goal.endDate || monthKey < goal.endDate.slice(0, 7)}
@@ -161,7 +161,7 @@ function GoalSettings({goal, picking: initialPicking = false, overlay}: {goal: L
   // 적립판 칸 수는 늘리기만 된다 (2026-09-30). 앱과 같은 검사 함수로 오류 문구를 보여준다.
   const [slotsText, setSlotsText] = useState(String(goal.total));
   const slots = goal.kind === 'tally' ? parseSlotCount(slotsText, goal.total) : null;
-  return <Stage><GoalSettingsScreen name={goal.name} onChangeName={noop} sticker={goal.sticker} onChangeSticker={noop} onSave={noop} onDelete={noop} onBack={noop}
+  return <Stage><GoalSettingsScreen name={goal.name} onChangeName={noop} sticker={goal.sticker} onChooseSticker={noop} onSave={noop} onDelete={noop} onBack={noop}
     slots={slots ? {current: goal.total, value: slotsText, onChange: setSlotsText, error: slots.ok ? undefined : slots.reason} : undefined}
     saveDisabled={slots !== null && !slots.ok}
     period={goal.kind === 'calendar' ? {startDate: dateOf(goal.createdAt), endDate: end, lastPlacedDate: goal.lastPlacedAt ? dateOf(goal.lastPlacedAt) : undefined, picking,
@@ -176,7 +176,7 @@ function CompletedSettings({goal, overlay}: {goal: ListedGoal; overlay?: ReactNo
 }
 function NewCalendarGoal({withEnd}: {withEnd: boolean}) {
   const [mode, setMode] = useState<'none' | 'pick'>(withEnd ? 'pick' : 'none'), [end, setEnd] = useState<string | undefined>('2026-09-30');
-  return <Stage><NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker={byId('water').sticker} onChangeSticker={noop} onChooseSticker={noop}
+  return <Stage><NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker={byId('water').sticker} onChooseSticker={noop}
     endMode={mode} onChangeEndMode={setMode} endDate={end} onChangeEndDate={setEnd} today={TODAY} todayLabel={longDate(TODAY)} onSubmit={noop} onBack={noop}/></Stage>;
 }
 

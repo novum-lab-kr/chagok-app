@@ -708,29 +708,7 @@
         "label": "홈 화면 위젯",
         "tags": [
           "PRD 4.10",
-          "RN 미리보기 (10월 4일 모양)"
-        ],
-        "stories": [
-          {
-            "id": "widgets-preview--ring",
-            "label": "링 위젯"
-          },
-          {
-            "id": "widgets-preview--board",
-            "label": "달력 위젯"
-          },
-          {
-            "id": "widgets-preview--edge",
-            "label": "긴 이름 · 큰 적립판"
-          },
-          {
-            "id": "widgets-preview--empty",
-            "label": "목표 없음"
-          },
-          {
-            "id": "widgets-preview--try",
-            "label": "눌러 보기"
-          }
+          "Storybook 미리보기 없음 (iOS 위젯 3종)"
         ],
         "scenarios": [
           "daily"

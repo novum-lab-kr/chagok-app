@@ -21,7 +21,7 @@ export function MonthNavigation({year,month,onChange,canGoPrev=true,canGoNext=tr
     {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel="다음 달" onPress={()=>move(1)} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
   </View>;
 }
-export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,readonly=false,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void;/** 완성한 판: 날짜를 눌러도 붙이거나 떼지 않고 기록 열기만 남긴다 */readonly?:boolean}) {
+export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void}) {
   const [measured,setWidth]=useState<number|null>(null);
   const width=useContentWidth(measured);
   const border=retro.shape.cellBorder;
@@ -35,7 +35,7 @@ export function CalendarBoard({year,month,records={},recordedDates,selectedDate,
         // 오늘 칸의 포커스는 격자선 위로 나간다. 뒤에 그려지는 옆 칸에 가리지 않게 그 칸을 위로 올린다 (2026-10-09)
         return <View key={index} style={{width:cellWidth,height:58,borderRightWidth:border,borderBottomWidth:border,borderColor:retro.color.ink,zIndex:date&&date===selectedDate?1:0}}>
           {day&&<CalendarDay day={day} month={month} date={date} sticker={records[date]} recorded={!!recordedDates?.has(date)} selected={date===selectedDate}
-            enabled={!isDateEnabled||isDateEnabled(date)} cellWidth={cellWidth} readonly={readonly} onSelect={onSelect} onOpenRecord={onOpenRecord} popIn={date===poppedDate}/>}
+            enabled={!isDateEnabled||isDateEnabled(date)} cellWidth={cellWidth} onSelect={onSelect} onOpenRecord={onOpenRecord} popIn={date===poppedDate}/>}
         </View>;
       })}</View>
     </View>
@@ -47,12 +47,12 @@ export function CalendarBoard({year,month,records={},recordedDates,selectedDate,
  * 손을 떼는 순간 React Native가 한 번 누르기로 보고 빈칸 붙이기가 불려 다시 붙었다 (2026-10-08 시뮬레이터 재현).
  */
 const ignoreLongPress=()=>{};
-function CalendarDay({day,month,date,sticker,recorded,selected,enabled,cellWidth,readonly,onSelect,onOpenRecord,popIn}:{day:number;month:number;date:string;sticker?:StickerId;recorded:boolean;selected:boolean;enabled:boolean;cellWidth:number;readonly:boolean;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void;popIn:boolean}) {
+function CalendarDay({day,month,date,sticker,recorded,selected,enabled,cellWidth,onSelect,onOpenRecord,popIn}:{day:number;month:number;date:string;sticker?:StickerId;recorded:boolean;selected:boolean;enabled:boolean;cellWidth:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void;popIn:boolean}) {
   const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
-  const select=readonly?undefined:()=>onSelect(date);
+  const select=()=>onSelect(date);
   const press=open??select;
   const remove=open?select:undefined;
-  const active=enabled&&(!readonly||!!open);
+  const active=enabled;
   return <Pressable accessibilityRole="button" accessibilityLabel={`${month}월 ${day}일${sticker?', 스티커 있음':''}${sticker&&recorded?', 사진 또는 메모 기록 있음':''}`} accessibilityState={{selected,disabled:!active}} aria-selected={selected} aria-disabled={!active} disabled={!active} onPress={press} onLongPress={remove??ignoreLongPress}
     accessibilityActions={remove?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===removeStickerAction.name)remove?.()}} style={{flex:1,alignItems:'center',paddingTop:4,opacity:enabled?1:retro.opacity.disabled}}>
     <PixelText style={{fontSize:14,lineHeight:18}}>{day}</PixelText>{sticker&&(popIn?<StickMotion><StickerGlyph id={sticker} size={Math.min(28,cellWidth-6)}/></StickMotion>:<StickerGlyph id={sticker} size={Math.min(28,cellWidth-6)}/>)}{selected&&<View testID="calendar-focus" pointerEvents="none" style={{position:'absolute',left:-retro.shape.cellBorder,right:-retro.shape.cellBorder,top:-retro.shape.cellBorder,bottom:-retro.shape.cellBorder}}><PixelFocusRing/></View>}

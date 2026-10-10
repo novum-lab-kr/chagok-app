@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe,it,expect,afterEach,vi } from 'vitest';
 import { render,screen,fireEvent,cleanup } from '@testing-library/react';
-import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,StickerFilters,ProgressBar,StickerSlot,retro,StickerGlyph,stickerLabel,toColorStickerId,ActionSymbol,MemoEditor } from './index';
+import { PixelButton,PixelDialog,PixelFrame,PixelInput,PixelText,SettingRow,ShortNotice,PixelLoadingIndicator,ProgressBar,StickerSlot,retro,StickerGlyph,stickerLabel,toColorStickerId,ActionSymbol,MemoEditor } from './index';
 afterEach(cleanup);
 describe('공통 컴포넌트 동작',()=>{
   it('픽셀 틀 SVG는 크기를 재기 전부터 있다 — 크기가 바뀌면 key로 새로 만든다(iOS는 만든 뒤 크기만 바꾸면 다시 그리지 않는다, 2026-10-04)',()=>{
@@ -41,13 +41,6 @@ describe('공통 컴포넌트 동작',()=>{
     const changed=vi.fn();render(<MemoEditor value="" maxLength={3} onChange={changed}/>);
     fireEvent.change(screen.getByRole('textbox',{name:'메모'}),{target:{value:'ㅇㄹㄴㅇ'}});
     expect(changed).toHaveBeenLastCalledWith('ㅇㄹㄴ');
-  });
-  it('필터 선택을 전달하고 테두리를 만들지 않는다',()=>{
-    const change=vi.fn();const {rerender}=render(<StickerFilters value="전체" onChange={change}/>);
-    fireEvent.click(screen.getByRole('tab',{name:'친구'}));expect(change).toHaveBeenCalledWith('친구');
-    rerender(<StickerFilters value="친구" onChange={change}/>);
-    expect(screen.getByRole('tab',{name:'친구'}).getAttribute('aria-selected')).toBe('true');
-    for(const tab of screen.getAllByRole('tab'))expect(parseFloat(getComputedStyle(tab).borderTopWidth)||0).toBe(0);
   });
   it('진행률 0분모와 범위 밖 값을 접근성 값에 노출하지 않는다',()=>{
     const {rerender}=render(<ProgressBar value={6} total={15}/>);

@@ -4,7 +4,15 @@ import { dateKeyOf, daysInclusive, daysInMonth, localDateKey } from '../domain/d
 import { inPeriod, orderGoals, progressBasis, progressOf, startDate } from '../domain/board';
 import { kindLabel, percentLabel } from '../app-data/pocketAdapter';
 import { normalizeStickerId } from '../stickers/stickerIds';
-import type { WidgetCalendarCell, WidgetGoalView, WidgetMini, WidgetTallyCell } from '../design-system/widget-preview';
+import type { StickerId } from '../design-system/sticker-glyphs';
+
+/** 위젯 칸 모양 (위젯 설계). 아래 스냅샷이 채우고, 위젯 props(widgetProps.ts)가 그대로 쓴다. */
+export type WidgetCalendarCell = 'filled' | 'missed' | 'future' | 'outside';
+export type WidgetTallyCell = 'filled' | 'empty';
+export type WidgetMini =
+  | { type: 'calendar'; year: number; month: number; firstWeekday: number; days: WidgetCalendarCell[] }
+  | { type: 'tally'; from: number; cells: WidgetTallyCell[]; placed: number; total: number };
+export type WidgetGoalView = { id: string; name: string; sticker: StickerId; kind: string; progressLabel: string; percent: number; mini: WidgetMini };
 
 /**
  * 위젯 입력. 달력판은 이번 달에 붙인 날짜, 적립판은 붙인 칸 번호(0부터)를 준다.

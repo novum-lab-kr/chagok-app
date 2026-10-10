@@ -8,7 +8,7 @@ export type PolicyVersion = {
   postedAt: DateKey;
   effectiveAt: DateKey;
   summary: string;
-  /** 문구만 다듬은 개정은 false — 재동의를 받지 않는다 */
+  /** 사이트 versions.json에 있는 값. 재동의 화면을 두지 않아 앱은 쓰지 않는다 (약관 설계 2026-10-01 변경) */
   requiresConsent: boolean;
 };
 
@@ -40,17 +40,3 @@ export function monthDayLabel(key: DateKey): string {
   return `${month}월 ${day}일`;
 }
 
-/**
- * 로그인한 사용자에게 동의 화면을 다시 띄울지. 목록을 받지 못하면 묻지 않는다 — 앱 사용을 막지 않는다.
- * 동의한 판 이후의 시행된 판 중 하나라도 동의가 필요하면 참이다.
- */
-export function needsReconsent(
-  manifest: PolicyManifest | null,
-  agreed: Record<PolicyKind, number>,
-  today: DateKey,
-): boolean {
-  if (!manifest) return false;
-  return (['terms', 'privacy'] as const).some((kind) =>
-    manifest[kind].some((v) => v.effectiveAt <= today && v.version > agreed[kind] && v.requiresConsent),
-  );
-}
