@@ -1,11 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { PixelLoadingIndicator, RetroScreen, StickerChooserScreen, togglePack } from '../../src/design-system';
+import { LoadingScreen, StickerChooserScreen, togglePack, useLoadRetry } from '../../src/design-system';
 import { initialChoice, packViews } from '../../src/app-data/packViews';
 import { offerSticker, takeOpenPack } from '../../src/app-data/stickerChoice';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
-import { goBackOrHome } from '../../src/app-data/goBack';
+import { goBackOrHome, goHome } from '../../src/app-data/goBack';
 import { dayTrialThreshold } from '../../src/domain/packs';
 import { loadPackState } from '../../src/repositories/packRepository';
 import { updateGoal } from '../../src/repositories/goalRepository';
@@ -27,6 +26,7 @@ export default function ChooseSticker() {
   const [mine, setMine] = useState(false);
   const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
   const { ask, dialog } = useDialog();
+  const { failed, attempt, fail, retry } = useLoadRetry();
 
   // 묶음 화면에서 열고 돌아오면 다시 읽고 그 묶음을 펼친다.
   useFocusEffect(useCallback(() => {
@@ -44,9 +44,11 @@ export default function ChooseSticker() {
         setSelected(first.selected);
         setOpen((o) => (o.includes(first.open) ? o : [first.open, ...o]));
       }
-    });
+    }).catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, [current]));
+  // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, attempt, fail]));
 
   async function done() {
     if (goalId) {
@@ -59,13 +61,7 @@ export default function ChooseSticker() {
   }
 
   if (!state) {
-    return (
-      <RetroScreen>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelLoadingIndicator label="불러오는 중" />
-        </View>
-      </RetroScreen>
-    );
+    return <LoadingScreen failed={failed} kind="stickers" onRetry={retry} onHome={goHome} />;
   }
   return (
     <>

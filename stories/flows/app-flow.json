@@ -227,6 +227,10 @@
           {
             "id": "screens-home-structure-·-proposals--home-ad-free",
             "label": "광고 제거를 산 뒤"
+          },
+          {
+            "id": "screens-screen-failed--goals",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [
@@ -304,6 +308,10 @@
           {
             "id": "screens-sticker-shop--trial-ended",
             "label": "체험이 끝난 뒤 붙이려 할 때"
+          },
+          {
+            "id": "screens-screen-failed--records",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [
@@ -335,6 +343,10 @@
           {
             "id": "rules-입력-검사--memo-full",
             "label": "메모 500자 (입력 검사)"
+          },
+          {
+            "id": "screens-screen-failed--records",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [
@@ -392,6 +404,10 @@
           {
             "id": "rules-입력-검사--name-settings-blank",
             "label": "이름 비움 (입력 검사)"
+          },
+          {
+            "id": "screens-screen-failed--records",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [
@@ -468,6 +484,10 @@
           {
             "id": "screens-home-structure-·-proposals--flow-extend-end-date",
             "label": "달력판 종료일 늘리기"
+          },
+          {
+            "id": "screens-screen-failed--records",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [
@@ -762,6 +782,10 @@
           {
             "id": "screens-sticker-shop--chooser-ad-trial-started",
             "label": "광고를 다 본 뒤"
+          },
+          {
+            "id": "screens-screen-failed--stickers",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [
@@ -791,6 +815,10 @@
           {
             "id": "screens-sticker-shop--pack-ad-free",
             "label": "광고 제거를 산 사람"
+          },
+          {
+            "id": "screens-screen-failed--stickers",
+            "label": "불러오지 못함"
           }
         ],
         "scenarios": [

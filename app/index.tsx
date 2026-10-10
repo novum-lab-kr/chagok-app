@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { AccountStartScreen, FirstRunTutorial, GoalListScreen, PixelLoadingIndicator, RetroScreen, accountDialogs } from '../src/design-system';
+import { AccountStartScreen, FirstRunTutorial, GoalListScreen, LoadingScreen, accountDialogs, useLoadRetry } from '../src/design-system';
 import type { AccountStartChoice, GoalListTab } from '../src/design-system';
 import { listGoalSummaries, settleExpiredPeriods } from '../src/repositories/goalRepository';
 import type { GoalSummary } from '../src/repositories/goalRepository';
@@ -29,6 +28,7 @@ export default function GoalList() {
   const [showStart, setShowStart] = useState<boolean | undefined>(undefined);
   const [startChoice, setStartChoice] = useState<AccountStartChoice>('account');
   const { ask, dialog } = useDialog();
+  const { failed, attempt, fail, retry } = useLoadRetry();
   /** 로그인 풀림 안내가 끝났는지. true면 연결 화면으로 떠났다. 약관 안내가 그 뒤에 이어 묻도록 기다린다. */
   const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
 
@@ -42,9 +42,11 @@ export default function GoalList() {
       if (!alive) return;
       setShowStart(start);
       setShowTutorial(!tutorialDone);
-    })();
+    })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, []));
+  // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempt, fail]));
 
   // 로그인이 풀렸으면 앱을 열 때 한 번만 묻는다. 그 뒤로는 앱 설정의 계정 칸이 안내한다 (시안 2C).
   useEffect(() => {
@@ -99,9 +101,11 @@ export default function GoalList() {
       await settleExpiredPeriods(now);
       const next = await listGoalSummaries(now);
       if (alive) setSummaries(next);
-    })();
+    })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, []));
+  // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempt, fail]));
 
   // 앱이 앞으로 올 때 위젯 탭이 기록에 반영되면 포커스가 바뀌지 않아도 다시 읽는다 — 진행률·오늘 붙임 표시가 이전 값으로 남지 않게.
   useEffect(() => subscribeWidgetApplied(() => {
@@ -109,13 +113,7 @@ export default function GoalList() {
   }), []);
 
   if (!summaries || showTutorial === undefined || showStart === undefined) {
-    return (
-      <RetroScreen>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelLoadingIndicator label="불러오는 중" />
-        </View>
-      </RetroScreen>
-    );
+    return <LoadingScreen failed={failed} kind="goals" onRetry={retry} />;
   }
 
   if (showStart) {

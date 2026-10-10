@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { CompletedGoalSettingsScreen, GoalSettingsScreen, PixelLoadingIndicator, RetroScreen } from '../../../src/design-system';
+import { CompletedGoalSettingsScreen, GoalSettingsScreen, LoadingScreen, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import {
   completeGoal, countGoalContents, deleteGoal, getGoal, settleExpiredPeriods, updateGoal,
@@ -12,7 +11,7 @@ import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { useUnsavedBack } from '../../../src/app-data/useUnsavedBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
-import { goBackOrHome } from '../../../src/app-data/goBack';
+import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { takeOfferedSticker } from '../../../src/app-data/stickerChoice';
 import { GOAL_NAME_MAX, goalNameError, isCompleted, parseSlotCount, startDate } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
@@ -34,6 +33,7 @@ export default function GoalSettings() {
   const [picking, setPicking] = useState(false);
   const [actOnce] = useState(createSingleFlight);
   const { ask, confirm, dialog: confirmDialog } = useDialog();
+  const { failed, attempt, fail, retry } = useLoadRetry();
 
   useEffect(() => {
     let alive = true;
@@ -47,9 +47,9 @@ export default function GoalSettings() {
       setSticker(normalizeStickerId(g.defaultStickerId));
       setEndDate(g.endDate ?? undefined);
       setSlotsText(String(g.totalSlots ?? ''));
-    })();
+    })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, [id]);
+  }, [id, attempt, fail]);
 
   const slots = goal?.boardType === 'tally' ? parseSlotCount(slotsText, goal.totalSlots ?? 0) : null;
   // 칸 수는 숫자로 비교한다("030"과 30은 같다). 잘못된 입력도 저장하지 않은 입력으로 친다.
@@ -64,13 +64,7 @@ export default function GoalSettings() {
   }, []));
 
   if (!goal) {
-    return (
-      <RetroScreen>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelLoadingIndicator label="불러오는 중" />
-        </View>
-      </RetroScreen>
-    );
+    return <LoadingScreen failed={failed} kind="records" onRetry={retry} onHome={goHome} />;
   }
   const current = goal;
 

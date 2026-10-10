@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
+import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
+import { goHome } from '../src/app-data/goBack';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
@@ -42,6 +43,18 @@ function SplashOverlay({ onShown, onDone }: { onShown: () => void; onDone: () =>
  * 때문에, 켜두면 제목과 뒤로가기가 두 벌씩 나온다. 상단 여백은 `RetroScreen`이 세이프에어리어로
  * 처리한다. 픽셀 폰트를 불러오기 전에는 대체 폰트로 그리지 않는다 (DESIGN-SYSTEM.md).
  */
+/**
+ * 화면을 그리다 예외가 나면 빈 화면 대신 같은 안내를 보인다 (PRD 7절). [다시 시도]는 그 화면을 다시 그린다.
+ * https://docs.expo.dev/versions/v57.0.0/sdk/router/ 「ErrorBoundary」
+ */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <SafeAreaProvider>
+      <LoadingScreen failed kind="screen" onRetry={() => { void retry(); }} onHome={goHome} />
+    </SafeAreaProvider>
+  );
+}
+
 export default function RootLayout() {
   // 앱을 처음 켤 때만 재생한다. 백그라운드에서 돌아올 때는 이 레이아웃이 다시 만들어지지 않는다.
   const [splashDone, setSplashDone] = useState(false);

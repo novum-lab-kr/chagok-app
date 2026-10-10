@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BoardDetailScreen, PixelLoadingIndicator, RetroScreen, stickerShopDialogs } from '../../../src/design-system';
+import { BoardDetailScreen, LoadingScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
@@ -11,7 +10,7 @@ import { normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
-import { goBackOrHome } from '../../../src/app-data/goBack';
+import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { checkPlaceGate } from '../../../src/app-data/placeGate';
 import {
   canPlace, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, placedAtFor,
@@ -39,6 +38,7 @@ export default function Board() {
   const today = new Date();
   const [shown, setShown] = useState({ year: today.getFullYear(), month: today.getMonth() + 1 });
   const [data, setData] = useState<BoardData | null>(null);
+  const { failed, attempt, fail, retry } = useLoadRetry();
   const [justPlaced, setJustPlaced] = useState<{ slot?: number; date?: string }>({});
   const [actOnce] = useState(createSingleFlight);
   const { ask, confirm, dialog } = useDialog();
@@ -58,9 +58,11 @@ export default function Board() {
       if (!alive) return;
       if (!next) { goBackOrHome(); return; }
       setData(next);
-    })();
+    })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  }, [id, shown.year, shown.month]));
+  // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, shown.year, shown.month, attempt, fail]));
 
   // 앱이 앞으로 올 때 위젯 탭이 기록에 반영되면, 이미 열려 있던 이 화면도 다시 읽는다 — 이전 목록으로 같은 칸에 또 붙지 않게.
   useEffect(() => subscribeWidgetApplied(() => { void reload(); }), [reload]);
@@ -130,13 +132,7 @@ export default function Board() {
   }, [placeParam, data]);
 
   if (!data || !goal) {
-    return (
-      <RetroScreen>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelLoadingIndicator label="불러오는 중" />
-        </View>
-      </RetroScreen>
-    );
+    return <LoadingScreen failed={failed} kind="records" onRetry={retry} onHome={goHome} />;
   }
   const { stickers, placedInBasis, recordedIds } = data;
   const done = isCompleted(goal);
