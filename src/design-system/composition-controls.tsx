@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutChangeEvent, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
-import {PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,type StickerGroup} from './components';
+import {clampLength,FieldError,PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
@@ -103,8 +103,8 @@ export function PhotoAttachment({source,preview,onChoose,onRemove,onPhotoError,a
     {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?'사진 바꾸기':'사진 추가'} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label="사진 지우기" variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
   </View>;
 }
-export function MemoEditor({value,onChange,readonly=false}:{value:string;onChange:(value:string)=>void;/** 완성한 판의 기록: 고칠 수 없다 */readonly?:boolean}) {
-  return <PixelPanel title="메모"><TextInput accessibilityLabel="메모" value={value} onChangeText={onChange} editable={!readonly} aria-readonly={readonly} multiline placeholder={readonly?'메모 없음':'오늘의 기록을 남겨보세요'} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel>;
+export function MemoEditor({value,onChange,readonly=false,maxLength,error}:{value:string;onChange:(value:string)=>void;/** 완성한 판의 기록: 고칠 수 없다 */readonly?:boolean;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
+  return <View style={{gap:8}}><PixelPanel title="메모"><TextInput accessibilityLabel="메모" value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} editable={!readonly} aria-readonly={readonly} multiline placeholder={readonly?'메모 없음':'오늘의 기록을 남겨보세요'} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;

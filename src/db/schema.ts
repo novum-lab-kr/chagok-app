@@ -120,6 +120,27 @@ export const MIGRATIONS: readonly (readonly string[])[] = [
        PRIMARY KEY (entity, row_id)
      );`,
   ],
+  // v6 (2026-10-08): 모든 스티커를 컬러로. 흑백 6종은 기본 묶음의 같은 그림(basic.*)으로 옮긴다.
+  // updated_at을 바꾸지 않는다 — 서버 값은 읽을 때 normalizeStickerId가 옮기므로 다시 올리지 않는다.
+  // pack_access: 이 기기에서 쓸 수 있는 묶음. 산 묶음은 expires_at null. 서버로 올리지 않는다.
+  // placed_days: 스티커를 누른 로컬 날짜. 붙인 날 체험(7·14·이후 30일마다)을 센다. 떼도 지우지 않는다.
+  //   달력판 지난 칸은 그 날짜로 붙지만 누른 날은 오늘이다 — 몰아 채워도 하루 (2026-10-08 사용자 확인).
+  //   처음에는 지금 붙어 있는 스티커 날짜로 채운다. 'localtime'은 기기 시간대다.
+  [
+    `UPDATE goals SET default_sticker_id = 'basic.' || default_sticker_id
+       WHERE default_sticker_id IN ('sprout','cat','star','flower','book','shoe');`,
+    `UPDATE stickers SET sticker_type = 'basic.' || sticker_type
+       WHERE sticker_type IN ('sprout','cat','star','flower','book','shoe');`,
+    `CREATE TABLE IF NOT EXISTS pack_access (
+       pack_id TEXT PRIMARY KEY,
+       source TEXT NOT NULL CHECK (source IN ('purchase','ad','days')),
+       granted_at INTEGER NOT NULL,
+       expires_at INTEGER
+     );`,
+    `CREATE TABLE IF NOT EXISTS placed_days (date_key TEXT PRIMARY KEY);`,
+    `INSERT OR IGNORE INTO placed_days (date_key)
+       SELECT DISTINCT date(placed_at / 1000, 'unixepoch', 'localtime') FROM stickers;`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

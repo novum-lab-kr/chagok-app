@@ -5,7 +5,7 @@ import type { WidgetRequest } from './requests';
 
 // 위젯 3종이 받는 props (PRD 4.10). 위젯 파일(widgets/ios/*)은 이 파일의 타입만 가져간다.
 export type WidgetArt = { mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: { ivory: string; white: string; ink: string }; stickers: Record<string, string> };
-export type CardBase = { id: string; name: string; placed: number; total: number; placedToday: boolean; undoable: boolean; remaining: number | null; sticker: string };
+export type CardBase = { id: string; name: string; placed: number; total: number; placedToday: boolean; undoable: boolean; remaining: number | null; sticker: string; locked?: boolean };
 export type GoalCard = CardBase;
 export type MonthCard = CardBase & { monthLabel: string; days: WidgetCalendarCell[]; firstWeekday: number; todayIndex: number };
 /** todaySlots·removableSlots는 판 전체 칸 번호(0부터)다. 위젯 칸 i는 from - 1 + i번 칸이다. */
@@ -21,7 +21,8 @@ export type TallyWidgetProps = Shared & { goals: Record<string, TallyCard> };
 const base = (g: WidgetGoal, art: WidgetArt): CardBase => ({
   id: g.id, name: g.name, placed: g.placed, total: g.total,
   placedToday: g.placedToday, undoable: g.undoable, remaining: g.remaining,
-  sticker: art.stickers[g.sticker] ?? art.stickers.sprout ?? '',
+  sticker: art.stickers[g.sticker] ?? art.stickers['basic.sprout'] ?? '',
+  locked: g.locked,
 });
 
 function shared(goals: readonly WidgetGoal[], s: WidgetSnapshot, art: WidgetArt): Shared {

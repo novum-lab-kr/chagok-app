@@ -26,7 +26,7 @@
 
 | 브랜치 | 내용 | 할 일 |
 | --- | --- | --- |
-| `spike/widgets` (worktree `chagok-wt-widgets`) | 위젯 spike 코드, 결과 문서 `docs/superpowers/specs/2026-10-05-widget-spike-results.md` | 코드는 합치지 않는다. 사용자 결정 뒤 결과 문서와 스크린샷만 main으로 옮긴다 |
+| `spike/widgets` (워크트리 없음) | 위젯 spike 코드, 결과 문서 `docs/superpowers/specs/2026-10-05-widget-spike-results.md` | 코드는 합치지 않는다. 사용자 결정 뒤 결과 문서와 스크린샷만 main으로 옮긴다 |
 | `fix/light-mode-font-scale` | 다크 모드 막기, 글자 크기 고정 (PRD 6.1·6.2) | 사용자가 실기기에서 확인하면 합친다 |
 | `docs/scope-decisions` | 2026-09-30 범위 결정 | 내용을 PRD·HANDOFF로 옮겼으니 합치지 않는다 |
 
@@ -49,11 +49,12 @@
    - 다음 1: 실기기 확인 — 자정 넘김(2026-10-07 시뮬레이터에서 날짜 버그를 찾아 고쳤다 `7fa7656`; 고친 뒤 자정은 아직 다시 안 봤다), 탭 속도, 앱을 이틀 넘게 안 열었을 때 위젯 탭(③은 테스트로만 확인). 실기기 설치 준비: Xcode에 Apple 계정 추가, iPhone 연결·개발자 모드 켜기(재시동), `npx expo run:ios --device`. Expo Go로는 위젯을 볼 수 없다.
    - 다음 2: Android 위젯(계획 2) — 새 모양·목표 고르기·앱이 꺼졌을 때 첫 탭 유실(시험 구현 결과 A7).
    - 위젯은 컬러 스티커로 그렸다. 앱 스티커도 모두 컬러로 정했다(2026-10-07, 2번).
-2. **스티커 화면 — 설계 확정·Storybook 반영 (2026-10-08), 다음은 앱 연결.** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
+2. **스티커 화면 — 앱 연결 (2026-10-08, 결제·광고는 개발용 대역).** 시안 [스티커 화면](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판, 요구사항 PRD 4.12, 결정 [RELEASE-DECISIONS](RELEASE-DECISIONS.md) 10월 5~8일 줄.
    - 정한 것: 모두 컬러(48pt, 스키마 v6 마이그레이션), 묶음 10종·2,200원, 여는 길 세 가지(사기 · 광고 보고 24시간 · 붙인 날 누적 7·14·이후 30일마다 3일 체험), 광고 제거 구매자는 하루 체험 없음, 「기본 스티커」 화면 · 묶음 화면 · 앱 설정 「구매」 블럭, 구매 복원은 앱 설정에만.
    - Storybook 반영 끝(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-storybook.md`): `Screens/Sticker Shop`, 앱 설정 「구매」 블럭, 홈 광고 자리(`GoalListScreen` `footer`), 흐름도 줄 5. 시안 캡처용 임시 스토리는 치웠다.
-   - 다음: 앱 연결 계획 — 「기본 스티커」·묶음 화면 라우트와 `onChooseSticker`, 스키마 v6 마이그레이션(`toColorStickerId`), RevenueCat 구매·복원, AdMob 배너(`footer`)·보상형 광고, 체험 만료 시각과 붙인 날 수 저장, 위젯 체험 종료 처리.
-   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 같은 묶음 보상 재체험, 위젯에서 체험이 끝난 묶음 처리(앱을 열어 안내 — 위젯 설계에 추가), 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤).
+   - 앱 연결(2026-10-08, 계획 `docs/superpowers/plans/2026-10-08-sticker-shop-app.md`): 저장된 스티커를 모두 컬러 ID로(스키마 v6, 읽을 때 `normalizeStickerId`), 「기본 스티커」 `app/stickers/choose`·묶음 `app/stickers/pack/[packId]`, 묶음 권한 `pack_access`·누른 날 `placed_days`(기기에만), 판에서 체험이 끝난 묶음은 붙이지 않고 「n일 체험이 끝났어요」, 위젯은 컬러 스티커 66종 그림 + 체험이 끝난 목표는 앱 열기 링크, 앱 설정 「구매」 블럭. 결제·광고는 `src/purchases`의 개발용 대역(누르면 바로 성공).
+   - 다음: RevenueCat 구매·복원과 AdMob 보상형 광고·홈 배너(`footer`)를 `src/purchases`의 `Store`에 끼운다 — App Store Connect 상품 등록·AdMob 계정이 먼저. 결제 실패·광고를 못 불러올 때 문구도 이때 정한다.
+   - 아직 열린 것: 출시 묶음 수·주제, 기본 묶음을 10종으로 늘릴지, 스티커 그림 품질(2026-10-07 [품질 점검](https://claude.ai/artifact/NWuVMD9zg1GxyHaLgHjHcq), 사용자가 우선순위를 낮춤. 2026-10-08 동물 10종은 [동물 얼굴 스티커](https://claude.ai/artifact/PsPcaJT3TeV2sgRTkyRLS5) 4판으로 다시 그려 원본에 반영. 2026-10-09 [다시 그린 스티커](https://claude.ai/artifact/HWmo9Ae3tbEZSNfKvqVNty) 12판으로 「다시 그리기」(새싹·운동·커피·빵·케이크)와 손보기 중 비행기를 반영 — 손보기 나머지 14종은 사용자가 지금 그림이 낫다고 해 그대로).
 3. **수익화 기반**
    - 권한 계층(RevenueCat entitlements): 팩은 구매 또는 구독이면 쓸 수 있고, 광고는 광고 제거 구매 또는 구독이면 꺼진다.
    - 카탈로그에 팩 정보 연결
@@ -77,7 +78,7 @@
 6. **사용자 결정 — 출시 전에 필요**
    - 앱 설정 전체 배치: 3안(프레임 없는 목록 + `PixelBadge` 머리글)이 유력하고, 배지 크기는 12·14·18 중에서 고른다. 구역 안 내용(계정 항목 + 값, 「구매」 블럭)은 2026-10-08 정했고 지금 판 배치로 Storybook에 있다.
    - 운영 서버: Supabase 클라우드 서울 별도 프로젝트(1순위, 무료면 매일 DB 내보내기) 또는 VPS 셀프 호스팅(국외 이전 기재). 정해지면 처리방침 `[클라우드 사업자]`를 채운다.
-   - 입력 길이 제한·날짜/시간대 정책(PRD 11절): 서버 컬럼 제약과 동기화 날짜 키에 걸리므로 운영 서버보다 먼저 정한다.
+   - 날짜/시간대 정책(PRD 11절): 동기화 날짜 키에 걸리므로 운영 서버보다 먼저 정한다. (입력 길이는 2026-10-08 확정·연결 — 20자·500자, 계획 `docs/superpowers/plans/2026-10-08-input-validation-app.md`)
    - 약관 변경 안내 범위: 처리방침 개정도 알릴지, 쓰지 않게 된 `needsReconsent`·`requiresConsent`를 지울지.
    - Google Play 계정 유형: 개인을 추천한다. 개인 계정은 출시 전 테스터 12명·14일 비공개 테스트가 필요하다.
 7. **개발 — 언제든**
@@ -97,6 +98,7 @@
      - 판 진입 스크롤
      - 기록 화면 첫 진입 때 스타일이 빠지는 문제(재현 대기)
      - `fix/light-mode-font-scale`
+     - 한글 키보드로 목표 이름 20번째 글자 조합(maxLength)
    - 계정 화면 남은 테스트
      - 계정 삭제: 지우면 `npm run server:dev-user`로 개발 계정을 다시 만든다.
      - "이 기기 기록 사용하기": 서버 테스트 기록을 덮어쓰므로 하기 전에 묻는다.
@@ -105,7 +107,7 @@
      - 개발 서버 기록 "10분 독서"에 테스트로 붙인 스티커 1개(42번 칸)를 뗀다.
    - Google 로그인(Android): OAuth 준비 뒤.
 
-**나중에 정할 것 (설계 전에 범위부터 묻는다):** 푸시 알림, 이용 분석·오류 추적, 구독 플랜(모든 팩 + 광고 제거), 맞춤 광고 전환, 해외 출시, 워치 아이디어(캐릭터 키우기 + 빠른 스티커 붙이기 — PRD 2절 제외 범위와 부딪침, PRD 11절).
+**나중에 정할 것 (설계 전에 범위부터 묻는다):** 푸시 알림, 이용 분석·오류 추적, 구독 플랜(모든 팩 + 광고 제거), 맞춤 광고 전환, 해외 출시, 워치(쌓인 만큼 자라기 + 빠른 스티커 붙이기 — 방향은 2026-10-04 정함, 플랫폼 순서·화면·성장 단계 디자인 미정, PRD 2절·11절).
 
 **기기 테스트 방법 (2026-10-02).**
 
@@ -184,7 +186,9 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 - RN + react-native-svg 공통 컴포넌트를 Storybook RN Web에서 같은 소스로 렌더한다.
 - 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤/패널/칸 border와 패널 제목 구분선은 3px. 과거의 2px 수치는 폐기됐다.
 - `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3.
+- 달력판 오늘 칸 (2026-10-09 D-2): 같은 `PixelFocusRing`을 칸 밖으로 격자선 두께(3)만큼 넓혀 격자선 위에 겹쳐 그리고, 그 칸을 `zIndex: 1`로 올린다. 칸 안에 그리면 Pro Max 칸(약 48×58)을 3분의 1쯤 덮고 기록 표시와 겹쳤다. 작게 줄이거나(A안) 칸을 칠하는 안(B·C)은 [달력 포커스 시안](https://claude.ai/artifact/6QcCHwy2WZaMTz3vQojz4c)에서 비교했다.
 - 톱니바퀴는 v6 원본 윤곽을 추출한 `assets/gear.ts`를 쓴다. 임의 16×16 아이콘으로 되돌리지 않는다.
+- 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 20pt (2026-10-09, 390에서 넓힘 — Pro Max에서 양옆이 45pt로 비어 보였다). 더 넓은 화면은 가운데로 모은다.
 - `StickerGrid`: 3열, 좌우 안쪽 6px, 열 간격 15px, 행 간격 10px. 390px에서 칸 약 84×64px.
 - 붙인 새싹 최대 54px, 아래 여백 2px. 기본 스티커 미리보기 32px. 칸 숫자 28px/32px.
 - 전체/친구/모양/사물 필터는 개별 테두리 없이 선택 채움과 세로 구분선만 쓴다.
@@ -223,7 +227,7 @@ Neo둥근모 1.601을 사용한다. 대체 폰트는 선택되지 않았다. 임
 
 **컬러 스티커 (2026-10-05, 디자인 시스템·Storybook은 컬러, 앱은 스키마 v6 전까지 흑백).** `src/stickers/color/`는 흑백과 별도인 24×24 도트 컬러 스티커 66종이다.
 
-- 묶음: 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10.
+- 묶음: 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10. 운동은 2026-10-09에 운동 종류로 다시 짰다: 덤벨·달리기·걷기·등산·요가·필라테스·수영·자전거·줄넘기·축구공(물병·농구공·테니스·스톱워치 뺌, 축구공은 새 그림).
 - ID는 `묶음.이름`(예: `snack.cheese`)이다. 흑백 ID와 겹치지 않는다.
 - 원본은 `source/sticker-packs-24.json`이다. 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다.
 - `ColorStickerArtwork`는 색별 path로 그린다. 크기는 24의 정수배를 쓴다.

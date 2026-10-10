@@ -1,6 +1,6 @@
 // 위젯 그림을 PNG로 굽는다(PRD 4.10). zlib만 쓴다.
 // node scripts/build-widget-art.mjs → assets/widget-art/
-//   color-<pocketId>.png  기본 컬러 스티커(24칸 × 6 = 144px, 48pt @3x)
+//   color-<묶음>-<이름>.png  컬러 스티커 전부(24칸 × 6 = 144px, 48pt @3x)
 //   mascot-<face>.png     차곡이 얼굴(24칸 × 6)
 //   bubble-<scheme>-<palette>.png  말풍선 틀(글자 없음, 32×14칸 × 6)
 import fs from 'node:fs';
@@ -47,14 +47,28 @@ function png(name, w, h, get) {
   console.log(name, W, H);
 }
 
-// 컬러 스티커: 흑백 ID(sprout·cat·…)와 같은 이름의 기본 묶음 그림
+// 컬러 스티커 전부 (2026-10-08 — 목표의 기본 스티커는 어느 묶음이든 될 수 있다).
+// 앱 ID(묶음.이름)는 scripts/build-color-stickers.mjs와 같은 규칙으로 붙인다. 파일은 color-<묶음>-<이름>.png.
+// Metro는 require 경로가 고정이어야 해서 src/widgets/widgetStickerArt.generated.ts에 목록을 함께 쓴다.
+const PACK_IDS = { free: 'basic' };
+const STICKER_IDS = { 'weather.sun2': 'sun' };
 const src = JSON.parse(fs.readFileSync('src/stickers/color/source/sticker-packs-24.json', 'utf8'));
-for (const s of src.stickers.filter((s) => s.theme === 'free')) {
+const stickerArt = [];
+for (const s of src.stickers) {
+  const pack = PACK_IDS[s.theme] ?? s.theme;
+  const name = STICKER_IDS[`${s.theme}.${s.id}`] ?? s.id;
   const grid = new Map();
   for (const l of s.layers) for (const [, x, y, w] of l.d.matchAll(/M(\d+) (\d+)h(\d+)v1h-\d+Z/g))
     for (let i = 0; i < Number(w); i++) grid.set(`${Number(x) + i},${y}`, l.color);
-  png(`color-${s.id}`, 24, 24, (x, y) => grid.get(`${x},${y}`) ?? null);
+  png(`color-${pack}-${name}`, 24, 24, (x, y) => grid.get(`${x},${y}`) ?? null);
+  stickerArt.push(`  '${pack}.${name}': require('../../assets/widget-art/color-${pack}-${name}.png'),`);
 }
+fs.writeFileSync('src/widgets/widgetStickerArt.generated.ts', `// 생성 파일 — 직접 고치지 않는다. node scripts/build-widget-art.mjs로 다시 만든다.
+// 위젯 스티커 그림: 컬러 스티커 ID → 앱 번들 PNG.
+export const widgetStickerArt: Record<string, number> = {
+${stickerArt.join('\n')}
+};
+`);
 
 // 차곡이
 const PAL = { '#': '#06261C', g: '#C7DE94', o: '#FD855F', w: '#FEF1D1', m: '#AFE1CB' };

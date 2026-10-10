@@ -144,15 +144,30 @@ export function PixelPanel({ children, title, action, style, contentStyle }: {ch
 const singleLineText = Platform.OS === 'web'
   ? retro.typography.body
   : { fontSize: retro.typography.body.fontSize, textAlignVertical: 'center' as const, includeFontPadding: false };
-export function PixelInput({label, style, onFocus, onBlur, ...props}: TextInputProps & {label: string}) {
+/** 입력칸 아래 검사 문구: 한도·빈 값 (2026-10-08). 칸 수 오류 문구와 같은 작은 글자. */
+export function FieldError({message}: {message?: string}) {
+  if (!message) return null;
+  return <View accessible accessibilityRole="alert"><PixelText variant="caption" style={{color:c.buttonText}}>{message}</PixelText></View>;
+}
+/**
+ * 한도를 넘긴 글자를 자른다. iOS는 한글을 조합하는 중인 글자에는 maxLength를 적용하지 않아 (2026-10-08)
+ * 받은 글자를 한 번 더 자른다. 이모지처럼 두 칸짜리 글자는 반으로 가르지 않는다.
+ */
+export function clampLength(text: string, max?: number): string {
+  if (max === undefined || text.length <= max) return text;
+  const code = text.charCodeAt(max - 1);
+  return text.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 1 : max);
+}
+export function PixelInput({label, error, style, onFocus, onBlur, onChangeText, ...props}: TextInputProps & {label: string; /** 입력칸 아래 검사 문구 */error?: string}) {
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
     <PixelFrame variant="input" fill={c.secondary} focused={focused}>
-      <TextInput {...props} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
+      <TextInput {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
         returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
         style={[{minHeight:48,paddingHorizontal:12,paddingVertical:Platform.OS==='web'?10:0,color:c.ink,...(props.multiline?retro.typography.body:singleLineText)},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
     </PixelFrame>
+    <FieldError message={error}/>
   </View>;
 }
 
@@ -215,7 +230,7 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
  * 화면 콘텐츠 폭의 기준값. 이보다 넓은 기기에서는 가운데로 모은다.
  * `RetroScreen`이 이 값으로 레이아웃하므로 측정 전 첫 프레임의 추정치도 여기서 나온다.
  */
-export const SCREEN_MAX_WIDTH=390;
+export const SCREEN_MAX_WIDTH=440; // 2026-10-09: 390 → 440. Pro Max(440pt)도 양옆 20pt만 남기고 채운다
 export const SCREEN_PADDING=20;
 /**
  * onLayout 이전 첫 프레임에 쓸 콘텐츠 폭. 실제 측정값과 같아 깜빡이지 않는다.

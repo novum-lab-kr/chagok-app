@@ -87,3 +87,23 @@ describe('applyWidgetRequests', () => {
     }
   });
 });
+
+describe('누른 날 기록 (placed_days)', () => {
+  it('어제 위젯에서 누른 것을 오늘 반영하면 누른 날은 어제다', async () => {
+    const { getDb } = await import('../src/db/client');
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
+    const yesterday = now - 24 * 60 * 60 * 1000;
+    await applyWidgetRequests([add(g.id, 'w1', yesterday)]);
+    const db = await getDb();
+    const days = (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days')).map((r) => r.date_key);
+    expect(days).toEqual([localDateKey(yesterday)]);
+  });
+});
+
+describe('체험이 끝난 묶음 (2026-10-08)', () => {
+  it('잠긴 묶음 스티커가 기본인 목표의 요청은 붙이지 않고 처리한 것으로 둔다', async () => {
+    const g = await createGoal({ name: '동물', boardType: 'tally', totalSlots: 10, defaultStickerId: 'animals.cat' });
+    expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: false });
+    expect(await listStickers(g.id)).toHaveLength(0);
+  });
+});

@@ -1,11 +1,13 @@
 import React from 'react';
 import {Pressable,View} from 'react-native';
 import Svg,{Circle} from 'react-native-svg';
-import type {PocketStickerId} from '../stickers/pocket/catalog';
+import {StickerGlyph,isColorStickerId,type StickerId} from './sticker-glyphs';
 import {PixelText} from './components';
 import {Mascot} from './mascot';
 import {StickerArtwork} from '../stickers/pocket/StickerArtwork';
 import {retro} from './tokens';
+/** 위젯은 컬러 스티커로 그린다. 흑백 ID는 팔레트 색으로 칠한다(예전 미리보기). */
+const WidgetSticker=({id,size,color}:{id:StickerId;size:number;color:string})=>isColorStickerId(id)?<StickerGlyph id={id} size={size}/>:<StickerArtwork id={id} size={size} color={color}/>;
 
 /** 위젯 화면 모델 (위젯 설계). 스냅샷(src/widgets/snapshot.ts)이 이 모양을 채운다 — GoalCardItem과 같은 방식. */
 export type WidgetCalendarCell='filled'|'missed'|'future'|'outside';
@@ -13,7 +15,7 @@ export type WidgetTallyCell='filled'|'empty';
 export type WidgetMini=
   |{type:'calendar';year:number;month:number;firstWeekday:number;days:WidgetCalendarCell[]}
   |{type:'tally';from:number;cells:WidgetTallyCell[];placed:number;total:number};
-export type WidgetGoalView={id:string;name:string;sticker:PocketStickerId;kind:string;progressLabel:string;percent:number;mini:WidgetMini};
+export type WidgetGoalView={id:string;name:string;sticker:StickerId;kind:string;progressLabel:string;percent:number;mini:WidgetMini};
 
 /*
  * 2026-10-04 확정 모양 (PRD 4.10): 링 위젯 + 달력 위젯, 테두리 없이 꽉 채움, 판 종류 배지 없음, `n% 채웠어요`.
@@ -64,7 +66,7 @@ function Ring({g,p,size,onStick}:{g:WidgetGoalView;p:Pal;size:number;onStick?:(i
     </Svg>
     <Pressable accessibilityRole="button" accessibilityLabel={`${g.name}에 붙이기`} onPress={()=>onStick?.(g.id)}
       style={{position:'absolute',left:11,top:11,width:disc,height:disc,borderRadius:disc/2,alignItems:'center',justifyContent:'center'}}>
-      <StickerArtwork id={g.sticker} size={Math.round(disc*0.62)} color={p.ink}/>
+      <WidgetSticker id={g.sticker} size={Math.round(disc*0.62)} color={p.ink}/>
     </Pressable>
   </View>;
 }
@@ -106,7 +108,7 @@ function Board({g,p,cell,today}:{g:WidgetGoalView;p:Pal;cell:number;today?:numbe
 }
 function NameRow({g,p,lines,icon}:{g:WidgetGoalView;p:Pal;lines:number;icon:number}) {
   return <View style={{flexDirection:'row',alignItems:'flex-start',gap:6}}>
-    <StickerArtwork id={g.sticker} size={icon} color={p.ink}/>
+    <WidgetSticker id={g.sticker} size={icon} color={p.ink}/>
     <PixelText numberOfLines={lines} style={{flex:1,color:p.ink,fontSize:16,lineHeight:20}}>{g.name}</PixelText>
   </View>;
 }

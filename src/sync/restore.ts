@@ -69,6 +69,9 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
         r.id, r.sticker_id, r.memo, r.created_at, r.updated_at, r.photo_remote_path,
       );
     }
+    // 누른 날은 서버에 없다 — 받은 스티커의 날짜로 채운다(스키마 v6과 같은 방식). 이 기기 기록은 남긴다.
+    await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key)
+      SELECT DISTINCT date(placed_at / 1000, 'unixepoch', 'localtime') FROM stickers;`);
   });
   await setSetting('syncCursor', String(snap.cursor));
   await setSetting('lastSyncedAt', String(Date.now()));

@@ -36,7 +36,7 @@ export function TutorialSpotlight({step,target,width,height,onNext,onSkip,highli
   const below=y+h+16;
   const above=y-dialogHeight-16;
   const top=step!==1&&above>=20?above:below+dialogHeight<=height-20?below:Math.max(20,above);
-  // 화면 내용은 최대 390px 열을 가운데 정렬한다. 넓은 캔버스에서도 다이얼로그를 그 열 안에 둔다.
+  // 화면 내용은 최대 SCREEN_MAX_WIDTH 열을 가운데 정렬한다. 넓은 캔버스에서도 다이얼로그를 그 열 안에 둔다.
   const columnWidth=Math.min(width,SCREEN_MAX_WIDTH), columnLeft=(width-columnWidth)/2;
   const shade={position:'absolute' as const,backgroundColor:retro.color.ink,opacity:retro.opacity.scrim};
   return <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>

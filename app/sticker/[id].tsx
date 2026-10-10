@@ -3,17 +3,18 @@ import { Linking, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ActionSymbol, RecordScreen, RetroScreen, PixelLoadingIndicator, PixelText } from '../../src/design-system';
-import type { PocketGoal, PocketStickerId } from '../../src/design-system';
+import type { PocketGoal, StickerId } from '../../src/design-system';
 import { getSticker, listStickers, removeSticker } from '../../src/repositories/stickerRepository';
 import { getGoal } from '../../src/repositories/goalRepository';
 import { getRecord, upsertRecord } from '../../src/repositories/recordRepository';
-import { toPocketGoal, safeStickerId } from '../../src/app-data/pocketAdapter';
+import { toPocketGoal } from '../../src/app-data/pocketAdapter';
+import { normalizeStickerId } from '../../src/stickers/stickerIds';
 import { displayRecordPhotoUri, preserveRecordPhoto, recordPhotoExists, removeManagedRecordPhoto } from '../../src/app-data/recordPhotos';
 import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { goBackOrHome } from '../../src/app-data/goBack';
-import { needsRemoveConfirm } from '../../src/domain/board';
+import { MEMO_MAX, memoError, needsRemoveConfirm } from '../../src/domain/board';
 import { localDateKey, parseDateKey } from '../../src/domain/dates';
 import type { Goal, Sticker } from '../../src/domain/types';
 
@@ -26,7 +27,7 @@ export default function StickerRecord() {
   const [goal, setGoal] = useState<Goal | null>(null);
   const [pocketGoal, setPocketGoal] = useState<PocketGoal | null>(null);
   const [sticker, setSticker] = useState<Sticker | null>(null);
-  const [stickerType, setStickerType] = useState<PocketStickerId | undefined>(undefined);
+  const [stickerType, setStickerType] = useState<StickerId | undefined>(undefined);
   const [date, setDate] = useState('');
   const [memo, setMemo] = useState('');
   const [draftMemo, setDraftMemo] = useState('');
@@ -55,7 +56,7 @@ export default function StickerRecord() {
       setGoal(g);
       setPocketGoal(toPocketGoal(g, siblings));
       setSticker(s);
-      setStickerType(safeStickerId(s.stickerType));
+      setStickerType(normalizeStickerId(s.stickerType));
       // 화면 표기는 시안과 같은 'YYYY년 M월 D일'. 저장 키(YYYY-MM-DD)를 그대로 보여주지 않는다.
       const d = parseDateKey(localDateKey(s.placedAt));
       setDate(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`);
@@ -148,6 +149,8 @@ export default function StickerRecord() {
         onRemovePhoto={() => { setPhotoUri(null); setPhotoMissing(false); }}
         onBack={goBack}
         onMemoChange={setDraftMemo}
+        memoMaxLength={MEMO_MAX}
+        memoError={memoError(draftMemo)}
         onSave={(m) => { void saveOnce(() => save(m)); }}
         onRemoveSticker={() => { void saveOnce(remove); }}
       />

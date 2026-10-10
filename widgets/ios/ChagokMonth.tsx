@@ -108,7 +108,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
     const isToday = c.day === todayDay;
     const filled = c.state === 'filled';
     if (!filled && !isToday && c.state !== 'missed') return label;
-    if (!filled && lastSlot) return <Link key={key} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
+    if (!filled && (lastSlot || g.locked)) return <Link key={key} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
     if (filled && !(isToday && undoable)) return <Link key={key} destination={`chagok://goal/${g.id}`}>{label}</Link>;
     const dateKey = `${todayKey.slice(0, 8)}${String(c.day).padStart(2, '0')}`;
     return (

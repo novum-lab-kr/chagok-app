@@ -10,6 +10,22 @@ Storybook `Flows/앱 전체`. 앱의 모든 화면을 실제 Storybook 스토리
 | `appFlow.ts` | 배치. 화면마다 `[줄, 칸]` |
 | `AppFlow.mdx` | 흐름도 페이지 |
 
+## 입력 검사 흐름도
+
+Storybook `Flows/입력 검사`(2026-10-08). 상태(한도·비움·잘못된 값) 하나가 노드 하나이고, 입력칸마다 한 줄에 상태를 옆으로 늘어놓아
+누르지 않고 한눈에 본다. 노드 이름은 `입력칸 · 상태`, 첫 태그와 스토리 라벨은 그 상태의 문구다.
+화면은 `stories/InputValidation.stories.tsx`(`Rules/입력 검사`), 문구는 앱과 같은 `src/domain/board.ts` 함수
+(`goalNameError`·`memoError`·`parseSlotCount`)에서 나온다.
+
+| 파일 | 역할 |
+|---|---|
+| `input-flow.json` | 상태 노드. id는 `<입력칸>--<상태>`. 화살표는 없다 |
+| `inputFlow.ts` | 배치. id 앞부분(입력칸)이 줄, 같은 입력칸 안의 순서가 칸 — 자리 표를 따로 두지 않는다 |
+| `InputFlow.mdx` | 흐름도 페이지 |
+
+새 입력칸이나 검사 문구가 생기면 스토리를 더하고 `input-flow.json`에 노드를 하나 넣는다(같은 입력칸 노드 옆에). 문구가 바뀌면 이름·태그·라벨을 고친다.
+아래 「확인」의 스토리 ID 검사는 `input-flow.json`에도 돌린다.
+
 `app-flow.json`은 일부러 `*.flow.json`이 아니다. 그 이름이면 애드온이 간격이 고정된 자동 배치 문서를 따로 만든다.
 
 ## 언제 고치나

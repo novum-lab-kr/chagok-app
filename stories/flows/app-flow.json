@@ -255,6 +255,14 @@
           {
             "id": "screens-home-structure-·-proposals--new-with-end",
             "label": "달력판 종료일 고르기"
+          },
+          {
+            "id": "rules-입력-검사--name-new-full",
+            "label": "이름 20자 (입력 검사)"
+          },
+          {
+            "id": "rules-입력-검사--name-new-blank",
+            "label": "이름 비움 (입력 검사)"
           }
         ],
         "scenarios": [
@@ -319,6 +327,14 @@
           {
             "id": "screens-home-structure-·-proposals--record-completed",
             "label": "완성한 판에서 연 기록"
+          },
+          {
+            "id": "rules-입력-검사--memo-typing",
+            "label": "기록 쓰는 중"
+          },
+          {
+            "id": "rules-입력-검사--memo-full",
+            "label": "메모 500자 (입력 검사)"
           }
         ],
         "scenarios": [
@@ -372,6 +388,10 @@
           {
             "id": "screens-home-structure-·-proposals--settings-completed",
             "label": "완성한 판 (삭제만)"
+          },
+          {
+            "id": "rules-입력-검사--name-settings-blank",
+            "label": "이름 비움 (입력 검사)"
           }
         ],
         "scenarios": [
@@ -715,7 +735,8 @@
       "data": {
         "label": "기본 스티커",
         "tags": [
-          "PRD 4.12"
+          "PRD 4.12",
+          "app/stickers/choose"
         ],
         "stories": [
           {
@@ -755,7 +776,8 @@
       "data": {
         "label": "묶음 화면",
         "tags": [
-          "PRD 4.12"
+          "PRD 4.12",
+          "app/stickers/pack/[packId]"
         ],
         "stories": [
           {
@@ -782,7 +804,8 @@
         "label": "스토어 결제",
         "tags": [
           "PRD 4.12",
-          "OS"
+          "OS",
+          "개발용 대역"
         ],
         "coverage": "external",
         "scenarios": [
@@ -797,7 +820,8 @@
         "label": "보상형 광고",
         "tags": [
           "PRD 4.12",
-          "AdMob"
+          "AdMob",
+          "개발용 대역"
         ],
         "coverage": "external",
         "scenarios": [
@@ -1303,6 +1327,18 @@
       }
     },
     {
+      "id": "sticker-chooser-goal-settings",
+      "source": "sticker-chooser",
+      "target": "goal-settings",
+      "label": "선택 완료",
+      "data": {
+        "scenarios": [
+          "goal",
+          "sticker"
+        ]
+      }
+    },
+    {
       "id": "sticker-chooser-pack",
       "source": "sticker-chooser",
       "target": "pack",
@@ -1373,6 +1409,28 @@
       "source": "detail",
       "target": "pack",
       "label": "묶음 열기 (체험이 끝난 뒤)",
+      "data": {
+        "scenarios": [
+          "sticker"
+        ]
+      }
+    },
+    {
+      "id": "detail-sticker-chooser",
+      "source": "detail",
+      "target": "sticker-chooser",
+      "label": "다른 스티커 (체험이 끝난 뒤)",
+      "data": {
+        "scenarios": [
+          "sticker"
+        ]
+      }
+    },
+    {
+      "id": "sticker-chooser-detail",
+      "source": "sticker-chooser",
+      "target": "detail",
+      "label": "선택 완료 (그 목표에 저장)",
       "data": {
         "scenarios": [
           "sticker"

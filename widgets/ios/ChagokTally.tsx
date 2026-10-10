@@ -115,7 +115,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const tap = (i: number, label: React.ReactElement) => {
     const slot = first + i;
     const filled = cells[i] === 'filled';
-    if (!filled && lastSlot) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
+    if (!filled && (lastSlot || g.locked)) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
     if (filled && !removable.has(slot)) return <Link key={`t${i}`} destination={`chagok://goal/${g.id}`}>{label}</Link>;
     return (
       <Button

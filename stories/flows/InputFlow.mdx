@@ -1,0 +1,10 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { StoryFlowMap } from '@zigbang/storybook-addon-story-flow';
+import { inputFlow } from './inputFlow';
+
+<Meta title="Flows/입력 검사" />
+
+{/* 앱 전체 흐름도와 같이 문서 폭을 풀어 화면 폭 전체를 쓴다. */}
+<style>{`.sbdocs-wrapper{padding:16px!important}.sbdocs-content{max-width:none!important}`}</style>
+
+<StoryFlowMap flow={inputFlow} autoLayout={false} height="calc(100vh - 32px)" />

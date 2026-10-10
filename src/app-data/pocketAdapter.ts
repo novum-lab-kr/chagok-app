@@ -1,22 +1,10 @@
-import { pocketStickers } from '../stickers/pocket/catalog';
-import type { PocketStickerId } from '../stickers/pocket/catalog';
-import type { GoalCardItem, PocketGoal } from '../design-system';
-import { DEFAULT_STICKER_ID } from '../domain/types';
+import { normalizeStickerId } from '../stickers/stickerIds';
+import type { GoalCardItem, PocketGoal, StickerId } from '../design-system';
 import type { Goal, Sticker } from '../domain/types';
 import { localDateKey, parseDateKey } from '../domain/dates';
 import type { DateKey } from '../domain/dates';
 import { isCompleted, progressBasis, progressOf, startDate } from '../domain/board';
 import type { GoalSummary } from '../repositories/goalRepository';
-
-const KNOWN = new Set<string>(pocketStickers.map((s) => s.id));
-
-/**
- * DB에는 폐기된 카탈로그의 id가 남아 있을 수 있다. 화면이 터지지 않도록
- * 알 수 없는 값은 기본 스티커로 대체한다. 저장값은 바꾸지 않는다.
- */
-export function safeStickerId(raw: string): PocketStickerId {
-  return (KNOWN.has(raw) ? raw : DEFAULT_STICKER_ID) as PocketStickerId;
-}
 
 /**
  * 도메인 모델을 디자인 시스템의 화면 모델로 옮긴다.
@@ -31,15 +19,15 @@ export function toPocketGoal(goal: Goal, stickers: readonly Sticker[]): PocketGo
     ? mine.map((s) => s.slotIndex + 1).sort((a, b) => a - b)
     : [];
 
-  const filledStickers: Record<number, PocketStickerId> = {};
+  const filledStickers: Record<number, StickerId> = {};
   if (goal.boardType === 'tally') {
-    for (const s of mine) filledStickers[s.slotIndex + 1] = safeStickerId(s.stickerType);
+    for (const s of mine) filledStickers[s.slotIndex + 1] = normalizeStickerId(s.stickerType);
   }
 
-  const calendarRecords: Record<string, PocketStickerId> = {};
+  const calendarRecords: Record<string, StickerId> = {};
   if (goal.boardType === 'calendar') {
     for (const s of mine) {
-      calendarRecords[localDateKey(s.placedAt)] = safeStickerId(s.stickerType);
+      calendarRecords[localDateKey(s.placedAt)] = normalizeStickerId(s.stickerType);
     }
   }
 
@@ -48,7 +36,7 @@ export function toPocketGoal(goal: Goal, stickers: readonly Sticker[]): PocketGo
     name: goal.name,
     kind: goal.boardType,
     total: goal.totalSlots ?? 0,
-    sticker: safeStickerId(goal.defaultStickerId),
+    sticker: normalizeStickerId(goal.defaultStickerId),
     filled,
     filledStickers,
     calendarRecords,
@@ -88,7 +76,7 @@ export function goalCard({ goal, placedInBasis }: GoalSummary, now: Date): GoalC
   return {
     id: goal.id,
     name: goal.name,
-    sticker: safeStickerId(goal.defaultStickerId),
+    sticker: normalizeStickerId(goal.defaultStickerId),
     kind: kindLabel(goal),
     percent: progressOf(goal, placedInBasis, now).percent,
     status: isCompleted(goal) ? [label, `${shortDate(goal.completedAt!)} 완성`] : [`${label} 채웠어요`],

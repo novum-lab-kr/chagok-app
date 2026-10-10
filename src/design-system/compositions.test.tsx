@@ -2,10 +2,11 @@ import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
-import {GoalStickerCell,exampleGoals} from './screen-compositions';
-import {ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
+import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
+import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,StickerPicker} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
+import {retro} from './tokens';
 afterEach(cleanup);
 /** react-native-web은 누른 채 450ms가 지나면 onLongPress를 부른다. */
 function longPress(el:Element) {
@@ -40,6 +41,19 @@ describe('화면 구성 컴포넌트',()=>{
     rerender(<NewGoalScreen {...props} kind="calendar"/>);
     expect(screen.queryByText('칸 수')).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'날짜 고르기'}));expect(props.onChangeEndMode).toHaveBeenCalledWith('pick');
+  });
+  it('새 목표: 이름 칸은 한도와 문구를 받고, 칸에서 나오면 알린다',()=>{
+    const blur=vi.fn();
+    render(<NewGoalScreen name="" onChangeName={vi.fn()} nameMaxLength={20} nameError="목표 이름을 입력해주세요." onNameBlur={blur} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="sprout" onChangeSticker={vi.fn()} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={()=>{}}/>);
+    const input=screen.getByRole('textbox',{name:'목표 이름'});
+    expect(input.getAttribute('maxlength')).toBe('20');
+    expect(screen.getByRole('alert').textContent).toBe('목표 이름을 입력해주세요.');
+    fireEvent.focus(input);fireEvent.blur(input);expect(blur).toHaveBeenCalledTimes(1);
+  });
+  it('기록: 메모 칸은 한도와 문구를 받는다',()=>{
+    render(<RecordScreen goal={exampleGoals[0]} date="2026년 10월 8일" initialMemo="" memoMaxLength={500} memoError="500자까지 입력할 수 있어요." onChoosePhoto={()=>{}} onRemovePhoto={()=>{}} onBack={()=>{}} onSave={()=>{}} onRemoveSticker={()=>{}}/>);
+    expect(screen.getByRole('textbox',{name:'메모'}).getAttribute('maxlength')).toBe('500');
+    expect(screen.getByRole('alert').textContent).toBe('500자까지 입력할 수 있어요.');
   });
   it('칸 늘리기: 1 이상만 받고 늘린 뒤 칸 수를 보여준다. 상한은 없다',()=>{
     const submit=vi.fn();
@@ -83,6 +97,18 @@ describe('화면 구성 컴포넌트',()=>{
     expect(screen.getByRole('button',{name:'9월 2일, 스티커 있음'})).toBeTruthy();
     expect(screen.getByRole('button',{name:'9월 3일, 스티커 있음, 사진 또는 메모 기록 있음'})).toBeTruthy();
     expect(screen.getAllByLabelText('사진 또는 메모 기록 있음')).toHaveLength(1);
+  });
+  it('달력 오늘 칸의 포커스는 기존 크기 그대로 격자선 위에 겹쳐 그리고, 그 칸을 옆 칸 위로 올린다 (2026-10-09 D-2)',()=>{
+    expect(retro.focus).toEqual({cornerSize:15,cornerThickness:8,cornerCut:2,lineWidth:3,lineInset:2,gap:3});
+    render(<CalendarBoard year={2026} month={10} selectedDate="2026-10-09" onSelect={()=>{}} onMonthChange={()=>{}}/>);
+    const ring=screen.getByTestId('calendar-focus');
+    const offset=`-${retro.shape.cellBorder}px`;
+    expect(getComputedStyle(ring).left).toBe(offset);
+    expect(getComputedStyle(ring).top).toBe(offset);
+    expect(getComputedStyle(ring).right).toBe(offset);
+    expect(getComputedStyle(ring).bottom).toBe(offset);
+    const cell=screen.getByRole('button',{name:'10월 9일'}).parentElement!;
+    expect(getComputedStyle(cell).zIndex).toBe('1');
   });
 });
 describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
@@ -185,6 +211,16 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     render(<NewGoalScreen name="책 읽기" onChangeName={vi.fn()} kind="tally" onChangeKind={vi.fn()} count="15" onChangeCount={vi.fn()} sticker="basic.book" onChangeSticker={vi.fn()} onChooseSticker={choose} endMode="none" onChangeEndMode={vi.fn()} onChangeEndDate={vi.fn()} today="2026-10-08" todayLabel="10월 8일" onSubmit={vi.fn()} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button',{name:'바꾸기'}));
     expect(choose).toHaveBeenCalled();expect(screen.queryByRole('button',{name:'선택 완료'})).toBeNull();
+  });
+  it('완성한 판 설정은 마지막 정보 줄에 밑줄이 없어 [삭제하기] 위 구분선과 겹치지 않는다',()=>{
+    const bottom=(label:string)=>parseFloat(getComputedStyle(screen.getByText(label).parentElement!).borderBottomWidth)||0;
+    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 · 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(bottom('기본 스티커')).toBeGreaterThan(0);
+    expect(bottom('판 종류')).toBe(0);
+    cleanup();
+    render(<CompletedGoalSettingsScreen name="산책" sticker="basic.shoe" boardLabel="달력판" periodLabel="9월 1일부터" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(bottom('판 종류')).toBeGreaterThan(0);
+    expect(bottom('기간')).toBe(0);
   });
   it('홈 목록은 footer를 스크롤 밖 맨 아래에 둔다',()=>{
     render(<GoalListScreen tab="active" onTab={vi.fn()} active={[]} completed={[]} onOpen={vi.fn()} onAdd={vi.fn()} footer={<PixelText>광고 자리</PixelText>}/>);
