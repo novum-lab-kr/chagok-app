@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Dimensions, type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
 import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
@@ -181,6 +181,13 @@ const HEADER_GAP=24;
 export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap=HEADER_GAP,scrollable=true}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** 헤더와 본문 사이. 헤더 끝이 제목이 아니라 탭이면 본문 간격으로 줄인다 (2026-10-10) */headerGap?:number;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
   const {scroll,content,offset,scrollProps,scrollToCenter}=useCenteringScroll();
+  // iOS 시트(모달)는 화면 아래에 붙어 위가 비어 있다. 시트 안에서는 measureInWindow·layout이 시트 기준이고 키보드 위치는
+  // 화면 기준이라, 그 빈 높이만큼 키보드와 겹침을 적게 잡아 새 목표의 「칸 수 직접 입력」이 키패드에 가려졌다 (2026-10-10).
+  // 화면 높이 − 이 화면 높이로 빈 높이를 구해 두 계산에 더한다. 전체 화면은 0이다.
+  const [sheetTop,setSheetTop]=useState(0);
+  const measureSheet=(event:LayoutChangeEvent)=>{
+    if(Platform.OS==='ios') setSheetTop(Math.max(0,Dimensions.get('window').height-event.nativeEvent.layout.height));
+  };
   // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
   // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
   useEffect(()=>{
@@ -188,12 +195,12 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
       const input=TextInput.State.currentlyFocusedInput?.();
       if(!input) return;
       input.measureInWindow((_x,y,_width,height)=>{
-        const overlap=y+height+SCREEN_PADDING-event.endCoordinates.screenY;
+        const overlap=sheetTop+y+height+SCREEN_PADDING-event.endCoordinates.screenY;
         if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
       });
     });
     return ()=>subscription.remove();
-  },[offset,scroll]);
+  },[offset,scroll,sheetTop]);
   // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
@@ -213,12 +220,12 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
-  return <View style={{flex:1,backgroundColor:retro.color.screen,paddingTop:insets.top}}>
+  return <View onLayout={measureSheet} style={{flex:1,backgroundColor:retro.color.screen,paddingTop:insets.top}}>
     {header&&<View testID="retro-header" style={{alignItems:'center',paddingHorizontal:SCREEN_PADDING,paddingTop:SCREEN_PADDING,paddingBottom:headerGap}}>
       <View style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>{header}</View>
     </View>}
     {avoidKeyboard
-      ? <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>{body}</KeyboardAvoidingView>
+      ? <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={sheetTop}>{body}</KeyboardAvoidingView>
       : body}
   </View>;
 }
