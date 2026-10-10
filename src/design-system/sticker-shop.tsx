@@ -118,7 +118,7 @@ export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,
   const order=[...packs.filter(p=>p.state!=='locked'),...(mine?[]:packs.filter(p=>p.state==='locked'))];
   const rewardReady=reward.days>=reward.goal;
   return <View style={{flex:1}}>
-    <RetroScreen style={{gap:14}} header={<View style={{gap:12}}><ScreenHeader title="기본 스티커" onBack={onBack}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
+    <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:24}}><ScreenHeader title="기본 스티커" onBack={onBack}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
       <RewardProgress days={reward.days} goal={reward.goal}/>
       {order.map(p=><PackCard key={p.id} pack={p} open={openPacks.includes(p.id)} selected={selected} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={onSelect} onOpenPack={()=>onOpenPack(p.id)}/>)}
     </RetroScreen>

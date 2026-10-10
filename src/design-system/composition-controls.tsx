@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, type ImageSourcePropType, type LayoutChangeEvent, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, type ImageSourcePropType, type LayoutChangeEvent, type LayoutRectangle, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
 import {clampLength,FieldError,PixelButton,PixelFrame,PixelFocusRing,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,StickerFilters,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,type StickerGroup} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
@@ -190,10 +190,10 @@ export function CenteringScrollView({children,style,testID}:{children:ReactNode;
  * `avoidKeyboard`는 하단에 입력창이 있는 화면(기록)만 켠다. 홈처럼 입력이 없는 화면에서 켜면
  * 안드로이드에서 불필요한 리사이즈가 생긴다.
  */
-export function RetroScreen({children,style,avoidKeyboard=false,header,scrollable=true}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
+/** 제목 줄과 본문 사이. 화면마다 gap(14·16)을 따르면 제목에 본문이 붙어 보여 모든 화면을 24로 맞췄다 (2026-10-10). */
+const HEADER_GAP=24;
+export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap=HEADER_GAP,scrollable=true}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** 헤더와 본문 사이. 헤더 끝이 제목이 아니라 탭이면 본문 간격으로 줄인다 (2026-10-10) */headerGap?:number;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
-  // 헤더와 본문 사이는 화면이 준 gap을 그대로 쓴다. 헤더를 밖으로 빼도 스크롤 전 첫 화면이 같아야 한다.
-  const gap=(StyleSheet.flatten(style)?.gap as number|undefined)??20;
   const {scroll,content,offset,scrollProps,scrollToCenter}=useCenteringScroll();
   // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
   // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
@@ -228,13 +228,22 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,scrollabl
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
   return <View style={{flex:1,backgroundColor:retro.color.screen,paddingTop:insets.top}}>
-    {header&&<View testID="retro-header" style={{alignItems:'center',paddingHorizontal:SCREEN_PADDING,paddingTop:SCREEN_PADDING,paddingBottom:gap}}>
+    {header&&<View testID="retro-header" style={{alignItems:'center',paddingHorizontal:SCREEN_PADDING,paddingTop:SCREEN_PADDING,paddingBottom:headerGap}}>
       <View style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>{header}</View>
     </View>}
     {avoidKeyboard
       ? <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>{body}</KeyboardAvoidingView>
       : body}
   </View>;
+}
+
+/**
+ * iOS 시트(`presentation: 'modal'`) 안의 화면. 시트는 이미 상태 표시줄 아래에서 시작하는데 창 기준 위쪽
+ * 여백을 또 비워서 헤더 위가 휑했다(2026-10-10 기본 스티커·묶음 화면). 아래쪽 여백은 그대로 둔다.
+ */
+export function SheetSafeArea({children}:{children:ReactNode}) {
+  const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
+  return <SafeAreaInsetsContext.Provider value={{...insets,top:0}}>{children}</SafeAreaInsetsContext.Provider>;
 }
 
 export function SelectionBadge() {

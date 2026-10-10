@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { SplashAnimation, retro } from '../src/design-system';
+import { SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
@@ -115,6 +115,11 @@ export default function RootLayout() {
             headerShown: false,
             contentStyle: { backgroundColor: retro.color.screen },
           }}
+          // iOS 시트는 상태 표시줄 아래에서 시작한다. Android 모달은 화면 전체라 위쪽 여백이 필요하다.
+          screenLayout={({ options, children }) =>
+            options.presentation === 'modal' && Platform.OS === 'ios'
+              ? <SheetSafeArea>{children}</SheetSafeArea>
+              : <>{children}</>}
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="goal/new" options={{ presentation: 'modal' }} />
