@@ -37,6 +37,6 @@
 
 ## 가끔
 
-- **최소 앱 버전**(HANDOFF 0절 나-2): 구버전 앱의 동기화를 막아야 하는 스키마 변경 때만 서버의 최소 빌드 번호를 올린다. EAS가 iOS·Android 번호를 따로 세므로 **플랫폼별로** 둔다.
+- **최소 앱 버전**(HANDOFF 「다음 할 일」): 구버전 앱의 동기화를 막아야 하는 스키마 변경 때만 서버의 최소 빌드 번호를 올린다. EAS가 iOS·Android 번호를 따로 세므로 **플랫폼별로** 둔다.
 - **약관 판**(`chagok-app-policy`의 `versions.json`): 앱 버전과 별개. 약관을 바꿀 때만.
 - JS만 바꾸는 업데이트(`expo-updates`)를 도입하면 `runtimeVersion` 정책은 `appVersion`.

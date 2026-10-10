@@ -6,7 +6,7 @@
  *
  * 임의로 삭제하지 않는다. 과거 id로 저장된 데이터를 옮길 때 매핑 근거가 된다.
  * 새 스티커는 여기가 아니라 pocket 쪽에 추가한다.
- * 근거: docs/HANDOFF.md 5절, docs/PRD.md 5절.
+ * 근거: docs/PRD.md 5절, docs/DESIGN-SYSTEM.md 「스티커 자산」.
  *
  * 스티커 22종. 시안(claude.ai/artifact/L2FvWa53FDxhZLVdQVsRcx)에서 확정된 값.
  * id가 그대로 stickers.sticker_type 컬럼에 저장된다.

@@ -21,6 +21,33 @@ npm run storybook
 
 정적 배포 파일은 `npm run build-storybook`으로 `storybook-static/`에 생성한다. `file://`로 열지 말고 HTTP 정적 서버에서 제공해야 한다. 개발 서버는 로컬 주소에만 바인딩한다.
 
+## 시각 기준
+
+- **기존 디자인 시스템으로 화면을 조립한다.** 팔레트·폰트·공통 프레임·포커스를 새로 바꾸지 않는다. 토큰은 추가만 하고 기존 값은 바꾸지 않는다(사용자 승인 기준). 앱 연결은 기존 컴포넌트에 선택(optional) prop을 더하는 방식으로 한다.
+- **기준은 Storybook이다**(2026-09-29 확정). 원본 이미지 시안과 픽셀 단위로 같다는 뜻은 아니다 — 폰트·프레임 치수·포커스·단색 자산에서 오는 차이는 남아 있다. 테스트 통과나 토큰 버전을 사용자 승인으로 보지 않는다.
+- 새 화면 시안은 아티팩트로 먼저 보여 주고, 확정되면 Storybook에 반영한다. 원본과 고른 과정은 [design/proposals-2026-10/](design/proposals-2026-10/README.md).
+- 판 종류 카드는 사용자가 첨부한 [상세 시안](design/retro-pocket-v1/review-set-02/references/board-type-detail-user.png)이 기준이다(달력 요일/빈칸, 적립판 첫 칸 체크, 주황 외곽 선택).
+- 시안의 폰 목업·OS 상태바·광원·질감은 구현 대상이 아니다. `review-set-01`, `screen-preview`의 거절된 실험과 종이 테마를 되살리지 않는다.
+- 확대 화면만 보고 끝내지 않는다. 100% 배율, DPR 1, 390px와 320px에서 본다.
+
+## 화면 수치
+
+- 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤·패널·칸 테두리와 패널 제목 구분선은 3px.
+- `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3. 달력판 오늘 칸은 같은 링을 칸 밖으로 격자선 두께(3)만큼 넓혀 격자선 위에 겹쳐 그리고 그 칸을 `zIndex: 1`로 올린다(2026-10-09, [달력 포커스 시안](https://claude.ai/artifact/6QcCHwy2WZaMTz3vQojz4c)).
+- 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 `SCREEN_PADDING` 20pt. 더 넓은 화면은 가운데로 모은다.
+- 제목 줄(`RetroScreen header`)과 본문 사이 24pt, 모든 화면(2026-10-10). 제목 아래에 탭이 붙는 「기본 스티커」는 제목–탭 24, 탭–본문 14(`headerGap`).
+- iOS 시트(`presentation: 'modal'` — 새 목표, 기본 스티커, 묶음)는 위쪽 안전 영역을 비우지 않는다(`SheetSafeArea`, 2026-10-10). Android 모달은 화면 전체라 그대로 둔다.
+- `StickerGrid`: 3열, 좌우 안쪽 6px, 열 간격 15px, 행 간격 10px. 칸 숫자 28/32px.
+- 컬러 스티커는 24의 정수배 크기로 그린다. 판 칸·목록 카드 48pt.
+- 확인 다이얼로그는 `PixelDialog variant="basic"`을 화면 가운데에 둔다(앱은 `PixelDialogModal`). 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다.
+- 톱니바퀴는 v6 원본 윤곽 `assets/gear.ts`를 쓴다.
+
+## 스티커 자산
+
+- **컬러 스티커(앱이 쓰는 것):** `src/stickers/color/`. 24×24 도트 66종 — 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10. ID는 `묶음.이름`. 원본은 `source/sticker-packs-24.json`, 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다. 위젯용 그림은 `widgetStickerArt.generated.ts`. 검토는 Storybook `Stickers / Color Assets`. [README](../src/stickers/color/README.md).
+- **흑백 스티커:** `src/stickers/pocket/`(6종, 56×56 SVG path). 앱 저장값은 스키마 v6에서 컬러로 옮겼다. `node scripts/trace-pocket-stickers.mjs`는 추가 5종 파일을 덮어쓰니 자산을 다시 만들 때만 쓴다.
+- `src/stickers/catalog.ts`(22종)는 쓰는 코드가 없지만 옛 마이그레이션 매핑 근거라 지우지 않는다.
+
 ## 시안 형태 비교
 
 ~~`Design System / Reference Match`~~ — 옛 v6 홈(칩 + 판) 시안과의 비교 페이지였다. 홈 구조가 바뀌어 2026-09-30에 지웠다. 기준 이미지는 `docs/design/`에 남아 있다.
@@ -164,7 +191,7 @@ npm run check:storybook
 
 **배지 색을 늘리는 방법.** `badgeTones`(`components.tsx`)에 tone을 **추가**한다. `fill`과 `text` 두 색을 토큰에서 고른다. 기존 `ink`·`primary` 조합은 바꾸지 않는다. 지금은 시안에 있는 두 가지만 있다.
 
-**판 조작 (PRD 4.5).** 빈칸 한 번 누르기 = 붙이기, 붙인 칸 한 번 누르기 = 떼기, 붙인 칸 두 번 누르기·꾹 누르기 = 기록 열기. `GoalStickerCell`과 `CalendarBoard`에 `onOpenRecord`를 주면 이 구분이 켜지고, 주지 않으면 지금처럼 누르는 즉시 `onPress`/`onSelect`가 불린다. 두 번 누르기를 가르기 위해 한 번 누르기는 250ms(`DOUBLE_PRESS_MS`, `gestures.ts`) 뒤에 실행된다. 스크린리더에는 같은 칸에 `기록 열기` 접근성 동작(`openRecordAction`)을 붙인다.
+**판 조작 (PRD 4.1).** 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 붙인 칸 꾹 = 떼기. 스크린리더에는 같은 칸에 '스티커 떼기' 접근성 동작을 붙인다.
 
 **기존 컴포넌트에 추가한 선택 props.** 넘기지 않으면 기존 동작·모양과 같다.
 
@@ -179,5 +206,5 @@ npm run check:storybook
 
 **화면 조합 (2026-09-30).** 목록·판 상세·목표 설정·완성한 판 설정·새 목표·칸/종료일 늘리기는 `board-screens.tsx`, 5단계 첫 실행 튜토리얼은 `first-run-tutorial.tsx`에 있고 Storybook과 앱이 같은 소스를 쓴다. 옛 `HomeScreen`·`GoalEditorScreen`·3단계 `TutorialScreen`·`GoalChip`·`GoalStickerLink`/`DefaultStickerLink`는 지웠다. 모션은 `StickMotion`(붙이기, 모션 감소 설정이면 생략). `SettingRow`는 앱 설정 구현 때 쓸 컴포넌트로 남겼고 스토리는 지웠다.
 
-**스티커 묶음·구매 (2026-10-08, PRD 4.12).** `sticker-shop.tsx`에 `PackViewSwitch`·`FoldToggle`·`StickerChoice`·`RewardProgress`·`PickedStickerBar`·`PackCard`·`StickerChooserScreen`(「기본 스티커」)·`PackScreen`(묶음 화면)·`PurchasePanel`(앱 설정 「구매」)·`stickerShopDialogs`·`colorPack`이 있다. 스토리는 `Screens/Sticker Shop`. `composition-controls.tsx`의 `InfoRow`는 누를 수 없는 「항목 · 값」 줄이다. 디자인 시스템은 스티커로 `StickerId`(흑백 + 컬러 `묶음.이름`)를 받고, `StickerGlyph`는 컬러를 24의 배수 크기로 그린다(판 칸·목록 카드 48). 화면 안 흑백 고르기(`StickerPicker`)는 앱이 스키마 v6 전까지 쓰므로 흑백 그대로다.
+**스티커 묶음·구매 (2026-10-08, PRD 4.12).** `sticker-shop.tsx`에 `PackViewSwitch`·`FoldToggle`·`StickerChoice`·`RewardProgress`·`PickedStickerBar`·`PackCard`·`StickerChooserScreen`(「기본 스티커」)·`PackScreen`(묶음 화면)·`PurchasePanel`(앱 설정 「구매」)·`stickerShopDialogs`·`colorPack`이 있다. 스토리는 `Screens/Sticker Shop`. `composition-controls.tsx`의 `InfoRow`는 누를 수 없는 「항목 · 값」 줄이다. 디자인 시스템은 스티커로 `StickerId`(흑백 + 컬러 `묶음.이름`)를 받고, `StickerGlyph`는 컬러를 24의 배수 크기로 그린다(판 칸·목록 카드 48).
 
