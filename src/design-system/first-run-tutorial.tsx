@@ -60,27 +60,27 @@ const filledWith=(n:number,sticker:StickerId)=>Object.fromEntries(range(n).map(k
 export function TutorialListExample() {
   const add=useTutorialSpot('add');
   return <GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} onSettings={noop} addTargetRef={add} completed={[]} active={[
-    {id:'reading',name:'책 읽기',sticker:'sprout',kind:'적립판',percent:40,status:['40% 채웠어요']},
-    {id:'walk',name:'매일 저녁 동네 한 바퀴 걷기',sticker:'shoe',kind:'달력판',percent:30,status:['이번 달 30% 채웠어요']},
+    {id:'reading',name:'책 읽기',sticker:'basic.sprout',kind:'적립판',percent:40,status:['40% 채웠어요']},
+    {id:'walk',name:'매일 저녁 동네 한 바퀴 걷기',sticker:'basic.shoe',kind:'달력판',percent:30,status:['이번 달 30% 채웠어요']},
   ]}/>;
 }
 /** 2단계: 새 목표의 기본 스티커 */
 export function TutorialNewGoalExample() {
   const sticker=useTutorialSpot('sticker');
-  return <NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker="flower" onChooseSticker={noop}
+  return <NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker="basic.flower" onChooseSticker={noop}
     endMode="none" onChangeEndMode={noop} onChangeEndDate={noop} today="2026-09-29" todayLabel="9월 29일" onSubmit={noop} onBack={noop} stickerTargetRef={sticker}/>;
 }
 /** 3·4단계: 진행 중인 적립판의 다음 빈칸과 붙인 칸 */
 export function TutorialBoardExample() {
   const slot=useTutorialSpot('slot'),record=useTutorialSpot('record');
-  return <BoardDetailScreen name="책 읽기" sticker="sprout" completed={false} progress={{value:6,total:15,percentLabel:'40%'}} onBack={noop} onSettings={noop}
-    board={{kind:'tally',total:15,filled:filledWith(6,'sprout'),onPress:noop,onOpenRecord:noop,nextSlotRef:slot,recordSlotRef:record}}/>;
+  return <BoardDetailScreen name="책 읽기" sticker="basic.sprout" completed={false} progress={{value:6,total:15,percentLabel:'40%'}} onBack={noop} onSettings={noop}
+    board={{kind:'tally',total:15,filled:filledWith(6,'basic.sprout'),onPress:noop,onOpenRecord:noop,nextSlotRef:slot,recordSlotRef:record}}/>;
 }
 /** 5단계: 완성한 판의 [완성] 스티커 */
 export function TutorialCompletedExample() {
   const done=useTutorialSpot('done');
-  return <BoardDetailScreen name="자기 전 스트레칭 십 분" sticker="star" completed progress={{value:20,total:20,percentLabel:'100%'}} onBack={noop} onSettings={noop} completionTargetRef={done}
-    board={{kind:'tally',total:20,filled:filledWith(20,'star'),onPress:noop,onOpenRecord:noop}}/>;
+  return <BoardDetailScreen name="자기 전 스트레칭 십 분" sticker="basic.star" completed progress={{value:20,total:20,percentLabel:'100%'}} onBack={noop} onSettings={noop} completionTargetRef={done}
+    board={{kind:'tally',total:20,filled:filledWith(20,'basic.star'),onPress:noop,onOpenRecord:noop}}/>;
 }
 
 /** 앱 첫 실행. 끝까지 보거나 건너뛰면 onFinish. */
