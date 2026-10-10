@@ -44,6 +44,12 @@ function SplashOverlay({ onShown, onDone }: { onShown: () => void; onDone: () =>
  * 처리한다. 픽셀 폰트를 불러오기 전에는 대체 폰트로 그리지 않는다 (DESIGN-SYSTEM.md).
  */
 /**
+ * 어느 화면으로 시작하든(링크로 켜짐, 개발 중 다시 불러오기) 홈을 맨 아래에 둔다. 없으면 새 목표 같은 시트 화면이
+ * 첫 화면이 되어 전체 화면으로 뜨고, 시트용으로 0으로 둔 위쪽 여백 때문에 헤더가 시계와 겹쳤다 (2026-10-10 실기기).
+ */
+export const unstable_settings = { anchor: 'index' };
+
+/**
  * 화면을 그리다 예외가 나면 빈 화면 대신 같은 안내를 보인다 (PRD 7절). [다시 시도]는 그 화면을 다시 그린다.
  * https://docs.expo.dev/versions/v57.0.0/sdk/router/ 「ErrorBoundary」
  */
