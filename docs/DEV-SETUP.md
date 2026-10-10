@@ -264,7 +264,7 @@ rm -rf node_modules package-lock.json && npm install
 ```
 
 `package.json`의 `overrides: { "react-dom": "19.2.3" }`를 **지우면 모든 설치가 ERESOLVE로 실패한다.**
-자세한 이유는 [HANDOFF.md](HANDOFF.md)와 [PRD.md](PRD.md)를 참고한다.
+자세한 내용은 [PITFALLS.md](PITFALLS.md) 「의존성과 빌드」.
 
 ### 터널이 8081을 잡고 있으면 LAN 주소도 터널로 간다
 

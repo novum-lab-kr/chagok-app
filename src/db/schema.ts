@@ -75,7 +75,7 @@ export const MIGRATIONS: readonly (readonly string[])[] = [
      );`,
   ],
 
-  // v4 — 목록·판 상세 구조 (PRD 4.1, 4.3, 4.7 · docs/DEV-DESIGN-home-structure.md 1절)
+  // v4 — 목록·판 상세 구조 (PRD 4.1, 4.3, 4.7)
   //
   // end_date: 달력판 종료일. 'YYYY-MM-DD' 로컬 날짜라 시간대 변환 없이 localDateKey와 비교한다.
   // completed_at: 완성한 시각. NULL이면 진행 중이다.
