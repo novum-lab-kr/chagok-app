@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDialogs } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
@@ -21,6 +21,12 @@ export default function DeleteAccount() {
   const [step, setStep] = useState<Step>('review');
   /** 서버 삭제가 끝났다. 그 뒤 기기 정리만 실패했으면 [다시 시도]는 기기 정리만 한다 — 세션이 이미 없다. */
   const serverDone = useRef(false);
+  const navigation = useNavigation();
+
+  // [계정 삭제하기]를 누른 뒤에는 iOS 스와이프로 빠져나가지 않는다. 안내만 보는 동안은 스와이프로 나갈 수 있다 (2026-10-11)
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: step === 'review' });
+  }, [navigation, step]);
 
   // 삭제 중·완료 뒤에는 Android 뒤로가기로 빠져나가지 않는다
   useEffect(() => {
