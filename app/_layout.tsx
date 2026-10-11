@@ -153,7 +153,7 @@ export default function RootLayout() {
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />
           <Stack.Screen name="account/connect" />
-          <Stack.Screen name="account/delete" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="account/delete" />
           <Stack.Screen name="dev/sync" />
         </Stack>
         {/* 글꼴이 준비된 뒤에 그려야 "차곡차곡" 글자가 대체 글꼴로 나오지 않는다 — 그동안은 OS 스플래시가 남아 있다. */}
