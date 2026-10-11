@@ -92,6 +92,32 @@ export default function StickerRecord() {
     }
   }
 
+  /** 카메라로 찍은 사진은 앱 안에만 둔다(휴대폰 앨범에 저장하지 않음, 2026-10-11). 권한을 거부해도 앨범·메모는 계속 쓴다 (PRD 7절). */
+  async function takePhoto() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      if (await confirm({
+        title: '카메라를 쓸 수 없어요',
+        description: '기기 설정에서 차곡차곡의 카메라 접근을 허용하면 사진을 찍을 수 있어요. 앨범에서 고르거나 메모만 남길 수도 있어요.',
+        secondaryLabel: '닫기',
+        primaryLabel: '기기 설정 열기',
+      })) void Linking.openSettings();
+      return;
+    }
+    let result: ImagePicker.ImagePickerResult;
+    try {
+      result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    } catch {
+      // 카메라가 없는 기기(시뮬레이터 등)에서는 여기로 온다.
+      await ask({ title: '카메라를 열 수 없어요', description: '앨범에서 사진을 골라 주세요. 메모는 그대로 남길 수 있어요.', primaryLabel: '확인' });
+      return;
+    }
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+      setPhotoMissing(false);
+    }
+  }
+
   /** 저장이 끝난 뒤에 화면을 닫는다. 성공 전에 완료로 표시하지 않는다 (PRD 7절). */
   async function save(nextMemo: string) {
     let newPhotoUri: string | null = null;
@@ -141,6 +167,7 @@ export default function StickerRecord() {
         onPhotoError={() => setPhotoMissing(true)}
         photoActionsInFrame
         onChoosePhoto={() => { void choosePhoto(); }}
+        onTakePhoto={() => { void takePhoto(); }}
         onRemovePhoto={() => { setPhotoUri(null); setPhotoMissing(false); }}
         onBack={goBack}
         onMemoChange={setDraftMemo}

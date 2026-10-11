@@ -78,6 +78,16 @@ describe('화면 구성 컴포넌트',()=>{
     expect(screen.queryByRole('button',{name:'사진 추가'})).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'사진 지우기'}));expect(remove).toHaveBeenCalledTimes(1);
   });
+  it('카메라를 쓸 수 있으면 빈 사진 프레임에 사진 찍기와 앨범에서 고르기를 함께 둔다',()=>{
+    const choose=vi.fn(),take=vi.fn(),remove=vi.fn();
+    const {rerender}=render(<PhotoAttachment actionsInFrame onChoose={choose} onTakePhoto={take} onRemove={remove}/>);
+    fireEvent.click(screen.getByRole('button',{name:'사진 찍기'}));expect(take).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button',{name:'앨범에서 고르기'}));expect(choose).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button',{name:'사진 추가'})).toBeNull();
+    rerender(<PhotoAttachment actionsInFrame preview={<PixelText>첨부 사진</PixelText>} onChoose={choose} onTakePhoto={take} onRemove={remove}/>);
+    expect(screen.queryByRole('button',{name:'사진 찍기'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'앨범에서 고르기'})).toBeNull();
+  });
   it('기록 표식은 기록이 있는 붙인 칸에만 표시한다',()=>{
     const {rerender}=render(<GoalStickerCell number={7} sticker="sprout" state="empty" hasRecord onPress={()=>{}}/>);
     expect(screen.queryByLabelText('사진 또는 메모 기록 있음')).toBeNull();
