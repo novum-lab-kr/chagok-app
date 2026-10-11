@@ -1,0 +1,8 @@
+{
+  "_": "LICENSE 파일 없이 배포된 패키지 → 같은 저장소(모노레포)의 LICENSE 원문. 키가 '/*'로 끝나면 그 범위 전체.",
+  "metro-runtime": "meta-mit.txt",
+  "@react-native/*": "meta-mit.txt",
+  "expo-router": "expo-mit.txt",
+  "@expo/ui": "expo-mit.txt",
+  "standard-navigation": "standard-navigation.txt"
+}
