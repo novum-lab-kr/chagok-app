@@ -140,7 +140,7 @@ function CompletedRecord() {
   const goal = byId('stretch');
   return <Stage><RecordScreen goal={goal} date="2026년 9월 12일" initialMemo="오늘은 허리까지 쭉 펴졌다." photoActionsInFrame
     photoPreview={<View style={{alignItems: 'center', gap: 8}}><ActionSymbol name="photo" size={40}/><Small>사진</Small></View>}
-    onChoosePhoto={noop} onRemovePhoto={noop} onBack={noop} onSave={noop} onRemoveSticker={noop}/></Stage>;
+    onChoosePhoto={noop} onTakePhoto={noop} onRemovePhoto={noop} onBack={noop} onSave={noop} onRemoveSticker={noop}/></Stage>;
 }
 /** 완료 다이얼로그에서 계속하기: 달력판은 종료일을 늘린다. 지난 날은 붙일 수 없으므로 오늘부터 고른다. */
 function ExtendEndDate() {
