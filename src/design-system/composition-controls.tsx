@@ -190,17 +190,23 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
   };
   // 키보드가 올라오면 포커스한 입력칸이 키보드 위로 오도록 내린다. KeyboardAvoidingView는 보이는 영역만 줄이고
   // 스크롤은 옮기지 않아, 화면 아래쪽 입력칸(기록 메모, 칸 수 직접 입력)이 가려진 채로 남았다.
-  useEffect(()=>{
-    const subscription=Keyboard.addListener('keyboardDidShow',event=>{
-      const input=TextInput.State.currentlyFocusedInput?.();
-      if(!input) return;
-      input.measureInWindow((_x,y,_width,height)=>{
-        const overlap=sheetTop+y+height+SCREEN_PADDING-event.endCoordinates.screenY;
-        if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
-      });
+  // Android는 키보드 이벤트가 KeyboardAvoidingView가 스크롤 영역을 줄이기 전에 와서, 그때는 내릴 자리가 없어 덜 내려간다.
+  // 영역이 줄어든 뒤(onLayout)에 한 번 더 맞춘다 (2026-10-11).
+  const keyboardTop=useRef<number|null>(null);
+  const revealFocused=useCallback(()=>{
+    const top=keyboardTop.current;
+    const input=TextInput.State.currentlyFocusedInput?.();
+    if(top===null||!input) return;
+    input.measureInWindow((_x,y,_width,height)=>{
+      const overlap=sheetTop+y+height+SCREEN_PADDING-top;
+      if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
     });
-    return ()=>subscription.remove();
   },[offset,scroll,sheetTop]);
+  useEffect(()=>{
+    const show=Keyboard.addListener('keyboardDidShow',event=>{keyboardTop.current=event.endCoordinates.screenY;revealFocused();});
+    const hide=Keyboard.addListener('keyboardDidHide',()=>{keyboardTop.current=null;});
+    return ()=>{show.remove();hide.remove();};
+  },[revealFocused]);
   // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
@@ -211,6 +217,7 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     : <ScrollView
     testID="retro-scroll"
     {...scrollProps}
+    onLayout={event=>{scrollProps.onLayout(event);revealFocused();}}
     style={{flex:1}}
     contentContainerStyle={{flexGrow:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
@@ -220,12 +227,14 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
+  // Android도 padding으로 줄인다. Android 15부터 edge-to-edge가 강제돼 adjustResize가 창을 줄여 주지 않아,
+  // 기록 메모·칸 수 직접 입력이 키보드에 가려진 채 스크롤할 자리도 없었다 (2026-10-11 Android 16 에뮬레이터).
   return <View onLayout={measureSheet} style={{flex:1,backgroundColor:retro.color.screen,paddingTop:insets.top}}>
     {header&&<View testID="retro-header" style={{alignItems:'center',paddingHorizontal:SCREEN_PADDING,paddingTop:SCREEN_PADDING,paddingBottom:headerGap}}>
       <View style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>{header}</View>
     </View>}
     {avoidKeyboard
-      ? <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={sheetTop}>{body}</KeyboardAvoidingView>
+      ? <KeyboardAvoidingView style={{flex:1}} behavior="padding" keyboardVerticalOffset={sheetTop}>{body}</KeyboardAvoidingView>
       : body}
   </View>;
 }
