@@ -13,3 +13,4 @@ export * from './mascot';
 export * from './splash';
 export * from './sticker-shop';
 export * from './load-state';
+export * from './tab-screens';

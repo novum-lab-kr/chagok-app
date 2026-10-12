@@ -42,7 +42,9 @@ export type SettingKey =
   /** 붙인 날 3일 체험을 받은 횟수 — 같은 문턱을 두 번 받지 않게 (스티커 묶음, 2026-10-08) */
   | 'dayTrialsClaimed'
   /** '1'이면 광고 제거를 샀다. 하루 체험 버튼이 없다 */
-  | 'adFree';
+  | 'adFree'
+  /** 체험 열림 카드를 ×로 닫을 때 넘긴 문턱(7, 14…). 다음 문턱까지 카드를 숨긴다 (2026-10-12) */
+  | 'trialCardDismissed';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();

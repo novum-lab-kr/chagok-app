@@ -1,29 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import {
-  AccountBackupPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, ScreenHeader, SettingRow, accountDialogs,
+  AccountBackupPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
   stickerShopDialogs,
   type AccountBackupStatus,
-} from '../src/design-system';
-import { goBackOrHome } from '../src/app-data/goBack';
-import { removeAllManagedPhotos } from '../src/app-data/recordPhotos';
-import { signOutLocal } from '../src/sync/account';
-import { formatBackedUpAt, localOnlyCount, readAccountState } from '../src/sync/accountStatus';
-import { syncDepsFor } from '../src/sync/appSync';
-import { pendingCount } from '../src/sync/outbox';
-import { pushOnce } from '../src/sync/push';
-import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
-import { pauseSync, resumeSync, subscribeSyncStatus } from '../src/sync/syncGate';
-import { wipeDevice } from '../src/sync/wipe';
-import { getSetting } from '../src/repositories/appSettingsRepository';
-import { loadPackState } from '../src/repositories/packRepository';
-import { buyAdFree, restorePurchases } from '../src/purchases';
-import { useDialog } from '../src/app-data/useDialog';
-import { createSingleFlight } from '../src/app-data/singleFlight';
+} from '../../src/design-system';
+import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
+import { signOutLocal } from '../../src/sync/account';
+import { formatBackedUpAt, localOnlyCount, readAccountState } from '../../src/sync/accountStatus';
+import { syncDepsFor } from '../../src/sync/appSync';
+import { pendingCount } from '../../src/sync/outbox';
+import { pushOnce } from '../../src/sync/push';
+import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
+import { pauseSync, resumeSync, subscribeSyncStatus } from '../../src/sync/syncGate';
+import { wipeDevice } from '../../src/sync/wipe';
+import { getSetting } from '../../src/repositories/appSettingsRepository';
+import { loadPackState } from '../../src/repositories/packRepository';
+import { buyAdFree, restorePurchases } from '../../src/purchases';
+import { useDialog } from '../../src/app-data/useDialog';
+import { createSingleFlight } from '../../src/app-data/singleFlight';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
 
-/** 앱 설정. 서버 설정이 있으면 「계정과 백업」 칸(시안 2C), 없으면 기기 저장 안내만. */
+/** 앱 설정 (하단 탭 「설정」, 2026-10-12). 서버 설정이 있으면 「계정과 백업」 칸(시안 2C), 없으면 기기 저장 안내만. */
 export default function AppSettings() {
   const nav = useRouter();
   const supabase = getSupabase();
@@ -119,8 +118,8 @@ export default function AppSettings() {
   })();
 
   return (
-    <>
-      <RetroScreen style={{ gap: 16 }} header={<ScreenHeader title="앱 설정" onBack={goBackOrHome} />}>
+    <TabSafeArea>
+      <RetroScreen style={{ gap: 16 }} header={<TabTitle title="설정" />}>
         {supabase ? (
           status && (
             <AccountBackupPanel
@@ -151,6 +150,6 @@ export default function AppSettings() {
       </RetroScreen>
       {logoutDialog && <PixelDialogModal visible {...logoutDialog} />}
       {purchaseDialog}
-    </>
+    </TabSafeArea>
   );
 }

@@ -11,7 +11,7 @@ const grid: Record<string, [row: number, col: number]> = {
   // 0 첫 사용·계정 연결
   splash: [0, 0], start: [0, 1], consent: [0, 2], restore: [0, 3], conflict: [0, 4], tutorial: [0, 5],
   // 1 일상 기록
-  widget: [1, 0], watch: [1, 1], list: [1, 2], new: [1, 3], detail: [1, 4], record: [1, 5], photos: [1, 6],
+  widget: [1, 0], watch: [1, 1], list: [1, 2], new: [1, 3], detail: [1, 4], record: [1, 5], photos: [1, 6], 'records-tab': [1, 7],
   // 2 목표 관리·판 완료
   'goal-settings': [2, 4], 'goal-delete': [2, 5], complete: [2, 6], extend: [2, 7], 'completed-board': [2, 8],
   // 3 앱 설정·정보
@@ -19,7 +19,7 @@ const grid: Record<string, [row: number, col: number]> = {
   // 4 계정 삭제
   'account-delete': [4, 3], deleted: [4, 4],
   // 5 스티커 묶음·구매
-  'sticker-chooser': [5, 3], pack: [5, 4], 'store-pay': [5, 5], 'rewarded-ad': [5, 6],
+  'stickers-tab': [5, 2], 'sticker-chooser': [5, 3], pack: [5, 4], 'store-pay': [5, 5], 'rewarded-ad': [5, 6],
 };
 
 export const appFlow = {

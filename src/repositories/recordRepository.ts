@@ -72,6 +72,42 @@ export async function listRecordedStickerIds(goalId: string): Promise<Set<string
   return new Set(rows.map((r) => r.sticker_id));
 }
 
+/** 기록 모아보기의 한 줄. sticker는 그 칸에 붙은 스티커 종류다. */
+export type TimelineEntry = {
+  stickerId: string;
+  goalId: string;
+  goalName: string;
+  sticker: string;
+  placedAt: number;
+  memo: string | null;
+  photoUri: string | null;
+};
+
+/**
+ * 하단 탭 「기록」(2026-10-12): 모든 목표에서 사진이나 내용 있는 메모가 있는 칸을 붙인 시각 최근 순으로.
+ * 기준은 판의 기록 표식과 같다(listRecordedStickerIds). 완성한 판도 넣는다.
+ */
+export async function listRecordTimeline(): Promise<TimelineEntry[]> {
+  const db = await getDb();
+  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; sticker_type: string; placed_at: number; memo: string | null; photo_uri: string | null }>(
+    `SELECT r.sticker_id, s.goal_id, g.name, s.sticker_type, s.placed_at, r.memo, r.photo_uri
+     FROM records r
+     JOIN stickers s ON s.id = r.sticker_id
+     JOIN goals g ON g.id = s.goal_id
+     WHERE NULLIF(TRIM(r.memo), '') IS NOT NULL OR NULLIF(TRIM(r.photo_uri), '') IS NOT NULL
+     ORDER BY s.placed_at DESC, s.id`,
+  );
+  return rows.map((r) => ({
+    stickerId: r.sticker_id,
+    goalId: r.goal_id,
+    goalName: r.name,
+    sticker: r.sticker_type,
+    placedAt: r.placed_at,
+    memo: r.memo,
+    photoUri: r.photo_uri,
+  }));
+}
+
 export async function deleteRecord(stickerId: string): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {

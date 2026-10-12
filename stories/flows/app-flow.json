@@ -194,12 +194,20 @@
     {
       "id": "list",
       "data": {
-        "label": "홈 · 목표 목록",
+        "label": "목표 탭 · 목표 목록",
         "tags": [
           "PRD 4.1",
-          "app/index"
+          "app/(tabs)/index"
         ],
         "stories": [
+          {
+            "id": "screens-bottom-tabs--goals-tab",
+            "label": "목표 탭"
+          },
+          {
+            "id": "screens-bottom-tabs--goals-tab-trial",
+            "label": "체험 열림 카드"
+          },
           {
             "id": "screens-home-structure-·-proposals--home-active",
             "label": "내 목표"
@@ -504,6 +512,10 @@
         ],
         "stories": [
           {
+            "id": "screens-bottom-tabs--completion-nudge-on-board",
+            "label": "완성 뒤 · 다음 판 권하기"
+          },
+          {
             "id": "screens-home-structure-·-proposals--detail-tally-done",
             "label": "적립판"
           },
@@ -520,13 +532,17 @@
     {
       "id": "app-settings",
       "data": {
-        "label": "앱 설정",
+        "label": "설정 탭 · 앱 설정",
         "tags": [
           "PRD 4.9",
-          "app/settings",
+          "app/(tabs)/settings",
           "배치 시안 중"
         ],
         "stories": [
+          {
+            "id": "screens-bottom-tabs--settings-tab",
+            "label": "설정 탭"
+          },
           {
             "id": "screens-account-backup--settings-synced",
             "label": "계정 연결됨"
@@ -834,6 +850,46 @@
           "sticker"
         ]
       }
+    },
+    {
+      "id": "records-tab",
+      "data": {
+        "label": "기록 탭",
+        "tags": [
+          "PRD 4.13",
+          "app/(tabs)/records"
+        ],
+        "stories": [
+          {
+            "id": "screens-bottom-tabs--records-tab",
+            "label": "기록 탭"
+          },
+          {
+            "id": "screens-bottom-tabs--records-tab-filtered",
+            "label": "목표 고름"
+          },
+          {
+            "id": "screens-bottom-tabs--records-tab-empty",
+            "label": "비었을 때"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stickers-tab",
+      "data": {
+        "label": "스티커 탭",
+        "tags": [
+          "PRD 4.12",
+          "app/(tabs)/stickers"
+        ],
+        "stories": [
+          {
+            "id": "screens-bottom-tabs--stickers-tab",
+            "label": "스티커 탭"
+          }
+        ]
+      }
     }
   ],
   "edges": [
@@ -1122,7 +1178,7 @@
       "id": "list-app-settings",
       "source": "list",
       "target": "app-settings",
-      "label": "톱니바퀴",
+      "label": "설정 탭",
       "data": {
         "scenarios": [
           "daily",
@@ -1451,6 +1507,62 @@
       "data": {
         "scenarios": [
           "info"
+        ]
+      }
+    },
+    {
+      "id": "list-records-tab",
+      "source": "list",
+      "target": "records-tab",
+      "label": "기록 탭",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "records-tab-record",
+      "source": "records-tab",
+      "target": "record",
+      "label": "기록 누르기",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "list-stickers-tab",
+      "source": "list",
+      "target": "stickers-tab",
+      "label": "스티커 탭 · 묶음 고르기",
+      "data": {
+        "scenarios": [
+          "sticker"
+        ]
+      }
+    },
+    {
+      "id": "stickers-tab-pack",
+      "source": "stickers-tab",
+      "target": "pack",
+      "label": "묶음 누르기",
+      "data": {
+        "scenarios": [
+          "sticker"
+        ]
+      }
+    },
+    {
+      "id": "completed-board-stickers-tab",
+      "source": "completed-board",
+      "target": "stickers-tab",
+      "label": "스티커 보기",
+      "data": {
+        "scenarios": [
+          "complete",
+          "sticker"
         ]
       }
     }

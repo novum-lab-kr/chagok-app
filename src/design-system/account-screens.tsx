@@ -12,7 +12,7 @@ import {retro} from './tokens';
  */
 export const accountDialogs={
   /** 로그인이 풀렸을 때 앱을 열면 한 번 묻는다. 그 뒤로는 앱 설정의 계정 칸이 안내한다. */
-  session:{title:'로그인이 필요해요',description:'다시 로그인해 주세요. 로그인하기 전까지 기록은 이 기기에만 저장돼요. 나중에 앱 설정에서 로그인해도 돼요.',primaryLabel:'로그인',secondaryLabel:'나중에'},
+  session:{title:'로그인이 필요해요',description:'다시 로그인해 주세요. 로그인하기 전까지 기록은 이 기기에만 저장돼요. 나중에 설정 탭에서 로그인해도 돼요.',primaryLabel:'로그인',secondaryLabel:'나중에'},
   restoring:{title:'기록을 가져오는 중',description:'앱을 닫지 말고 잠시 기다려 주세요.'},
   restoreFailed:{title:'가져오지 못했어요',description:'이 기기의 기록은 바뀌지 않았어요. 연결을 확인하고 다시 시도해 주세요.',primaryLabel:'다시 시도',secondaryLabel:'나중에'},
   /** 백업 중에는 loading으로 같은 다이얼로그를 둔다. */
