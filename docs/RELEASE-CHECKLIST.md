@@ -19,7 +19,7 @@
 - [ ] 개발용 대역이 남아 있지 않다:
   - 결제·광고가 `src/purchases`의 개발용 대역이 아니라 RevenueCat·AdMob이다. 광고 ID가 테스트 ID가 아니다.
   - 연결 화면의 [개발 계정으로 계속], `/dev/sync`가 출시 빌드에 보이지 않는다(`__DEV__`).
-- [ ] 다크 모드 막기·글자 크기 고정이 들어가 있다(`fix/light-mode-font-scale`, PRD 6.2).
+- [x] 다크 모드 막기·글자 크기 고정이 들어가 있다(`app.json` `userInterfaceStyle: "light"`, `allowFontScaling={false}`, PRD 6.2). 2026-10-12 실기기 확인.
 - [ ] 한 번에 한 기기, 동기화 버전·최소 앱 버전이 서버와 앱에 들어가 있다(PRD 4.8, [버전 규칙](RELEASE-VERSIONING.md) 「가끔」).
 - [ ] 오픈소스 라이선스 목록이 지금 의존성과 맞다: `npm run licenses`를 돌려 `src/policy/oss-licenses.generated.ts`가 바뀌지 않는다. 바뀌면 커밋한다. 「LICENSE 파일이 없는 패키지」로 멈추면 원래 저장소의 LICENSE를 확인해 `scripts/licenses/packages.json`에 더한다. 네이티브 라이브러리(`scripts/licenses/native.json`)는 React Native를 올렸을 때 버전을 맞춘다.
 - [ ] Android 앱 라이선스 목록에 AndroidX 등 Android 네이티브 라이브러리가 들어가 있다(아직 없음 — Android 위젯 작업 때).
