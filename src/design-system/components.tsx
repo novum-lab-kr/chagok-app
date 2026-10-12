@@ -14,7 +14,7 @@ const c = retro.color;
 const decorativeSvg = Platform.OS === 'web' ? { 'aria-hidden': true } as const : { accessible: false };
 const sproutAccessibility = Platform.OS === 'web' ? { role: 'img', 'aria-label': '새싹이' } as const : { accessible: true, accessibilityLabel: '새싹이' };
 export function PixelText({ variant = 'body', style, ...props }: TextProps & { variant?: TextVariant }) {
-  return <Text {...props} style={[{ color: c.ink, ...retro.typography[variant] }, style,
+  return <Text allowFontScaling={false} {...props} style={[{ color: c.ink, ...retro.typography[variant] }, style,
     { fontFamily: retro.fontFamily, fontWeight: '400', fontStyle: 'normal', letterSpacing: 0 }]} />;
 }
 
@@ -162,7 +162,7 @@ export function PixelInput({label, error, style, onFocus, onBlur, onChangeText, 
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
     <PixelFrame variant="input" fill={c.secondary} focused={focused}>
-      <TextInput {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
+      <TextInput allowFontScaling={false} {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
         returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
         style={[{minHeight:48,paddingHorizontal:12,paddingVertical:Platform.OS==='web'?10:0,color:c.ink,...(props.multiline?retro.typography.body:singleLineText)},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
