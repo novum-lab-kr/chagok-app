@@ -1,0 +1,165 @@
+<title>로그인 버튼 시안</title>
+<style>
+/* 판 화면 캡처를 가운데 두고, 안마다 한 띠(설명 · 좋은 점/걸리는 점 · 고르기 · 메모). 아래 고정 막대에 고른 안 요약. */
+@font-face { font-family: 'NeoDunggeunmo'; src: url(data:font/ttf;base64,__FONT__) format('truetype'); font-display: block; }
+:root {
+  --mint: #AFE1CB; --lcd: #C7DE94; --coral: #FD855F; --ivory: #FEF1D1; --ink: #06261C;
+  --bg: #EAF5EE; --card: #FFFFFF; --fg: #06261C; --muted: #4C6A5E; --line: #B9D6C6; --pick: #FD855F; --pick-bg: #FFF1EA; --bad: #B4381A;
+  --pixel: 'NeoDunggeunmo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 120px; display: grid; gap: 28px; }
+h1, h2, .code, .btn, .tag { font-family: var(--pixel); font-weight: normal; }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.decided { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decided ul { margin: 0; padding-left: 20px; }
+section.group { display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.opt { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.ok { border-color: var(--pick); background: var(--pick-bg); }
+.opt.ref { border-style: dashed; }
+.head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code { font-size: 18px; }
+.tag { font-size: 12px; padding: 1px 6px; border: 2px solid var(--ink); background: var(--lcd); color: var(--ink); border-radius: 3px; }
+.tag.new { background: var(--ivory); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shots figure { margin: 0; min-width: 0; display: grid; gap: 4px; align-content: start; }
+.shots img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.shots figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+dl { margin: 0; display: grid; gap: 4px; font-size: 14px; }
+dt { font-weight: 600; }
+dd { margin: 0 0 4px; color: var(--muted); }
+.btn { font-size: 15px; padding: 8px 12px; border: 3px solid var(--ink); background: var(--ivory); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--coral); }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: 14px/1.5 var(--body); padding: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); resize: vertical; }
+.state { font-size: 12px; color: var(--muted); min-height: 1em; }
+.state.bad { color: var(--bad); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar #summary { flex: 1 1 260px; min-width: 0; font-size: 14px; }
+.bar #store-state { font-size: 12px; color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>로그인 버튼 높이와 글자 크기</h1>
+    <p class="muted">계정 연결 동의 화면입니다. 지금 앱의 동의 화면 컴포넌트로 그렸고, Apple 버튼은 Apple 서버가 그린 공식 버튼 이미지입니다. 두 회사 규칙이 달라 높이를 키우면 Apple 글자만 커집니다.</p>
+    <div class="decided">
+      <b>두 회사 규칙</b>
+      <ul>
+        <li><b>Apple</b>: 직접 만든 버튼도 글자는 버튼 높이의 43%. 높이 33이면 약 14, 44면 약 19.</li>
+        <li><b>Google</b>: 기본은 글자 14/20 · 로고 20. 화면에 맞게 키우거나 줄여도 되지만 로고가 늘어나지 않게 비율을 지킨다.</li>
+        <li><b>탭 대상</b>: iOS 44 · Android 48 (2026-10-12 정함). 보이는 버튼이 작으면 누르는 영역만 넓힌다.</li>
+      </ul>
+    </div>
+  </header>
+  <div id="groups"></div>
+</main>
+<div class="bar"><div id="summary"></div><span id="store-state">불러오는 중</span><button class="btn" id="copy" type="button">메모까지 복사</button></div>
+
+<script>
+const IMG = __IMG__;
+const S = v => [[v + '-zoom', '버튼 크게'], [v, '화면 전체 · 390pt']];
+const GROUPS = [
+  { key: 'v', title: '어느 쪽으로 맞출까요', intro: '세 안 모두 두 회사 공식 모양(흰 바탕 · 테두리 · 로고)은 같습니다. 다른 것은 버튼 높이와 Google 글자 크기입니다.',
+    ref: { code: '지금', shots: S('now'), text: '높이 44. Apple 글자 약 19, Google 글자 14라 크기가 달라 보입니다.' },
+    opts: [
+      { id: 'a', code: 'A', name: '높이 33 · 누르는 영역만 44', rec: true, shots: [['a-zoom', '버튼 크게'], ['a-slop-zoom', '누르는 영역(점선, 앱에는 안 보임)'], ['a', '화면 전체 · 390pt']],
+        good: '두 글자가 14로 같다. 두 회사 규칙을 그대로 지키고, 누르는 영역은 44라 탭 기준도 지킨다.', bad: '보이는 버튼이 낮아 조금 작아 보인다. 두 버튼의 누르는 영역이 거의 맞닿는다(사이 약 1pt).' },
+      { id: 'b', code: 'B', name: '높이 44 · Google 글자 19', shots: S('b'),
+        good: '두 글자가 19로 같고 버튼이 크고 시원하다.', bad: 'Google은 비율을 지켜 키우라고 하는데, 높이는 그대로 두고 글자·로고만 키운 셈이라 규칙을 넘는지 애매하다.' },
+      { id: 'c', code: 'C', name: '높이 44 · Google 버튼 1.1배 확대', shots: S('c'),
+        good: '두 회사 규칙 안에서 차이를 줄인다(Google 글자 약 15, 로고 22).', bad: '그래도 Apple 19와 Google 15로 차이가 남는다.' },
+    ] },
+];
+const $ = id => document.getElementById(id);
+const LS = 'chagok-login-review';
+const ALL = GROUPS.flatMap(g => g.opts.map(o => o.id));
+let state = { choice: { v: '' }, notes: Object.fromEntries(ALL.map(id => [id, ''])) };
+try { const s = JSON.parse(localStorage.getItem(LS) || 'null'); if (s && s.choice && s.notes) state = { choice: { ...state.choice, ...s.choice }, notes: { ...state.notes, ...s.notes } }; } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shots = list => `<div class="shots">${list.map(([k, cap]) => `<figure><img src="${IMG[k]}" alt="${esc(cap)}" ><figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+function render() {
+  $('groups').innerHTML = GROUPS.map(g => `<section class="group"><h2>${esc(g.title)}</h2><p class="muted">${esc(g.intro)}</p><div class="row">
+    ${g.ref ? `<article class="opt ref"><div class="head"><span class="code">${esc(g.ref.code)}</span><span class="tag">비교용</span></div>${shots(g.ref.shots)}<p class="muted">${esc(g.ref.text)}</p></article>` : ''}
+    ${g.opts.map(o => `<article class="opt" id="g-${o.id}"><div class="head"><span class="code">${o.code}</span><b>${esc(o.name)}</b>${o.rec ? '<span class="tag">추천</span>' : ''}${o.newEl ? '<span class="tag new">새 요소</span>' : ''}</div>
+      ${shots(o.shots)}<dl><dt>좋은 점</dt><dd>${esc(o.good)}</dd><dt>걸리는 점</dt><dd>${esc(o.bad)}</dd></dl>
+      <button class="btn ok-btn" type="button" id="ok-${o.id}" data-g="${g.key}" data-o="${o.id}" aria-pressed="false">이 안 고르기</button>
+      <label class="muted" for="note-${o.id}" style="font-size:13px">${o.code} 메모</label><textarea id="note-${o.id}" data-o="${o.id}" placeholder="바꿀 점, 숫자 등"></textarea><div class="state" id="state-${o.id}"></div></article>`).join('')}
+  </div></section>`).join('');
+  paint();
+}
+const codeOf = id => id ? id.toUpperCase() : '';
+const label = () => `고른 안: ${codeOf(state.choice.v) || '아직'}`;
+function paint() {
+  for (const g of GROUPS) for (const o of g.opts) {
+    const picked = state.choice[g.key] === o.id;
+    $(`g-${o.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${o.id}`); b.setAttribute('aria-pressed', String(picked)); b.textContent = picked ? '고른 안' : '이 안 고르기';
+    const t = $(`note-${o.id}`); if (document.activeElement !== t && t.value !== state.notes[o.id]) t.value = state.notes[o.id];
+  }
+  const n = ALL.filter(id => state.notes[id].trim()).length;
+  $('summary').textContent = label() + (n ? ` · 메모 ${n}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-login-v {value}, review/note-<a·b·c> {note}
+async function persist(key, statusId) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[key]) { queued[key] = statusId; return; }
+  writing[key] = true; setStatus(statusId, '저장 중…');
+  try {
+    const data = key.startsWith('choice-login-') ? { value: state.choice[key.slice(-1)] } : { note: state.notes[key.slice(5)] };
+    await db.doc(`review/${key}`).set({ ...data, updatedAt: new Date().toISOString() });
+    setStatus(statusId, '저장됨');
+  } catch (e) { setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true); }
+  finally { writing[key] = false; if (queued[key]) { const s = queued[key]; queued[key] = null; persist(key, s); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn'); if (!b) return;
+  const g = b.dataset.g, o = b.dataset.o;
+  state.choice[g] = state.choice[g] === o ? '' : o; paint(); persist(`choice-login-${g}`, o);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t) return;
+  const id = t.dataset.o; state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-${id}`, id); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t || !timers[t.dataset.o]) return;
+  const id = t.dataset.o; clearTimeout(timers[id]); timers[id] = null; persist(`note-${id}`, id);
+});
+$('copy').addEventListener('click', () => {
+  const text = label() + '\n' + ALL.filter(id => state.notes[id].trim()).map(id => `${codeOf(id)} 메모: ${state.notes[id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-login-')) { const g = d.id.slice(-1); if (g in state.choice && typeof v.value === 'string') state.choice[g] = v.value; continue; }
+      const id = d.id.replace(/^note-/, ''); if (!(id in state.notes)) continue;
+      const t = document.activeElement; state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>
