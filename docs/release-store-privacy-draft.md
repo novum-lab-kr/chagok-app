@@ -28,11 +28,12 @@
 }
 ```
 
+**넣은 방법 (2026-10-12)** — 위 값이 `app.json` `ios.privacyManifests`에 있다. Expo와 RN Pods 모으기는 **앱 타깃에만** 넣고 위젯 확장(App Extension)에는 넣지 않는다(RN `privacy_manifest_utils.rb`가 application 타깃만 고른다). 위젯도 RN·expo-widgets(App Group UserDefaults)를 링크하므로 로컬 플러그인 `plugins/widget-goal`이 같은 선언을 `ExpoWidgetsTarget/PrivacyInfo.xcprivacy`로 써서 위젯 리소스에 넣는다. 시뮬레이터 Debug 빌드에서 `app.app/PrivacyInfo.xcprivacy`와 `app.app/PlugIns/ExpoWidgetsTarget.appex/PrivacyInfo.xcprivacy` 둘 다 들어간 것을 확인했다.
+
 **확인 못 한 것**
 
-- 위젯 확장(App Extension)은 앱과 다른 번들이라 자기 선언이 따로 필요할 수 있다. `ios.privacyManifests`가 확장에도 들어가는지 prebuild 결과(`ios/` 안 확장 폴더)에서 확인해야 한다.
-- `NSPrivacyCollectedDataTypes`(수집 데이터)도 manifest에 적을 수 있다. 아래 2절과 같은 내용을 넣을지는 Expo 57 문서를 보고 정한다.
-- 넣은 뒤 `npx expo prebuild --clean`으로 `ios/<앱>/PrivacyInfo.xcprivacy`가 생기는지, Xcode Archive의 「Generate Privacy Report」에 빠진 것이 없는지.
+- Xcode Archive의 「Generate Privacy Report」(서명이 필요해 첫 TestFlight 빌드 때). 업로드가 ITMS-91053 없이 통과하는지.
+- `NSPrivacyCollectedDataTypes`(수집 데이터)는 넣지 않았다. Expo 57 문서는 다루지 않는다. App Store 라벨(아래 2절)은 App Store Connect에서 따로 답한다.
 
 ## 2. App Store 개인정보 라벨 (App Privacy)
 
