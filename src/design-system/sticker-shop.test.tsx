@@ -128,7 +128,7 @@ describe('묶음 화면',()=>{
 describe('앱 설정 「구매」 블럭',()=>{
   it('사기 전에는 광고 제거 설명과 버튼, 늘 구매 복원 버튼과 설명이 있다',()=>{
     const remove=vi.fn(),restore=vi.fn();render(<PurchasePanel adFree={false} onRemoveAds={remove} onRestore={restore}/>);
-    expect(screen.getByText('홈 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.')).toBeTruthy();
+    expect(screen.getByText('목표 화면 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'5,500원에 광고 없애기'}));expect(remove).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'구매 복원'}));expect(restore).toHaveBeenCalled();
     expect(screen.getByText('구매한 스티커 묶음과 광고 제거를 되살려요')).toBeTruthy();

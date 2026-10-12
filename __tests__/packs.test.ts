@@ -1,4 +1,4 @@
-import { AD_TRIAL_MS, DAY_TRIAL_MS, canStartDayTrial, canUseSticker, dayTrialThreshold, dayTrialsAvailable, packStatus, trialLabel } from '../src/domain/packs';
+import { AD_TRIAL_MS, DAY_TRIAL_MS, canStartDayTrial, canUseSticker, dayTrialThreshold, dayTrialsAvailable, packStatus, reachedThreshold, showTrialReadyCard, trialLabel } from '../src/domain/packs';
 import type { PackAccess } from '../src/domain/packs';
 import type { ColorStickerId } from '../src/stickers/color/catalog';
 
@@ -67,5 +67,27 @@ describe('canUseSticker', () => {
     expect(canUseSticker('basic.sprout', [], now)).toBe(true);
     expect(canUseSticker('animals.cat' as ColorStickerId, [], now)).toBe(false);
     expect(canUseSticker('animals.cat' as ColorStickerId, [bought], now)).toBe(true);
+  });
+});
+
+describe('체험 열림 카드 (목표 탭, 2026-10-12)', () => {
+  it('넘긴 가장 높은 문턱', () => {
+    expect(reachedThreshold(6)).toBe(0);
+    expect(reachedThreshold(7)).toBe(7);
+    expect(reachedThreshold(20)).toBe(14);
+    expect(reachedThreshold(44)).toBe(44);
+  });
+  it('받을 체험이 있으면 보인다', () => {
+    expect(showTrialReadyCard(7, 0, 0)).toBe(true);
+    expect(showTrialReadyCard(6, 0, 0)).toBe(false);
+  });
+  it('받은 뒤에는 다음 문턱까지 안 보인다', () => {
+    expect(showTrialReadyCard(10, 1, 0)).toBe(false);
+    expect(showTrialReadyCard(14, 1, 0)).toBe(true);
+  });
+  it('×로 닫으면 다음 문턱을 넘길 때까지 안 보인다', () => {
+    expect(showTrialReadyCard(9, 0, 7)).toBe(false);
+    expect(showTrialReadyCard(14, 0, 7)).toBe(true);
+    expect(showTrialReadyCard(20, 0, 14)).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BoardDetailScreen, LoadingScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
+import { BoardDetailScreen, CompletionNudge, LoadingScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
@@ -44,6 +44,8 @@ export default function Board() {
   const { ask, confirm, dialog } = useDialog();
   /** 완성 다이얼로그가 떠 있는 동안 다시 띄우지 않는다 */
   const completionOpen = useRef(false);
+  /** 완성한 판을 [닫기]로 보관한 순간에만 보이는 「다음 판은 새 스티커로」. 닫거나 판을 나가면 다시 보이지 않는다 (2026-10-12). */
+  const [nudge, setNudge] = useState(false);
 
   const reload = useCallback(async () => {
     const next = await loadBoard(id, shown.year, shown.month, new Date());
@@ -82,7 +84,10 @@ export default function Board() {
     });
     if (choice === 'dismiss') return;
     if (choice === 'secondary') {
-      if (await saveOrNotify(ask, '저장하지 못했어요', () => markCompletionSeen(goal.id))) await reload();
+      if (await saveOrNotify(ask, '저장하지 못했어요', () => markCompletionSeen(goal.id))) {
+        await reload();
+        setNudge(true);
+      }
       return;
     }
     if (goal.boardType === 'calendar' && !goal.endDate) {
@@ -238,6 +243,7 @@ export default function Board() {
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}
         onSettings={() => router.push({ pathname: '/goal/[id]/settings', params: { id: goal.id } })}
+        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onClose={() => setNudge(false)} /> : undefined}
         board={goal.boardType === 'tally'
           ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: (n) => openRecord(bySlot(n)) }
           : {

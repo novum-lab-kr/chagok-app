@@ -2,7 +2,7 @@ import React,{useContext} from 'react';
 import {Pressable,View} from 'react-native';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
-import {PixelBadge,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelPanel,PixelText,ProgressBar,StickerGrid,StickerSlot} from './components';
+import {PixelBadge,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelPanel,PixelText,ProgressBar,StickerGrid,StickerSlot,useLayoutSize} from './components';
 import {InfoRow,RetroScreen,ScreenHeader,SelectionBadge} from './composition-controls';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 import {colorStickerPacks,colorStickersInPack,type ColorStickerId,type ColorStickerPackId} from '../stickers/color/catalog';
@@ -67,11 +67,25 @@ export function colorPack(id:ColorStickerPackId,state:PackState,trialLabel?:stri
   return {id,label:pack.label,state,stickers:colorStickersInPack(id).map(s=>s.id as ColorStickerId),trialLabel};
 }
 const PRICE='2,200원';
+/** 접힌 줄 한 칸 폭(StickerChoice), 칸 사이, 「+n」 글자 폭 */
+const ROW_CELL=50,ROW_GAP=10,ROW_MORE=28;
+/**
+ * 접힌 줄에 보일 스티커 수(최대 5). 남으면 「+n」 자리까지 들어가야 한다.
+ * 폴드 커버(344dp)에서 5개 + 「+n」이 카드 밖으로 넘쳐 폭을 재서 줄인다 (2026-10-12). 재기 전(0)에는 5개.
+ */
+export function packRowCount(width:number,total:number):number {
+  const most=Math.min(5,total);
+  if(width<=0) return most;
+  for(let n=most;n>1;n--) if(n*ROW_CELL+(n-1)*ROW_GAP+(n<total?ROW_GAP+ROW_MORE:0)<=width) return n;
+  return 1;
+}
 
 /** 묶음 카드. 가진 묶음·체험 중은 펼치거나(5개씩 두 줄) 접고(5개 + +n), 잠긴 묶음은 흐린 5개 + +n 위에 가림막. */
-export function PackCard({pack,open,selected,rewardReady=false,onToggle,onSelect,onOpenPack}:{pack:PackView;open:boolean;selected?:StickerId;rewardReady?:boolean;onToggle:()=>void;onSelect:(id:StickerId)=>void;onOpenPack:()=>void}) {
+export function PackCard({pack,open,selected,rewardReady=false,selectable=true,onToggle,onSelect,onOpenPack}:{pack:PackView;open:boolean;selected?:StickerId;rewardReady?:boolean;/** false면 둘러보기만(스티커 탭): 스티커가 고르는 칸이 아니다 */selectable?:boolean;onToggle:()=>void;onSelect:(id:StickerId)=>void;onOpenPack:()=>void}) {
   const locked=pack.state==='locked';
-  const more=pack.stickers.length-5;
+  const {ref:row,size,onLayout}=useLayoutSize();
+  const fit=packRowCount(size.width,pack.stickers.length);
+  const more=pack.stickers.length-fit;
   const right=pack.state==='free'?<PixelText variant="caption" style={caption}>무료</PixelText>
     :pack.state==='owned'?<PixelBadge label="열었어요"/>
     :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
@@ -85,9 +99,9 @@ export function PackCard({pack,open,selected,rewardReady=false,onToggle,onSelect
   if(locked) return <Pressable accessibilityRole="button" accessibilityLabel={`${pack.label} 묶음 미리 보기`} onPress={onOpenPack}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
       {head}
-      <View>
+      <View ref={row} onLayout={onLayout}>
         <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-          {pack.stickers.slice(0,5).map(id=><View key={id} style={{opacity:retro.opacity.disabled}}><StickerGlyph id={id} size={48}/></View>)}
+          {pack.stickers.slice(0,fit).map(id=><View key={id} style={{opacity:retro.opacity.disabled}}><StickerGlyph id={id} size={48}/></View>)}
           {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
         </View>
         <View style={{position:'absolute',left:-4,right:-4,top:-4,bottom:-4,alignItems:'center',justifyContent:'center'}}>
@@ -99,12 +113,18 @@ export function PackCard({pack,open,selected,rewardReady=false,onToggle,onSelect
       </View>
     </PixelFrame>
   </Pressable>;
-  const shown=open?pack.stickers:pack.stickers.slice(0,5);
+  const shown=open?pack.stickers:pack.stickers.slice(0,fit);
+  const cell=(id:StickerId)=>selectable
+    ?<StickerChoice id={id} selected={id===selected} onPress={()=>onSelect(id)}/>
+    :<View accessibilityLabel={stickerLabel(id)} style={{width:ROW_CELL,height:52,alignItems:'center',justifyContent:'center'}}><StickerGlyph id={id} size={48}/></View>;
+  const group=selectable?'radiogroup' as const:undefined;
   return <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
     {head}
+    <View ref={row} onLayout={onLayout}>
     {open
-      ?<View accessibilityRole="radiogroup" style={{flexDirection:'row',flexWrap:'wrap',rowGap:14}}>{shown.map(id=><View key={id} style={{width:'20%',alignItems:'center'}}><StickerChoice id={id} selected={id===selected} onPress={()=>onSelect(id)}/></View>)}</View>
-      :<View accessibilityRole="radiogroup" style={{flexDirection:'row',alignItems:'center',gap:10}}>{shown.map(id=><StickerChoice key={id} id={id} selected={id===selected} onPress={()=>onSelect(id)}/>)}{more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}</View>}
+      ?<View accessibilityRole={group} style={{flexDirection:'row',flexWrap:'wrap',rowGap:14}}>{shown.map(id=><View key={id} style={{width:'20%',alignItems:'center'}}>{cell(id)}</View>)}</View>
+      :<View accessibilityRole={group} style={{flexDirection:'row',alignItems:'center',gap:ROW_GAP}}>{shown.map(id=><React.Fragment key={id}>{cell(id)}</React.Fragment>)}{more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}</View>}
+    </View>
   </PixelFrame>;
 }
 
@@ -163,7 +183,7 @@ export function PurchasePanel({adFree,onRemoveAds,onRestore}:{adFree:boolean;onR
     {adFree?<InfoRow label="광고 제거" value="없이 쓰는 중"/>
       :<View style={{gap:12,paddingVertical:12}}>
         <PixelText style={{fontSize:18,lineHeight:24}}>광고 제거</PixelText>
-        <PixelText>홈 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.</PixelText>
+        <PixelText>목표 화면 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.</PixelText>
         <PixelButton label="5,500원에 광고 없애기" onPress={onRemoveAds}/>
       </View>}
     <View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>

@@ -1,22 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { AccountStartScreen, FirstRunTutorial, GoalListScreen, LoadingScreen, accountDialogs, useLoadRetry } from '../src/design-system';
-import type { AccountStartChoice, GoalListTab } from '../src/design-system';
-import { listGoalSummaries, settleExpiredPeriods } from '../src/repositories/goalRepository';
-import type { GoalSummary } from '../src/repositories/goalRepository';
-import { getFlag, getSetting, setFlag, setSetting } from '../src/repositories/appSettingsRepository';
-import { useDialog } from '../src/app-data/useDialog';
-import { readAccountState } from '../src/sync/accountStatus';
-import { getSupabase } from '../src/sync/supabaseClient';
-import { orderGoals } from '../src/domain/board';
-import { goalCard } from '../src/app-data/pocketAdapter';
-import { localDateKey } from '../src/domain/dates';
-import { fetchPolicyManifest } from '../src/policy/manifest';
-import { openPolicy } from '../src/policy/openPolicy';
-import { monthDayLabel, upcomingChange } from '../src/policy/versions';
-import { subscribeWidgetApplied } from '../src/widgets/applied';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { AccountStartScreen, FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
+import type { AccountStartChoice, GoalListTab } from '../../src/design-system';
+import { listGoalSummaries, settleExpiredPeriods } from '../../src/repositories/goalRepository';
+import type { GoalSummary } from '../../src/repositories/goalRepository';
+import { getFlag, getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
+import { useDialog } from '../../src/app-data/useDialog';
+import { readAccountState } from '../../src/sync/accountStatus';
+import { getSupabase } from '../../src/sync/supabaseClient';
+import { orderGoals } from '../../src/domain/board';
+import { goalCard } from '../../src/app-data/pocketAdapter';
+import { localDateKey } from '../../src/domain/dates';
+import { fetchPolicyManifest } from '../../src/policy/manifest';
+import { openPolicy } from '../../src/policy/openPolicy';
+import { monthDayLabel, upcomingChange } from '../../src/policy/versions';
+import { subscribeWidgetApplied } from '../../src/widgets/applied';
+import { loadPackState } from '../../src/repositories/packRepository';
+import { reachedThreshold, showTrialReadyCard } from '../../src/domain/packs';
 
-/** 홈 = 목표 목록 (PRD 4.1). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
+/** 홈 = 목표 탭 (PRD 4.1, 2026-10-12 하단 탭). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
 export default function GoalList() {
   const router = useRouter();
   const { tab: initialTab } = useLocalSearchParams<{ tab?: string }>();
@@ -31,6 +33,9 @@ export default function GoalList() {
   const { failed, attempt, fail, retry } = useLoadRetry();
   /** 로그인 풀림 안내가 끝났는지. true면 연결 화면으로 떠났다. 약관 안내가 그 뒤에 이어 묻도록 기다린다. */
   const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
+  /** 체험 열림 카드에 보일 문턱(7, 14…). null이면 숨긴다 (2026-10-12). */
+  const [trial, setTrial] = useState<number | null>(null);
+  const navigation = useNavigation();
 
   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
   useFocusEffect(useCallback(() => {
@@ -101,6 +106,9 @@ export default function GoalList() {
       await settleExpiredPeriods(now);
       const next = await listGoalSummaries(now);
       if (alive) setSummaries(next);
+      const pack = await loadPackState();
+      const dismissed = Number(await getSetting('trialCardDismissed') ?? 0);
+      if (alive) setTrial(showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
     })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
   // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
@@ -111,6 +119,12 @@ export default function GoalList() {
   useEffect(() => subscribeWidgetApplied(() => {
     void listGoalSummaries(new Date()).then(setSummaries);
   }), []);
+
+  // 시작 화면·튜토리얼·불러오는 동안은 하단 탭을 숨긴다. 첫 실행은 탭보다 먼저 끝내야 한다.
+  const hideTabBar = !summaries || showTutorial !== false || showStart !== false;
+  useEffect(() => {
+    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined });
+  }, [navigation, hideTabBar]);
 
   if (!summaries || showTutorial === undefined || showStart === undefined) {
     return <LoadingScreen failed={failed} kind="goals" onRetry={retry} />;
@@ -142,8 +156,14 @@ export default function GoalList() {
   const { active, completed } = orderGoals(summaries.map((s) => s.goal));
   const cards = (goals: typeof active) => goals.map((g) => goalCard(byId.get(g.id)!, now));
 
+  const closeTrial = () => {
+    if (trial === null) return;
+    setTrial(null);
+    void setSetting('trialCardDismissed', String(trial));
+  };
+
   return (
-    <>
+    <TabSafeArea>
       <GoalListScreen
         tab={tab}
         onTab={setTab}
@@ -151,9 +171,11 @@ export default function GoalList() {
         completed={cards(completed)}
         onOpen={(id) => router.push({ pathname: '/goal/[id]', params: { id } })}
         onAdd={() => router.push('/goal/new')}
-        onSettings={() => router.push('/settings')}
+        notice={tab === 'active' && trial !== null
+          ? <TrialReadyCard days={trial} onChoose={() => router.navigate('/stickers')} onClose={closeTrial} />
+          : undefined}
       />
       {dialog}
-    </>
+    </TabSafeArea>
   );
 }

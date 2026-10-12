@@ -254,7 +254,7 @@ export function SelectionBadge() {
 
 // ── 홈 목록·판 상세 (2026-09-29 시안) ─────────────────────────────────
 const caption={color:retro.color.buttonText};
-/** 앱 최상단: 차곡이 + 차곡차곡 + 앱 설정 톱니바퀴. */
+/** 앱 최상단: 차곡이 + 차곡차곡. onSettings를 주면 톱니바퀴도(2026-10-12부터 앱은 하단 「설정」 탭을 쓴다). */
 export function AppHeader({onSettings}:{onSettings?:()=>void}) {
   return <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}>
     <Mascot size={44}/><PixelText variant="brand">차곡차곡</PixelText>

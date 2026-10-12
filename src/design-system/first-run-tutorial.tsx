@@ -59,7 +59,7 @@ const filledWith=(n:number,sticker:StickerId)=>Object.fromEntries(range(n).map(k
 /** 1단계: 목록의 `+` */
 export function TutorialListExample() {
   const add=useTutorialSpot('add');
-  return <GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} onSettings={noop} addTargetRef={add} completed={[]} active={[
+  return <GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} addTargetRef={add} completed={[]} active={[
     {id:'reading',name:'책 읽기',sticker:'basic.sprout',kind:'적립판',percent:40,status:['40% 채웠어요']},
     {id:'walk',name:'매일 저녁 동네 한 바퀴 걷기',sticker:'basic.shoe',kind:'달력판',percent:30,status:['이번 달 30% 채웠어요']},
   ]}/>;

@@ -47,7 +47,7 @@ function SplashOverlay({ onShown, onDone }: { onShown: () => void; onDone: () =>
  * 어느 화면으로 시작하든(링크로 켜짐, 개발 중 다시 불러오기) 홈을 맨 아래에 둔다. 없으면 새 목표 같은 시트 화면이
  * 첫 화면이 되어 전체 화면으로 뜨고, 시트용으로 0으로 둔 위쪽 여백 때문에 헤더가 시계와 겹쳤다 (2026-10-10 실기기).
  */
-export const unstable_settings = { anchor: 'index' };
+export const unstable_settings = { anchor: '(tabs)' };
 
 /**
  * 화면을 그리다 예외가 나면 빈 화면 대신 같은 안내를 보인다 (PRD 7절). [다시 시도]는 그 화면을 다시 그린다.
@@ -140,7 +140,7 @@ export default function RootLayout() {
               ? <SheetSafeArea>{children}</SheetSafeArea>
               : <>{children}</>}
         >
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
           <Stack.Screen name="goal/new" options={{ presentation: 'modal' }} />
           <Stack.Screen name="goal/[id]/index" />
           <Stack.Screen name="goal/[id]/settings" />
@@ -148,7 +148,6 @@ export default function RootLayout() {
           <Stack.Screen name="sticker/[id]" />
           <Stack.Screen name="stickers/choose" options={{ presentation: 'modal' }} />
           <Stack.Screen name="stickers/pack/[packId]" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="settings" />
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />

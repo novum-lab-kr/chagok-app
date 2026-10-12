@@ -51,6 +51,21 @@ export function dayTrialsAvailable(days: number, claimed: number): number {
   return Math.max(0, reached - claimed);
 }
 
+/** 붙인 날 수로 넘긴 가장 높은 문턱. 7일 전이면 0. */
+export function reachedThreshold(days: number): number {
+  let reached = 0;
+  for (let i = 0; days >= dayTrialThreshold(i); i++) reached = dayTrialThreshold(i);
+  return reached;
+}
+
+/**
+ * 목표 탭 맨 위 「체험 열림 카드」(2026-10-12). 받을 체험이 있을 때 보이고,
+ * ×로 닫으면(dismissedAt = 닫을 때 넘긴 문턱) 다음 문턱을 넘길 때까지 다시 보이지 않는다.
+ */
+export function showTrialReadyCard(days: number, claimed: number, dismissedAt: number): boolean {
+  return dayTrialsAvailable(days, claimed) > 0 && reachedThreshold(days) > dismissedAt;
+}
+
 /** 붙인 날 3일 체험을 시작할 수 있는가. 끝난 체험 묶음은 다시 고를 수 있다 (2026-10-08 계획 B). */
 export function canStartDayTrial(packId: ColorStickerPackId, access: readonly PackAccess[], days: number, claimed: number, now: number): boolean {
   return dayTrialsAvailable(days, claimed) > 0 && packStatus(packId, access, now).state === 'locked';

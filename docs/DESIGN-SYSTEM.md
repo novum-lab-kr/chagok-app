@@ -100,7 +100,10 @@ npm run storybook
 | PixelBadge | 짧은 글자 배지. `tone`: `ink`(판 종류), `primary`(완성). `badge` 글씨 |
 | PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |
 | CompletionSticker | 판의 기본 스티커 + `primary` 「완성」 배지. `tilted`는 붙인 듯 비스듬히 |
-| AppHeader / GoalListHeader | 앱 최상단(꽃·차곡차곡·앱 설정) / 목록 탭 `내 목표 n · 완성한 판 n` + 오른쪽 끝 `+` |
+| AppHeader / GoalListHeader | 앱 최상단(차곡이·차곡차곡. 앱은 톱니바퀴 없이 쓴다) / 목록 탭 `내 목표 n · 완성한 판 n` + 오른쪽 끝 `+` |
+| FloatingTabBar / TabIcon / TabTitle | 하단 탭(2026-10-12): 화면 가장자리에서 16pt 떨어진 `dialog` 판 모양 바, 탭마다 아이콘 24 + 이름 13. 고른 탭은 아이콘만 `primary`(살구), 나머지는 0.45 투명도 — 위 PixelTabs의 잉크 채움과 겹쳐 보이지 않게 채우지 않는다. 누르는 높이 52. 탭 화면 제목은 `TabTitle`(brand 글씨). 탭 안 화면은 `TabSafeArea`로 아래 안전 영역을 탭 바에 맡긴다 |
+| RecordTimelineScreen / StickerCollectionScreen | 기록 탭(날짜 머리글 + 기록 줄: 스티커 40 · 목표 이름 · 메모 2줄 · 사진 64) / 스티커 탭(기본 스티커 화면에서 고르기 줄을 뺀 둘러보기, `PackCard selectable={false}`) |
+| TrialReadyCard / CompletionNudge | 목표 탭 맨 위 체험 열림 카드 / 판 완성 뒤 판 아래에 뜨는 「다음 판은 새 스티커로」. 둘 다 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 모서리 ×(44pt, 글자 폭을 빼앗지 않게 겹쳐 둔다) |
 | GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대 |
 | BoardProgressRow | 판 상세 `n / nn [여백] m% 달성중`, 완성하면 완성 스티커 |
 | EmptyState | 목록이 비었을 때의 안내 상자 |
@@ -205,5 +208,5 @@ npm run check:storybook
 
 **화면 조합 (2026-09-30).** 목록·판 상세·목표 설정·완성한 판 설정·새 목표·칸/종료일 늘리기는 `board-screens.tsx`, 5단계 첫 실행 튜토리얼은 `first-run-tutorial.tsx`에 있고 Storybook과 앱이 같은 소스를 쓴다. 옛 `HomeScreen`·`GoalEditorScreen`·3단계 `TutorialScreen`·`GoalChip`·`GoalStickerLink`/`DefaultStickerLink`는 지웠다. 모션은 `StickMotion`(붙이기, 모션 감소 설정이면 생략). `SettingRow`는 앱 설정 구현 때 쓸 컴포넌트로 남겼고 스토리는 지웠다.
 
-**스티커 묶음·구매 (2026-10-08, PRD 4.12).** `sticker-shop.tsx`에 `PackViewSwitch`·`FoldToggle`·`StickerChoice`·`RewardProgress`·`PickedStickerBar`·`PackCard`·`StickerChooserScreen`(「기본 스티커」)·`PackScreen`(묶음 화면)·`PurchasePanel`(앱 설정 「구매」)·`stickerShopDialogs`·`colorPack`이 있다. 스토리는 `Screens/Sticker Shop`. `composition-controls.tsx`의 `InfoRow`는 누를 수 없는 「항목 · 값」 줄이다. 디자인 시스템은 스티커로 `StickerId`(흑백 + 컬러 `묶음.이름`)를 받고, `StickerGlyph`는 컬러를 24의 배수 크기로 그린다(판 칸·목록 카드 48).
+**스티커 묶음·구매 (2026-10-08, PRD 4.12).** `sticker-shop.tsx`에 `PackViewSwitch`·`FoldToggle`·`StickerChoice`·`RewardProgress`·`PickedStickerBar`·`PackCard`·`StickerChooserScreen`(「기본 스티커」)·`PackScreen`(묶음 화면)·`PurchasePanel`(앱 설정 「구매」)·`stickerShopDialogs`·`colorPack`이 있다. 스토리는 `Screens/Sticker Shop`. `composition-controls.tsx`의 `InfoRow`는 누를 수 없는 「항목 · 값」 줄이다. 디자인 시스템은 스티커로 `StickerId`(흑백 + 컬러 `묶음.이름`)를 받고, `StickerGlyph`는 컬러를 24의 배수 크기로 그린다(판 칸·목록 카드 48). 묶음 카드의 접힌 줄은 재어 본 폭에 들어가는 만큼만 보이고(`packRowCount`, 최대 5) 나머지는 「+n」이다 — 폴드 커버(344dp)에서 5개 + 「+n」이 카드 밖으로 넘쳤다(2026-10-12).
 
