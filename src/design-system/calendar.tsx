@@ -2,6 +2,7 @@ import React,{useState} from 'react';
 import {View,Pressable,useWindowDimensions} from 'react-native';
 import {PixelFocusRing,PixelIcon,PixelText,StickMotion,useContentWidth,removeStickerAction} from './components';
 import {retro} from './tokens';
+import {touchSlop} from './touch';
 import {ActionSymbol,StickerGlyph,type StickerId} from './sticker-glyphs';
 
 export function monthCells(year:number,month:number):(number|null)[] {
@@ -16,9 +17,9 @@ export function MonthNavigation({year,month,onChange,canGoPrev=true,canGoNext=tr
   const {width}=useWindowDimensions();
   const move=(amount:number)=>{const date=new Date(year,month-1+amount,1);onChange(date.getFullYear(),date.getMonth()+1)};
   return <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-    {canGoPrev?<Pressable accessibilityRole="button" accessibilityLabel="이전 달" onPress={()=>move(-1)} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="back" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
+    {canGoPrev?<Pressable accessibilityRole="button" accessibilityLabel="이전 달" onPress={()=>move(-1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="back" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
     <PixelText variant="title" numberOfLines={1} style={{flex:1,textAlign:'center',fontSize:width<=320?18:22,lineHeight:width<=320?24:30}}>{year}년 {month}월</PixelText>
-    {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel="다음 달" onPress={()=>move(1)} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
+    {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel="다음 달" onPress={()=>move(1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
   </View>;
 }
 export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void}) {

@@ -2,6 +2,7 @@ import React,{useContext} from 'react';
 import {Pressable,View} from 'react-native';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
+import {touchSlop} from './touch';
 import {PixelBadge,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelPanel,PixelText,ProgressBar,StickerGrid,StickerSlot,useLayoutSize} from './components';
 import {InfoRow,RetroScreen,ScreenHeader,SelectionBadge} from './composition-controls';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
@@ -27,7 +28,7 @@ export function PackViewSwitch({mine,onChange}:{mine:boolean;onChange:(mine:bool
 }
 /** 묶음 카드 머리글 끝의 꺾쇠. 펼침은 위, 접힘은 아래를 가리킨다. */
 export function FoldToggle({open,onPress}:{open:boolean;onPress:()=>void}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={open?'접기':'펼치기'} onPress={onPress} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={open?'접기':'펼치기'} onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
     <View style={{transform:[{rotate:open?'-90deg':'90deg'}]}}><PixelIcon name="chevron" size={16}/></View>
   </Pressable>;
 }
