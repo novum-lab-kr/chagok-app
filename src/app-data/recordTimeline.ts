@@ -1,11 +1,11 @@
-import { localDateKey } from '../domain/dates';
+import { parseDateKey } from '../domain/dates';
 import type { TimelineEntry } from '../repositories/recordRepository';
 
 const WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
 
-/** 기록 모아보기의 날짜 머리글: 「10월 12일 월요일」. 붙인 시각의 로컬 날짜다. */
-export function dayLabel(at: number): string {
-  const d = new Date(at);
+/** 기록 모아보기의 날짜 머리글: 「10월 12일 월요일」. 붙인 날짜(dateKey)다. */
+export function dayLabel(key: string): string {
+  const d = parseDateKey(key);
   return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}`;
 }
 
@@ -16,10 +16,10 @@ export function groupTimeline(entries: readonly TimelineEntry[], goalId: string 
   const days: TimelineDay[] = [];
   for (const entry of entries) {
     if (goalId && entry.goalId !== goalId) continue;
-    const key = localDateKey(entry.placedAt);
+    const key = entry.dateKey;
     const last = days[days.length - 1];
     if (last?.key === key) last.entries.push(entry);
-    else days.push({ key, label: dayLabel(entry.placedAt), entries: [entry] });
+    else days.push({ key, label: dayLabel(key), entries: [entry] });
   }
   return days;
 }

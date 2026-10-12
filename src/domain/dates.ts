@@ -15,6 +15,11 @@ export function localDateKey(epochMs: number): DateKey {
   return dateKeyOf(d.getFullYear(), d.getMonth() + 1, d.getDate());
 }
 
+/** 그 순간 기기 시간대가 UTC보다 몇 분 빠른가. 한국 540. */
+export function tzOffsetMinutes(epochMs: number): number {
+  return -new Date(epochMs).getTimezoneOffset();
+}
+
 /** 로컬 0시의 Date. */
 export function parseDateKey(key: DateKey): Date {
   const [y, m, d] = key.split('-').map(Number);

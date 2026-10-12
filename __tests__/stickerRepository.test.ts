@@ -41,6 +41,25 @@ describe('stickerRepository', () => {
     expect(await listStickers(b.id)).toHaveLength(0);
   });
 
+  it('붙일 때 그 순간의 기기 날짜와 시간대를 함께 저장한다 (PRD 4.5)', async () => {
+    const g = await goal();
+    const at = new Date(2026, 9, 12, 23, 30).getTime();
+    const s = await placeSticker(g.id, 0, 'star', { placedAt: at });
+    expect(s.dateKey).toBe('2026-10-12');
+    expect(s.tzOffsetMin).toBe(-new Date(at).getTimezoneOffset());
+    expect(await getSticker(s.id)).toEqual(s);
+  });
+
+  it('달력판은 저장된 날짜로 같은 날을 막는다 — 붙인 시각이 아니라', async () => {
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    const db = await getDb();
+    // 다른 시간대에서 붙인 스티커: 시각은 이 기기로 10월 11일이지만 붙인 날짜는 10월 12일이다.
+    await db.run(`INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min)
+      VALUES ('far', ?, ?, 11, 'star', 1, '2026-10-12', -420)`, g.id, new Date(2026, 9, 11, 12).getTime());
+    await expect(placeSticker(g.id, 11, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() })).rejects.toThrow('이미 붙인 칸');
+    await expect(placeSticker(g.id, 10, 'star', { placedAt: new Date(2026, 9, 11, 9).getTime() })).resolves.toMatchObject({ dateKey: '2026-10-11' });
+  });
+
   it('스티커를 뗀다', async () => {
     const g = await goal();
     const s = await placeSticker(g.id, 0);
@@ -170,12 +189,13 @@ describe('붙이기·떼기와 목표 상태 (DEV-DESIGN 3절)', () => {
     expect(await removeSticker(t.id)).toBeNull();
   });
 
-  it('기간으로 읽으면 그 사이에 붙인 스티커만 준다', async () => {
-    const { listStickersInRange } = await import('../src/repositories/stickerRepository');
-    const g = await goal();
-    const s = await placeSticker(g.id, 0);
-    expect(await listStickersInRange(g.id, s.placedAt, s.placedAt + 1)).toHaveLength(1);
-    expect(await listStickersInRange(g.id, s.placedAt + 1, s.placedAt + 100)).toHaveLength(0);
+  it('달로 읽으면 붙인 날짜가 그 달인 스티커만 준다', async () => {
+    const { listStickersInMonth } = await import('../src/repositories/stickerRepository');
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    await placeSticker(g.id, 30, 'star', { placedAt: new Date(2026, 9, 31, 23, 59).getTime() });
+    await placeSticker(g.id, 0, 'star', { placedAt: new Date(2026, 10, 1, 0, 1).getTime() });
+    expect((await listStickersInMonth(g.id, 2026, 10)).map((s) => s.dateKey)).toEqual(['2026-10-31']);
+    expect((await listStickersInMonth(g.id, 2026, 11)).map((s) => s.dateKey)).toEqual(['2026-11-01']);
   });
 });
 

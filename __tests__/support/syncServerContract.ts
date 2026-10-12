@@ -6,6 +6,7 @@ export const goal = (id: string, updatedAt = 1, name = `목표 ${id}`): GoalRow 
 });
 export const sticker = (id: string, goalId: string, updatedAt = 1): StickerRow => ({
   id, goal_id: goalId, placed_at: 1, slot_index: 0, sticker_type: 'sprout', updated_at: updatedAt,
+  date_key: '2026-10-12', tz_offset_min: 540,
 });
 export const record = (id: string, stickerId: string, updatedAt = 1): RecordRow => ({
   id, sticker_id: stickerId, memo: '메모', photo_remote_path: null, created_at: 1, updated_at: updatedAt,

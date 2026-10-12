@@ -229,13 +229,13 @@ export type GoalSummary = {
 
 /**
  * 목록 카드용. 스티커를 전부 읽지 않고 목표·달별 개수만 읽는다 (PRD 6.3).
- * 달은 기기 로컬 시간 기준이다.
+ * 달은 스티커에 저장된 붙인 날짜(date_key) 기준이다.
  */
 export async function listGoalSummaries(now: Date): Promise<GoalSummary[]> {
   const db = await getDb();
   const goals = (await db.all<GoalRow>('SELECT * FROM goals')).map(toGoal);
   const counts = await db.all<{ goal_id: string; ym: string; n: number }>(
-    `SELECT goal_id, strftime('%Y-%m', placed_at / 1000, 'unixepoch', 'localtime') AS ym, COUNT(*) AS n
+    `SELECT goal_id, substr(date_key, 1, 7) AS ym, COUNT(*) AS n
        FROM stickers GROUP BY goal_id, ym`,
   );
   return goals.map((goal) => {

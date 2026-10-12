@@ -79,6 +79,8 @@ export type TimelineEntry = {
   goalName: string;
   sticker: string;
   placedAt: number;
+  /** 붙인 날짜 'YYYY-MM-DD' (PRD 4.5) */
+  dateKey: string;
   memo: string | null;
   photoUri: string | null;
 };
@@ -89,8 +91,8 @@ export type TimelineEntry = {
  */
 export async function listRecordTimeline(): Promise<TimelineEntry[]> {
   const db = await getDb();
-  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; sticker_type: string; placed_at: number; memo: string | null; photo_uri: string | null }>(
-    `SELECT r.sticker_id, s.goal_id, g.name, s.sticker_type, s.placed_at, r.memo, r.photo_uri
+  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; sticker_type: string; placed_at: number; date_key: string; memo: string | null; photo_uri: string | null }>(
+    `SELECT r.sticker_id, s.goal_id, g.name, s.sticker_type, s.placed_at, s.date_key, r.memo, r.photo_uri
      FROM records r
      JOIN stickers s ON s.id = r.sticker_id
      JOIN goals g ON g.id = s.goal_id
@@ -103,6 +105,7 @@ export async function listRecordTimeline(): Promise<TimelineEntry[]> {
     goalName: r.name,
     sticker: r.sticker_type,
     placedAt: r.placed_at,
+    dateKey: r.date_key,
     memo: r.memo,
     photoUri: r.photo_uri,
   }));

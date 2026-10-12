@@ -240,13 +240,14 @@ secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는�
 **명령**
 
 ```sh
-supabase db push                                   # supabase/migrations의 새 파일을 서버에 올린다
+supabase db query --linked "select 1"              # 연결 확인
+supabase db reset --linked                         # 개발 서버를 비우고 supabase/migrations를 처음부터 다시 적용한다
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
 ```
 
-이미 올린 마이그레이션 파일은 고치지 않는다. 고칠 것이 있으면 새 파일을 더한다.
+**출시 전(2026-10-12~):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **출시 뒤에는** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`).
 
 **앱에서 확인** — `.env.local`을 바꿨으면 `npx expo start`를 다시 시작한다. 앱 설정 → 개발 → 서버 동기화 (개발)에서
 개발 계정으로 로그인하고 올리기·복원을 한다. 로그인해 있으면 기록이 바뀐 뒤 2초쯤 지나 자동으로 올라간다.

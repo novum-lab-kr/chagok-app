@@ -2,7 +2,7 @@
 -- PK는 (user_id, id): 기기가 만든 id가 다른 사용자와 겹쳐도 서로 건드리지 않는다.
 -- seq는 pull_changes 커서다. 행이 바뀔 때마다 새 번호를 받는다.
 
-create sequence public.change_seq;
+create sequence if not exists public.change_seq; -- db reset --linked가 시퀀스는 남긴다(2026-10-12)
 
 create table public.goals (
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -32,6 +32,9 @@ create table public.stickers (
   slot_index integer not null,
   sticker_type text not null,
   updated_at bigint not null,
+  -- 붙인 날짜와 그때 기기 시간대(분, 한국 540). 달력 칸은 이 날짜로 정한다 (PRD 4.5)
+  date_key date not null,
+  tz_offset_min smallint not null,
   deleted_at bigint,
   device_id text,
   seq bigint not null default nextval('public.change_seq'),

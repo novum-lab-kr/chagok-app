@@ -2,6 +2,7 @@ import { createGoal } from '../src/repositories/goalRepository';
 import { placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord, getRecord, listRecordedStickerIds, deleteRecord, listRecordTimeline } from '../src/repositories/recordRepository';
 import { withFreshDb } from './support/setup';
+import { localDateKey } from '../src/domain/dates';
 
 withFreshDb();
 
@@ -102,8 +103,8 @@ describe('기록 모아보기 (하단 탭 「기록」, 2026-10-12)', () => {
     const list = await listRecordTimeline();
 
     expect(list).toEqual([
-      { stickerId: recent.id, goalId: read.id, goalName: '책 읽기', sticker: 'basic.sprout', placedAt: 4_000, memo: null, photoUri: 'file:///p.jpg' },
-      { stickerId: old.id, goalId: walk.id, goalName: '걷기', sticker: 'basic.shoe', placedAt: 1_000, memo: '첫날', photoUri: null },
+      { stickerId: recent.id, goalId: read.id, goalName: '책 읽기', sticker: 'basic.sprout', placedAt: 4_000, dateKey: localDateKey(4_000), memo: null, photoUri: 'file:///p.jpg' },
+      { stickerId: old.id, goalId: walk.id, goalName: '걷기', sticker: 'basic.shoe', placedAt: 1_000, dateKey: localDateKey(1_000), memo: '첫날', photoUri: null },
     ]);
   });
 

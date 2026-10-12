@@ -1,14 +1,15 @@
 import { dayLabel, groupTimeline, timelineGoals } from '../src/app-data/recordTimeline';
 import type { TimelineEntry } from '../src/repositories/recordRepository';
+import { localDateKey } from '../src/domain/dates';
 
 const at = (y: number, m: number, d: number, h = 9) => new Date(y, m - 1, d, h).getTime();
 const entry = (id: string, goalId: string, goalName: string, placedAt: number): TimelineEntry =>
-  ({ stickerId: id, goalId, goalName, sticker: 'basic.sprout', placedAt, memo: id, photoUri: null });
+  ({ stickerId: id, goalId, goalName, sticker: 'basic.sprout', placedAt, dateKey: localDateKey(placedAt), memo: id, photoUri: null });
 
 describe('기록 모아보기 (2026-10-12)', () => {
   it('날짜는 「10월 12일 월요일」', () => {
-    expect(dayLabel(at(2026, 10, 12))).toBe('10월 12일 월요일');
-    expect(dayLabel(at(2026, 10, 11))).toBe('10월 11일 일요일');
+    expect(dayLabel('2026-10-12')).toBe('10월 12일 월요일');
+    expect(dayLabel('2026-10-11')).toBe('10월 11일 일요일');
   });
 
   it('붙인 날(로컬)별로 묶고 순서를 지킨다', () => {
@@ -17,6 +18,11 @@ describe('기록 모아보기 (2026-10-12)', () => {
       { key: '2026-10-12', label: '10월 12일 월요일', entries: [list[0], list[1]] },
       { key: '2026-10-09', label: '10월 9일 금요일', entries: [list[2]] },
     ]);
+  });
+
+  it('붙인 시각이 아니라 저장된 붙인 날짜로 묶는다 — 다른 시간대에서 붙인 기록 (PRD 4.5)', () => {
+    const far = { ...entry('a', 'read', '책 읽기', at(2026, 10, 11, 12)), dateKey: '2026-10-12' };
+    expect(groupTimeline([far], null)).toEqual([{ key: '2026-10-12', label: '10월 12일 월요일', entries: [far] }]);
   });
 
   it('목표를 고르면 그 목표만, 빈 날은 뺀다', () => {

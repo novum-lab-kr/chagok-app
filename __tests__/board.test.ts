@@ -22,7 +22,7 @@ const tally = (over: Partial<Goal> = {}): Goal => ({ ...base, ...over });
 const calendar = (over: Partial<Goal> = {}): Goal =>
   ({ ...base, boardType: 'calendar', totalSlots: null, initialSlots: null, ...over });
 const stk = (slotIndex: number, placedAt = at(2026, 9, 20)): Sticker =>
-  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout' });
+  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
 const onDay = (d: number, m = 9) => stk(d - 1, at(2026, m, d));
 
 describe('dates', () => {

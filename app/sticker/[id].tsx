@@ -15,7 +15,7 @@ import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { goBackOrHome, goHome } from '../../src/app-data/goBack';
 import { MEMO_MAX, memoError, needsRemoveConfirm } from '../../src/domain/board';
-import { localDateKey, parseDateKey } from '../../src/domain/dates';
+import { parseDateKey } from '../../src/domain/dates';
 import type { Goal, Sticker } from '../../src/domain/types';
 
 /**
@@ -59,7 +59,7 @@ export default function StickerRecord() {
       setSticker(s);
       setStickerType(normalizeStickerId(s.stickerType));
       // 화면 표기는 시안과 같은 'YYYY년 M월 D일'. 저장 키(YYYY-MM-DD)를 그대로 보여주지 않는다.
-      const d = parseDateKey(localDateKey(s.placedAt));
+      const d = parseDateKey(s.dateKey);
       setDate(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`);
       setMemo(record?.memo ?? '');
       setDraftMemo(record?.memo ?? '');

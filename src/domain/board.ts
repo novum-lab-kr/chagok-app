@@ -84,7 +84,8 @@ export function monthNav(goal: Goal, year: number, month: number): { canGoPrev: 
   };
 }
 
-export const stickerDate = (s: Sticker): DateKey => localDateKey(s.placedAt);
+/** 붙인 날짜. 저장된 값이라 다른 시간대에서 열어도 같다 (PRD 4.5). */
+export const stickerDate = (s: Sticker): DateKey => s.dateKey;
 
 /**
  * 붙일 수 있는가. 적립판은 빈칸 어디든, 달력판은 시작일부터 오늘까지의 빈 날 (2026-10-08 — 지난 날짜도, 미래는 안 됨).

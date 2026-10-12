@@ -7,7 +7,7 @@ import type { Change, GoalRow, PhotoStore, RecordRow, RowEntity, StickerRow, Syn
 const TABLE: Record<RowEntity, string> = { goal: 'goals', sticker: 'stickers', record: 'records' };
 const COLUMNS: Record<RowEntity, string> = {
   goal: 'id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at, completion_seen, last_placed_at, initial_slots, updated_at',
-  sticker: 'id, goal_id, placed_at, slot_index, sticker_type, updated_at',
+  sticker: 'id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min',
   // 기기 경로 photo_uri는 보내지 않는다
   record: 'id, sticker_id, memo, photo_remote_path, created_at, updated_at',
 };

@@ -1,7 +1,7 @@
 import { normalizeStickerId } from '../stickers/stickerIds';
 import type { GoalCardItem, PocketGoal, StickerId } from '../design-system';
 import type { Goal, Sticker } from '../domain/types';
-import { localDateKey, parseDateKey } from '../domain/dates';
+import { parseDateKey } from '../domain/dates';
 import type { DateKey } from '../domain/dates';
 import { isCompleted, progressBasis, progressOf, startDate } from '../domain/board';
 import type { GoalSummary } from '../repositories/goalRepository';
@@ -27,7 +27,7 @@ export function toPocketGoal(goal: Goal, stickers: readonly Sticker[]): PocketGo
   const calendarRecords: Record<string, StickerId> = {};
   if (goal.boardType === 'calendar') {
     for (const s of mine) {
-      calendarRecords[localDateKey(s.placedAt)] = normalizeStickerId(s.stickerType);
+      calendarRecords[s.dateKey] = normalizeStickerId(s.stickerType);
     }
   }
 

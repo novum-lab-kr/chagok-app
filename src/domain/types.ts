@@ -34,6 +34,10 @@ export type Sticker = {
   placedAt: number;
   slotIndex: number;
   stickerType: string;
+  /** 붙인 날짜 'YYYY-MM-DD'. 붙일 때 그 기기 시간대로 정해 저장한다 — 다른 시간대에서 열어도 칸이 그대로다 (PRD 4.5) */
+  dateKey: string;
+  /** 붙일 때 기기 시간대. UTC보다 몇 분 빠른가(한국 540). 붙인 곳의 시각을 보여 줄 때 쓴다 */
+  tzOffsetMin: number;
 };
 
 export type RecordNote = {
