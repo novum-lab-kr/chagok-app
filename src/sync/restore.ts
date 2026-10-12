@@ -59,8 +59,8 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
     }
     for (const s of snap.stickers) {
       await tx.run(
-        'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-        s.id, s.goal_id, s.placed_at, s.slot_index, s.sticker_type, s.updated_at,
+        'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        s.id, s.goal_id, s.placed_at, s.slot_index, s.sticker_type, s.updated_at, s.date_key, s.tz_offset_min,
       );
     }
     for (const r of snap.records) {
@@ -69,9 +69,8 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
         r.id, r.sticker_id, r.memo, r.created_at, r.updated_at, r.photo_remote_path,
       );
     }
-    // 누른 날은 서버에 없다 — 받은 스티커의 날짜로 채운다(스키마 v6과 같은 방식). 이 기기 기록은 남긴다.
-    await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key)
-      SELECT DISTINCT date(placed_at / 1000, 'unixepoch', 'localtime') FROM stickers;`);
+    // 누른 날은 서버에 없다 — 받은 스티커의 붙인 날짜로 채운다. 이 기기 기록은 남긴다.
+    await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key) SELECT DISTINCT date_key FROM stickers;`);
   });
   await setSetting('syncCursor', String(snap.cursor));
   await setSetting('lastSyncedAt', String(Date.now()));
@@ -142,7 +141,7 @@ export async function replaceServerWithDevice(server: SyncServer, deviceId: stri
     `SELECT id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at, completion_seen,
             last_placed_at, initial_slots, updated_at FROM goals`,
   );
-  const stickers = await db.all<StickerRow>('SELECT id, goal_id, placed_at, slot_index, sticker_type, updated_at FROM stickers');
+  const stickers = await db.all<StickerRow>('SELECT id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min FROM stickers');
   const records = await db.all<RecordRow>(
     'SELECT id, sticker_id, memo, NULL AS photo_remote_path, created_at, updated_at FROM records',
   );

@@ -27,12 +27,15 @@ begin
       updated_at = excluded.updated_at, deleted_at = null, device_id = excluded.device_id
     where force or t.updated_at <= excluded.updated_at;
   elsif entity = 'sticker' then
-    insert into public.stickers as t (user_id, id, goal_id, placed_at, slot_index, sticker_type, updated_at, deleted_at, device_id)
+    -- date_key가 날짜 형식이 아니면 22007로 거절된다(앱은 22xxx를 "보류"로 본다).
+    insert into public.stickers as t (user_id, id, goal_id, placed_at, slot_index, sticker_type, updated_at, deleted_at, device_id,
+      date_key, tz_offset_min)
     values (uid, r->>'id', r->>'goal_id', (r->>'placed_at')::bigint, (r->>'slot_index')::int, r->>'sticker_type',
-      (r->>'updated_at')::bigint, null, device)
+      (r->>'updated_at')::bigint, null, device, (r->>'date_key')::date, (r->>'tz_offset_min')::smallint)
     on conflict (user_id, id) do update set
       goal_id = excluded.goal_id, placed_at = excluded.placed_at, slot_index = excluded.slot_index,
-      sticker_type = excluded.sticker_type, updated_at = excluded.updated_at, deleted_at = null, device_id = excluded.device_id
+      sticker_type = excluded.sticker_type, updated_at = excluded.updated_at, deleted_at = null, device_id = excluded.device_id,
+      date_key = excluded.date_key, tz_offset_min = excluded.tz_offset_min
     where force or t.updated_at <= excluded.updated_at;
   elsif entity = 'record' then
     insert into public.records as t (user_id, id, sticker_id, memo, photo_remote_path, created_at, updated_at, deleted_at, device_id)
@@ -106,7 +109,8 @@ begin
     union all
     select 'sticker', seq, deleted_at, jsonb_build_object(
         'id', id, 'goal_id', goal_id, 'placed_at', placed_at, 'slot_index', slot_index,
-        'sticker_type', sticker_type, 'updated_at', updated_at)
+        'sticker_type', sticker_type, 'updated_at', updated_at,
+        'date_key', to_char(date_key, 'YYYY-MM-DD'), 'tz_offset_min', tz_offset_min)
       from public.stickers where user_id = uid and seq > p_since
     union all
     select 'record', seq, deleted_at, jsonb_build_object(

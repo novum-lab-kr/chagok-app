@@ -1,5 +1,6 @@
 import { toPocketGoal, goalCard, percentLabel, kindLabel, longDate, boardLabel, periodLabel, deleteDescription } from '../src/app-data/pocketAdapter';
 import type { Goal, Sticker } from '../src/domain/types';
+import { localDateKey } from '../src/domain/dates';
 
 const tally: Goal = {
   id: 'g1', name: '러닝', boardType: 'tally', totalSlots: 20,
@@ -11,9 +12,10 @@ const cal: Goal = {
   defaultStickerId: 'book', createdAt: 0,
   endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: null,
 };
-const stk = (over: Partial<Sticker>): Sticker => ({
-  id: 's', goalId: 'g1', placedAt: 0, slotIndex: 0, stickerType: 'sprout', ...over,
-});
+const stk = (over: Partial<Sticker>): Sticker => {
+  const placedAt = over.placedAt ?? 0;
+  return { id: 's', goalId: 'g1', placedAt, slotIndex: 0, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, ...over };
+};
 
 describe('toPocketGoal - 적립판', () => {
   it('slotIndex 0은 칸 번호 1이 된다', () => {

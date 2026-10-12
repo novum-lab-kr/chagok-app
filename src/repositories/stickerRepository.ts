@@ -2,7 +2,7 @@ import { getDb } from '../db/client';
 import { newId } from './ids';
 import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { Sticker } from '../domain/types';
-import { localDateKey } from '../domain/dates';
+import { localDateKey, monthKeyOf, tzOffsetMinutes } from '../domain/dates';
 import { enqueue } from '../sync/outbox';
 
 type StickerRow = {
@@ -11,6 +11,8 @@ type StickerRow = {
   placed_at: number;
   slot_index: number;
   sticker_type: string;
+  date_key: string;
+  tz_offset_min: number;
 };
 
 function toSticker(r: StickerRow): Sticker {
@@ -20,23 +22,19 @@ function toSticker(r: StickerRow): Sticker {
     placedAt: r.placed_at,
     slotIndex: r.slot_index,
     stickerType: r.sticker_type,
+    dateKey: r.date_key,
+    tzOffsetMin: r.tz_offset_min,
   };
 }
 
 const TAKEN = '이미 붙인 칸입니다.';
 
-/** placedAt이 속한 로컬 날짜의 0시부터 다음 날 0시 전까지 */
-function localDayRange(at: number): [number, number] {
-  const d = new Date(at);
-  return [new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime()];
-}
-
 /**
  * 붙인다. 목표의 마지막으로 붙인 시각도 함께 바꾼다 (PRD 4.1) — 더 늦은 시각일 때만.
  * complete면 같은 트랜잭션에서 완성한다. 마지막 칸 확인을 받은 뒤에만 쓴다 (PRD 4.7).
- * 완성한 판에도 붙인다(2026-10-08). 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt으로 정한다.
+ * 완성한 판에도 붙인다(2026-10-08). 달력판의 slotIndex는 그 달의 날짜 - 1이며, 날짜는 placedAt의 기기 날짜로 정해 dateKey로 저장한다.
  * id·placedAt은 위젯 요청을 처리할 때 준다: 요청 id를 스티커 id로 써서 두 번 붙지 않게 하고, 누른 시각으로 붙인다.
- * 이미 붙인 칸이면 거부한다 — 적립판은 같은 칸 번호, 달력판은 placedAt과 같은 로컬 날짜(달력판의 칸은 날짜다).
+ * 이미 붙인 칸이면 거부한다 — 적립판은 같은 칸 번호, 달력판은 같은 dateKey(달력판의 칸은 날짜다).
  * 화면이 위젯 요청을 반영하기 전의 목록으로 계산해도 두 장이 붙지 않게 하는 마지막 방어다.
  */
 export async function placeSticker(
@@ -48,23 +46,26 @@ export async function placeSticker(
 ): Promise<Sticker> {
   const db = await getDb();
   const now = Date.now();
+  const placedAt = options.placedAt ?? now;
   const sticker: Sticker = {
     id: options.id ?? newId(),
     goalId,
-    placedAt: options.placedAt ?? now,
+    placedAt,
     slotIndex,
     stickerType,
+    dateKey: localDateKey(placedAt),
+    tzOffsetMin: tzOffsetMinutes(placedAt),
   };
   await db.transaction(async (tx) => {
     const goal = await tx.first<{ completed_at: number | null; board_type: string }>('SELECT completed_at, board_type FROM goals WHERE id = ?', goalId);
     if (!goal) throw new Error('목표가 없습니다.');
     const taken = goal.board_type === 'tally'
       ? await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND slot_index = ?', goalId, slotIndex)
-      : await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND placed_at >= ? AND placed_at < ?', goalId, ...localDayRange(sticker.placedAt));
+      : await tx.first('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND date_key = ?', goalId, sticker.dateKey);
     if (taken) throw new Error(TAKEN);
     await tx.run(
-      'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType, now,
+      'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      sticker.id, sticker.goalId, sticker.placedAt, sticker.slotIndex, sticker.stickerType, now, sticker.dateKey, sticker.tzOffsetMin,
     );
     await tx.run(
       'UPDATE goals SET last_placed_at = MAX(COALESCE(last_placed_at, 0), ?), updated_at = ? WHERE id = ?',
@@ -89,12 +90,12 @@ export async function listStickers(goalId: string): Promise<Sticker[]> {
   return rows.map(toSticker);
 }
 
-/** 달력판 상세는 보고 있는 달만 읽는다 (PRD 6.3). from 이상, to 미만. */
-export async function listStickersInRange(goalId: string, from: number, to: number): Promise<Sticker[]> {
+/** 달력판 상세는 보고 있는 달만 읽는다 (PRD 6.3). 붙인 날짜(dateKey)가 그 달인 스티커. month는 1–12. */
+export async function listStickersInMonth(goalId: string, year: number, month: number): Promise<Sticker[]> {
   const db = await getDb();
   const rows = await db.all<StickerRow>(
-    'SELECT * FROM stickers WHERE goal_id = ? AND placed_at >= ? AND placed_at < ? ORDER BY placed_at ASC',
-    goalId, from, to,
+    'SELECT * FROM stickers WHERE goal_id = ? AND substr(date_key, 1, 7) = ? ORDER BY date_key ASC, placed_at ASC',
+    goalId, monthKeyOf(year, month),
   );
   return rows.map(toSticker);
 }

@@ -43,3 +43,6 @@
 - **위젯 탭 속도:** chronod 로그로 단계별로 잰다. Release 빌드로 잰다.
 - **Android:** 이 저장소 전용 에뮬레이터 `Chagok_Pixel_7`(포트 5556). `Pixel_7`은 다른 프로젝트와 같이 쓴다. 조작은 `adb shell input tap`·`screencap`, 비행기 모드는 `cmd connectivity airplane-mode enable`.
 - **개발 서버 계정:** 계정을 지우면 `npm run server:dev-user`로 개발 계정을 다시 만든다. "이 기기 기록 사용하기"는 서버 테스트 기록을 덮어쓰므로 하기 전에 묻는다.
+- **시간대 바꿔 보기 (2026-10-12):** iOS 시뮬레이터는 `SIMCTL_CHILD_TZ=Pacific/Kiritimati xcrun simctl launch --terminate-running-process <UDID> com.novum.chagok` 뒤 개발 서버 주소를 `openurl`로 연다(시뮬레이터 전체 시간대는 Mac을 따른다). Android 에뮬레이터는 `adb shell service call alarm 3 s16 Pacific/Kiritimati`, 끝나면 `Asia/Seoul`로 되돌리고 `settings put global auto_time_zone 1`. 한국 밤 시각에 날짜가 바뀌는 곳은 키리바시(UTC+14), 낮이면 LA.
+- **기기 DB 구조가 다른 코드끼리 섞지 않는다:** 출시 전에는 구조를 바꿀 때 v1을 고치고 앱 데이터를 지운다(DEV-SETUP 「개발 서버」). 구조를 바꾼 브랜치로 연 기기를 다른 브랜치·main 코드로 열면 테이블이 맞지 않아 깨진다 — 앱 데이터를 지우고 연다(iOS 시뮬레이터: `simctl get_app_container <UDID> com.novum.chagok data`의 Documents·Library를 비움, Android: `adb shell pm clear com.novum.chagok`, 실기기: 앱 삭제 후 다시 설치).
+- **`supabase db reset --linked`가 `public.change_seq` 시퀀스를 남긴다(2026-10-12):** 첫 마이그레이션이 `create sequence if not exists`라 다시 적용해도 된다. 예전처럼 "already exists"가 나면 `supabase db query --linked "drop sequence public.change_seq"` 뒤 다시 리셋한다.

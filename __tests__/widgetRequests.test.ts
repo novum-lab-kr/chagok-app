@@ -1,6 +1,7 @@
 import { isWidgetRequest, planRequest } from '../src/widgets/requests';
 import type { WidgetRequest } from '../src/widgets/requests';
 import type { Goal, Sticker } from '../src/domain/types';
+import { localDateKey } from '../src/domain/dates';
 
 const t = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m - 1, d, h, min).getTime();
 const goal = (over: Partial<Goal> = {}): Goal => ({
@@ -10,7 +11,7 @@ const goal = (over: Partial<Goal> = {}): Goal => ({
 });
 const tally = (over: Partial<Goal> = {}) => goal({ boardType: 'tally', totalSlots: 5, ...over });
 const st = (id: string, placedAt: number, slotIndex: number): Sticker =>
-  ({ id, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout' });
+  ({ id, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
 const req = (over: Partial<WidgetRequest> = {}): WidgetRequest =>
   ({ id: 'r1', goalId: 'g', kind: 'add', at: t(2026, 10, 6, 9), dateKey: '2026-10-06', ...over });
 const none = new Set<string>();

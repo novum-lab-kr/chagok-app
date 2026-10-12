@@ -1,4 +1,5 @@
-import { loadBoard, monthRange } from '../src/app-data/boardData';
+import { loadBoard } from '../src/app-data/boardData';
+import { localDateKey } from '../src/domain/dates';
 import { createGoal, getGoal } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
@@ -10,14 +11,8 @@ withFreshDb();
 /** 지난 날짜의 스티커. placeSticker는 지금 시각으로만 붙이므로 직접 넣는다. */
 async function stickerAt(goalId: string, id: string, at: number) {
   const db = await getDb();
-  await db.run('INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type) VALUES (?, ?, ?, ?, ?)', id, goalId, at, new Date(at).getDate() - 1, 'sprout');
+  await db.run('INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, date_key, tz_offset_min) VALUES (?, ?, ?, ?, ?, ?, 540)', id, goalId, at, new Date(at).getDate() - 1, 'sprout', localDateKey(at));
 }
-
-describe('monthRange', () => {
-  it('그 달 1일 0시부터 다음 달 1일 0시 전까지 (로컬)', () => {
-    expect(monthRange(2026, 12)).toEqual([new Date(2026, 11, 1).getTime(), new Date(2027, 0, 1).getTime()]);
-  });
-});
 
 describe('loadBoard', () => {
   it('없는 목표면 null', async () => {

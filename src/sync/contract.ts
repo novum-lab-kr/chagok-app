@@ -7,7 +7,11 @@ export type GoalRow = {
   created_at: number; end_date: string | null; completed_at: number | null; completion_seen: number;
   last_placed_at: number | null; initial_slots: number | null; updated_at: number;
 };
-export type StickerRow = { id: string; goal_id: string; placed_at: number; slot_index: number; sticker_type: string; updated_at: number };
+export type StickerRow = {
+  id: string; goal_id: string; placed_at: number; slot_index: number; sticker_type: string; updated_at: number;
+  /** 붙인 날짜 'YYYY-MM-DD'와 그때 시간대(분). 서버는 date·smallint로 둔다 (PRD 4.5) */
+  date_key: string; tz_offset_min: number;
+};
 export type RecordRow = { id: string; sticker_id: string; memo: string | null; photo_remote_path: string | null; created_at: number; updated_at: number };
 
 export type RowEntity = 'goal' | 'sticker' | 'record';

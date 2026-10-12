@@ -1,13 +1,8 @@
 import { getGoal, settleExpiredPeriods } from '../repositories/goalRepository';
-import { countStickers, listStickers, listStickersInRange } from '../repositories/stickerRepository';
+import { countStickers, listStickers, listStickersInMonth } from '../repositories/stickerRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
 import { progressBasis } from '../domain/board';
 import type { Goal, Sticker } from '../domain/types';
-
-/** 그 달 1일 0시(로컬)부터 다음 달 1일 0시 전까지. month는 1–12. */
-export function monthRange(year: number, month: number): [number, number] {
-  return [new Date(year, month - 1, 1).getTime(), new Date(year, month, 1).getTime()];
-}
 
 export type BoardData = {
   goal: Goal;
@@ -31,12 +26,12 @@ export async function loadBoard(goalId: string, year: number, month: number, now
   if (!goal) return null;
   const stickers = goal.boardType === 'tally'
     ? await listStickers(goal.id)
-    : await listStickersInRange(goal.id, ...monthRange(year, month));
+    : await listStickersInMonth(goal.id, year, month);
   const placedAll = await countStickers(goal.id);
   const basis = progressBasis(goal, now);
   const placedInBasis = basis.kind === 'all'
     ? placedAll
-    : (await listStickersInRange(goal.id, ...monthRange(basis.year, basis.month))).length;
+    : (await listStickersInMonth(goal.id, basis.year, basis.month)).length;
   const recordedIds = await listRecordedStickerIds(goal.id);
   return { goal, stickers, placedAll, placedInBasis, recordedIds };
 }
