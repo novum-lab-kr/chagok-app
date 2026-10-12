@@ -3,6 +3,7 @@ import {Image,Pressable,ScrollView,View,type ImageSourcePropType} from 'react-na
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import Svg,{Path} from 'react-native-svg';
 import {retro} from './tokens';
+import {touchSlop} from './touch';
 import {PixelButton,PixelFrame,PixelTabs,PixelText} from './components';
 import {EmptyState,RetroScreen} from './composition-controls';
 import {ActionSymbol,StickerGlyph,type StickerId} from './sticker-glyphs';
@@ -115,7 +116,7 @@ export function StickerCollectionScreen({packs,mine,onChangeMine,openPacks,onTog
 // ── 흐름 중간 안내 ───────────────────────────────────────────────
 /** 카드 오른쪽 위 모서리의 ×. 글자 폭을 빼앗지 않게 겹쳐 둔다(누르는 곳은 44pt). */
 function CloseButton({onPress}:{onPress:()=>void}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="닫기" onPress={onPress} style={{position:'absolute',top:-4,right:-4,width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+  return <Pressable accessibilityRole="button" accessibilityLabel="닫기" onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:-4,right:-4,width:44,height:44,alignItems:'center',justifyContent:'center'}}>
     <ActionSymbol name="close" size={14} color={c.buttonText}/>
   </Pressable>;
 }

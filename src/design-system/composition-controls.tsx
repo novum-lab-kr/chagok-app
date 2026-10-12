@@ -4,6 +4,7 @@ import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,Pixel
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
+import {touchSlop} from './touch';
 import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
 import {pixelOutline} from './geometry';
@@ -84,7 +85,7 @@ export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,on
   return <View style={{gap:12}}>
     <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:586/494,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
       {source?<Image source={source} onError={onPhotoError} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label="사진 찍기" variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label="앨범에서 고르기" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label="사진 추가" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>사진을 남겨보세요</PixelText></View>)}
-      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel="사진 지우기" onPress={onRemove} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
+      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel="사진 지우기" onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
     </View></PixelFrame>
     {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?'사진 바꾸기':'사진 추가'} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label="사진 지우기" variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
   </View>;
@@ -93,7 +94,7 @@ export function MemoEditor({value,onChange,maxLength,error}:{value:string;onChan
   return <View style={{gap:8}}><PixelPanel title="메모"><TextInput allowFontScaling={false} accessibilityLabel="메모" value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder="오늘의 기록을 남겨보세요" placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={touchSlop({height:retro.layout.touch})} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
 }
 export function SettingRow({label,value,onPress,navigates=true,disabled=false}:{label:string;value?:string;onPress?:()=>void;navigates?:boolean;disabled?:boolean}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={value?`${label}, ${value}`:label} accessibilityState={{disabled}} disabled={disabled} onPress={onPress} style={{minHeight:56,flexDirection:'row',alignItems:'center',gap:8,opacity:disabled?retro.opacity.disabled:1}}>
@@ -258,7 +259,7 @@ const caption={color:retro.color.buttonText};
 export function AppHeader({onSettings}:{onSettings?:()=>void}) {
   return <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}>
     <Mascot size={44}/><PixelText variant="brand">차곡차곡</PixelText>
-    {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel="앱 설정" onPress={onSettings} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
+    {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel="앱 설정" onPress={onSettings} hitSlop={touchSlop({width:36,height:40})} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
   </View>;
 }
 export type GoalListTab='active'|'completed';
