@@ -93,14 +93,6 @@
             "label": "Android · Google만"
           },
           {
-            "id": "screens-account-consent--ready-33",
-            "label": "버튼 높이 33 (시안)"
-          },
-          {
-            "id": "screens-account-consent--ready-38",
-            "label": "버튼 높이 38 (시안)"
-          },
-          {
             "id": "screens-account-backup--under-14",
             "label": "만 14세 미만 안내"
           }

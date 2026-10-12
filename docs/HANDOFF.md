@@ -48,7 +48,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 **계정·외부 준비가 끝난 뒤**
 
 - **결제·광고 실제 연결** — `src/purchases`의 `Store`에 RevenueCat과 AdMob을 끼운다. 결제 실패·광고 실패 문구도 이때. 서버 `entitlements` 테이블·RLS(서버만 쓰기), 처리방침 제2판, 약관 유료 조항, 통신판매업 신고 확인이 따라온다. **사용자에게 물어 둔 것:** 결제 시험을 RevenueCat Test Store로 할지(그러면 App Store Connect 상품 등록 전에도 코드를 시작할 수 있다).
-- **Apple 로그인**(다른 세션 진행 중), `apple-link`, Apple 토큰 폐기(그전에는 토큰이 있으면 계정 삭제가 멈춘다). 버튼은 연결 화면의 [개발 계정으로 계속] 자리에.
+- **Apple 로그인**(다른 세션 진행 중), `apple-link`, Apple 토큰 폐기(그전에는 토큰이 있으면 계정 삭제가 멈춘다). 버튼은 연결 화면의 [개발 계정으로 계속] 자리에. 버튼 높이 44, Google 버튼 글자 19·로고 24·여백 19·14·19, 좁은 화면에서는 Google 버튼 안 전체를 같은 비율로 줄인다(2026-10-12 사용자 결정, Storybook `Screens/Account consent`·[시안](https://claude.ai/artifact/Masmo48AjPKNvZihxUobwR)).
 - **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
 - **TestFlight** — EAS 클라우드 빌드 전에 서버 주소·키를 EAS 환경 변수로.
 - Google 로그인(Android) — OAuth 준비 뒤.
