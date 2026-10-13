@@ -1,10 +1,9 @@
 import React from 'react';
 import {View} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
-import {PixelText,StickerGlyph,retro} from '../src/design-system';
+import {PixelText,retro} from '../src/design-system';
 import {colorStickerPacks,colorStickersInPack,type ColorStickerId,type ColorStickerPackId} from '../src/stickers/color/catalog';
 import {ColorStickerArtwork} from '../src/stickers/color/ColorStickerArtwork';
-import {pocketStickers} from '../src/stickers/pocket/catalog';
 
 const meta={
   title:'Stickers/Color Assets',
@@ -67,12 +66,3 @@ export const OnBoards:Story={name:'판에 붙인 모습 (적립판 48 · 달력 
     </View>
   </View>;
 }};
-
-export const MonoComparison:Story={name:'흑백(현재) · 컬러 기본 비교',render:()=> <View style={{gap:16,padding:16,alignSelf:'flex-start',backgroundColor:retro.color.lcd}}>
-  <View style={{flexDirection:'row',gap:16}}><View style={{width:72}}/><PixelText style={{width:56}}>흑백</PixelText><PixelText style={{width:56}}>컬러</PixelText></View>
-  {pocketStickers.map(mono=><View key={mono.id} style={{flexDirection:'row',alignItems:'center',gap:16}}>
-    <PixelText style={{width:72}}>{mono.label}</PixelText>
-    <StickerGlyph id={mono.id} size={48}/>
-    <View style={{width:56}}><ColorStickerArtwork id={`basic.${mono.id}`} size={48}/></View>
-  </View>)}
-</View>};

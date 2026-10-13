@@ -2,17 +2,17 @@ import React, {useState, type ReactNode} from 'react';
 import {View, useWindowDimensions} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {
-  PixelDialog, PixelText, RecordScreen, calendarDateKey, retro, type GoalListTab, type PocketGoal, type StickerId,
-  GoalListScreen, BoardDetailScreen, GoalSettingsScreen, CompletedGoalSettingsScreen, NewGoalScreen, ExtendEndDateScreen, ExtendSlotsScreen,
+  PixelDialog, PixelText, RecordScreen, calendarDateKey, retro, type PocketGoal, type StickerId,
+  BoardDetailScreen, GoalSettingsScreen, CompletedGoalSettingsScreen, NewGoalScreen, ExtendEndDateScreen, ExtendSlotsScreen,
   FirstRunTutorialFrame, TutorialListExample, TutorialNewGoalExample, TutorialBoardExample, TutorialCompletedExample,
 } from '../src/design-system';
 import {ActionSymbol} from '../src/design-system/sticker-glyphs';
 import {parseSlotCount} from '../src/domain/board';
 
-/** 목록·판 상세·달력판 기간 규칙 시안. 화면 조합은 src/design-system/board-screens.tsx이고 앱과 같은 소스다. */
+/** 판 상세·목표 설정·완성 흐름·첫 실행 튜토리얼. 화면 조합은 src/design-system/board-screens.tsx이고 앱과 같은 소스다. 목표 목록은 Screens/Bottom Tabs에 있다. */
 const meta = {
-  title: 'Screens/Home structure · proposals',
-  parameters: {layout: 'fullscreen', edgeToEdge: true, docs: {description: {component: '홈 목표 목록(A안·헤더 3)과 판 상세, 달력판 기간·완성 규칙 시안. 앱 동작에 연결되지 않습니다.'}}},
+  title: 'Screens/Board & goal',
+  parameters: {layout: 'fullscreen', edgeToEdge: true, docs: {description: {component: '판 상세, 목표 설정·새 목표, 달력판 기간·완성 흐름, 첫 실행 튜토리얼. 목표 목록은 Screens/Bottom Tabs에 있다. 앱 동작에 연결되지 않습니다.'}}},
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -31,15 +31,10 @@ const goals: ListedGoal[] = [
   {id: 'walk', name: '매일 저녁 동네 한 바퀴 걷기', kind: 'calendar', total: 30, sticker: 'basic.shoe', filled: [], calendarRecords: records(9, [2, 4, 7, 10, 14, 17, 20, 23, 28], 'basic.shoe'), createdAt: '2026-09-01T09:00', lastPlacedAt: '2026-09-28T21:10'},
   {id: 'reading', name: '책 읽기', kind: 'tally', total: 15, sticker: 'basic.sprout', filled: range(6), calendarRecords: {}, createdAt: '2026-08-20T10:00', lastPlacedAt: '2026-09-29T08:05'},
   {id: 'water', name: '물 여덟 잔 마시기', kind: 'calendar', total: 30, sticker: 'basic.flower', filled: [], calendarRecords: records(9, [10, 12, 15, 16, 19, 22, 25, 26, 29], 'basic.flower'), createdAt: '2026-09-10T22:00', lastPlacedAt: '2026-09-29T07:30', endDate: '2026-10-31'},
-  {id: 'words', name: '영어 단어 외우기', kind: 'tally', total: 30, sticker: 'basic.book', filled: range(22), calendarRecords: {}, createdAt: '2026-08-10T19:00', lastPlacedAt: '2026-09-25T22:40'},
-  {id: 'diary', name: '일기 쓰기', kind: 'calendar', total: 30, sticker: 'basic.cat', filled: [], calendarRecords: {}, createdAt: '2026-09-29T09:00'},
   {id: 'stretch', name: '자기 전 스트레칭 십 분', kind: 'tally', total: 20, sticker: 'basic.star', filled: range(20), calendarRecords: {}, createdAt: '2026-09-05T23:00', lastPlacedAt: '2026-09-29T08:30', completedAt: '2026-09-29T08:30'},
   {id: 'vitamin', name: '영양제 챙겨 먹기', kind: 'calendar', total: 30, sticker: 'basic.star', filled: [], calendarRecords: records(9, [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18, 19, 21, 22], 'basic.star'), createdAt: '2026-09-01T08:00', lastPlacedAt: '2026-09-22T08:10', endDate: '2026-09-23', completedAt: '2026-09-24T00:00'},
-  {id: 'guitar', name: '기타 코드 연습', kind: 'calendar', total: 30, sticker: 'basic.book', filled: [], calendarRecords: records(9, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20], 'basic.book'), createdAt: '2026-09-01T20:00', lastPlacedAt: '2026-09-20T20:50', completedAt: '2026-09-20T21:00'},
-  {id: 'plank', name: '플랭크 1분 버티기', kind: 'tally', total: 15, sticker: 'basic.star', filled: range(15), calendarRecords: {}, createdAt: '2026-07-01T07:00', lastPlacedAt: '2026-08-14T07:20', completedAt: '2026-08-14T07:20'},
 ];
 const byId = (id: string) => goals.find(goal => goal.id === id)!;
-const noneCompleted = goals.filter(goal => !goal.completedAt);
 
 // ── 규칙 ──────────────────────────────────────────────────────────
 const dateOf = (iso: string) => iso.slice(0, 10);
@@ -67,15 +62,7 @@ const percentLabel = (goal: ListedGoal) => {
 };
 /** 완성: 적립판 100%, 기간 달력판은 100%이거나 종료일이 지남, 기간 없는 달력판은 수동 [완성]. 예시 데이터는 completedAt으로 표시한다. */
 const isDone = (goal: ListedGoal) => Boolean(goal.completedAt);
-function orderGoals(list: readonly ListedGoal[]) {
-  const recent = (goal: ListedGoal) => goal.lastPlacedAt ?? goal.createdAt;
-  const active = list.filter(goal => !isDone(goal)).sort((a, b) => recent(b).localeCompare(recent(a)));
-  const completed = list.filter(isDone).sort((a, b) => b.completedAt!.localeCompare(a.completedAt!));
-  return {active, completed};
-}
-const shortDate = (key: string) => `${Number(key.slice(5, 7))}/${Number(key.slice(8, 10))}`;
 const longDate = (key: string) => `${Number(key.slice(5, 7))}월 ${Number(key.slice(8, 10))}일`;
-const kindLabel = (goal: ListedGoal) => goal.kind === 'tally' ? '적립판' : '달력판';
 /** 이 판에서 날짜를 누를 수 있는 범위: 만든 날부터 종료일까지. */
 const inPeriod = (goal: ListedGoal) => (date: string) => date >= dateOf(goal.createdAt) && (!goal.endDate || date <= goal.endDate);
 
@@ -101,22 +88,6 @@ const noop = () => {};
 function FirstRunTutorial({index, children, autoFocus = true}: {index: number; children: ReactNode; autoFocus?: boolean}) {
   const {width} = useWindowDimensions();
   return <FirstRunTutorialFrame index={index} autoFocus={autoFocus} onNext={noop} onSkip={noop} style={{width: Math.min(width, 390), height: 844}}>{children}</FirstRunTutorialFrame>;
-}
-
-// ── 목록 ──────────────────────────────────────────────────────────
-const cardOf = (goal: ListedGoal) => ({id: goal.id, name: goal.name, sticker: goal.sticker, kind: kindLabel(goal), percent: progressOf(goal).percent,
-  status: isDone(goal) ? [percentLabel(goal), `${shortDate(goal.completedAt!)} 완성`] : [`${percentLabel(goal)} 채웠어요`]});
-/** 광고 자리: AdMob 배너가 들어갈 곳. 앱 밖에서 오는 그림이라 앱 팔레트를 쓰지 않는다(광고 위치 시안과 같은 회색 상자). */
-function AdSlot() {
-  return <View style={{height: 62, backgroundColor: '#f1f1f1', borderTopWidth: 1, borderColor: '#c9c9c9', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12}}>
-    <View style={{width: 36, height: 36, backgroundColor: '#d9d9d9'}}/>
-    <PixelText style={{fontFamily: 'system-ui', fontSize: 12, lineHeight: 16, color: '#3c3c3c'}}>{'광고 · 광고주 이름\n광고 문구가 여기에 들어갑니다'}</PixelText>
-  </View>;
-}
-function Home({list, initialTab = 'active', ads = true}: {list: ListedGoal[]; initialTab?: GoalListTab; /** 광고 제거를 샀으면 false (PRD 4.12) */ads?: boolean}) {
-  const [tab, setTab] = useState<GoalListTab>(initialTab);
-  const {active, completed} = orderGoals(list);
-  return <Stage><GoalListScreen tab={tab} onTab={setTab} onAdd={noop} onOpen={noop} onSettings={noop} active={active.map(cardOf)} completed={completed.map(cardOf)} footer={ads ? <AdSlot/> : undefined}/></Stage>;
 }
 
 // ── 상세 ──────────────────────────────────────────────────────────
@@ -183,10 +154,6 @@ function NewCalendarGoal({withEnd}: {withEnd: boolean}) {
 const almostDone: ListedGoal = {...byId('reading'), filled: range(14)};
 const confirmLast = <Overlay title="이 판을 완성할까요?" description="마지막 칸이에요. 완성한 뒤에도 칸과 기록은 고칠 수 있어요." secondaryLabel="취소" primaryLabel="완성하기"/>;
 
-export const HomeActive: Story = {name: '목록 · 내 목표', render: () => <Home list={goals}/>};
-export const HomeAdFree: Story = {name: '목록 · 광고 제거를 산 뒤', render: () => <Home list={goals} ads={false}/>};
-export const HomeCompleted: Story = {name: '목록 · 완성한 판', render: () => <Home list={goals} initialTab="completed"/>};
-export const HomeEmptyCompleted: Story = {name: '목록 · 완성한 판 없음', render: () => <Home list={noneCompleted} initialTab="completed"/>};
 export const DetailTally: Story = {name: '상세 · 적립판 진행중', render: () => <Detail goal={byId('reading')}/>};
 export const DetailTallyLong: Story = {name: '상세 · 적립판 100칸 (빈칸으로 스크롤)', render: () => <Detail goal={{...byId('reading'), total: 100, filled: range(33)}}/>};
 export const DetailPeriod: Story ={name: '상세 · 달력판 기간 진행중', render: () => <Detail goal={byId('water')}/>};

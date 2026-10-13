@@ -3,7 +3,7 @@ import {Pressable,View} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
 import {PixelText,SplashAnimation,retro,splashTimeline} from '../src/design-system';
 
-const meta={title:'Brand/Splash',parameters:{docs:{description:{component:'스플래시 S2-B (2026-10-04 확정). OS 정지 화면(윤곽선만 있는 몸)에서 이어받아 색 채우기 → 판 세 장 낙하(캐릭터가 두 칸씩 좌우로 받음) → "차곡차곡" 한 자씩 + 커서. 기준: docs/design/character/README.md 「스플래시」. 앱 시작 흐름에는 아직 연결하지 않았다.'}}}} satisfies Meta;
+const meta={title:'Brand/Splash',parameters:{docs:{description:{component:'스플래시 S2-B (2026-10-04 확정). OS 정지 화면(윤곽선만 있는 몸)에서 이어받아 색 채우기 → 판 세 장 낙하(캐릭터가 두 칸씩 좌우로 받음) → "차곡차곡" 한 자씩 + 커서. 기준: docs/design/character/README.md 「스플래시」. 앱을 켤 때 보인다(app/_layout.tsx).'}}}} satisfies Meta;
 export default meta;
 type Story=StoryObj<typeof meta>;
 

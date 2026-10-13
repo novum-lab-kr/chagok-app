@@ -38,9 +38,9 @@ const active:GoalCardItem[]=[
   {id:'water',name:'물 여덟 잔 마시기',sticker:'basic.flower',kind:'달력판',percent:30,status:['이번 달 30% 채웠어요']},
 ];
 const completed:GoalCardItem[]=[{id:'stretch',name:'자기 전 스트레칭 십 분',sticker:'basic.star',kind:'적립판',percent:100,status:['100%','9/29 완성']}];
-function Goals({trial=false}:{trial?:boolean}) {
-  const [tab,setTab]=useState<GoalListTab>('active');
-  return <GoalListScreen tab={tab} onTab={setTab} active={active} completed={completed} onOpen={noop} onAdd={noop}
+function Goals({trial=false,initialTab='active',list=active,done=completed}:{trial?:boolean;initialTab?:GoalListTab;list?:GoalCardItem[];done?:GoalCardItem[]}) {
+  const [tab,setTab]=useState<GoalListTab>(initialTab);
+  return <GoalListScreen tab={tab} onTab={setTab} active={list} completed={done} onOpen={noop} onAdd={noop}
     notice={trial&&tab==='active'?<TrialReadyCard days={7} onChoose={noop} onClose={noop}/>:undefined}/>;
 }
 
@@ -76,6 +76,10 @@ const star='basic.star' as StickerId;
 
 export const GoalsTab:Story={name:'1 목표 탭',render:()=><Stage tab="index" ad><Goals/></Stage>};
 export const GoalsTabTrial:Story={name:'1 목표 탭 · 체험 열림 카드',render:()=><Stage tab="index" ad><Goals trial/></Stage>};
+export const GoalsTabCompleted:Story={name:'1 목표 탭 · 완성한 판',render:()=><Stage tab="index" ad><Goals initialTab="completed"/></Stage>};
+export const GoalsTabNoneCompleted:Story={name:'1 목표 탭 · 완성한 판 없음',render:()=><Stage tab="index" ad><Goals initialTab="completed" done={[]}/></Stage>};
+export const GoalsTabEmpty:Story={name:'1 목표 탭 · 목표 없음',render:()=><Stage tab="index" ad><Goals list={[]} done={[]}/></Stage>};
+export const GoalsTabAdFree:Story={name:'1 목표 탭 · 광고 제거를 산 뒤',render:()=><Stage tab="index"><Goals/></Stage>};
 export const RecordsTab:Story={name:'2 기록 탭',render:()=><Stage tab="records"><Records/></Stage>};
 export const RecordsTabFiltered:Story={name:'2 기록 탭 · 목표 고름',render:()=><Stage tab="records"><Records initialGoal="reading"/></Stage>};
 export const RecordsTabEmpty:Story={name:'2 기록 탭 · 비었을 때',render:()=><Stage tab="records"><RecordTimelineScreen days={[]} goals={[]} goal={null} onGoal={noop} onOpen={noop}/></Stage>};

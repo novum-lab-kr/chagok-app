@@ -39,7 +39,21 @@
         "label": "스플래시",
         "tags": [
           "PRD 4.11",
-          "미정"
+          "app/_layout"
+        ],
+        "stories": [
+          {
+            "id": "brand-splash--play",
+            "label": "재생"
+          },
+          {
+            "id": "brand-splash--frames",
+            "label": "장면별"
+          },
+          {
+            "id": "brand-splash--reduced",
+            "label": "모션 줄이기"
+          }
         ],
         "scenarios": [
           "first",
@@ -158,23 +172,23 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--tutorial-1",
+            "id": "screens-board-goal--tutorial-1",
             "label": "1 목표 만들기"
           },
           {
-            "id": "screens-home-structure-·-proposals--tutorial-2",
+            "id": "screens-board-goal--tutorial-2",
             "label": "2 스티커 고르기"
           },
           {
-            "id": "screens-home-structure-·-proposals--tutorial-3",
+            "id": "screens-board-goal--tutorial-3",
             "label": "3 빈칸에 톡"
           },
           {
-            "id": "screens-home-structure-·-proposals--tutorial-4",
+            "id": "screens-board-goal--tutorial-4",
             "label": "4 기록 남기기"
           },
           {
-            "id": "screens-home-structure-·-proposals--tutorial-5",
+            "id": "screens-board-goal--tutorial-5",
             "label": "5 완성한 판"
           }
         ],
@@ -201,19 +215,15 @@
             "label": "체험 열림 카드"
           },
           {
-            "id": "screens-home-structure-·-proposals--home-active",
-            "label": "내 목표"
-          },
-          {
-            "id": "screens-home-structure-·-proposals--home-completed",
+            "id": "screens-bottom-tabs--goals-tab-completed",
             "label": "완성한 판 탭"
           },
           {
-            "id": "screens-home-structure-·-proposals--home-empty-completed",
+            "id": "screens-bottom-tabs--goals-tab-none-completed",
             "label": "완성한 판 없음"
           },
           {
-            "id": "screens-empty-goal-list--only-notice",
+            "id": "screens-bottom-tabs--goals-tab-empty",
             "label": "목표 없음"
           },
           {
@@ -225,7 +235,7 @@
             "label": "약관 변경 안내"
           },
           {
-            "id": "screens-home-structure-·-proposals--home-ad-free",
+            "id": "screens-bottom-tabs--goals-tab-ad-free",
             "label": "광고 제거를 산 뒤"
           },
           {
@@ -253,11 +263,11 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--new-without-end",
+            "id": "screens-board-goal--new-without-end",
             "label": "달력판 종료일 없음"
           },
           {
-            "id": "screens-home-structure-·-proposals--new-with-end",
+            "id": "screens-board-goal--new-with-end",
             "label": "달력판 종료일 고르기"
           },
           {
@@ -286,23 +296,23 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--detail-tally",
+            "id": "screens-board-goal--detail-tally",
             "label": "적립판"
           },
           {
-            "id": "screens-home-structure-·-proposals--detail-tally-long",
+            "id": "screens-board-goal--detail-tally-long",
             "label": "적립판 100칸"
           },
           {
-            "id": "screens-home-structure-·-proposals--detail-period",
+            "id": "screens-board-goal--detail-period",
             "label": "달력판 기간"
           },
           {
-            "id": "screens-home-structure-·-proposals--detail-open-ended",
+            "id": "screens-board-goal--detail-open-ended",
             "label": "달력판 종료일 없음"
           },
           {
-            "id": "screens-home-structure-·-proposals--remove-with-record",
+            "id": "screens-board-goal--remove-with-record",
             "label": "기록 있는 스티커 떼기"
           },
           {
@@ -333,7 +343,7 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--record-completed",
+            "id": "screens-board-goal--record-completed",
             "label": "완성한 판에서 연 기록"
           },
           {
@@ -378,27 +388,27 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--settings-tally",
+            "id": "screens-board-goal--settings-tally",
             "label": "적립판"
           },
           {
-            "id": "screens-home-structure-·-proposals--settings-tally-30",
+            "id": "screens-board-goal--settings-tally-30",
             "label": "적립판 30칸 (늘리기만)"
           },
           {
-            "id": "screens-home-structure-·-proposals--settings-period",
+            "id": "screens-board-goal--settings-period",
             "label": "종료일 바꾸기"
           },
           {
-            "id": "screens-home-structure-·-proposals--settings-open-ended",
+            "id": "screens-board-goal--settings-open-ended",
             "label": "종료일 없음과 완성"
           },
           {
-            "id": "screens-home-structure-·-proposals--settings-manual-confirm",
+            "id": "screens-board-goal--settings-manual-confirm",
             "label": "수동 완성 확인"
           },
           {
-            "id": "screens-home-structure-·-proposals--settings-completed",
+            "id": "screens-board-goal--settings-completed",
             "label": "완성한 판 (삭제만)"
           },
           {
@@ -425,11 +435,11 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--delete-confirm-active",
+            "id": "screens-board-goal--delete-confirm-active",
             "label": "진행 중인 목표"
           },
           {
-            "id": "screens-home-structure-·-proposals--delete-confirm-completed",
+            "id": "screens-board-goal--delete-confirm-completed",
             "label": "완성한 판"
           }
         ],
@@ -447,19 +457,19 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--flow-confirm-last",
+            "id": "screens-board-goal--flow-confirm-last",
             "label": "1 마지막 칸 확인"
           },
           {
-            "id": "screens-home-structure-·-proposals--flow-continue-tally",
+            "id": "screens-board-goal--flow-continue-tally",
             "label": "2 계속하기 · 적립판"
           },
           {
-            "id": "screens-home-structure-·-proposals--flow-continue-period",
+            "id": "screens-board-goal--flow-continue-period",
             "label": "2 계속하기 · 종료일 지남"
           },
           {
-            "id": "screens-home-structure-·-proposals--flow-continue-manual",
+            "id": "screens-board-goal--flow-continue-manual",
             "label": "2 계속하기 · 수동 완성"
           }
         ],
@@ -478,11 +488,11 @@
         ],
         "stories": [
           {
-            "id": "screens-home-structure-·-proposals--flow-extend-slots",
+            "id": "screens-board-goal--flow-extend-slots",
             "label": "적립판 칸 늘리기"
           },
           {
-            "id": "screens-home-structure-·-proposals--flow-extend-end-date",
+            "id": "screens-board-goal--flow-extend-end-date",
             "label": "달력판 종료일 늘리기"
           },
           {
@@ -508,11 +518,11 @@
             "label": "완성 뒤 · 다음 판 권하기"
           },
           {
-            "id": "screens-home-structure-·-proposals--detail-tally-done",
+            "id": "screens-board-goal--detail-tally-done",
             "label": "적립판"
           },
           {
-            "id": "screens-home-structure-·-proposals--detail-period-ended",
+            "id": "screens-board-goal--detail-period-ended",
             "label": "달력판"
           }
         ],
@@ -577,32 +587,6 @@
           "account",
           "info",
           "sticker"
-        ]
-      }
-    },
-    {
-      "id": "replay",
-      "data": {
-        "label": "사용법 다시 보기 (자리 시안)",
-        "tags": [
-          "PRD 4.9"
-        ],
-        "stories": [
-          {
-            "id": "screens-tutorial-replay-·-proposals--in-settings",
-            "label": "A 앱 설정 안의 행"
-          },
-          {
-            "id": "screens-tutorial-replay-·-proposals--in-header",
-            "label": "B 목록 헤더 ? 버튼"
-          },
-          {
-            "id": "screens-tutorial-replay-·-proposals--at-list-end",
-            "label": "C 목록 맨 아래 링크"
-          }
-        ],
-        "scenarios": [
-          "info"
         ]
       }
     },
@@ -1257,21 +1241,10 @@
       }
     },
     {
-      "id": "app-settings-replay",
+      "id": "app-settings-tutorial",
       "source": "app-settings",
-      "target": "replay",
-      "label": "사용법 다시 보기",
-      "data": {
-        "scenarios": [
-          "info"
-        ]
-      }
-    },
-    {
-      "id": "replay-tutorial",
-      "source": "replay",
       "target": "tutorial",
-      "label": "다시 보기",
+      "label": "사용법 다시 보기",
       "data": {
         "scenarios": [
           "info"

@@ -12,9 +12,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStep: Story = {args: {step: '1 / 3'}};
-export const StickerStep: Story = {args: {step: '2 / 3', title: '스티커 고르기', description: '목표마다 스티커를 정해요'}};
-export const LastStep: Story = {args: {step: '3 / 3', title: '빈칸에 톡!', description: '어느 빈칸이든 누르면 스티커가 붙어요', primaryLabel: '시작하기'}};
+export const FirstStep: Story = {args: {step: '1 / 5'}};
+export const StickerStep: Story = {args: {step: '2 / 5', title: '스티커 고르기', description: '목표마다 스티커를 정해요'}};
+export const LastStep: Story = {args: {step: '5 / 5', title: '완성한 판', description: '판을 다 채우면 완성! 완성한 뒤에도 빠진 칸과 기록을 고칠 수 있어요', primaryLabel: '시작하기'}};
 
 function CenteredPreview(args: React.ComponentProps<typeof PixelDialog>) {
   const {width} = useWindowDimensions();

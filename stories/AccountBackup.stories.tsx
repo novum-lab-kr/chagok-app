@@ -2,12 +2,12 @@ import React,{useState,type ReactNode} from 'react';
 import {View,useWindowDimensions} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
 import {
-  AccountBackupPanel,AccountDeletedScreen,AccountStartScreen,AppHeader,ConsentScreen,DeleteAccountScreen,GoalListHeader,GoalSummaryCard,
-  PixelBusyDialog,PixelButton,PixelDialog,PixelPanel,PixelText,PurchasePanel,RestoreConflictScreen,RetroScreen,ScreenHeader,SettingRow,accountDialogs,retro,stickerShopDialogs,
-  type AccountBackupStatus,type AccountStartChoice,type RestoreSide,
+  AccountBackupPanel,AccountDeletedScreen,AccountStartScreen,ConsentScreen,DeleteAccountScreen,FloatingTabBar,GoalListScreen,
+  PixelBusyDialog,PixelButton,PixelDialog,PixelPanel,PixelText,PurchasePanel,RestoreConflictScreen,RetroScreen,SettingRow,TabTitle,accountDialogs,retro,stickerShopDialogs,
+  type AccountBackupStatus,type AccountStartChoice,type RestoreSide,type TabItem,
 } from '../src/design-system';
 
-const meta={title:'Screens/Account backup',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'계정·백업 화면 (2026-10-01 확정 시안). 다이얼로그는 앱에서 PixelDialogModal·PixelBusyModal이 같은 배치로 띄운다. 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
+const meta={title:'Screens/Account backup',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'계정·백업 화면 (2026-10-01 확정 시안). 설정은 2026-10-12부터 하단 「설정」 탭이다. 다이얼로그는 앱에서 PixelDialogModal·PixelBusyModal이 같은 배치로 띄운다. 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
 export default meta;
 type Story=StoryObj<typeof meta>;
 const c=retro.color;
@@ -35,20 +35,27 @@ function Start({initial='account'}:{initial?:AccountStartChoice}) {
   const [value,setValue]=useState(initial);
   return <AccountStartScreen value={value} onChange={setValue} onContinue={noop}/>;
 }
+type Tab='index'|'records'|'stickers'|'settings';
+const TABS:readonly TabItem<Tab>[]=[{key:'index',label:'목표',icon:'goal'},{key:'records',label:'기록',icon:'record'},{key:'stickers',label:'스티커',icon:'sticker'},{key:'settings',label:'설정',icon:'settings'}];
+/** 탭 안 화면 + 하단 탭. 앱에서는 expo-router Tabs가 같은 배치를 한다(app/(tabs)/_layout.tsx). */
+function WithTabs({tab,children}:{tab:Tab;children:ReactNode}) {
+  return <View style={{flex:1}}><View style={{flex:1}}>{children}</View><FloatingTabBar items={TABS} value={tab} onChange={noop}/></View>;
+}
+/** 설정 탭 (2026-10-12 하단 탭). */
 function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore'}) {
-  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="앱 설정" onBack={noop}/>}>
+  return <WithTabs tab="settings"><RetroScreen style={{gap:16}} header={<TabTitle title="설정"/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
     <PurchasePanel adFree={adFree} onRemoveAds={noop} onRestore={noop} busy={busy}/>
     <PixelPanel title="도움말"><SettingRow label="사용법 다시 보기" onPress={noop}/></PixelPanel>
     <PixelPanel title="정보"><SettingRow label="약관과 라이선스" onPress={noop}/></PixelPanel>
-  </RetroScreen>;
+  </RetroScreen></WithTabs>;
 }
+/** 목표 탭. 앱을 열 때 묻는 안내의 배경. */
 function Home() {
-  return <RetroScreen style={{gap:16}} header={<AppHeader onSettings={noop}/>}>
-    <GoalListHeader tab="active" counts={{active:2,completed:1}} onTab={noop} onAdd={noop}/>
-    <GoalSummaryCard name="매일 산책하기" sticker="basic.shoe" kind="달력판" percent={40} status={['이번 달 40% 채웠어요']} onPress={noop}/>
-    <GoalSummaryCard name="책 20권 읽기" sticker="basic.book" kind="적립판" percent={35} status={['35% 채웠어요']} onPress={noop}/>
-  </RetroScreen>;
+  return <WithTabs tab="index"><GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} completed={[{id:'c',name:'자기 전 스트레칭 십 분',sticker:'basic.star',kind:'적립판',percent:100,status:['100%','9/29 완성']}]} active={[
+    {id:'a',name:'매일 산책하기',sticker:'basic.shoe',kind:'달력판',percent:40,status:['이번 달 40% 채웠어요']},
+    {id:'b',name:'책 20권 읽기',sticker:'basic.book',kind:'적립판',percent:35,status:['35% 채웠어요']},
+  ]}/></WithTabs>;
 }
 function Conflict() {
   const [value,setValue]=useState<RestoreSide>('server');
@@ -62,7 +69,7 @@ const Delete=()=><DeleteAccountScreen onDelete={noop} onCancel={noop} onBack={no
 export const StartAccount:Story={name:'1 시작 · 계정 연결',render:()=><Stage><Start/></Stage>};
 export const StartLocal:Story={name:'1 시작 · 이 기기에서만',render:()=><Stage><Start initial="local"/></Stage>};
 
-// 2. 앱 설정
+// 2. 설정 탭
 export const SettingsSynced:Story={name:'2 설정 · 연결됨',render:()=><Stage><Settings/></Stage>};
 export const SettingsStates:Story={name:'2 설정 · 상태별',render:()=><Stage auto><View style={{padding:20,gap:12}}>
   <Label>계정 없음</Label>
@@ -81,7 +88,7 @@ export const SessionExpired:Story={name:'2 다시 로그인 묻기',render:()=><
 export const RestoreConflict:Story={name:'3 복원 충돌',render:()=><Stage><Conflict/></Stage>};
 
 // 4. 복원 진행·실패
-export const RestoreFromSettings:Story={name:'4 복원 · 앱 설정에서 연결',render:()=><Stage><Settings status={{state:'restoring',provider:'Apple'}}/><Scrim><PixelBusyDialog {...accountDialogs.restoring}/></Scrim></Stage>};
+export const RestoreFromSettings:Story={name:'4 복원 · 설정 탭에서 연결',render:()=><Stage><Settings status={{state:'restoring',provider:'Apple'}}/><Scrim><PixelBusyDialog {...accountDialogs.restoring}/></Scrim></Stage>};
 export const RestoreFirstRun:Story={name:'4 복원 · 첫 실행',render:()=><Stage><Start/><Scrim><PixelBusyDialog {...accountDialogs.restoring}/></Scrim></Stage>};
 export const RestoreFailed:Story={name:'4 복원 · 실패',render:()=><Stage><Start/><Dialog {...accountDialogs.restoreFailed}/></Stage>};
 
