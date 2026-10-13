@@ -118,7 +118,7 @@ describe('로딩 표시',()=>{
   });
   it('스티커 이름은 흑백·컬러 모두 읽고, 흑백 ID는 같은 그림의 기본 묶음 컬러 ID로 바꾼다',()=>{
     expect(stickerLabel('book')).toBe('책');
-    expect(stickerLabel('animals.dog')).toBe('강아지');
+    expect(stickerLabel('animals_normal.dog')).toBe('강아지');
     expect(toColorStickerId('sprout')).toBe('basic.sprout');
   });
   it('자물쇠와 재생 기호를 그린다',()=>{

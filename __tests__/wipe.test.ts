@@ -35,7 +35,7 @@ it('끝나면 로컬 변경 신호를 보낸다 (위젯 갱신)', async () => {
 
 it('묶음 권한과 누른 날 기록도 지운다 — 다음 사람이 이어 받지 않게', async () => {
   const db = await getDb();
-  await db.run("INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES ('animals', 'ad', 1, 2)");
+  await db.run("INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES ('animals_normal', 'ad', 1, 2)");
   await db.run("INSERT INTO placed_days (date_key) VALUES ('2026-10-08')");
   await wipeDevice(() => {});
   expect(await db.all('SELECT * FROM pack_access')).toEqual([]);

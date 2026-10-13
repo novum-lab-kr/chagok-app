@@ -6,17 +6,17 @@ const now = new Date(2026, 9, 8, 14, 0).getTime();
 
 describe('packViews', () => {
   it('묶음 순서대로, 상태와 스티커 10종을 담는다', () => {
-    const views = packViews([{ packId: 'animals', source: 'ad', grantedAt: now, expiresAt: now + AD_TRIAL_MS }], now);
+    const views = packViews([{ packId: 'animals_normal', source: 'ad', grantedAt: now, expiresAt: now + AD_TRIAL_MS }], now);
     expect(views.map((v) => [v.id, v.state])).toEqual([
-      ['basic', 'free'], ['sports', 'locked'], ['snack', 'locked'], ['objects', 'locked'], ['animals', 'trial'], ['emotions', 'locked'], ['weather', 'locked'],
+      ['basic', 'free'], ['sports_normal', 'locked'], ['snack_normal', 'locked'], ['objects_normal', 'locked'], ['animals_normal', 'trial'], ['emotions_normal', 'locked'], ['weather_normal', 'locked'],
     ]);
-    const animals = views.find((v) => v.id === 'animals')!;
+    const animals = views.find((v) => v.id === 'animals_normal')!;
     expect(animals).toMatchObject({ label: '동물', trialLabel: '24시간 남음' });
     expect(animals.stickers).toHaveLength(10);
-    expect(animals.stickers.every((id) => id.startsWith('animals.'))).toBe(true);
+    expect(animals.stickers.every((id) => id.startsWith('animals_normal.'))).toBe(true);
   });
   it('판 예시는 그 묶음의 서로 다른 5개', () => {
-    const v = packViews([], now).find((p) => p.id === 'snack')!;
+    const v = packViews([], now).find((p) => p.id === 'snack_normal')!;
     const s = samplePlacement(v);
     expect(s).toHaveLength(5);
     expect(new Set(s).size).toBe(5);
@@ -36,13 +36,13 @@ describe('endLabel — 광고 하루 체험이 끝나는 때', () => {
 
 describe('stickerChoice — 화면 사이 넘기기', () => {
   it('한 번 읽으면 비운다', () => {
-    offerSticker('animals.cat' as never);
-    expect(takeOfferedSticker()).toBe('animals.cat');
+    offerSticker('animals_normal.cat' as never);
+    expect(takeOfferedSticker()).toBe('animals_normal.cat');
     expect(takeOfferedSticker()).toBeNull();
   });
   it('펼칠 묶음도 한 번만', () => {
-    offerOpenPack('snack');
-    expect(takeOpenPack()).toBe('snack');
+    offerOpenPack('snack_normal');
+    expect(takeOpenPack()).toBe('snack_normal');
     expect(takeOpenPack()).toBeNull();
   });
 });
@@ -52,6 +52,6 @@ describe('initialChoice — 「기본 스티커」를 열 때 고른 상태', ()
     expect(initialChoice('basic.star', [], now)).toEqual({ selected: 'basic.star', open: 'basic' });
   });
   it('잠긴 묶음 스티커로 열면(체험이 끝난 뒤 [다른 스티커]) 새싹을 고른 채로 연다', () => {
-    expect(initialChoice('animals.cat', [], now)).toEqual({ selected: 'basic.sprout', open: 'basic' });
+    expect(initialChoice('animals_normal.cat', [], now)).toEqual({ selected: 'basic.sprout', open: 'basic' });
   });
 });

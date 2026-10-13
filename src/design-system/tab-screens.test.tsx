@@ -41,9 +41,9 @@ describe('기록 탭',()=>{
 describe('스티커 탭',()=>{
   it('둘러보기만 한다: 가진 묶음의 스티커는 고르는 칸이 아니고, 잠긴 묶음을 누르면 묶음 화면을 연다',()=>{
     const openPack=vi.fn();
-    render(<StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('animals','locked')]} mine={false} onChangeMine={vi.fn()} openPacks={['basic']} onToggle={vi.fn()} reward={{days:5,goal:7}} onOpenPack={openPack}/>);
+    render(<StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('animals_normal','locked')]} mine={false} onChangeMine={vi.fn()} openPacks={['basic']} onToggle={vi.fn()} reward={{days:5,goal:7}} onOpenPack={openPack}/>);
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button',{name:'동물 묶음 미리 보기'}));expect(openPack).toHaveBeenCalledWith('animals');
+    fireEvent.click(screen.getByRole('button',{name:'동물 묶음 미리 보기'}));expect(openPack).toHaveBeenCalledWith('animals_normal');
   });
 });
 

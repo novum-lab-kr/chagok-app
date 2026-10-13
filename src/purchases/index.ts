@@ -3,7 +3,8 @@ import { grantPurchase, setAdFree, startAdTrial } from '../repositories/packRepo
 import { devStore } from './devStore';
 
 /** 결제·광고 (PRD 4.12). 결제 팝업은 Apple·Google이 그린다. */
-export type BuyResult = { ok: true } | { ok: false; reason: 'cancelled' | 'failed' };
+/** pending: 보호자 승인(구입 승인 요청·가족 결제)을 기다린다. 승인되면 [구매 복원]으로 연다. */
+export type BuyResult = { ok: true } | { ok: false; reason: 'cancelled' | 'failed' | 'pending' };
 export type AdResult = { ok: true } | { ok: false; reason: 'closed' | 'unavailable' };
 export interface Store {
   buyPack(packId: ColorStickerPackId): Promise<BuyResult>;
@@ -15,8 +16,10 @@ export interface Store {
 }
 
 let override: Store | null = null;
-/** 지금은 개발용 대역. 다음 계획에서 RevenueCat·AdMob 구현으로 바꾼다. */
-export const store = (): Store => override ?? devStore;
+/** 키가 있으면 앱을 켤 때 RevenueCat으로 바뀐다(revenueCat.ts). 없으면 개발용 대역. 보상형 광고는 AdMob 전까지 대역. */
+let active: Store = devStore;
+export const store = (): Store => override ?? active;
+export function setActiveStore(s: Store): void { active = s; }
 export function setStoreForTest(s: Store | null): void { override = s; }
 
 export async function buyPack(packId: ColorStickerPackId, now = Date.now()): Promise<BuyResult> {

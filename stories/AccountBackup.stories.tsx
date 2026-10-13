@@ -35,10 +35,10 @@ function Start({initial='account'}:{initial?:AccountStartChoice}) {
   const [value,setValue]=useState(initial);
   return <AccountStartScreen value={value} onChange={setValue} onContinue={noop}/>;
 }
-function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false}:{status?:AccountBackupStatus;adFree?:boolean}) {
+function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore'}) {
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title="앱 설정" onBack={noop}/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
-    <PurchasePanel adFree={adFree} onRemoveAds={noop} onRestore={noop}/>
+    <PurchasePanel adFree={adFree} onRemoveAds={noop} onRestore={noop} busy={busy}/>
     <PixelPanel title="도움말"><SettingRow label="사용법 다시 보기" onPress={noop}/></PixelPanel>
     <PixelPanel title="정보"><SettingRow label="약관과 라이선스" onPress={noop}/></PixelPanel>
   </RetroScreen>;
@@ -103,6 +103,10 @@ export const DeleteDone:Story={name:'6 계정 삭제 · 완료',render:()=><Stag
 export const SettingsAdFree:Story={name:'8 구매 · 광고 제거를 산 뒤',render:()=><Stage><Settings adFree/></Stage>};
 export const RestoreDone:Story={name:'8 구매 복원 · 찾음',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreDone(['동물 묶음','간식 묶음','광고 제거'])}/></Stage>};
 export const RestoreNone:Story={name:'8 구매 복원 · 없음',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreNone}/></Stage>};
+export const RestoreWaiting:Story={name:'8 구매 복원 · 기다리는 중',render:()=><Stage><Settings busy="restore"/></Stage>};
+export const RestorePurchaseFailed:Story={name:'8 구매 복원 · 실패',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreFailed}/></Stage>};
+export const AdFreeWaiting:Story={name:'8 광고 제거 · 결제 기다리는 중',render:()=><Stage><Settings busy="adFree"/></Stage>};
+export const AdFreeFailed:Story={name:'8 광고 제거 · 결제 실패',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.adFreeFailed}/></Stage>};
 
 export const TermsChanged:Story={name:'7 약관 변경 안내',render:()=><Stage><Home/><Dialog {...accountDialogs.termsChanged('10월 15일')}/></Stage>};
 export const Under14:Story={name:'7 만 14세 미만 안내',render:()=><Stage>

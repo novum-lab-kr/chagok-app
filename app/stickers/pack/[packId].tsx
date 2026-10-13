@@ -21,6 +21,7 @@ export default function Pack() {
   const { packId } = useLocalSearchParams<{ packId: ColorStickerPackId }>();
   const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
   const [once] = useState(createSingleFlight);
+  const [busy, setBusy] = useState<'buy' | 'ad'>();
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
 
@@ -42,18 +43,26 @@ export default function Pack() {
 
   const opened = () => { offerOpenPack(packId); goBackOrHome(); };
 
-  /** 결제 팝업은 스토어가 그린다. 취소하면 아무것도 하지 않는다. */
+  /** 결제 팝업은 스토어가 그린다. 기다리는 동안 누른 버튼에 로딩 점. 취소하면 아무것도 하지 않는다 (2026-10-13). */
   async function buy() {
-    const r = await buyPack(packId);
-    if (!r.ok) return;
+    setBusy('buy');
+    const r = await buyPack(packId).finally(() => setBusy(undefined));
+    if (!r.ok) {
+      if (r.reason !== 'cancelled') await ask(r.reason === 'pending' ? stickerShopDialogs.purchasePending : stickerShopDialogs.buyFailed);
+      return;
+    }
     await ask(stickerShopDialogs.bought(view!.label));
     opened();
   }
 
-  /** 광고를 끝까지 본 때부터 24시간. 닫거나 못 불러오면 아무것도 하지 않는다. */
+  /** 광고를 끝까지 본 때부터 24시간. 닫으면 아무것도 하지 않고, 못 불러오면 알린다. */
   async function watchAd() {
-    const r = await watchAdForPack(packId);
-    if (!r.ok) return;
+    setBusy('ad');
+    const r = await watchAdForPack(packId).finally(() => setBusy(undefined));
+    if (!r.ok) {
+      if (r.reason === 'unavailable') await ask(stickerShopDialogs.adUnavailable);
+      return;
+    }
     await ask(stickerShopDialogs.adTrialStarted(endLabel(r.endsAt, r.endsAt - AD_TRIAL_MS)));
     opened();
   }
@@ -74,6 +83,7 @@ export default function Pack() {
         onWatchAd={() => { void once(watchAd); }}
         onTrial={() => { void once(trial); }}
         onBack={goBackOrHome}
+        busy={busy}
       />
       {dialog}
     </>
