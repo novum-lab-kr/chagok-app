@@ -30,6 +30,11 @@ describe('RevenueCat 결제', () => {
     expect(await fail.buyPack('snack_normal')).toEqual({ ok: false, reason: 'failed' });
   });
 
+  it('앞 결제 창이 아직 열려 있으면(이미 진행 중) 실패가 아니라 취소처럼 조용히 끝낸다', async () => {
+    const store = createRevenueCatStore(fakeSdk({ purchaseStoreProduct: async () => { throw { userCancelled: false, code: '15' }; } }));
+    expect(await store.buyAdFree()).toEqual({ ok: false, reason: 'cancelled' });
+  });
+
   it('보호자 승인을 기다리면 pending', async () => {
     const store = createRevenueCatStore(fakeSdk({ purchaseStoreProduct: async () => { throw { userCancelled: false, code: '20' }; } }));
     expect(await store.buyPack('snack_normal')).toEqual({ ok: false, reason: 'pending' });

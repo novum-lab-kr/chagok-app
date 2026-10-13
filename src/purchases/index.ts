@@ -31,10 +31,24 @@ export function setActiveStore(s: PurchaseStore): void { purchases = s; }
 export function setAdStore(s: AdStore): void { ads = s; }
 export function setStoreForTest(s: Store | null): void { override = s; }
 
-export async function buyPack(packId: ColorStickerPackId, now = Date.now()): Promise<BuyResult> {
-  const r = await store().buyPack(packId);
-  if (r.ok) await grantPurchase(packId, now);
-  return r;
+/**
+ * 결제는 한 번에 하나 (2026-10-13). 결제 창이 떠 있는 동안 화면을 나갔다 와서 같은 상품을 다시 누르면 그 결제를 같이 기다리고,
+ * 다른 상품이면 아무것도 하지 않는다 — 스토어가 「이미 진행 중」으로 거절해 실패처럼 보이던 문제.
+ */
+let inFlight: { key: string; result: Promise<BuyResult> } | null = null;
+function oneAtATime(key: string, run: () => Promise<BuyResult>): Promise<BuyResult> {
+  if (inFlight) return inFlight.key === key ? inFlight.result : Promise.resolve({ ok: false, reason: 'cancelled' });
+  const result = run().finally(() => { inFlight = null; });
+  inFlight = { key, result };
+  return result;
+}
+
+export function buyPack(packId: ColorStickerPackId, now = Date.now()): Promise<BuyResult> {
+  return oneAtATime(packId, async () => {
+    const r = await store().buyPack(packId);
+    if (r.ok) await grantPurchase(packId, now);
+    return r;
+  });
 }
 
 /** 광고를 끝까지 본 때부터 24시간 (2026-10-08). */
@@ -44,10 +58,12 @@ export async function watchAdForPack(packId: ColorStickerPackId, now = Date.now(
   return { ok: true, endsAt: await startAdTrial(packId, now) };
 }
 
-export async function buyAdFree(): Promise<BuyResult> {
-  const r = await store().buyAdFree();
-  if (r.ok) await setAdFree(true);
-  return r;
+export function buyAdFree(): Promise<BuyResult> {
+  return oneAtATime('adFree', async () => {
+    const r = await store().buyAdFree();
+    if (r.ok) await setAdFree(true);
+    return r;
+  });
 }
 
 /** 산 묶음 전부와 광고 제거를 되살린다. 결과 문구용 이름: 묶음 순서대로 「○○ 묶음」, 끝에 「광고 제거」. */

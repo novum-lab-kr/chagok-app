@@ -13,6 +13,8 @@ export const entitlementOf = (packId: ColorStickerPackId) => `pack_${packId}`;
 export const AD_FREE_ENTITLEMENT = 'ad_free';
 /** PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR — 보호자 승인을 기다린다 */
 const PAYMENT_PENDING = '20';
+/** PURCHASES_ERROR_CODE.OPERATION_ALREADY_IN_PROGRESS_ERROR — 앞 결제 창이 아직 열려 있다. 실패가 아니라 알리지 않는다 */
+const ALREADY_IN_PROGRESS = '15';
 
 /** react-native-purchases에서 쓰는 부분만. 테스트에서 가짜로 바꾼다. */
 type CustomerInfo = { entitlements: { active: Record<string, unknown> } };
@@ -30,7 +32,7 @@ async function buy(sdk: PurchasesSdk, productId: string, entitlement: string): P
     return entitlement in customerInfo.entitlements.active ? { ok: true } : { ok: false, reason: 'failed' };
   } catch (e) {
     const err = e as { userCancelled?: boolean | null; code?: string };
-    if (err.userCancelled) return { ok: false, reason: 'cancelled' };
+    if (err.userCancelled || err.code === ALREADY_IN_PROGRESS) return { ok: false, reason: 'cancelled' };
     return { ok: false, reason: err.code === PAYMENT_PENDING ? 'pending' : 'failed' };
   }
 }

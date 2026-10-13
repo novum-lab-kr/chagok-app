@@ -296,8 +296,8 @@ export function PixelBusyDialog({title,description}:{title:string;description:st
   </PixelFrame>;
 }
 
-function ModalHost({visible,onRequestClose,children}:{visible:boolean;onRequestClose:()=>void;children:ReactNode}) {
-  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} statusBarTranslucent>
+function ModalHost({visible,onRequestClose,onDismiss,children}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;children:ReactNode}) {
+  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
     <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:SCREEN_PADDING}}>
       <View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.scrim}]}/>
       <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH-2*SCREEN_PADDING,alignItems:'center'}}>{children}</View>
@@ -307,8 +307,8 @@ function ModalHost({visible,onRequestClose,children}:{visible:boolean;onRequestC
 const ignoreClose=()=>{};
 
 /** 일반 화면용 확인 호스트. `basic` 다이얼로그를 화면 중앙에 두고 배경을 막는다. Android 뒤로가기는 onRequestClose로 닫는다 — loading 중에는 무시한다. */
-export function PixelDialogModal({visible,onRequestClose,...dialog}:{visible:boolean;onRequestClose:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림) */single?:boolean;/** 진행 중: 뒤로가기로도 닫히지 않는다 */loading?:boolean}) {
-  return <ModalHost visible={visible} onRequestClose={dialog.loading?ignoreClose:onRequestClose}><PixelDialog variant="basic" {...dialog}/></ModalHost>;
+export function PixelDialogModal({visible,onRequestClose,onDismiss,...dialog}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤. 그 뒤에야 다른 창(결제 창 등)을 띄울 수 있다 */onDismiss?:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림) */single?:boolean;/** 진행 중: 뒤로가기로도 닫히지 않는다 */loading?:boolean}) {
+  return <ModalHost visible={visible} onRequestClose={dialog.loading?ignoreClose:onRequestClose} onDismiss={onDismiss}><PixelDialog variant="basic" {...dialog}/></ModalHost>;
 }
 
 /** PixelBusyDialog 호스트. Android 뒤로가기를 무시한다. */

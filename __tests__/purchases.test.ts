@@ -87,3 +87,29 @@ describe('가격', () => {
     expect(await loadPrices()).toEqual({});
   });
 });
+
+describe('결제는 한 번에 하나', () => {
+  it('결제 창이 떠 있는 동안 같은 상품을 다시 누르면 그 결제를 같이 기다린다', async () => {
+    let finish: (r: { ok: true }) => void = () => {};
+    let calls = 0;
+    setStoreForTest(fakeStore({ buyPack: () => { calls++; return new Promise((r) => { finish = r; }); } }));
+    const first = buyPack('animals_normal', now);
+    const second = buyPack('animals_normal', now);
+    finish({ ok: true });
+    expect(await first).toEqual({ ok: true });
+    expect(await second).toEqual({ ok: true });
+    expect(calls).toBe(1);
+    expect((await listPackAccess()).map((a) => a.packId)).toEqual(['animals_normal']);
+  });
+
+  it('다른 상품이면 실패로 알리지 않고 끝낸다. 앞 결제가 끝나면 다시 살 수 있다', async () => {
+    let finish: (r: { ok: true }) => void = () => {};
+    setStoreForTest(fakeStore({ buyPack: () => new Promise((r) => { finish = r; }) }));
+    const first = buyPack('animals_normal', now);
+    expect(await buyAdFree()).toEqual({ ok: false, reason: 'cancelled' });
+    finish({ ok: true });
+    await first;
+    expect(await buyAdFree()).toEqual({ ok: true });
+  });
+});
+
