@@ -170,6 +170,12 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
 
 /** 화면 위에 PixelDialogModal로 띄운다. 결제 팝업은 Apple·Google이 그린다. */
 export const stickerShopDialogs={
+  /**
+   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안). 쓰기 시작하면 환불이 어려울 수 있음을 사기 전에 알린다(약관 2판 11조).
+   * 제목은 무엇을 사는지, 설명 첫 줄은 얻는 것, 둘째 줄이 환불. 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다.
+   */
+  confirmBuy:(label:string,count:number)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.`,primaryLabel:`${PRICE}에 열기`,secondaryLabel:'취소'}),
+  confirmAdFree:{title:'광고를 없앨까요?',description:'목표 화면 아래 광고가 사라져요.\n산 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'광고 없애기',secondaryLabel:'취소'},
   bought:(label:string)=>({title:`${label} 묶음을 열었어요`,description:'기본 스티커로 쓸 그림을 골라 주세요.',primaryLabel:'확인',single:true}),
   /** endLabel 예: '내일 밤 11:00' — 광고를 다 본 때부터 24시간 */
   adTrialStarted:(endLabel:string)=>({title:'하루 동안 써 볼 수 있어요',description:`${endLabel}까지 쓸 수 있어요.`,primaryLabel:'확인',single:true}),

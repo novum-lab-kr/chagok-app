@@ -105,6 +105,7 @@ export const RestoreDone:Story={name:'8 구매 복원 · 찾음',render:()=><Sta
 export const RestoreNone:Story={name:'8 구매 복원 · 없음',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreNone}/></Stage>};
 export const RestoreWaiting:Story={name:'8 구매 복원 · 기다리는 중',render:()=><Stage><Settings busy="restore"/></Stage>};
 export const RestorePurchaseFailed:Story={name:'8 구매 복원 · 실패',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreFailed}/></Stage>};
+export const AdFreeConfirm:Story={name:'8 광고 제거 · 사기 전 확인',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.confirmAdFree}/></Stage>};
 export const AdFreeWaiting:Story={name:'8 광고 제거 · 결제 기다리는 중',render:()=><Stage><Settings busy="adFree"/></Stage>};
 export const AdFreeFailed:Story={name:'8 광고 제거 · 결제 실패',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.adFreeFailed}/></Stage>};
 
