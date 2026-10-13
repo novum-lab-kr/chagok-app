@@ -1,6 +1,6 @@
 # 인계
 
-갱신: 2026-10-12
+갱신: 2026-10-13
 
 다음 세션이 바로 이어서 일할 수 있게 **지금 상태, 진행 중인 것, 다음 할 일, 아직 확인 못 한 것**만 둔다. 끝난 일은 지운다(git 기록에 있다).
 
@@ -15,7 +15,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 | 기능 | 지금 | PRD |
 | --- | --- | --- |
-| 결제·광고 | `src/purchases`의 개발용 대역(누르면 바로 성공). 목표 탭의 광고 자리는 아직 그리지 않는다(Storybook `Screens/Bottom Tabs`에만 회색 자리) | RevenueCat 구매·복원, AdMob 보상형 광고·목표 탭 탭 바 위 배너 8pt 띄움 (4.12) |
+| 결제·광고 | RevenueCat **Test Store**(가짜 결제, 키는 `.env.local` `EXPO_PUBLIC_REVENUECAT_KEY`)와 AdMob **Google 테스트 광고 ID**로 연결(2026-10-13). 키나 네이티브 모듈이 없는 빌드는 개발용 대역(누르면 바로 성공)으로 돈다. 가격은 화면에 박아 둔 2,200원·5,500원 — 스토어 가격 표시는 미정 | 스토어 키·실제 광고 단위 ID (4.12) |
 | 로그인 | 연결 화면의 [개발 계정으로 계속]만(`__DEV__`). 시작·동의·복원·로그아웃·계정 삭제 화면은 연결됨 | Apple·Google (4.8) |
 | 한 번에 한 기기 | 없음 | 4.8 |
 | 위젯 | iOS 세 종류만 | Android도 (4.10) |
@@ -47,7 +47,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 **계정·외부 준비가 끝난 뒤**
 
-- **결제·광고 실제 연결** — `src/purchases`의 `Store`에 RevenueCat과 AdMob을 끼운다. 결제 실패·광고 실패 문구도 이때. 서버 `entitlements` 테이블·RLS(서버만 쓰기), 처리방침 제2판, 약관 유료 조항, 통신판매업 신고 확인이 따라온다. **사용자에게 물어 둔 것:** 결제 시험을 RevenueCat Test Store로 할지(그러면 App Store Connect 상품 등록 전에도 코드를 시작할 수 있다).
+- **결제·광고 출시 연결** — 코드는 Test Store·테스트 광고로 붙어 있다(2026-10-13). 남은 것: App Store Connect·Google Play 상품 등록과 RevenueCat 스토어 키, AdMob 가입(남편 명의)과 실제 앱 ID·광고 단위 ID, `app-ads.txt`, 계정 삭제 때 RevenueCat 구매 기록 삭제 요청(처리방침 제2판 초안 5절 3항), 처리방침 제2판·약관 유료 조항 게시(초안: 정책 저장소 `docs/paid-v2` 브랜치), 통신판매업 신고 확인.
 - **Apple 로그인**(다른 세션 진행 중), `apple-link`, Apple 토큰 폐기(그전에는 토큰이 있으면 계정 삭제가 멈춘다). 버튼은 연결 화면의 [개발 계정으로 계속] 자리에. 버튼 높이 44, Google 버튼 글자 19·로고 24·여백 19·14·19, 좁은 화면에서는 Google 버튼 안 전체를 같은 비율로 줄인다(2026-10-12 사용자 결정, Storybook `Screens/Account consent`·[시안](https://claude.ai/artifact/Masmo48AjPKNvZihxUobwR)).
 - **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
 - **TestFlight** — EAS 클라우드 빌드 전에 서버 주소·키를 EAS 환경 변수로.

@@ -44,7 +44,9 @@ export type SettingKey =
   /** '1'이면 광고 제거를 샀다. 하루 체험 버튼이 없다 */
   | 'adFree'
   /** 체험 열림 카드를 ×로 닫을 때 넘긴 문턱(7, 14…). 다음 문턱까지 카드를 숨긴다 (2026-10-12) */
-  | 'trialCardDismissed';
+  | 'trialCardDismissed'
+  /** '1'이면 동의 화면에서 「만 14세 미만이에요」를 눌렀다. 이 기기의 광고를 아동 처리한다 (2026-10-13 결정) */
+  | 'adChildDirected';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();

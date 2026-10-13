@@ -17,7 +17,9 @@
 - [ ] main이 깨끗하고, 합치지 않은 출시 관련 브랜치가 없다(HANDOFF 「진행 중인 브랜치」).
 - [ ] `npm test`, `npm run test:components`, `npm run typecheck`, `npm run lint`(오류 0), `npx expo export --platform ios`·`android`가 모두 통과한다.
 - [ ] 개발용 대역이 남아 있지 않다:
-  - 결제·광고가 `src/purchases`의 개발용 대역이 아니라 RevenueCat·AdMob이다. 광고 ID가 테스트 ID가 아니다.
+  - 결제·광고가 `src/purchases`의 개발용 대역이 아니라 RevenueCat·AdMob이다.
+  - RevenueCat 키가 Test Store 키(`test_`로 시작)가 아니라 iOS·Android 스토어 키다. Test Store 키로 만든 출시 빌드는 SDK가 일부러 멈춘다.
+  - AdMob 앱 ID(`app.json` 플러그인 `react-native-google-mobile-ads`)와 광고 단위 ID(`src/purchases/admob.ts` `adUnits`)가 Google 테스트 ID(`ca-app-pub-3940256099942544`)가 아니다.
   - 연결 화면의 [개발 계정으로 계속], `/dev/sync`가 출시 빌드에 보이지 않는다(`__DEV__`).
 - [x] 다크 모드 막기·글자 크기 고정이 들어가 있다(`app.json` `userInterfaceStyle: "light"`, `allowFontScaling={false}`, PRD 6.2). 2026-10-12 실기기 확인.
 - [ ] 한 번에 한 기기, 동기화 버전·최소 앱 버전이 서버와 앱에 들어가 있다(PRD 4.8, [버전 규칙](RELEASE-VERSIONING.md) 「가끔」).

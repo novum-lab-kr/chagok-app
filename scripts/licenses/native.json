@@ -6,5 +6,7 @@
   { "name": "double-conversion", "version": "", "license": "BSD-3-Clause", "file": "double-conversion.txt" },
   { "name": "fmt", "version": "12.1.0", "license": "MIT", "file": "fmt.txt" },
   { "name": "fast_float", "version": "8.0.0", "license": "MIT", "file": "fast_float.txt" },
-  { "name": "SocketRocket", "version": "", "license": "BSD-3-Clause", "file": "SocketRocket.txt" }
+  { "name": "SocketRocket", "version": "", "license": "BSD-3-Clause", "file": "SocketRocket.txt" },
+  { "name": "RevenueCat", "version": "5.95.0", "license": "MIT", "file": "revenuecat-ios.txt" },
+  { "name": "PurchasesHybridCommon", "version": "19.11.0", "license": "MIT", "file": "purchases-hybrid-common.txt" }
 ]

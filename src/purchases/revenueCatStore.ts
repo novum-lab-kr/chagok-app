@@ -1,5 +1,5 @@
 import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/catalog';
-import type { BuyResult, Store } from './index';
+import type { BuyResult, PurchaseStore } from './index';
 
 /**
  * RevenueCat 결제 (2026-10-13 — Test Store로 개발, 출시 전에 스토어 키로 바꾼다).
@@ -34,8 +34,8 @@ async function buy(sdk: PurchasesSdk, productId: string, entitlement: string): P
   }
 }
 
-/** 보상형 광고는 AdMob을 붙일 때까지 ads(지금은 개발용 대역)에 맡긴다. */
-export function createRevenueCatStore(sdk: PurchasesSdk, ads: Pick<Store, 'showRewardedAd'>): Store {
+/** 보상형 광고는 따로(admob.ts) 끼운다. */
+export function createRevenueCatStore(sdk: PurchasesSdk): PurchaseStore {
   return {
     buyPack: (packId) => buy(sdk, productIdOf(packId), entitlementOf(packId)),
     buyAdFree: () => buy(sdk, AD_FREE_PRODUCT, AD_FREE_ENTITLEMENT),
@@ -46,6 +46,5 @@ export function createRevenueCatStore(sdk: PurchasesSdk, ads: Pick<Store, 'showR
         adFree: AD_FREE_ENTITLEMENT in active,
       };
     },
-    showRewardedAd: () => ads.showRewardedAd(),
   };
 }
