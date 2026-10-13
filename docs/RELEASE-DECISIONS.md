@@ -34,6 +34,7 @@
 | 2026-10-08 | 체험이 끝난 뒤 | 그 묶음 스티커가 기본인 목표에서 다음에 붙일 때 「n일 체험이 끝났어요 / 붙인 스티커는 그대로 남아 있어요.」 + [다른 스티커] [묶음 열기]. 위젯에서는 붙이지 않고 앱을 열어 같은 안내를 보인다 |
 | 2026-10-08 | 스티커·구매 화면 | [화면 시안](https://claude.ai/artifact/MX8DFS3TUf5KHFX5F3gMCH) 19판 확정. 「기본 스티커」 고르기 화면 · 묶음 화면 · 앱 설정 「구매」 블럭(광고 제거 + [구매 복원]). **구매 복원은 앱 설정에만** 두고, 한 번에 산 묶음 전부와 광고 제거를 되살린다. 홈 배너의 [광고 없이 쓰기] 글자는 두지 않는다. 화면 세부는 PRD 4.12 |
 | 2026-10-13 | 결제 SDK | **RevenueCat + Test Store로 지금 개발**한다(가짜 결제, 월 매출 2,500달러까지 무료). 출시 전에 따로 한다: App Store Connect 유료 앱 계약·은행·세금·인앱 상품 등록, Google Play 상품 등록, RevenueCat에 iOS·Android 앱 추가와 스토어 키 연결. 앱 코드는 플랫폼별 키를 고르는 곳만 바뀐다. 결제 기록이 RevenueCat(미국)으로 가므로 처리방침에 국외 이전을 적는다 ([결정 시안](https://claude.ai/artifact/2wgj53KwaY2tRPiPHRQiYb)) |
+| 2026-10-13 | 상품 ID | 묶음 ID는 `<주제>_<세부>`, 첫 묶음은 `normal` — `sports_normal` `snack_normal` `objects_normal` `animals_normal` `emotions_normal` `weather_normal`(무료 `basic`은 그대로). 상품 ID는 `com.novum.chagok.pack.<묶음 ID>`, 광고 제거는 `com.novum.chagok.adfree`. 실제 스토어 ID는 지운 뒤에도 다시 못 쓰므로 한 번 쓴 묶음 ID는 재사용하지 않는다. 규칙은 `src/stickers/color/README.md` |
 | 2026-10-13 | 광고 SDK | **AdMob, 테스트 광고 ID로 지금 개발**한다. `react-native-google-mobile-ads`는 버전을 고정하고, 17.1~17.2의 Android 설정 플러그인 오류(#903)가 고쳐진 버전인지 도입 때 확인한다 |
 | 2026-10-13 | AdMob 명의 | **남편 명의(노붐)** — Apple 계정과 같게. 사업자 정보·세금 ID로 가입하고 사용자를 초대한다 |
 | 2026-10-13 | `app-ads.txt` | **정책 저장소(`chagok-app-policy`) 루트에 둔다.** 개발자 웹사이트는 우선 `https://chagok-app-terms.netlify.app`. 파일 내용은 AdMob 가입 뒤 받는 한 줄. 그 사이트 첫 화면을 지원 URL로도 쓰려면 **문의 이메일이 첫 화면에 보여야 한다**(App Review 1.5, Support URL은 실제 연락처로 이어져야 함) — 지금은 처리방침 안에만 있다 |

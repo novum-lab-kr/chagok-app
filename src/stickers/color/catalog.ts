@@ -1,6 +1,6 @@
 import {colorStickerData} from './stickers.generated';
 
-export type ColorStickerPackId='basic'|'sports'|'snack'|'objects'|'animals'|'emotions'|'weather';
+export type ColorStickerPackId='basic'|'sports_normal'|'snack_normal'|'objects_normal'|'animals_normal'|'emotions_normal'|'weather_normal';
 export interface ColorStickerLayer {readonly color:string; readonly d:string}
 export interface ColorStickerDefinition {
   readonly id:string;
@@ -13,12 +13,12 @@ export interface ColorStickerDefinition {
 /** 표시 순서대로. 기본 묶음만 무료다. */
 export const colorStickerPacks=[
   {id:'basic',label:'기본',free:true},
-  {id:'sports',label:'운동',free:false},
-  {id:'snack',label:'간식',free:false},
-  {id:'objects',label:'사물',free:false},
-  {id:'animals',label:'동물',free:false},
-  {id:'emotions',label:'감정',free:false},
-  {id:'weather',label:'날씨·계절',free:false},
+  {id:'sports_normal',label:'운동',free:false},
+  {id:'snack_normal',label:'간식',free:false},
+  {id:'objects_normal',label:'사물',free:false},
+  {id:'animals_normal',label:'동물',free:false},
+  {id:'emotions_normal',label:'감정',free:false},
+  {id:'weather_normal',label:'날씨·계절',free:false},
 ] as const satisfies readonly {id:ColorStickerPackId;label:string;free:boolean}[];
 
 /** Stable IDs: append new definitions; never reuse an ID for a different sticker. */

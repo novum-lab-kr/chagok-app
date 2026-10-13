@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
+import { configureRevenueCat, linkPurchaseAccount } from '../src/purchases/revenueCat';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
@@ -21,6 +22,8 @@ import { startWidgetSync } from '../src/widgets/syncWidgets';
 // 그려지는 순간 페이드 없이 내려서 끊김 없이 이어지게 한다 (docs/design/character/README.md 「스플래시」).
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 0, fade: false });
+// 결제는 화면보다 먼저 준비한다. 키나 결제 모듈이 없으면 개발용 대역 그대로 (src/purchases/revenueCat.ts).
+configureRevenueCat();
 
 /**
  * 애니메이션 첫 장면이 그려지면 OS 스플래시를 내린다. 새 아키텍처는 기기가 바쁠 때 첫 layout 이벤트를 버리므로
@@ -71,6 +74,14 @@ export default function RootLayout() {
     if (!splashDone) return;
     return startWidgetSync();
   }, [splashDone]);
+  // 구매를 로그인한 계정에 묶는다 — 다른 기기에서 [구매 복원]하면 되살아난다 (2026-10-13).
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void supabase.auth.getSession().then(({ data }) => linkPurchaseAccount(data.session?.user.id ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => { void linkPurchaseAccount(session?.user.id ?? null); });
+    return () => data.subscription.unsubscribe();
+  }, []);
   // 로그인해 있는 동안만 백업을 올린다 (계정·백업 설계 ②). 서버 설정이 없으면 기기에서만 쓴다.
   useEffect(() => {
     const supabase = getSupabase();

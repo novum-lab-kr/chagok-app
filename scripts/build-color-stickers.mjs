@@ -7,7 +7,7 @@ import path from 'node:path';
 const dir=path.resolve('src/stickers/color');
 const source=JSON.parse(fs.readFileSync(path.join(dir,'source/sticker-packs-24.json'),'utf8'));
 
-const PACK_IDS={free:'basic'};
+const PACK_IDS = { free: 'basic', sports: 'sports_normal', snack: 'snack_normal', objects: 'objects_normal', animals: 'animals_normal', emotions: 'emotions_normal', weather: 'weather_normal' };
 const STICKER_IDS={'weather.sun2':'sun'};
 
 const lines=source.stickers.map(s=>{

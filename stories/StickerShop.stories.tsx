@@ -28,30 +28,34 @@ function ChooserHost({packs,selected='basic.book',days=5,initialMine=false,initi
   const [open,setOpen]=useState<readonly ColorStickerPackId[]>([initialOpen??(selected.split('.')[0] as ColorStickerPackId)]);
   return <StickerChooserScreen packs={packs} mine={mine} onChangeMine={setMine} selected={value} onSelect={setValue} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days,goal:7}} onOpenPack={noop} onDone={noop} onBack={noop}/>;
 }
-const owned=[colorPack('basic','free'),colorPack('snack','owned'),colorPack('animals','locked'),colorPack('weather','locked')];
-const trying=(label:string)=>[colorPack('basic','free'),colorPack('snack','owned'),colorPack('animals','trial',label),colorPack('weather','locked')];
-const afterBuy=[colorPack('basic','free'),colorPack('snack','owned'),colorPack('animals','owned'),colorPack('weather','locked')];
-const animals=colorPack('animals','locked');
+const owned=[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','locked'),colorPack('weather_normal','locked')];
+const trying=(label:string)=>[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','trial',label),colorPack('weather_normal','locked')];
+const afterBuy=[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','owned'),colorPack('weather_normal','locked')];
+const animals=colorPack('animals_normal','locked');
 /** 판 예시: 묶음 안에서 서로 다른 5개 */
 const sample=[0,4,7,2,9].map(i=>animals.stickers[i]);
-const pack=(adFree:boolean,days:number)=><PackScreen pack={animals} sample={sample} adFree={adFree} reward={{days,goal:7}} onBuy={noop} onWatchAd={noop} onTrial={noop} onBack={noop}/>;
+const pack=(adFree:boolean,days:number,busy?:'buy'|'ad')=><PackScreen pack={animals} sample={sample} adFree={adFree} reward={{days,goal:7}} onBuy={noop} onWatchAd={noop} onTrial={noop} onBack={noop} busy={busy}/>;
 
 // 1. 기본 스티커
 export const Chooser:Story={name:'1 기본 스티커',render:()=><Stage><ChooserHost packs={owned}/></Stage>};
 export const ChooserMine:Story={name:'1 기본 스티커 · 내 스티커',render:()=><Stage><ChooserHost packs={owned} initialMine/></Stage>};
 export const ChooserRewardReady:Story={name:'1 기본 스티커 · 붙인 날이 찼을 때',render:()=><Stage><ChooserHost packs={owned} days={7}/></Stage>};
-export const ChooserTrial:Story={name:'1 기본 스티커 · 3일 써 보는 중',render:()=><Stage><ChooserHost packs={trying('3일 남음')} selected="animals.dog"/></Stage>};
+export const ChooserTrial:Story={name:'1 기본 스티커 · 3일 써 보는 중',render:()=><Stage><ChooserHost packs={trying('3일 남음')} selected="animals_normal.dog"/></Stage>};
 
 // 2. 묶음 화면
 export const Pack:Story={name:'2 묶음 화면',render:()=><Stage>{pack(false,5)}</Stage>};
 export const PackRewardReady:Story={name:'2 묶음 화면 · 붙인 날이 찼을 때',render:()=><Stage>{pack(false,7)}</Stage>};
 export const PackAdFree:Story={name:'2 묶음 화면 · 광고 제거를 산 사람',render:()=><Stage>{pack(true,5)}</Stage>};
+export const PackBuying:Story={name:'2 묶음 화면 · 결제 기다리는 중',render:()=><Stage>{pack(false,5,'buy')}</Stage>};
+export const PackBuyFailed:Story={name:'2 묶음 화면 · 결제 실패',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.buyFailed}/></Stage>};
+export const PackPending:Story={name:'2 묶음 화면 · 보호자 승인 기다림',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.purchasePending}/></Stage>};
+export const PackAdUnavailable:Story={name:'2 묶음 화면 · 광고를 못 불러옴',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.adUnavailable}/></Stage>};
 
 // 3. 연 뒤
-export const ChooserBought:Story={name:'3 산 직후',render:()=><Stage><ChooserHost packs={afterBuy} initialOpen="animals"/><Dialog {...stickerShopDialogs.bought('동물')}/></Stage>};
-export const ChooserAdTrialStarted:Story={name:'3 광고를 다 본 뒤',render:()=><Stage><ChooserHost packs={trying('24시간 남음')} selected="animals.dog"/><Dialog {...stickerShopDialogs.adTrialStarted('내일 밤 11:00')}/></Stage>};
+export const ChooserBought:Story={name:'3 산 직후',render:()=><Stage><ChooserHost packs={afterBuy} initialOpen="animals_normal"/><Dialog {...stickerShopDialogs.bought('동물')}/></Stage>};
+export const ChooserAdTrialStarted:Story={name:'3 광고를 다 본 뒤',render:()=><Stage><ChooserHost packs={trying('24시간 남음')} selected="animals_normal.dog"/><Dialog {...stickerShopDialogs.adTrialStarted('내일 밤 11:00')}/></Stage>};
 export const TrialEnded:Story={name:'3 체험이 끝난 뒤 붙이려 할 때',render:()=><Stage>
-  <BoardDetailScreen name="책 읽기" sticker="animals.dog" completed={false} progress={{value:4,total:15,percentLabel:'26%'}}
-    board={{kind:'tally',total:15,filled:{1:'animals.dog',2:'animals.dog',3:'animals.dog',4:'animals.dog'},onPress:noop,onOpenRecord:noop}} onBack={noop} onSettings={noop}/>
+  <BoardDetailScreen name="책 읽기" sticker="animals_normal.dog" completed={false} progress={{value:4,total:15,percentLabel:'26%'}}
+    board={{kind:'tally',total:15,filled:{1:'animals_normal.dog',2:'animals_normal.dog',3:'animals_normal.dog',4:'animals_normal.dog'},onPress:noop,onOpenRecord:noop}} onBack={noop} onSettings={noop}/>
   <Dialog {...stickerShopDialogs.trialEnded('3일')}/>
 </Stage>};

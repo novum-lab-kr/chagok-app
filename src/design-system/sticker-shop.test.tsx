@@ -17,7 +17,7 @@ describe('스티커 묶음 부품',()=>{
     rerender(<FoldToggle open onPress={press}/>);expect(screen.getByRole('button',{name:'접기'})).toBeTruthy();
   });
   it('스티커 칸은 이름으로 읽히고 고른 칸만 선택 상태다',()=>{
-    const press=vi.fn();render(<><StickerChoice id="animals.dog" selected onPress={press}/><StickerChoice id="animals.cat" onPress={press}/></>);
+    const press=vi.fn();render(<><StickerChoice id="animals_normal.dog" selected onPress={press}/><StickerChoice id="animals_normal.cat" onPress={press}/></>);
     expect(screen.getByRole('radio',{name:'강아지'}).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(screen.getByRole('radio',{name:'고양이'}));expect(press).toHaveBeenCalledTimes(1);
   });
@@ -40,7 +40,7 @@ describe('스티커 묶음 부품',()=>{
   });
 });
 describe('「기본 스티커」 화면',()=>{
-  const packs=[colorPack('basic','free'),colorPack('animals','locked'),colorPack('snack','owned'),colorPack('weather','trial','24시간 남음')];
+  const packs=[colorPack('basic','free'),colorPack('animals_normal','locked'),colorPack('snack_normal','owned'),colorPack('weather_normal','trial','24시간 남음')];
   const base={packs,mine:false,onChangeMine:vi.fn(),selected:'basic.book' as const,onSelect:vi.fn(),openPacks:['basic'] as const,onToggle:vi.fn(),reward:{days:5,goal:7},onOpenPack:vi.fn(),onDone:vi.fn(),onBack:vi.fn()};
   const titles=()=>screen.getAllByRole('heading').map(h=>h.textContent).filter(t=>t!=='기본 스티커');
   it('가진 묶음과 체험 중 묶음이 위, 잠긴 묶음이 아래다',()=>{
@@ -52,7 +52,7 @@ describe('「기본 스티커」 화면',()=>{
     expect(titles()).toContain('날씨·계절');expect(titles()).not.toContain('동물');
   });
   it('펼친 묶음은 10개를, 접힌 묶음은 5개와 +n을 보이고 접힌 줄에서도 고른다',()=>{
-    const pack=colorPack('snack','owned');const select=vi.fn();
+    const pack=colorPack('snack_normal','owned');const select=vi.fn();
     render(<PackCard pack={pack} open={false} onToggle={vi.fn()} onSelect={select} onOpenPack={vi.fn()}/>);
     expect(screen.getAllByRole('radio')).toHaveLength(5);expect(screen.getByText('+5')).toBeTruthy();
     fireEvent.click(screen.getAllByRole('radio')[0]);expect(select).toHaveBeenCalledWith(pack.stickers[0]);
@@ -61,39 +61,39 @@ describe('「기본 스티커」 화면',()=>{
     expect(screen.getAllByRole('radio')).toHaveLength(10);
   });
   it('접힌 줄의 5개 안에 고른 스티커가 있으면 선택 표시가 보인다',()=>{
-    const pack=colorPack('snack','owned');
+    const pack=colorPack('snack_normal','owned');
     render(<PackCard pack={pack} open={false} selected={pack.stickers[2]} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
     expect(screen.getAllByRole('radio')[2].getAttribute('aria-checked')).toBe('true');
   });
   it('잠긴 묶음은 고를 수 없고 가림막을 누르면 묶음 화면을 연다. 배지는 가격, 붙인 날이 차면 3일 무료',()=>{
-    const open=vi.fn();const {rerender}=render(<PackCard pack={colorPack('animals','locked')} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
+    const open=vi.fn();const {rerender}=render(<PackCard pack={colorPack('animals_normal','locked')} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
     expect(screen.getByText('2,200원')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'동물 묶음 미리 보기'}));expect(open).toHaveBeenCalled();
-    rerender(<PackCard pack={colorPack('animals','locked')} open={false} rewardReady onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
+    rerender(<PackCard pack={colorPack('animals_normal','locked')} open={false} rewardReady onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
     expect(screen.getByText('3일 무료')).toBeTruthy();
   });
   it('여러 묶음을 함께 펼칠 수 있다',()=>{
-    render(<StickerChooserScreen {...base} openPacks={['basic','snack']}/>);
+    render(<StickerChooserScreen {...base} openPacks={['basic','snack_normal']}/>);
     // 기본 6종 + 간식 10종 펼침, 날씨·계절은 접혀 5개
-    expect(screen.getAllByRole('radio')).toHaveLength(colorPack('basic','free').stickers.length+colorPack('snack','owned').stickers.length+5);
+    expect(screen.getAllByRole('radio')).toHaveLength(colorPack('basic','free').stickers.length+colorPack('snack_normal','owned').stickers.length+5);
   });
   it('펼친 묶음을 다시 누르면 접히고, 접힌 묶음을 누르면 펼쳐진다. 다른 묶음은 그대로다',()=>{
-    expect(togglePack(['basic'],'snack')).toEqual(['basic','snack']);
-    expect(togglePack(['basic','snack'],'basic')).toEqual(['snack']);
+    expect(togglePack(['basic'],'snack_normal')).toEqual(['basic','snack_normal']);
+    expect(togglePack(['basic','snack_normal'],'basic')).toEqual(['snack_normal']);
   });
   it('잠긴 묶음은 머리줄([2,200원]·[>])을 눌러도 묶음 화면을 연다',()=>{
-    const open=vi.fn();render(<PackCard pack={colorPack('animals','locked')} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
+    const open=vi.fn();render(<PackCard pack={colorPack('animals_normal','locked')} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
     fireEvent.click(screen.getByText('2,200원'));expect(open).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByText('동물'));expect(open).toHaveBeenCalledTimes(2);
   });
   it('체험 중 묶음은 남은 시간 배지를 단다',()=>{
-    render(<PackCard pack={colorPack('weather','trial','24시간 남음')} open onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
+    render(<PackCard pack={colorPack('weather_normal','trial','24시간 남음')} open onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
     expect(screen.getByText('24시간 남음')).toBeTruthy();
   });
 });
 describe('묶음 화면',()=>{
-  const pack=colorPack('animals','locked');
+  const pack=colorPack('animals_normal','locked');
   const sample=[0,4,7,2,9].map(i=>pack.stickers[i]);
   const base={pack,sample,adFree:false,reward:{days:5,goal:7},onBuy:vi.fn(),onWatchAd:vi.fn(),onTrial:vi.fn(),onBack:vi.fn()};
   const actions=()=>screen.getAllByRole('button').map(b=>b.getAttribute('aria-label')).filter(l=>l==='2,200원에 열기'||l==='광고 보고 하루 써 보기'||l==='3일 무료로 써 보기');

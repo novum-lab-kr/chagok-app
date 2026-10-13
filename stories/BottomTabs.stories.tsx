@@ -61,7 +61,7 @@ function Records({initialGoal=null}:{initialGoal?:string|null}) {
 function Stickers() {
   const [mine,setMine]=useState(false);
   const [open,setOpen]=useState<readonly ColorStickerPackId[]>([]);
-  return <StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('animals','trial','2일 남음'),colorPack('snack','locked'),colorPack('sports','locked')]}
+  return <StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('animals_normal','trial','2일 남음'),colorPack('snack_normal','locked'),colorPack('sports_normal','locked')]}
     mine={mine} onChangeMine={setMine} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days:5,goal:7}} onOpenPack={noop}/>;
 }
 function Settings() {

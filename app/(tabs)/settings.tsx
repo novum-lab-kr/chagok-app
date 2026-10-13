@@ -28,20 +28,35 @@ export default function AppSettings() {
   const supabase = getSupabase();
   const [status, setStatus] = useState<AccountBackupStatus | null>(null);
   const [logout, setLogout] = useState<Logout>(null);
-  /** 「구매」 블럭 (PRD 4.9·4.12). 결제·복원은 지금 개발용 대역이다 (스티커 화면 앱 연결 계획 A). */
+  /** 「구매」 블럭 (PRD 4.9·4.12). 키가 있으면 RevenueCat, 없으면 개발용 대역 (src/purchases). */
   const [adFree, setAdFree] = useState(false);
   const [buyOnce] = useState(createSingleFlight);
+  /** 기다리는 동안 누른 버튼에 로딩 점 (2026-10-13) */
+  const [purchaseBusy, setPurchaseBusy] = useState<'adFree' | 'restore'>();
   const { ask, dialog: purchaseDialog } = useDialog();
   useFocusEffect(useCallback(() => {
     let alive = true;
     void loadPackState().then((p) => { if (alive) setAdFree(p.adFree); });
     return () => { alive = false; };
   }, []));
+  /** 결제 창을 닫은 취소에는 알리지 않는다. */
   async function removeAds() {
-    if ((await buyAdFree()).ok) setAdFree(true);
+    setPurchaseBusy('adFree');
+    const r = await buyAdFree().finally(() => setPurchaseBusy(undefined));
+    if (r.ok) setAdFree(true);
+    else if (r.reason !== 'cancelled') await ask(r.reason === 'pending' ? stickerShopDialogs.purchasePending : stickerShopDialogs.adFreeFailed);
   }
   async function restore() {
-    const names = await restorePurchases();
+    setPurchaseBusy('restore');
+    let names: string[];
+    try {
+      names = await restorePurchases();
+    } catch {
+      await ask(stickerShopDialogs.restoreFailed);
+      return;
+    } finally {
+      setPurchaseBusy(undefined);
+    }
     if (names.includes('광고 제거')) setAdFree(true);
     await ask(names.length > 0 ? stickerShopDialogs.restoreDone(names) : stickerShopDialogs.restoreNone);
   }
@@ -135,7 +150,7 @@ export default function AppSettings() {
             <PixelText>지금은 이 기기에만 저장하고 있어요.</PixelText>
           </PixelPanel>
         )}
-        <PurchasePanel adFree={adFree} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
+        <PurchasePanel adFree={adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
         <PixelPanel title="도움말">
           <SettingRow label="사용법 다시 보기" onPress={() => nav.push('/tutorial')} />
         </PixelPanel>

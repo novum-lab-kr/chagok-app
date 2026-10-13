@@ -148,7 +148,7 @@ export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,
 }
 
 /** 묶음 화면 (PRD 4.12). 스티커 영역은 고르기 카드와 같은 모양, 「판에 붙이면」은 6칸에 5개. */
-export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,onBack}:{pack:PackView;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void}) {
+export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,onBack,busy}:{pack:PackView;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
   const ready=reward.days>=reward.goal;
   return <RetroScreen style={{gap:14}} header={<ScreenHeader title={`${pack.label} 묶음`} onBack={onBack}/>}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14}}>
@@ -160,9 +160,9 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
         :<StickerSlot key={i} number={i+1} width="100%" height="100%" state="empty"/>)}
     </StickerGrid></View></PixelPanel>
     <View style={{gap:10}}>
-      <PixelButton label={`${PRICE}에 열기`} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} onPress={onBuy}/>
-      {!adFree&&<PixelButton label="광고 보고 하루 써 보기" variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} onPress={onWatchAd}/>}
-      <PixelButton label="3일 무료로 써 보기" variant="secondary" disabled={!ready} onPress={onTrial}/>
+      <PixelButton label={`${PRICE}에 열기`} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
+      {!adFree&&<PixelButton label="광고 보고 하루 써 보기" variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
+      <PixelButton label="3일 무료로 써 보기" variant="secondary" disabled={!ready||busy!==undefined} onPress={onTrial}/>
       {!ready&&<PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{`스티커 붙인 날이 ${reward.goal-reward.days}일 더 모이면 써 볼 수 있어요 (${reward.days}/${reward.goal}일)`}</PixelText>}
     </View>
   </RetroScreen>;
@@ -176,20 +176,27 @@ export const stickerShopDialogs={
   trialEnded:(kind:'3일'|'하루')=>({title:`${kind} 체험이 끝났어요`,description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'묶음 열기',secondaryLabel:'다른 스티커'}),
   restoreDone:(names:readonly string[])=>({title:'구매 내역을 불러왔어요',description:names.join(', '),primaryLabel:'확인',single:true}),
   restoreNone:{title:'이 계정으로 구매 내역이 없어요',description:'구매한 스토어 계정으로 로그인했는지 확인해 주세요.',primaryLabel:'확인',single:true},
+  /** 실패 (2026-10-13 시안 2판 — 제목은 결과, 설명은 할 일). 결제 창을 닫은 취소에는 띄우지 않는다. */
+  buyFailed:{title:'묶음을 열지 못했어요',description:'잠시 후 다시 시도해 주세요.',primaryLabel:'확인',single:true},
+  adFreeFailed:{title:'광고를 없애지 못했어요',description:'잠시 후 다시 시도해 주세요.',primaryLabel:'확인',single:true},
+  restoreFailed:{title:'구매 내역을 못 불러왔어요',description:'인터넷 연결을 확인하고 다시 시도해 주세요.',primaryLabel:'확인',single:true},
+  /** 보호자 승인(구입 승인 요청·가족 결제)을 기다릴 때 */
+  purchasePending:{title:'보호자 승인을 기다려요',description:'승인되면 앱 설정에서 [구매 복원]을 눌러 주세요.',primaryLabel:'확인',single:true},
+  adUnavailable:{title:'지금은 광고를 볼 수 없어요',description:'잠시 후 다시 시도해 주세요.',primaryLabel:'확인',single:true},
 } as const;
 
 /** 앱 설정 「구매」 블럭 (PRD 4.9). 구매 복원은 앱 설정에만 두고, 사기 전·후 같은 자리다. */
-export function PurchasePanel({adFree,onRemoveAds,onRestore}:{adFree:boolean;onRemoveAds:()=>void;onRestore:()=>void}) {
+export function PurchasePanel({adFree,onRemoveAds,onRestore,busy}:{adFree:boolean;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
   return <PixelPanel title="구매" contentStyle={{gap:0}}>
     {adFree?<InfoRow label="광고 제거" value="없이 쓰는 중"/>
       :<View style={{gap:12,paddingVertical:12}}>
         <PixelText style={{fontSize:18,lineHeight:24}}>광고 제거</PixelText>
         <PixelText>목표 화면 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.</PixelText>
-        <PixelButton label="5,500원에 광고 없애기" onPress={onRemoveAds}/>
+        <PixelButton label="5,500원에 광고 없애기" loading={busy==='adFree'} disabled={busy==='restore'} onPress={onRemoveAds}/>
       </View>}
     <View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>
     <View style={{gap:8,paddingVertical:12}}>
-      <PixelButton label="구매 복원" variant="secondary" onPress={onRestore}/>
+      <PixelButton label="구매 복원" variant="secondary" loading={busy==='restore'} disabled={busy==='adFree'} onPress={onRestore}/>
       <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>구매한 스티커 묶음과 광고 제거를 되살려요</PixelText>
     </View>
   </PixelPanel>;

@@ -102,7 +102,7 @@ describe('누른 날 기록 (placed_days)', () => {
 
 describe('체험이 끝난 묶음 (2026-10-08)', () => {
   it('잠긴 묶음 스티커가 기본인 목표의 요청은 붙이지 않고 처리한 것으로 둔다', async () => {
-    const g = await createGoal({ name: '동물', boardType: 'tally', totalSlots: 10, defaultStickerId: 'animals.cat' });
+    const g = await createGoal({ name: '동물', boardType: 'tally', totalSlots: 10, defaultStickerId: 'animals_normal.cat' });
     expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(0);
   });

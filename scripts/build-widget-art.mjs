@@ -50,7 +50,7 @@ function png(name, w, h, get) {
 // 컬러 스티커 전부 (2026-10-08 — 목표의 기본 스티커는 어느 묶음이든 될 수 있다).
 // 앱 ID(묶음.이름)는 scripts/build-color-stickers.mjs와 같은 규칙으로 붙인다. 파일은 color-<묶음>-<이름>.png.
 // Metro는 require 경로가 고정이어야 해서 src/widgets/widgetStickerArt.generated.ts에 목록을 함께 쓴다.
-const PACK_IDS = { free: 'basic' };
+const PACK_IDS = { free: 'basic', sports: 'sports_normal', snack: 'snack_normal', objects: 'objects_normal', animals: 'animals_normal', emotions: 'emotions_normal', weather: 'weather_normal' };
 const STICKER_IDS = { 'weather.sun2': 'sun' };
 const src = JSON.parse(fs.readFileSync('src/stickers/color/source/sticker-packs-24.json', 'utf8'));
 const stickerArt = [];
