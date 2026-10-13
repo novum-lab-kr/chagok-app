@@ -1,4 +1,5 @@
-import { createElement, useCallback, useState } from 'react';
+import { createElement, useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { PixelDialogModal, boardDialogs } from '../design-system';
 
@@ -18,6 +19,9 @@ export type DialogChoice = 'primary' | 'secondary' | 'dismiss';
  * 확인·알림을 기존 basic 다이얼로그로 띄운다. OS Alert를 쓰지 않는다 (DESIGN-SYSTEM, 2026-09-29).
  * 반환한 `dialog`는 화면에 함께 렌더해야 한다.
  */
+/** 닫히는 애니메이션(fade)보다 넉넉하게 */
+const DISMISS_FALLBACK_MS = 700;
+
 export function useDialog() {
   const [open, setOpen] = useState<{ spec: DialogSpec; resolve: (choice: DialogChoice) => void } | null>(null);
 
@@ -40,14 +44,37 @@ export function useDialog() {
   /** 확인창: primary를 골랐을 때만 true */
   const confirm = useCallback(async (spec: DialogSpec) => (await ask(spec)) === 'primary', [ask]);
 
+  /**
+   * 고른 답은 창이 다 닫힌 뒤에 돌려준다 (2026-10-13). iOS는 닫히는 중인 창 위에 결제 창 같은 다른 창을 띄우지 못하고
+   * 조용히 실패한다 — 사기 전 확인 뒤 결제 창이 안 뜨고 로딩만 돌던 원인. onDismiss가 안 오면 잠시 뒤 돌려준다.
+   */
+  const [closing, setClosing] = useState<{ resolve: (choice: DialogChoice) => void; choice: DialogChoice } | null>(null);
+  const finishClosing = useCallback(() => {
+    setClosing((previous) => {
+      previous?.resolve(previous.choice);
+      return null;
+    });
+  }, []);
+  useEffect(() => {
+    if (!closing) return;
+    const timer = setTimeout(finishClosing, DISMISS_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [closing, finishClosing]);
   const close = (choice: DialogChoice) => {
-    open?.resolve(choice);
+    const resolve = open?.resolve;
     setOpen(null);
+    if (!resolve) return;
+    if (Platform.OS !== 'ios') { resolve(choice); return; }
+    setClosing((previous) => {
+      previous?.resolve(previous.choice);
+      return { resolve, choice };
+    });
   };
 
   const dialog = createElement(PixelDialogModal, {
     visible: open !== null,
     onRequestClose: () => close('dismiss'),
+    onDismiss: finishClosing,
     title: open?.spec.title ?? '',
     description: open?.spec.description ?? '',
     primaryLabel: open?.spec.primaryLabel,
