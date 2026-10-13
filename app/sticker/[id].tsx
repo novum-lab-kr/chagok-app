@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSymbol, LoadingScreen, RecordScreen, PixelText, useLoadRetry } from '../../src/design-system';
+import { ActionSymbol, LoadingScreen, RecordScreen, PixelText, boardDialogs, useLoadRetry } from '../../src/design-system';
 import type { PocketGoal, StickerId } from '../../src/design-system';
 import { getSticker, listStickers, removeSticker } from '../../src/repositories/stickerRepository';
 import { getGoal } from '../../src/repositories/goalRepository';
@@ -77,12 +77,7 @@ export default function StickerRecord() {
   async function choosePhoto() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      if (await confirm({
-        title: '사진에 접근할 수 없어요',
-        description: '기기 설정에서 차곡차곡의 사진 접근을 허용하면 다시 첨부할 수 있어요. 메모는 계속 남길 수 있어요.',
-        secondaryLabel: '메모만 남기기',
-        primaryLabel: '기기 설정 열기',
-      })) void Linking.openSettings();
+      if (await confirm(boardDialogs.photoDenied)) void Linking.openSettings();
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
@@ -96,12 +91,7 @@ export default function StickerRecord() {
   async function takePhoto() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      if (await confirm({
-        title: '카메라를 쓸 수 없어요',
-        description: '기기 설정에서 차곡차곡의 카메라 접근을 허용하면 사진을 찍을 수 있어요. 앨범에서 고르거나 메모만 남길 수도 있어요.',
-        secondaryLabel: '닫기',
-        primaryLabel: '기기 설정 열기',
-      })) void Linking.openSettings();
+      if (await confirm(boardDialogs.cameraDenied)) void Linking.openSettings();
       return;
     }
     let result: ImagePicker.ImagePickerResult;
@@ -109,7 +99,7 @@ export default function StickerRecord() {
       result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     } catch {
       // 카메라가 없는 기기(시뮬레이터 등)에서는 여기로 온다.
-      await ask({ title: '카메라를 열 수 없어요', description: '앨범에서 사진을 골라 주세요. 메모는 그대로 남길 수 있어요.', primaryLabel: '확인' });
+      await ask(boardDialogs.cameraUnavailable);
       return;
     }
     if (!result.canceled && result.assets[0]) {
@@ -146,7 +136,7 @@ export default function StickerRecord() {
   /** 떼기. 기록이 있으면 확인한다 (PRD 4.5). 완성한 판도 뗀다 (2026-10-08). */
   async function remove() {
     if (needsRemoveConfirm(hasStoredRecord)) {
-      if (!(await confirm({ title: '스티커를 뗄까요?', description: '사진·메모도 함께 사라져요.', secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
+      if (!(await confirm(boardDialogs.removeStickerInRecord))) return;
     }
     let photo: string | null = null;
     const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(id); });

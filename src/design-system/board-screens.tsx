@@ -11,7 +11,7 @@ import {GoalStickerCell} from './screen-compositions';
 
 /**
  * 홈 목록·판 상세·목표 설정 화면 (PRD 4.1–4.7, 2026-09-29 Storybook 확정 시안).
- * props만 받는다. Storybook `Screens / Home structure · proposals`와 앱 라우트가 같은 조합을 쓴다.
+ * props만 받는다. Storybook `Screens / Board & goal`(목록은 `Screens / Bottom Tabs`)과 앱 라우트가 같은 조합을 쓴다.
  * 확인 다이얼로그는 화면 밖에서 얹는다(앱은 PixelDialogModal).
  */
 const caption={color:retro.color.buttonText};
