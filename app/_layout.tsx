@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
+import { configureAds } from '../src/purchases/admob';
 import { configureRevenueCat, linkPurchaseAccount } from '../src/purchases/revenueCat';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
@@ -24,6 +25,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 0, fade: false });
 // 결제는 화면보다 먼저 준비한다. 키나 결제 모듈이 없으면 개발용 대역 그대로 (src/purchases/revenueCat.ts).
 configureRevenueCat();
+void configureAds();
 
 /**
  * 애니메이션 첫 장면이 그려지면 OS 스플래시를 내린다. 새 아키텍처는 기기가 바쁠 때 첫 layout 이벤트를 버리므로

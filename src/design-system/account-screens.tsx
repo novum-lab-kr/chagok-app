@@ -25,7 +25,7 @@ export const accountDialogs={
   deleteFailed:{title:'삭제하지 못했어요',description:'연결을 확인하고 다시 시도해 주세요. 아무것도 지우지 않았어요.',primaryLabel:'다시 시도',secondaryLabel:'닫기'},
   /** 약관 개정: 게시일부터 시행일 사이에 한 번. 재동의 화면은 두지 않는다. */
   termsChanged:(effectiveLabel:string)=>({title:'이용약관이 바뀌어요',description:`${effectiveLabel}부터 새 약관이 적용돼요. 바뀐 내용은 약관 보기에서 확인해 주세요.`,primaryLabel:'확인',secondaryLabel:'약관 보기'}),
-  /** 동의 화면의 "만 14세 미만이에요". 미만이라는 사실은 저장하지 않는다. */
+  /** 동의 화면의 "만 14세 미만이에요". 미만이라는 사실은 이 기기의 광고 아동 처리에만 쓴다(서버로 보내지 않는다, 2026-10-13). */
   under14:{title:'계정은 만 14세부터 연결할 수 있어요',description:'이 기기에서는 지금처럼 모든 기능을 쓸 수 있어요. 다만 기기를 바꾸면 기록을 옮길 수 없어요.',primaryLabel:'확인',single:true},
 } as const;
 

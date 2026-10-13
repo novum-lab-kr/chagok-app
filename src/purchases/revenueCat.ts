@@ -1,6 +1,5 @@
 import { NativeModules } from 'react-native';
 import Purchases, { PRODUCT_CATEGORY } from 'react-native-purchases';
-import { devStore } from './devStore';
 import { setActiveStore } from './index';
 import { createRevenueCatStore } from './revenueCatStore';
 
@@ -21,7 +20,7 @@ export function configureRevenueCat(): boolean {
     getProducts: (ids) => Purchases.getProducts(ids, PRODUCT_CATEGORY.NON_SUBSCRIPTION),
     purchaseStoreProduct: (product) => Purchases.purchaseStoreProduct(product as Parameters<typeof Purchases.purchaseStoreProduct>[0]),
     restorePurchases: () => Purchases.restorePurchases(),
-  }, devStore));
+  }));
   return true;
 }
 

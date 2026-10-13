@@ -4,5 +4,7 @@
   "@react-native/*": "meta-mit.txt",
   "expo-router": "expo-mit.txt",
   "@expo/ui": "expo-mit.txt",
-  "standard-navigation": "standard-navigation.txt"
+  "standard-navigation": "standard-navigation.txt",
+  "@revenuecat/purchases-typescript-internal": "revenuecat-hybrid-mit.txt",
+  "@revenuecat/purchases-js-hybrid-mappings": "revenuecat-hybrid-mit.txt"
 }

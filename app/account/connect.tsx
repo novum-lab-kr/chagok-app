@@ -11,6 +11,7 @@ import { useDialog } from '../../src/app-data/useDialog';
 import { localDateKey } from '../../src/domain/dates';
 import { currentVersions, fetchPolicyManifest } from '../../src/policy/manifest';
 import { openPolicy } from '../../src/policy/openPolicy';
+import { setChildDirectedAds } from '../../src/purchases/admob';
 import { getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
 import { recordConsent, signOutLocal } from '../../src/sync/account';
 import { providerFromAuth } from '../../src/sync/accountStatus';
@@ -205,6 +206,8 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
         if (error || !data.user) throw error ?? new Error('no user');
         const user = data.user;
         await recordConsent(supabase, versions.terms, versions.privacy);
+        // 만 14세 이상이라고 확인했으니 전에 미만이라고 눌렀어도 아동 처리를 푼다
+        await setChildDirectedAds(false);
         check();
         await setSetting('accountProvider', providerFromAuth(user.app_metadata.provider));
         await setSetting('sessionPrompted', null);
@@ -267,7 +270,7 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
         onToggleTerms={() => setTerms(!terms)}
         onViewTerms={() => void openPolicy('terms', ask)}
         onViewPrivacy={() => void openPolicy('privacy', ask)}
-        onUnder14={() => { if (!busy) void ask(accountDialogs.under14).then(goBackOrHome); }}
+        onUnder14={() => { if (!busy) { void setChildDirectedAds(true); void ask(accountDialogs.under14).then(goBackOrHome); } }}
         onBack={() => { if (!busy) goBackOrHome(); }}
         loginButtons={__DEV__ && DEV_EMAIL && DEV_PASSWORD
           ? <PixelButton label="개발 계정으로 계속" loading={busy} onPress={() => void connect()} />

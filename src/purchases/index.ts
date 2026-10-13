@@ -15,11 +15,17 @@ export interface Store {
   showRewardedAd(): Promise<AdResult>;
 }
 
+export type PurchaseStore = Omit<Store, 'showRewardedAd'>;
+export type AdStore = Pick<Store, 'showRewardedAd'>;
+
 let override: Store | null = null;
-/** 키가 있으면 앱을 켤 때 RevenueCat으로 바뀐다(revenueCat.ts). 없으면 개발용 대역. 보상형 광고는 AdMob 전까지 대역. */
-let active: Store = devStore;
-export const store = (): Store => override ?? active;
-export function setActiveStore(s: Store): void { active = s; }
+/** 키가 있으면 앱을 켤 때 RevenueCat으로 바뀐다(revenueCat.ts). 없으면 개발용 대역. */
+let purchases: PurchaseStore = devStore;
+/** 광고 모듈이 든 빌드면 앱을 켤 때 AdMob으로 바뀐다(admob.ts). 없으면 개발용 대역. */
+let ads: AdStore = devStore;
+export const store = (): Store => override ?? { ...purchases, showRewardedAd: ads.showRewardedAd };
+export function setActiveStore(s: PurchaseStore): void { purchases = s; }
+export function setAdStore(s: AdStore): void { ads = s; }
 export function setStoreForTest(s: Store | null): void { override = s; }
 
 export async function buyPack(packId: ColorStickerPackId, now = Date.now()): Promise<BuyResult> {
