@@ -105,10 +105,6 @@
           {
             "id": "screens-account-consent--android",
             "label": "Android · Google만"
-          },
-          {
-            "id": "screens-account-backup--under-14",
-            "label": "만 14세 미만 안내"
           }
         ],
         "scenarios": [
@@ -126,16 +122,12 @@
         ],
         "stories": [
           {
-            "id": "screens-account-backup--restore-first-run",
-            "label": "첫 실행에서"
-          },
-          {
-            "id": "screens-account-backup--restore-from-settings",
-            "label": "앱 설정에서"
-          },
-          {
-            "id": "screens-account-backup--restore-failed",
-            "label": "실패"
+            "id": "components-dialog--copy",
+            "label": "확인 창 · 문구 모음",
+            "render": "launcher",
+            "launch": {
+              "label": "문구 모음에서 보기"
+            }
           }
         ],
         "scenarios": [
@@ -227,14 +219,6 @@
             "label": "목표 없음"
           },
           {
-            "id": "screens-account-backup--session-expired",
-            "label": "다시 로그인 묻기"
-          },
-          {
-            "id": "screens-account-backup--terms-changed",
-            "label": "약관 변경 안내"
-          },
-          {
             "id": "screens-bottom-tabs--goals-tab-ad-free",
             "label": "광고 제거를 산 뒤"
           },
@@ -310,14 +294,6 @@
           {
             "id": "screens-board-goal--detail-open-ended",
             "label": "달력판 종료일 없음"
-          },
-          {
-            "id": "screens-board-goal--remove-with-record",
-            "label": "기록 있는 스티커 떼기"
-          },
-          {
-            "id": "screens-sticker-shop--trial-ended",
-            "label": "체험이 끝난 뒤 붙이려 할 때"
           },
           {
             "id": "screens-screen-failed--records",
@@ -404,10 +380,6 @@
             "label": "종료일 없음과 완성"
           },
           {
-            "id": "screens-board-goal--settings-manual-confirm",
-            "label": "수동 완성 확인"
-          },
-          {
             "id": "screens-board-goal--settings-completed",
             "label": "완성한 판 (삭제만)"
           },
@@ -435,12 +407,12 @@
         ],
         "stories": [
           {
-            "id": "screens-board-goal--delete-confirm-active",
-            "label": "진행 중인 목표"
-          },
-          {
-            "id": "screens-board-goal--delete-confirm-completed",
-            "label": "완성한 판"
+            "id": "components-dialog--copy",
+            "label": "확인 창 · 문구 모음",
+            "render": "launcher",
+            "launch": {
+              "label": "문구 모음에서 보기"
+            }
           }
         ],
         "scenarios": [
@@ -457,20 +429,12 @@
         ],
         "stories": [
           {
-            "id": "screens-board-goal--flow-confirm-last",
-            "label": "1 마지막 칸 확인"
-          },
-          {
-            "id": "screens-board-goal--flow-continue-tally",
-            "label": "2 계속하기 · 적립판"
-          },
-          {
-            "id": "screens-board-goal--flow-continue-period",
-            "label": "2 계속하기 · 종료일 지남"
-          },
-          {
-            "id": "screens-board-goal--flow-continue-manual",
-            "label": "2 계속하기 · 수동 완성"
+            "id": "components-dialog--copy",
+            "label": "확인 창 · 문구 모음",
+            "render": "launcher",
+            "launch": {
+              "label": "문구 모음에서 보기"
+            }
           }
         ],
         "scenarios": [
@@ -554,32 +518,8 @@
             "label": "백업 상태별"
           },
           {
-            "id": "screens-account-backup--logout",
-            "label": "로그아웃 확인"
-          },
-          {
-            "id": "screens-account-backup--logout-busy",
-            "label": "로그아웃 · 백업 중"
-          },
-          {
-            "id": "screens-account-backup--logout-failed",
-            "label": "로그아웃 · 백업 실패"
-          },
-          {
-            "id": "screens-account-backup--logout-held",
-            "label": "로그아웃 · 백업할 수 없는 기록"
-          },
-          {
             "id": "screens-account-backup--settings-ad-free",
             "label": "광고 제거를 산 뒤"
-          },
-          {
-            "id": "screens-account-backup--restore-done",
-            "label": "구매 복원 · 찾음"
-          },
-          {
-            "id": "screens-account-backup--restore-none",
-            "label": "구매 복원 · 없음"
           }
         ],
         "scenarios": [
@@ -657,18 +597,6 @@
           {
             "id": "screens-account-backup--delete-confirm",
             "label": "내용 확인"
-          },
-          {
-            "id": "screens-account-backup--delete-final",
-            "label": "최종 확인"
-          },
-          {
-            "id": "screens-account-backup--delete-busy",
-            "label": "삭제 중"
-          },
-          {
-            "id": "screens-account-backup--delete-failed",
-            "label": "실패"
           }
         ],
         "scenarios": [
@@ -748,10 +676,6 @@
           {
             "id": "screens-sticker-shop--chooser-bought",
             "label": "산 직후"
-          },
-          {
-            "id": "screens-sticker-shop--chooser-ad-trial-started",
-            "label": "광고를 다 본 뒤"
           },
           {
             "id": "screens-screen-failed--stickers",

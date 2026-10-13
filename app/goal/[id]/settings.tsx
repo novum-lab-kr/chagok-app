@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { CompletedGoalSettingsScreen, GoalSettingsScreen, LoadingScreen, useLoadRetry } from '../../../src/design-system';
+import { CompletedGoalSettingsScreen, GoalSettingsScreen, LoadingScreen, boardDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import {
   completeGoal, countGoalContents, deleteGoal, getGoal, settleExpiredPeriods, updateGoal,
@@ -82,12 +82,7 @@ export default function GoalSettings() {
 
   /** 기간 없는 달력판의 수동 완성 (PRD 4.3). 판 상세로 돌아가면 완성 흐름이 뜬다. */
   async function complete() {
-    if (!(await confirm({
-      title: '이 판을 완성할까요?',
-      description: '완성한 뒤에도 칸과 기록은 고칠 수 있어요. 계속하기로 다시 이어 쓸 수도 있어요.',
-      secondaryLabel: '취소',
-      primaryLabel: '완성하기',
-    }))) return;
+    if (!(await confirm(boardDialogs.confirmManual))) return;
     const ok = await saveOrNotify(ask, '완성하지 못했어요', async () => {
       await saveEdits();
       await completeGoal(current.id, Date.now());
@@ -98,12 +93,7 @@ export default function GoalSettings() {
   /** 삭제 (PRD 4.4). 함께 지워질 수를 보여주고, DB 삭제가 끝난 뒤에 사진 파일을 지운다. */
   async function remove() {
     const counts = await countGoalContents(current.id);
-    if (!(await confirm({
-      title: '목표를 삭제할까요?',
-      description: deleteDescription(counts),
-      secondaryLabel: '취소',
-      primaryLabel: '삭제하기',
-    }))) return;
+    if (!(await confirm(boardDialogs.deleteGoal(deleteDescription(counts))))) return;
     let photos: string[] = [];
     const ok = await saveOrNotify(ask, '목표를 삭제하지 못했어요', async () => { photos = await deleteGoal(current.id); });
     if (!ok) return;

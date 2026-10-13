@@ -1,6 +1,6 @@
 import { createElement, useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { PixelDialogModal } from '../design-system';
+import { PixelDialogModal, boardDialogs } from '../design-system';
 
 export type DialogSpec = {
   title: string;
@@ -69,7 +69,7 @@ export async function saveOrNotify(ask: (spec: DialogSpec) => Promise<DialogChoi
     await task();
     return true;
   } catch {
-    await ask({ title, description: '잠시 후 다시 시도해주세요. 입력한 내용은 그대로 있어요.', primaryLabel: '확인' });
+    await ask(boardDialogs.saveFailed(title));
     return false;
   }
 }

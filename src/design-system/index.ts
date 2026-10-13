@@ -9,6 +9,7 @@ export * from './board-screens';
 export * from './first-run-tutorial';
 export * from './policy-screens';
 export * from './account-screens';
+export * from './board-dialogs';
 export * from './mascot';
 export * from './splash';
 export * from './sticker-shop';
