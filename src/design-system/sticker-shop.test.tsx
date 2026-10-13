@@ -117,6 +117,8 @@ describe('묶음 화면',()=>{
     expect(actions()).toEqual(['2,200원에 열기','3일 무료로 써 보기']);
   });
   it('다이얼로그 문구는 확정 시안 그대로다',()=>{
+    expect(stickerShopDialogs.confirmBuy('동물',10)).toMatchObject({title:'동물 묶음을 열까요?',description:'스티커 10개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'2,200원에 열기',secondaryLabel:'취소'});
+    expect(stickerShopDialogs.confirmAdFree).toMatchObject({title:'광고를 없앨까요?',description:'목표 화면 아래 광고가 사라져요.\n산 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'광고 없애기',secondaryLabel:'취소'});
     expect(stickerShopDialogs.bought('동물')).toMatchObject({title:'동물 묶음을 열었어요',description:'기본 스티커로 쓸 그림을 골라 주세요.'});
     expect(stickerShopDialogs.adTrialStarted('내일 밤 11:00')).toMatchObject({title:'하루 동안 써 볼 수 있어요',description:'내일 밤 11:00까지 쓸 수 있어요.'});
     expect(stickerShopDialogs.trialEnded('3일')).toMatchObject({title:'3일 체험이 끝났어요',description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'묶음 열기',secondaryLabel:'다른 스티커'});

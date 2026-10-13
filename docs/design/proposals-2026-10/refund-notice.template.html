@@ -1,0 +1,175 @@
+<title>환불 안내 시안</title>
+<style>
+/* 안마다 캡처 · 좋은 점/걸리는 점 · 고르기 · 메모. 문구 묶음은 상황마다 「이대로」와 메모. 아래 고정 막대에 요약. */
+@font-face { font-family: 'NeoDunggeunmo'; src: url(data:font/ttf;base64,__FONT__) format('truetype'); font-display: block; }
+:root {
+  --mint: #AFE1CB; --lcd: #C7DE94; --coral: #FD855F; --ivory: #FEF1D1; --ink: #06261C;
+  --bg: #EAF5EE; --card: #FFFFFF; --fg: #06261C; --muted: #4C6A5E; --line: #B9D6C6; --pick: #FD855F; --pick-bg: #FFF1EA; --bad: #B4381A;
+  --pixel: 'NeoDunggeunmo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 120px; display: grid; gap: 28px; }
+h1, h2, .code, .btn, .tag { font-family: var(--pixel); font-weight: normal; }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.decided { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decided ul { margin: 0; padding-left: 20px; }
+section.group { display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.opt { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.ok { border-color: var(--pick); background: var(--pick-bg); }
+.opt.ref { border-style: dashed; }
+.head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code { font-size: 18px; }
+.tag { font-size: 12px; padding: 1px 6px; border: 2px solid var(--ink); background: var(--lcd); color: var(--ink); border-radius: 3px; }
+.tag.new { background: var(--ivory); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shots figure { margin: 0; min-width: 0; display: grid; gap: 4px; align-content: start; }
+.shots img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.shots figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+dl { margin: 0; display: grid; gap: 4px; font-size: 14px; }
+dt { font-weight: 600; }
+dd { margin: 0 0 4px; color: var(--muted); }
+.btn { font-size: 15px; padding: 8px 12px; border: 3px solid var(--ink); background: var(--ivory); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--coral); }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: 14px/1.5 var(--body); padding: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); resize: vertical; }
+.state { font-size: 12px; color: var(--muted); min-height: 1em; }
+.state.bad { color: var(--bad); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar #summary { flex: 1 1 260px; min-width: 0; font-size: 14px; }
+.bar #store-state { font-size: 12px; color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>사기 전에 환불 안내하기</h1>
+    <p class="muted">약관 2판 초안 11조에 맞춰, 사기 전에 「쓰기 시작하면 환불이 어려울 수 있다」는 걸 알리는 자리를 고릅니다. 법(전자상거래법 17조)은 디지털 상품을 무르지 못하게 하려면 <b>사기 전에 알리고</b>, <b>써 볼 기회</b>를 주라고 합니다. 써 볼 기회(광고 보고 하루 · 붙인 날 3일)는 이미 있어서, 알리는 자리만 비어 있어요. 캡처는 지금 앱의 묶음 화면·앱 설정 컴포넌트로 그렸습니다(390pt). 문구는 세 안이 같고 위치만 다릅니다.</p>
+    <div class="decided">
+      <b>정해 둔 것</b>
+      <ul>
+        <li>화면에는 「청약철회」 대신 <b>「환불」</b>이라고 씁니다.</li>
+        <li>실제 환불은 Apple·Google이 처리합니다. 앱은 알리기만 합니다.</li>
+        <li>약관 문장은 따로 법률 검토를 받습니다. 이 시안은 앱 화면 문구입니다.</li>
+      </ul>
+    </div>
+  </header>
+  <div id="groups"></div>
+</main>
+<div class="bar"><div id="summary"></div><span id="store-state">불러오는 중</span><button class="btn" id="copy" type="button">메모까지 복사</button></div>
+
+<script>
+const IMG = __IMG__;
+const GROUPS = [
+  { key: 'place', short: '자리', pick: 'one', title: '1. 어디에 알릴까요', intro: '묶음 화면의 [2,200원에 열기]와 앱 설정의 [5,500원에 광고 없애기] 두 곳에 같은 방식으로 넣습니다.',
+    opts: [
+      { id: 'place-a', code: 'A', name: '버튼 바로 아래 한 줄', rec: true, shots: [['a-pack', '묶음 화면'], ['a-settings', '앱 설정 · 구매']],
+        good: '누르기 직전에 눈에 들어온다. 누를 단계가 늘지 않는다. 새 컴포넌트가 필요 없다(붙인 날 안내와 같은 작은 글자).', bad: '버튼 사이가 조금 길어진다. 늘 보여서 사지 않을 사람에게도 보인다.' },
+      { id: 'place-b', code: 'B', name: '사기 전에 확인 창', shots: [['b-pack', '[2,200원에 열기]를 누르면'], ['b-settings', '[광고 없애기]를 누르면']],
+        good: '확실히 읽고 넘어간다. 평소 화면은 그대로다.', bad: '살 때마다 한 번 더 눌러야 하고, 그 뒤에 스토어 결제 창이 또 뜬다. 아이들에게는 창이 두 번 연달아 뜨는 셈이다.' },
+      { id: 'place-c', code: 'C', name: '화면 맨 아래 작은 글씨 + [환불 안내]', shots: [['c-pack', '묶음 화면 맨 아래'], ['c-settings', '앱 설정 · 구매 맨 아래']],
+        good: '버튼 둘레가 깔끔하다. [환불 안내]로 정책 사이트의 자세한 설명을 연다.', bad: '버튼과 떨어져 있어 사기 전에 못 볼 수 있다 — 「미리 알렸다」고 하기 가장 약하다. [환불 안내]가 열 쪽(정책 사이트 절)을 따로 만들어야 한다.' },
+    ] },
+  { key: 'copy', short: '문구', pick: 'each', title: '2. 문구', intro: '쉬운 말로, 왜 어려운지(쓰기 시작함)와 결과(환불이 어려움)를 한 줄에 담았습니다. 「어려울 수 있어요」는 스토어가 따로 환불해 주는 경우가 있어서입니다.',
+    opts: [
+      { id: 'copy-pack', code: '묶음', name: '묶음 화면', shots: [['a-pack', 'A 자리']], text: '「스티커를 고르거나 붙이면 환불이 어려울 수 있어요」' },
+      { id: 'copy-adfree', code: '광고 제거', name: '앱 설정', shots: [['a-settings', 'A 자리']], text: '「산 뒤에는 환불이 어려울 수 있어요」 — 사면 바로 광고가 사라져서 산 때가 곧 쓰기 시작한 때입니다.' },
+    ] },
+];
+const $ = id => document.getElementById(id);
+const LS = 'chagok-refund-notice-review';
+const ALL = GROUPS.flatMap(g => g.opts.map(o => o.id));
+const KEYS = GROUPS.flatMap(g => g.pick === 'one' ? [g.key] : g.opts.map(o => o.id));
+let state = { choice: Object.fromEntries(KEYS.map(k => [k, ''])), notes: Object.fromEntries(ALL.map(id => [id, ''])) };
+try { const s = JSON.parse(localStorage.getItem(LS) || 'null'); if (s && s.choice && s.notes) state = { choice: { ...state.choice, ...s.choice }, notes: { ...state.notes, ...s.notes } }; } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shots = list => `<div class="shots">${list.map(([k, cap]) => `<figure><img src="${IMG[k]}" alt="${esc(cap)}" ><figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+const keyOf = (g, o) => g.pick === 'one' ? g.key : o.id;
+const valOf = (g, o) => g.pick === 'one' ? o.id : 'ok';
+function render() {
+  $('groups').innerHTML = GROUPS.map(g => `<section class="group"><h2>${esc(g.title)}</h2><p class="muted">${esc(g.intro)}</p><div class="row">
+    ${g.opts.map(o => `<article class="opt" id="g-${o.id}"><div class="head"><span class="code">${esc(o.code)}</span><b>${esc(o.name)}</b>${o.rec ? '<span class="tag">추천</span>' : ''}${o.newEl ? `<span class="tag new">${esc(o.newEl)}</span>` : ''}</div>
+      ${shots(o.shots)}${o.text ? `<p>${esc(o.text)}</p>${o.why ? `<p class="muted" style="font-size:14px">${esc(o.why)}</p>` : ''}` : `<dl><dt>좋은 점</dt><dd>${esc(o.good)}</dd><dt>걸리는 점</dt><dd>${esc(o.bad)}</dd></dl>`}
+      <button class="btn ok-btn" type="button" id="ok-${o.id}" data-g="${g.key}" data-o="${o.id}" aria-pressed="false"></button>
+      <label class="muted" for="note-${o.id}" style="font-size:13px">${esc(o.code)} 메모</label><textarea id="note-${o.id}" data-o="${o.id}" placeholder="${g.pick === 'one' ? '바꿀 점 등' : '바꿀 문구 등'}"></textarea><div class="state" id="state-${o.id}"></div></article>`).join('')}
+  </div></section>`).join('');
+  paint();
+}
+const groupOf = id => GROUPS.find(g => g.opts.some(o => o.id === id));
+const optOf = id => { const g = groupOf(id); return g ? g.opts.find(o => o.id === id) : undefined; };
+function label() {
+  const short = {};
+  const parts = GROUPS.filter(g => g.pick === 'one').map(g => `${g.short || short[g.key]} ${(optOf(state.choice[g.key] || 'x-x') || {}).code || '아직'}`);
+  const each = GROUPS.filter(g => g.pick === 'each').flatMap(g => g.opts).filter(o => state.choice[o.id] === 'ok').map(o => `${o.code} 이대로`);
+  return parts.concat(each).join(' · ');
+}
+function paint() {
+  for (const g of GROUPS) for (const o of g.opts) {
+    const picked = state.choice[keyOf(g, o)] === valOf(g, o);
+    $(`g-${o.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${o.id}`); b.setAttribute('aria-pressed', String(picked));
+    b.textContent = g.pick === 'one' ? (picked ? '고른 안' : '이 안 고르기') : (picked ? '이대로 ✓' : '이대로');
+    const t = $(`note-${o.id}`); if (document.activeElement !== t && t.value !== state.notes[o.id]) t.value = state.notes[o.id];
+  }
+  const n = ALL.filter(id => state.notes[id].trim()).length;
+  $('summary').textContent = label() + (n ? ` · 메모 ${n}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-rn-<place·copy-pack·copy-adfree> {value}, review/note-rn-<안 id> {note}
+async function persist(doc, statusId, data) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[doc]) { queued[doc] = [statusId, data]; return; }
+  writing[doc] = true; setStatus(statusId, '저장 중…');
+  try { await db.doc(`review/${doc}`).set({ ...data(), updatedAt: new Date().toISOString() }); setStatus(statusId, '저장됨'); }
+  catch (e) { setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true); }
+  finally { writing[doc] = false; if (queued[doc]) { const [s, d] = queued[doc]; queued[doc] = null; persist(doc, s, d); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn'); if (!b) return;
+  const g = GROUPS.find(x => x.key === b.dataset.g), o = optOf(b.dataset.o), k = keyOf(g, o), v = valOf(g, o);
+  state.choice[k] = state.choice[k] === v ? '' : v; paint(); persist(`choice-rn-${k}`, o.id, () => ({ value: state.choice[k] }));
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t) return;
+  const id = t.dataset.o; state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-rn-${id}`, id, () => ({ note: state.notes[id] })); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t || !timers[t.dataset.o]) return;
+  const id = t.dataset.o; clearTimeout(timers[id]); timers[id] = null; persist(`note-rn-${id}`, id, () => ({ note: state.notes[id] }));
+});
+$('copy').addEventListener('click', () => {
+  const text = label() + '\n' + ALL.filter(id => state.notes[id].trim()).map(id => `${optOf(id).code} ${optOf(id).name} 메모: ${state.notes[id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-rn-')) { const k = d.id.slice(10); if (k in state.choice && typeof v.value === 'string') state.choice[k] = v.value; continue; }
+      if (!d.id.startsWith('note-rn-')) continue;
+      const id = d.id.slice(8); if (!(id in state.notes)) continue;
+      const t = document.activeElement; state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>
