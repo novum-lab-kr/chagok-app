@@ -1,5 +1,6 @@
 import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/catalog';
 import type { BuyResult, PurchaseStore } from './index';
+import type { ProductKey, StorePrice } from './price';
 
 /**
  * RevenueCat 결제 (2026-10-13 — Test Store로 개발, 출시 전에 스토어 키로 바꾼다).
@@ -16,7 +17,7 @@ const PAYMENT_PENDING = '20';
 /** react-native-purchases에서 쓰는 부분만. 테스트에서 가짜로 바꾼다. */
 type CustomerInfo = { entitlements: { active: Record<string, unknown> } };
 export interface PurchasesSdk {
-  getProducts(ids: string[], category: 'NON_SUBSCRIPTION'): Promise<{ identifier: string }[]>;
+  getProducts(ids: string[], category: 'NON_SUBSCRIPTION'): Promise<{ identifier: string; price?: number; currencyCode?: string; priceString?: string }[]>;
   purchaseStoreProduct(product: { identifier: string }): Promise<{ customerInfo: CustomerInfo }>;
   restorePurchases(): Promise<CustomerInfo>;
 }
@@ -39,6 +40,18 @@ export function createRevenueCatStore(sdk: PurchasesSdk): PurchaseStore {
   return {
     buyPack: (packId) => buy(sdk, productIdOf(packId), entitlementOf(packId)),
     buyAdFree: () => buy(sdk, AD_FREE_PRODUCT, AD_FREE_ENTITLEMENT),
+    /** 상품 ID → 묶음·광고 제거. 스토어에 아직 없는 상품은 빠진다 */
+    async prices() {
+      const keys: ProductKey[] = [...colorStickerPacks.filter((p) => !p.free).map((p) => p.id), 'adFree'];
+      const idOf = (k: ProductKey) => (k === 'adFree' ? AD_FREE_PRODUCT : productIdOf(k));
+      const products = await sdk.getProducts(keys.map(idOf), 'NON_SUBSCRIPTION');
+      const out: Partial<Record<ProductKey, StorePrice>> = {};
+      for (const k of keys) {
+        const p = products.find((x) => x.identifier === idOf(k));
+        if (p && typeof p.price === 'number' && p.currencyCode && p.priceString) out[k] = { amount: p.price, currency: p.currencyCode, text: p.priceString };
+      }
+      return out;
+    },
     async restore() {
       const { active } = (await sdk.restorePurchases()).entitlements;
       return {

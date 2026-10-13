@@ -55,4 +55,5 @@ export const DeleteDone:Story={name:'6 계정 삭제 · 완료',render:()=><Stag
 // 8. 구매 (2026-10-08 스티커 화면 시안 확정, PRD 4.9·4.12)
 export const SettingsAdFree:Story={name:'8 구매 · 광고 제거를 산 뒤',render:()=><Stage tab="settings"><SettingsTab adFree/></Stage>};
 export const RestoreWaiting:Story={name:'8 구매 복원 · 기다리는 중',render:()=><Stage tab="settings"><SettingsTab busy="restore"/></Stage>};
+export const AdFreeNoPrice:Story={name:'8 광고 제거 · 가격을 못 받아 왔을 때',render:()=><Stage tab="settings"><SettingsTab price={null}/></Stage>};
 export const AdFreeWaiting:Story={name:'8 광고 제거 · 결제 기다리는 중',render:()=><Stage tab="settings"><SettingsTab busy="adFree"/></Stage>};

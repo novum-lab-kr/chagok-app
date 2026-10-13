@@ -82,7 +82,8 @@ const groups: [string, [string, Spec][]][] = [
     ['계정 삭제 · 실패', accountDialogs.deleteFailed],
   ]],
   ['스티커 묶음·구매 (stickerShopDialogs)', [
-    ['묶음 · 사기 전 확인', stickerShopDialogs.confirmBuy(colorPack('animals_normal', 'locked').label, colorPack('animals_normal', 'locked').stickers.length)],
+    ['묶음 · 사기 전 확인', stickerShopDialogs.confirmBuy(colorPack('animals_normal', 'locked').label, colorPack('animals_normal', 'locked').stickers.length, '2,200원')],
+    ['묶음 · 사기 전 확인 (가격을 못 받아 왔을 때)', stickerShopDialogs.confirmBuy(colorPack('animals_normal', 'locked').label, colorPack('animals_normal', 'locked').stickers.length)],
     ['묶음 · 산 직후', stickerShopDialogs.bought('동물')],
     ['묶음 · 결제 실패', stickerShopDialogs.buyFailed],
     ['묶음 · 보호자 승인 기다림', stickerShopDialogs.purchasePending],

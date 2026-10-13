@@ -3,9 +3,10 @@ import { localDateKey } from '../domain/dates';
 import { canUseSticker, packStatus, type PackAccess } from '../domain/packs';
 import { colorStickerPacks, colorStickersInPack, getColorSticker, type ColorStickerId, type ColorStickerPackId } from '../stickers/color/catalog';
 import { DEFAULT_COLOR_STICKER, normalizeStickerId } from '../stickers/stickerIds';
+import type { PriceLabels } from '../purchases/price';
 
-/** 「기본 스티커」·묶음 화면의 묶음 목록. colorStickerPacks 순서 (PRD 4.12). */
-export function packViews(access: readonly PackAccess[], now: number): PackView[] {
+/** 「기본 스티커」·묶음 화면의 묶음 목록. colorStickerPacks 순서 (PRD 4.12). 가격은 스토어에서 받아 온 것만 붙인다. */
+export function packViews(access: readonly PackAccess[], now: number, prices: PriceLabels = {}): PackView[] {
   return colorStickerPacks.map((p) => {
     const s = packStatus(p.id, access, now);
     return {
@@ -14,6 +15,7 @@ export function packViews(access: readonly PackAccess[], now: number): PackView[
       state: s.state,
       stickers: colorStickersInPack(p.id).map((c) => c.id as ColorStickerId),
       ...(s.trialLabel ? { trialLabel: s.trialLabel } : {}),
+      ...(prices[p.id] ? { price: prices[p.id] } : {}),
     };
   });
 }

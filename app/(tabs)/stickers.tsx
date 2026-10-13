@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LoadingScreen, StickerCollectionScreen, TabSafeArea, togglePack, useLoadRetry } from '../../src/design-system';
 import { packViews } from '../../src/app-data/packViews';
+import { usePrices } from '../../src/app-data/usePrices';
 import { takeOpenPack } from '../../src/app-data/stickerChoice';
 import { dayTrialThreshold } from '../../src/domain/packs';
 import { loadPackState } from '../../src/repositories/packRepository';
@@ -16,6 +17,7 @@ export default function Stickers() {
   const [mine, setMine] = useState(false);
   const [open, setOpen] = useState<readonly ColorStickerPackId[]>([]);
   const { failed, attempt, fail, retry } = useLoadRetry();
+  const prices = usePrices();
 
   // 묶음 화면에서 열고 돌아오면 다시 읽고 그 묶음을 펼친다.
   useFocusEffect(useCallback(() => {
@@ -34,7 +36,7 @@ export default function Stickers() {
   return (
     <TabSafeArea>
       <StickerCollectionScreen
-        packs={packViews(state.pack.access, state.now)}
+        packs={packViews(state.pack.access, state.now, prices)}
         mine={mine}
         onChangeMine={setMine}
         openPacks={open}

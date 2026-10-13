@@ -62,12 +62,15 @@ export function PickedStickerBar({sticker,onDone}:{sticker:StickerId;onDone:()=>
 }
 
 export type PackState='free'|'owned'|'locked'|'trial';
-export type PackView={id:ColorStickerPackId;label:string;state:PackState;stickers:readonly StickerId[];/** 체험 중 배지. 예: '24시간 남음', '3일 남음' */trialLabel?:string};
+export type PackView={id:ColorStickerPackId;label:string;state:PackState;stickers:readonly StickerId[];/** 체험 중 배지. 예: '24시간 남음', '3일 남음' */trialLabel?:string;/** 스토어에서 받아 온 가격 글자(예: '2,200원'). 못 받아 왔으면 없다 */price?:string};
 export function colorPack(id:ColorStickerPackId,state:PackState,trialLabel?:string):PackView {
   const pack=colorStickerPacks.find(p=>p.id===id)!;
   return {id,label:pack.label,state,stickers:colorStickersInPack(id).map(s=>s.id as ColorStickerId),trialLabel};
 }
-const PRICE='2,200원';
+/*
+ * 가격은 스토어에서 받아 온 글자(src/purchases/price.ts). 못 받아 왔으면 가격만 빼고 그대로 둔다 —
+ * 배지 없이 [>], [묶음 열기], [열기], [광고 없애기]. 결제 창이 실제 가격을 보여 준다 (2026-10-13 시안 A).
+ */
 /** 접힌 줄 한 칸 폭(StickerChoice), 칸 사이, 「+n」 글자 폭 */
 const ROW_CELL=50,ROW_GAP=10,ROW_MORE=28;
 /**
@@ -90,7 +93,7 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
   const right=pack.state==='free'?<PixelText variant="caption" style={caption}>무료</PixelText>
     :pack.state==='owned'?<PixelBadge label="열었어요"/>
     :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
-    :<><PixelBadge label={rewardReady?'3일 무료':PRICE} tone="primary"/><PixelIcon name="chevron" size={16}/></>;
+    :<>{rewardReady?<PixelBadge label="3일 무료" tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
   const head=<View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:36}}>
     <PixelText accessibilityRole="header" style={{fontSize:20,lineHeight:26,color:c.buttonText}}>{pack.label}</PixelText>
     <PixelText variant="caption" style={caption}>{`${pack.stickers.length}종`}</PixelText><View style={{flex:1}}/>{right}
@@ -160,7 +163,7 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
         :<StickerSlot key={i} number={i+1} width="100%" height="100%" state="empty"/>)}
     </StickerGrid></View></PixelPanel>
     <View style={{gap:10}}>
-      <PixelButton label={`${PRICE}에 열기`} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
+      <PixelButton label={pack.price?`${pack.price}에 열기`:'묶음 열기'} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
       {!adFree&&<PixelButton label="광고 보고 하루 써 보기" variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
       <PixelButton label="3일 무료로 써 보기" variant="secondary" disabled={!ready||busy!==undefined} onPress={onTrial}/>
       {!ready&&<PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{`스티커 붙인 날이 ${reward.goal-reward.days}일 더 모이면 써 볼 수 있어요 (${reward.days}/${reward.goal}일)`}</PixelText>}
@@ -174,7 +177,7 @@ export const stickerShopDialogs={
    * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안). 쓰기 시작하면 환불이 어려울 수 있음을 사기 전에 알린다(약관 2판 11조).
    * 제목은 무엇을 사는지, 설명 첫 줄은 얻는 것, 둘째 줄이 환불. 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다.
    */
-  confirmBuy:(label:string,count:number)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.`,primaryLabel:`${PRICE}에 열기`,secondaryLabel:'취소'}),
+  confirmBuy:(label:string,count:number,price?:string)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.`,primaryLabel:price?`${price}에 열기`:'열기',secondaryLabel:'취소'}),
   confirmAdFree:{title:'광고를 없앨까요?',description:'목표 화면 아래 광고가 사라져요.\n산 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'광고 없애기',secondaryLabel:'취소'},
   bought:(label:string)=>({title:`${label} 묶음을 열었어요`,description:'기본 스티커로 쓸 그림을 골라 주세요.',primaryLabel:'확인',single:true}),
   /** endLabel 예: '내일 밤 11:00' — 광고를 다 본 때부터 24시간 */
@@ -192,13 +195,13 @@ export const stickerShopDialogs={
 } as const;
 
 /** 앱 설정 「구매」 블럭 (PRD 4.9). 구매 복원은 앱 설정에만 두고, 사기 전·후 같은 자리다. */
-export function PurchasePanel({adFree,onRemoveAds,onRestore,busy}:{adFree:boolean;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
+export function PurchasePanel({adFree,price,onRemoveAds,onRestore,busy}:{adFree:boolean;/** 스토어에서 받아 온 광고 제거 가격 글자. 못 받아 왔으면 없다 */price?:string;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
   return <PixelPanel title="구매" contentStyle={{gap:0}}>
     {adFree?<InfoRow label="광고 제거" value="없이 쓰는 중"/>
       :<View style={{gap:12,paddingVertical:12}}>
         <PixelText style={{fontSize:18,lineHeight:24}}>광고 제거</PixelText>
         <PixelText>목표 화면 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.</PixelText>
-        <PixelButton label="5,500원에 광고 없애기" loading={busy==='adFree'} disabled={busy==='restore'} onPress={onRemoveAds}/>
+        <PixelButton label={price?`${price}에 광고 없애기`:'광고 없애기'} loading={busy==='adFree'} disabled={busy==='restore'} onPress={onRemoveAds}/>
       </View>}
     <View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>
     <View style={{gap:8,paddingVertical:12}}>

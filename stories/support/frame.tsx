@@ -32,10 +32,10 @@ function AdSlot() {
 }
 
 /** 설정 탭 내용 (app/(tabs)/settings.tsx와 같은 순서). 탭 바는 Stage tab="settings"가 붙인다. */
-export function SettingsTab({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore'}) {
+export function SettingsTab({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy,price='5,500원'}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore';/** 스토어가 준 가격(원화 계정). null이면 못 받아 왔을 때 */price?:string|null}) {
   return <RetroScreen style={{gap:16}} header={<TabTitle title="설정"/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
-    <PurchasePanel adFree={adFree} onRemoveAds={noop} onRestore={noop} busy={busy}/>
+    <PurchasePanel adFree={adFree} price={price??undefined} onRemoveAds={noop} onRestore={noop} busy={busy}/>
     <PixelPanel title="도움말"><SettingRow label="사용법 다시 보기" onPress={noop}/></PixelPanel>
     <PixelPanel title="정보"><SettingRow label="약관과 라이선스" onPress={noop}/></PixelPanel>
   </RetroScreen>;

@@ -1,6 +1,7 @@
 import { getDb } from '../src/db/client';
 import { AD_TRIAL_MS } from '../src/domain/packs';
-import { buyAdFree, buyPack, restorePurchases, setStoreForTest, watchAdForPack, type Store } from '../src/purchases';
+import { buyAdFree, buyPack, loadPrices, resetPricesForTest, restorePurchases, setStoreForTest, watchAdForPack, type Store } from '../src/purchases';
+import { priceLabel } from '../src/purchases/price';
 import { grantPurchase, listPackAccess, loadPackState } from '../src/repositories/packRepository';
 import { withFreshDb } from './support/setup';
 
@@ -12,11 +13,12 @@ function fakeStore(over: Partial<Store>): Store {
     buyPack: async () => ({ ok: true }),
     buyAdFree: async () => ({ ok: true }),
     restore: async () => ({ packs: [], adFree: false }),
+    prices: async () => ({}),
     showRewardedAd: async () => ({ ok: true }),
     ...over,
   };
 }
-afterEach(() => setStoreForTest(null));
+afterEach(() => { setStoreForTest(null); resetPricesForTest(); });
 
 describe('purchases', () => {
   it('사면 그 묶음이 영구로 열린다', async () => {
@@ -62,5 +64,26 @@ describe('purchases', () => {
     const db = await getDb();
     await db.run("INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES ('snack_normal', 'ad', 1, 2)");
     expect(await restorePurchases(now)).toEqual(['동물 묶음']);
+  });
+});
+
+describe('가격', () => {
+  it('원화는 「2,200원」, 다른 통화는 스토어 글자 그대로', () => {
+    expect(priceLabel({ amount: 2200, currency: 'KRW', text: '₩2,200' })).toBe('2,200원');
+    expect(priceLabel({ amount: 12000, currency: 'KRW', text: '₩12,000' })).toBe('12,000원');
+    expect(priceLabel({ amount: 900, currency: 'KRW', text: '₩900' })).toBe('900원');
+    expect(priceLabel({ amount: 1.99, currency: 'USD', text: '$1.99' })).toBe('$1.99');
+  });
+
+  it('받아 온 가격을 글자로 바꾸고, 못 받아 오면 전에 받은 값을 쓴다', async () => {
+    setStoreForTest(fakeStore({ prices: async () => ({ animals_normal: { amount: 2200, currency: 'KRW', text: '₩2,200' }, adFree: { amount: 5500, currency: 'KRW', text: '₩5,500' } }) }));
+    expect(await loadPrices()).toEqual({ animals_normal: '2,200원', adFree: '5,500원' });
+    setStoreForTest(fakeStore({ prices: async () => { throw new Error('offline'); } }));
+    expect(await loadPrices()).toEqual({ animals_normal: '2,200원', adFree: '5,500원' });
+  });
+
+  it('한 번도 못 받아 왔으면 빈 값', async () => {
+    setStoreForTest(fakeStore({ prices: async () => { throw new Error('offline'); } }));
+    expect(await loadPrices()).toEqual({});
   });
 });
