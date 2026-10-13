@@ -1,0 +1,170 @@
+<title>환불 안내 문구</title>
+<style>
+/* 안마다 캡처 · 좋은 점/걸리는 점 · 고르기 · 메모. 문구 묶음은 상황마다 「이대로」와 메모. 아래 고정 막대에 요약. */
+@font-face { font-family: 'NeoDunggeunmo'; src: url(data:font/ttf;base64,__FONT__) format('truetype'); font-display: block; }
+:root {
+  --mint: #AFE1CB; --lcd: #C7DE94; --coral: #FD855F; --ivory: #FEF1D1; --ink: #06261C;
+  --bg: #EAF5EE; --card: #FFFFFF; --fg: #06261C; --muted: #4C6A5E; --line: #B9D6C6; --pick: #FD855F; --pick-bg: #FFF1EA; --bad: #B4381A;
+  --pixel: 'NeoDunggeunmo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 120px; display: grid; gap: 28px; }
+h1, h2, .code, .btn, .tag { font-family: var(--pixel); font-weight: normal; }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.decided { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decided ul { margin: 0; padding-left: 20px; }
+section.group { display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.opt { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.ok { border-color: var(--pick); background: var(--pick-bg); }
+.opt.ref { border-style: dashed; }
+.head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code { font-size: 18px; }
+.tag { font-size: 12px; padding: 1px 6px; border: 2px solid var(--ink); background: var(--lcd); color: var(--ink); border-radius: 3px; }
+.tag.new { background: var(--ivory); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shots figure { margin: 0; min-width: 0; display: grid; gap: 4px; align-content: start; }
+.shots img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.shots figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+dl { margin: 0; display: grid; gap: 4px; font-size: 14px; }
+dt { font-weight: 600; }
+dd { margin: 0 0 4px; color: var(--muted); }
+.btn { font-size: 15px; padding: 8px 12px; border: 3px solid var(--ink); background: var(--ivory); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--coral); }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: 14px/1.5 var(--body); padding: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); resize: vertical; }
+.state { font-size: 12px; color: var(--muted); min-height: 1em; }
+.state.bad { color: var(--bad); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar #summary { flex: 1 1 260px; min-width: 0; font-size: 14px; }
+.bar #store-state { font-size: 12px; color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>환불 안내 확인 창 문구</h1>
+    <p class="muted">1차에서 <b>B안(사기 전에 확인 창)</b>으로 정했습니다. 메모대로 제목에 「환불이 어려워요」를 크게 박지 않고, 무엇을 사는지·무엇을 할 수 있는지를 먼저 말하는 문구 세 가지입니다. 환불 이야기는 세 안 모두 설명 줄에 그대로 남겨 둡니다 — 법이 요구하는 「사기 전에 알리기」는 창 안에 분명히 쓰여 있으면 되고, 제목일 필요는 없어요. 캡처는 지금 앱 컴포넌트로 그렸습니다(390pt).</p>
+    <div class="decided">
+      <b>정해 둔 것</b>
+      <ul>
+        <li>자리: B안 — [2,200원에 열기]·[광고 없애기]를 누르면 확인 창이 먼저 뜨고, 그 다음 스토어 결제 창이 뜹니다.</li>
+        <li>버튼은 그대로: [취소] · [2,200원에 열기] / [광고 없애기].</li>
+        <li>설명은 두 줄로 끊어, 단어 중간에서 줄이 바뀌지 않게 했습니다.</li>
+      </ul>
+    </div>
+  </header>
+  <div id="groups"></div>
+</main>
+<div class="bar"><div id="summary"></div><span id="store-state">불러오는 중</span><button class="btn" id="copy" type="button">메모까지 복사</button></div>
+
+<script>
+const IMG = __IMG__;
+const GROUPS = [
+  { key: 'copy', short: '문구', pick: 'one', title: '확인 창 문구', intro: '왼쪽이 묶음 화면, 오른쪽이 앱 설정의 광고 제거입니다.',
+    opts: [
+      { id: 'copy-1', code: '1', name: '무엇을 사는지 묻기', rec: true, shots: [['c-1-pack', '묶음 · 「동물 묶음을 열까요?」'], ['c-1-settings', '광고 제거 · 「광고를 없앨까요?」']],
+        good: '제목이 평범한 확인 질문이라 거부감이 적다. 환불 조건은 설명 한 줄에 분명히 있다. 가장 짧다.', bad: '설명을 안 읽고 넘기는 사람도 있다(그래도 「알렸다」는 성립).' },
+      { id: 'copy-2', code: '2', name: '할 수 있는 것부터 말하기', shots: [['c-2-pack', '묶음 · 「열기 전에 알려 드려요」'], ['c-2-settings', '광고 제거 · 「사기 전에 알려 드려요」']],
+        good: '묶음은 「고르기 전까지는 환불을 요청할 수 있어요」로, 막는 말 대신 할 수 있는 말이다.', bad: '제목 「알려 드려요」가 오히려 뭔가 경고하는 느낌을 준다. 광고 제거는 바로 쓰기 시작해서 같은 식으로 못 쓴다. 「요청할 수 있어요」는 언제까지 안 되는지를 돌려 말해, 법률 검토에서 약하다고 볼 수 있다.' },
+      { id: 'copy-3', code: '3', name: '좋은 점 먼저, 환불은 끝에', shots: [['c-3-pack', '묶음 · 「스티커 10개를 바로…」'], ['c-3-settings', '광고 제거 · 「목표 화면 아래…」']],
+        good: '사면 얻는 것을 먼저 말해 사는 기분이 든다. 환불 조건은 둘째 줄.', bad: '이미 묶음 화면에서 본 내용을 한 번 더 말한다. 광고 제거는 버튼 위 설명과 겹친다. 가장 길다.' },
+    ] },
+];
+const $ = id => document.getElementById(id);
+const LS = 'chagok-refund-copy-review';
+const ALL = GROUPS.flatMap(g => g.opts.map(o => o.id));
+const KEYS = GROUPS.flatMap(g => g.pick === 'one' ? [g.key] : g.opts.map(o => o.id));
+let state = { choice: Object.fromEntries(KEYS.map(k => [k, ''])), notes: Object.fromEntries(ALL.map(id => [id, ''])) };
+try { const s = JSON.parse(localStorage.getItem(LS) || 'null'); if (s && s.choice && s.notes) state = { choice: { ...state.choice, ...s.choice }, notes: { ...state.notes, ...s.notes } }; } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shots = list => `<div class="shots">${list.map(([k, cap]) => `<figure><img src="${IMG[k]}" alt="${esc(cap)}" ><figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+const keyOf = (g, o) => g.pick === 'one' ? g.key : o.id;
+const valOf = (g, o) => g.pick === 'one' ? o.id : 'ok';
+function render() {
+  $('groups').innerHTML = GROUPS.map(g => `<section class="group"><h2>${esc(g.title)}</h2><p class="muted">${esc(g.intro)}</p><div class="row">
+    ${g.opts.map(o => `<article class="opt" id="g-${o.id}"><div class="head"><span class="code">${esc(o.code)}</span><b>${esc(o.name)}</b>${o.rec ? '<span class="tag">추천</span>' : ''}${o.newEl ? `<span class="tag new">${esc(o.newEl)}</span>` : ''}</div>
+      ${shots(o.shots)}${o.text ? `<p>${esc(o.text)}</p>${o.why ? `<p class="muted" style="font-size:14px">${esc(o.why)}</p>` : ''}` : `<dl><dt>좋은 점</dt><dd>${esc(o.good)}</dd><dt>걸리는 점</dt><dd>${esc(o.bad)}</dd></dl>`}
+      <button class="btn ok-btn" type="button" id="ok-${o.id}" data-g="${g.key}" data-o="${o.id}" aria-pressed="false"></button>
+      <label class="muted" for="note-${o.id}" style="font-size:13px">${esc(o.code)} 메모</label><textarea id="note-${o.id}" data-o="${o.id}" placeholder="${g.pick === 'one' ? '바꿀 점 등' : '바꿀 문구 등'}"></textarea><div class="state" id="state-${o.id}"></div></article>`).join('')}
+  </div></section>`).join('');
+  paint();
+}
+const groupOf = id => GROUPS.find(g => g.opts.some(o => o.id === id));
+const optOf = id => { const g = groupOf(id); return g ? g.opts.find(o => o.id === id) : undefined; };
+function label() {
+  const short = {};
+  const parts = GROUPS.filter(g => g.pick === 'one').map(g => `${g.short || short[g.key]} ${(optOf(state.choice[g.key] || 'x-x') || {}).code || '아직'}`);
+  const each = GROUPS.filter(g => g.pick === 'each').flatMap(g => g.opts).filter(o => state.choice[o.id] === 'ok').map(o => `${o.code} 이대로`);
+  return parts.concat(each).join(' · ');
+}
+function paint() {
+  for (const g of GROUPS) for (const o of g.opts) {
+    const picked = state.choice[keyOf(g, o)] === valOf(g, o);
+    $(`g-${o.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${o.id}`); b.setAttribute('aria-pressed', String(picked));
+    b.textContent = g.pick === 'one' ? (picked ? '고른 안' : '이 안 고르기') : (picked ? '이대로 ✓' : '이대로');
+    const t = $(`note-${o.id}`); if (document.activeElement !== t && t.value !== state.notes[o.id]) t.value = state.notes[o.id];
+  }
+  const n = ALL.filter(id => state.notes[id].trim()).length;
+  $('summary').textContent = label() + (n ? ` · 메모 ${n}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-rc-copy {value}, review/note-rc-<안 id> {note}
+async function persist(doc, statusId, data) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[doc]) { queued[doc] = [statusId, data]; return; }
+  writing[doc] = true; setStatus(statusId, '저장 중…');
+  try { await db.doc(`review/${doc}`).set({ ...data(), updatedAt: new Date().toISOString() }); setStatus(statusId, '저장됨'); }
+  catch (e) { setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true); }
+  finally { writing[doc] = false; if (queued[doc]) { const [s, d] = queued[doc]; queued[doc] = null; persist(doc, s, d); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn'); if (!b) return;
+  const g = GROUPS.find(x => x.key === b.dataset.g), o = optOf(b.dataset.o), k = keyOf(g, o), v = valOf(g, o);
+  state.choice[k] = state.choice[k] === v ? '' : v; paint(); persist(`choice-rc-${k}`, o.id, () => ({ value: state.choice[k] }));
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t) return;
+  const id = t.dataset.o; state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-rc-${id}`, id, () => ({ note: state.notes[id] })); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t || !timers[t.dataset.o]) return;
+  const id = t.dataset.o; clearTimeout(timers[id]); timers[id] = null; persist(`note-rc-${id}`, id, () => ({ note: state.notes[id] }));
+});
+$('copy').addEventListener('click', () => {
+  const text = label() + '\n' + ALL.filter(id => state.notes[id].trim()).map(id => `${optOf(id).code} ${optOf(id).name} 메모: ${state.notes[id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-rc-')) { const k = d.id.slice(10); if (k in state.choice && typeof v.value === 'string') state.choice[k] = v.value; continue; }
+      if (!d.id.startsWith('note-rc-')) continue;
+      const id = d.id.slice(8); if (!(id in state.notes)) continue;
+      const t = document.activeElement; state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>

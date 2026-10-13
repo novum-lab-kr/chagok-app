@@ -22,7 +22,7 @@ export default function Pack() {
   const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
   const [once] = useState(createSingleFlight);
   const [busy, setBusy] = useState<'buy' | 'ad'>();
-  const { ask, dialog } = useDialog();
+  const { ask, confirm, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
 
   useFocusEffect(useCallback(() => {
@@ -43,8 +43,12 @@ export default function Pack() {
 
   const opened = () => { offerOpenPack(packId); goBackOrHome(); };
 
-  /** 결제 팝업은 스토어가 그린다. 기다리는 동안 누른 버튼에 로딩 점. 취소하면 아무것도 하지 않는다 (2026-10-13). */
+  /**
+   * 사기 전에 환불 안내 확인 창을 먼저 띄운다. 결제 팝업은 스토어가 그린다.
+   * 기다리는 동안 누른 버튼에 로딩 점. 취소하면 아무것도 하지 않는다 (2026-10-13).
+   */
   async function buy() {
+    if (!(await confirm(stickerShopDialogs.confirmBuy(view!.label, view!.stickers.length)))) return;
     setBusy('buy');
     const r = await buyPack(packId).finally(() => setBusy(undefined));
     if (!r.ok) {

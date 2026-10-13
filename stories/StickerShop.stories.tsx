@@ -46,6 +46,7 @@ export const ChooserTrial:Story={name:'1 기본 스티커 · 3일 써 보는 중
 export const Pack:Story={name:'2 묶음 화면',render:()=><Stage>{pack(false,5)}</Stage>};
 export const PackRewardReady:Story={name:'2 묶음 화면 · 붙인 날이 찼을 때',render:()=><Stage>{pack(false,7)}</Stage>};
 export const PackAdFree:Story={name:'2 묶음 화면 · 광고 제거를 산 사람',render:()=><Stage>{pack(true,5)}</Stage>};
+export const PackConfirmBuy:Story={name:'2 묶음 화면 · 사기 전 확인',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.confirmBuy(animals.label,animals.stickers.length)}/></Stage>};
 export const PackBuying:Story={name:'2 묶음 화면 · 결제 기다리는 중',render:()=><Stage>{pack(false,5,'buy')}</Stage>};
 export const PackBuyFailed:Story={name:'2 묶음 화면 · 결제 실패',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.buyFailed}/></Stage>};
 export const PackPending:Story={name:'2 묶음 화면 · 보호자 승인 기다림',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.purchasePending}/></Stage>};

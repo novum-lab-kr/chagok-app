@@ -33,14 +33,15 @@ export default function AppSettings() {
   const [buyOnce] = useState(createSingleFlight);
   /** 기다리는 동안 누른 버튼에 로딩 점 (2026-10-13) */
   const [purchaseBusy, setPurchaseBusy] = useState<'adFree' | 'restore'>();
-  const { ask, dialog: purchaseDialog } = useDialog();
+  const { ask, confirm, dialog: purchaseDialog } = useDialog();
   useFocusEffect(useCallback(() => {
     let alive = true;
     void loadPackState().then((p) => { if (alive) setAdFree(p.adFree); });
     return () => { alive = false; };
   }, []));
-  /** 결제 창을 닫은 취소에는 알리지 않는다. */
+  /** 사기 전에 환불 안내 확인 창을 먼저 띄운다. 결제 창을 닫은 취소에는 알리지 않는다. */
   async function removeAds() {
+    if (!(await confirm(stickerShopDialogs.confirmAdFree))) return;
     setPurchaseBusy('adFree');
     const r = await buyAdFree().finally(() => setPurchaseBusy(undefined));
     if (r.ok) setAdFree(true);
