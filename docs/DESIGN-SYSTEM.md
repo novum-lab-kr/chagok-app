@@ -191,7 +191,7 @@ npm run check:storybook
 
 ## 홈 목록·판 상세 컴포넌트 (2026-09-29)
 
-[PRD](PRD.md) 4.1–4.7의 2026-09-29 결정을 그린 시안(`Screens / Home structure · proposals`)에서 공통 부분을 추출했다. 개별 상태는 Storybook `Components / Goal list & board`에서 본다. 시안 화면도 이 컴포넌트로 다시 조립했고, 기존 캡처와 같은지 대조했다.
+[PRD](PRD.md) 4.1–4.7의 2026-09-29 결정을 그린 시안(당시 `Screens / Home structure · proposals`, 지금 `Screens / Board & goal`)에서 공통 부분을 추출했다. 개별 상태는 Storybook `Components / Goal list & board`에서 본다. 시안 화면도 이 컴포넌트로 다시 조립했고, 기존 캡처와 같은지 대조했다.
 
 **배지 색을 늘리는 방법.** `badgeTones`(`components.tsx`)에 tone을 **추가**한다. `fill`과 `text` 두 색을 토큰에서 고른다. 기존 `ink`·`primary` 조합은 바꾸지 않는다. 지금은 시안에 있는 두 가지만 있다.
 

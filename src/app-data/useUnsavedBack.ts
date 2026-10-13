@@ -1,7 +1,7 @@
 import { createElement, useCallback, useEffect, useState } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import { useFocusEffect, useNavigation } from 'expo-router';
-import { PixelDialogModal } from '../design-system';
+import { PixelDialogModal, boardDialogs } from '../design-system';
 import { goBackOrHome } from './goBack';
 
 /**
@@ -34,10 +34,7 @@ export function useUnsavedBack(dirty: boolean) {
   const dialog = createElement(PixelDialogModal, {
     visible: asking,
     onRequestClose: () => setAsking(false),
-    title: '저장하지 않고 나갈까요?',
-    description: '지금 쓴 내용이 사라져요.',
-    primaryLabel: '계속 쓰기',
-    secondaryLabel: '나가기',
+    ...boardDialogs.unsaved,
     onPrimary: () => setAsking(false),
     onSecondary: () => { setAsking(false); goBackOrHome(); },
   });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BoardDetailScreen, CompletionNudge, LoadingScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
+import { BoardDetailScreen, CompletionNudge, LoadingScreen, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
@@ -75,13 +75,7 @@ export default function Board() {
   /** 닫기 / 계속하기 (PRD 4.7). 고르지 않고 닫으면 다음에 열 때 다시 묻는다. */
   async function askCompletion() {
     if (!goal) return;
-    const how = goal.boardType === 'tally' ? '칸을 늘려' : goal.endDate ? '종료일을 늘려' : '완성을 풀고';
-    const choice = await ask({
-      title: goal.boardType === 'calendar' && goal.endDate ? '기간을 마쳤어요!' : '판을 완성했어요!',
-      description: `${how} 이 판에 계속 붙일 수 있어요. 닫으면 완성한 판으로 보관돼요.`,
-      secondaryLabel: '닫기',
-      primaryLabel: '계속하기',
-    });
+    const choice = await ask(boardDialogs.completed(goal.boardType === 'tally' ? 'tally' : goal.endDate ? 'period' : 'open'));
     if (choice === 'dismiss') return;
     if (choice === 'secondary') {
       if (await saveOrNotify(ask, '저장하지 못했어요', () => markCompletionSeen(goal.id))) {
@@ -163,14 +157,7 @@ export default function Board() {
       return;
     }
     const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
-    if (complete && !(await confirm({
-      title: '이 판을 완성할까요?',
-      description: target.boardType === 'tally'
-        ? '마지막 칸이에요. 완성한 뒤에도 칸과 기록은 고칠 수 있어요.'
-        : '기간의 마지막 빈 날이에요. 완성한 뒤에도 칸과 기록은 고칠 수 있어요.',
-      secondaryLabel: '취소',
-      primaryLabel: '완성하기',
-    }))) return;
+    if (complete && !(await confirm(boardDialogs.confirmLast(target.boardType)))) return;
     const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
       await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt });
     });
@@ -183,7 +170,7 @@ export default function Board() {
   /** 뗀다. 기록이 있으면 먼저 확인한다 (PRD 4.5). 완성한 판에서도 뗀다 — 완성은 그대로 (2026-10-08). */
   async function remove(target: Sticker) {
     if (needsRemoveConfirm(recordedIds.has(target.id))) {
-      if (!(await confirm({ title: '스티커를 뗄까요?', description: '이 칸의 사진·메모도 함께 사라져요.', secondaryLabel: '취소', primaryLabel: '떼기' }))) return;
+      if (!(await confirm(boardDialogs.removeSticker))) return;
     }
     let photo: string | null = null;
     const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(target.id); });

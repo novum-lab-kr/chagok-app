@@ -15,7 +15,7 @@ const grid: Record<string, [row: number, col: number]> = {
   // 2 목표 관리·판 완료
   'goal-settings': [2, 4], 'goal-delete': [2, 5], complete: [2, 6], extend: [2, 7], 'completed-board': [2, 8],
   // 3 앱 설정·정보
-  'app-settings': [3, 2], replay: [3, 3], policies: [3, 4], license: [3, 5], 'policy-web': [3, 6], mail: [3, 7],
+  'app-settings': [3, 2], policies: [3, 3], license: [3, 4], 'policy-web': [3, 5], mail: [3, 6],
   // 4 계정 삭제
   'account-delete': [4, 3], deleted: [4, 4],
   // 5 스티커 묶음·구매

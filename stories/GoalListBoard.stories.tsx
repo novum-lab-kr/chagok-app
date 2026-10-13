@@ -7,7 +7,7 @@ import {
   StickerGrid, badgeTones, retro, type GoalListTab,
 } from '../src/design-system';
 
-/** 2026-09-29 홈 목록·판 상세 시안에서 추출한 공통 컴포넌트. 화면 조합은 `Screens / Home structure · proposals`. */
+/** 2026-09-29 홈 목록·판 상세 시안에서 추출한 공통 컴포넌트. 화면 조합은 `Screens / Board & goal`과 `Screens / Bottom Tabs`. */
 const meta = {
   title: 'Components/Goal list & board',
   decorators: [Story => <View style={{width: 350, maxWidth: '100%', gap: 16}}><Story/></View>],

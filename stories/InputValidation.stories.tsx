@@ -1,9 +1,8 @@
-import React, {useState, type ReactNode} from 'react';
-import {View, useWindowDimensions} from 'react-native';
+import React, {useState} from 'react';
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {ExtendSlotsScreen, GoalSettingsScreen, NewGoalScreen, PixelText, RecordScreen, type PocketGoal} from '../src/design-system';
-import {ActionSymbol} from '../src/design-system/sticker-glyphs';
+import {ExtendSlotsScreen, GoalSettingsScreen, NewGoalScreen, RecordScreen, type PocketGoal} from '../src/design-system';
 import {GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, parseSlotCount} from '../src/domain/board';
+import {Stage, noop} from './support/frame';
 
 /**
  * 입력 검사: 입력칸마다 상태별 화면. 문구는 앱과 같은 src/domain/board.ts 함수에서 나온다.
@@ -16,15 +15,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const noop = () => {};
 const NAME_20 = '매일 아침 일어나서 물 한 잔 마시기';
 const MEMO_500 = '오늘은 아침 일찍 일어나서 공원을 한 바퀴 천천히 걸었다. 바람이 시원해서 기분이 좋았다. '.repeat(20).slice(0, MEMO_MAX);
 const reading: PocketGoal = {id: 'reading', name: '책 읽기', kind: 'tally', total: 15, sticker: 'basic.sprout', filled: [1, 2, 3, 4, 5, 6], calendarRecords: {}};
-
-function Stage({children}: {children: ReactNode}) {
-  const {width} = useWindowDimensions();
-  return <View style={{width: Math.min(width, 390), height: 844}}>{children}</View>;
-}
 
 // ── 목표 이름 ─────────────────────────────────────────────────────
 function NewGoal({initialName, initialCount = '15'}: {initialName: string; initialCount?: string}) {
@@ -52,11 +45,11 @@ export const NameSettingsFull: Story = {name: '목표 이름 · 목표 설정 ·
 export const NameSettingsBlank: Story = {name: '목표 이름 · 목표 설정 · 비움', render: () => <GoalSettings initialName=""/>};
 
 // ── 메모 ──────────────────────────────────────────────────────────
+/** 앱 app/sticker/[id].tsx와 같은 값. 사진 없이 메모만 쓰는 기록이라 사진 칸 안에 앨범·카메라 버튼이 보인다. */
 function Record({initialMemo}: {initialMemo: string}) {
   const [memo, setMemo] = useState(initialMemo);
   return <Stage><RecordScreen goal={reading} date="2026년 10월 8일" initialMemo={initialMemo} onMemoChange={setMemo} memoMaxLength={MEMO_MAX} memoError={memoError(memo)}
-    photoPreview={<View style={{alignItems: 'center', gap: 8}}><ActionSymbol name="photo" size={40}/><PixelText variant="caption">사진</PixelText></View>}
-    onChoosePhoto={noop} onRemovePhoto={noop} onBack={noop} onSave={noop} onRemoveSticker={noop}/></Stage>;
+    photoActionsInFrame onChoosePhoto={noop} onTakePhoto={noop} onRemovePhoto={noop} onBack={noop} onSave={noop} onRemoveSticker={noop}/></Stage>;
 }
 export const MemoTyping: Story = {name: '메모 · 쓰는 중', render: () => <Record initialMemo="열 페이지만 읽으려다가 한 챕터를 다 읽었다."/>};
 export const MemoFull: Story = {name: '메모 · 500자', render: () => <Record initialMemo={MEMO_500}/>};
