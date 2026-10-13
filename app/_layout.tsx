@@ -8,6 +8,7 @@ import { goHome } from '../src/app-data/goBack';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
 import { configureRevenueCat, linkPurchaseAccount } from '../src/purchases/revenueCat';
+import { loadPrices } from '../src/purchases';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
@@ -25,6 +26,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 0, fade: false });
 // 결제는 화면보다 먼저 준비한다. 키나 결제 모듈이 없으면 개발용 대역 그대로 (src/purchases/revenueCat.ts).
 configureRevenueCat();
+// 가격은 앱을 켤 때 한 번 받아 둔다 — 상점 화면이 처음부터 가격을 그린다
+void loadPrices();
 void configureAds();
 
 /**

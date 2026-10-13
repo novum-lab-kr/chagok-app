@@ -18,6 +18,7 @@ import { getSetting } from '../../src/repositories/appSettingsRepository';
 import { loadPackState } from '../../src/repositories/packRepository';
 import { buyAdFree, restorePurchases } from '../../src/purchases';
 import { useDialog } from '../../src/app-data/useDialog';
+import { usePrices } from '../../src/app-data/usePrices';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
@@ -30,6 +31,7 @@ export default function AppSettings() {
   const [logout, setLogout] = useState<Logout>(null);
   /** 「구매」 블럭 (PRD 4.9·4.12). 키가 있으면 RevenueCat, 없으면 개발용 대역 (src/purchases). */
   const [adFree, setAdFree] = useState(false);
+  const prices = usePrices();
   const [buyOnce] = useState(createSingleFlight);
   /** 기다리는 동안 누른 버튼에 로딩 점 (2026-10-13) */
   const [purchaseBusy, setPurchaseBusy] = useState<'adFree' | 'restore'>();
@@ -151,7 +153,7 @@ export default function AppSettings() {
             <PixelText>지금은 이 기기에만 저장하고 있어요.</PixelText>
           </PixelPanel>
         )}
-        <PurchasePanel adFree={adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
+        <PurchasePanel adFree={adFree} price={prices.adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
         <PixelPanel title="도움말">
           <SettingRow label="사용법 다시 보기" onPress={() => nav.push('/tutorial')} />
         </PixelPanel>

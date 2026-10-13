@@ -46,4 +46,17 @@ describe('RevenueCat 결제', () => {
     const store = createRevenueCatStore(fakeSdk({ restorePurchases: async () => info('pack_weather_normal', 'pack_sports_normal', 'ad_free', 'pack_unknown') }));
     expect(await store.restore()).toEqual({ packs: ['sports_normal', 'weather_normal'], adFree: true });
   });
+
+  it('가격은 묶음·광고 제거 상품을 한 번에 묻고, 가격이 없는 상품은 뺀다', async () => {
+    const sdk = fakeSdk({
+      getProducts: async (ids) => ids.flatMap((identifier) =>
+        identifier.endsWith('animals_normal') ? [{ identifier, price: 2200, currencyCode: 'KRW', priceString: '₩2,200' }]
+          : identifier.endsWith('adfree') ? [{ identifier, price: 4.99, currencyCode: 'USD', priceString: '$4.99' }]
+            : identifier.endsWith('snack_normal') ? [{ identifier }] : []),
+    });
+    expect(await createRevenueCatStore(sdk).prices()).toEqual({
+      animals_normal: { amount: 2200, currency: 'KRW', text: '₩2,200' },
+      adFree: { amount: 4.99, currency: 'USD', text: '$4.99' },
+    });
+  });
 });

@@ -28,13 +28,15 @@ function ChooserHost({packs,selected='basic.book',days=5,initialMine=false,initi
   const [open,setOpen]=useState<readonly ColorStickerPackId[]>([initialOpen??(selected.split('.')[0] as ColorStickerPackId)]);
   return <StickerChooserScreen packs={packs} mine={mine} onChangeMine={setMine} selected={value} onSelect={setValue} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days,goal:7}} onOpenPack={noop} onDone={noop} onBack={noop}/>;
 }
-const owned=[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','locked'),colorPack('weather_normal','locked')];
-const trying=(label:string)=>[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','trial',label),colorPack('weather_normal','locked')];
-const afterBuy=[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','owned'),colorPack('weather_normal','locked')];
-const animals=colorPack('animals_normal','locked');
+/** 잠긴 묶음 — 가격은 앱에서 스토어가 준 값(src/purchases/price.ts). 여기서는 원화 계정 */
+const locked=(id:ColorStickerPackId,price:string|undefined='2,200원'):PackView=>({...colorPack(id,'locked'),...(price?{price}:{})});
+const owned=[colorPack('basic','free'),colorPack('snack_normal','owned'),locked('animals_normal'),locked('weather_normal')];
+const trying=(label:string)=>[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','trial',label),locked('weather_normal')];
+const afterBuy=[colorPack('basic','free'),colorPack('snack_normal','owned'),colorPack('animals_normal','owned'),locked('weather_normal')];
+const animals=locked('animals_normal');
 /** 판 예시: 묶음 안에서 서로 다른 5개 */
 const sample=[0,4,7,2,9].map(i=>animals.stickers[i]);
-const pack=(adFree:boolean,days:number,busy?:'buy'|'ad')=><PackScreen pack={animals} sample={sample} adFree={adFree} reward={{days,goal:7}} onBuy={noop} onWatchAd={noop} onTrial={noop} onBack={noop} busy={busy}/>;
+const pack=(adFree:boolean,days:number,busy?:'buy'|'ad',p:PackView=animals)=><PackScreen pack={p} sample={sample} adFree={adFree} reward={{days,goal:7}} onBuy={noop} onWatchAd={noop} onTrial={noop} onBack={noop} busy={busy}/>;
 
 // 1. 기본 스티커
 export const Chooser:Story={name:'1 기본 스티커',render:()=><Stage><ChooserHost packs={owned}/></Stage>};
@@ -46,7 +48,9 @@ export const ChooserTrial:Story={name:'1 기본 스티커 · 3일 써 보는 중
 export const Pack:Story={name:'2 묶음 화면',render:()=><Stage>{pack(false,5)}</Stage>};
 export const PackRewardReady:Story={name:'2 묶음 화면 · 붙인 날이 찼을 때',render:()=><Stage>{pack(false,7)}</Stage>};
 export const PackAdFree:Story={name:'2 묶음 화면 · 광고 제거를 산 사람',render:()=><Stage>{pack(true,5)}</Stage>};
-export const PackConfirmBuy:Story={name:'2 묶음 화면 · 사기 전 확인',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.confirmBuy(animals.label,animals.stickers.length)}/></Stage>};
+export const PackConfirmBuy:Story={name:'2 묶음 화면 · 사기 전 확인',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.confirmBuy(animals.label,animals.stickers.length,animals.price)}/></Stage>};
+export const PackNoPrice:Story={name:'2 묶음 화면 · 가격을 못 받아 왔을 때',render:()=><Stage>{pack(false,5,undefined,locked('animals_normal',undefined))}</Stage>};
+export const PackNoPriceConfirm:Story={name:'2 묶음 화면 · 가격 없이 사기 전 확인',render:()=><Stage>{pack(false,5,undefined,locked('animals_normal',undefined))}<Dialog {...stickerShopDialogs.confirmBuy(animals.label,animals.stickers.length)}/></Stage>};
 export const PackBuying:Story={name:'2 묶음 화면 · 결제 기다리는 중',render:()=><Stage>{pack(false,5,'buy')}</Stage>};
 export const PackBuyFailed:Story={name:'2 묶음 화면 · 결제 실패',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.buyFailed}/></Stage>};
 export const PackPending:Story={name:'2 묶음 화면 · 보호자 승인 기다림',render:()=><Stage>{pack(false,5)}<Dialog {...stickerShopDialogs.purchasePending}/></Stage>};

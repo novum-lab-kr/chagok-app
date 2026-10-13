@@ -1,0 +1,174 @@
+<title>가격 표시 시안</title>
+<style>
+/* 안마다 캡처 · 좋은 점/걸리는 점 · 고르기 · 메모. 문구 묶음은 상황마다 「이대로」와 메모. 아래 고정 막대에 요약. */
+@font-face { font-family: 'NeoDunggeunmo'; src: url(data:font/ttf;base64,__FONT__) format('truetype'); font-display: block; }
+:root {
+  --mint: #AFE1CB; --lcd: #C7DE94; --coral: #FD855F; --ivory: #FEF1D1; --ink: #06261C;
+  --bg: #EAF5EE; --card: #FFFFFF; --fg: #06261C; --muted: #4C6A5E; --line: #B9D6C6; --pick: #FD855F; --pick-bg: #FFF1EA; --bad: #B4381A;
+  --pixel: 'NeoDunggeunmo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 120px; display: grid; gap: 28px; }
+h1, h2, .code, .btn, .tag { font-family: var(--pixel); font-weight: normal; }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.decided { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decided ul { margin: 0; padding-left: 20px; }
+section.group { display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.opt { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.ok { border-color: var(--pick); background: var(--pick-bg); }
+.opt.ref { border-style: dashed; }
+.head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code { font-size: 18px; }
+.tag { font-size: 12px; padding: 1px 6px; border: 2px solid var(--ink); background: var(--lcd); color: var(--ink); border-radius: 3px; }
+.tag.new { background: var(--ivory); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shots figure { margin: 0; min-width: 0; display: grid; gap: 4px; align-content: start; }
+.shots img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.shots figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+dl { margin: 0; display: grid; gap: 4px; font-size: 14px; }
+dt { font-weight: 600; }
+dd { margin: 0 0 4px; color: var(--muted); }
+.btn { font-size: 15px; padding: 8px 12px; border: 3px solid var(--ink); background: var(--ivory); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--coral); }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: 14px/1.5 var(--body); padding: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); resize: vertical; }
+.state { font-size: 12px; color: var(--muted); min-height: 1em; }
+.state.bad { color: var(--bad); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar #summary { flex: 1 1 260px; min-width: 0; font-size: 14px; }
+.bar #store-state { font-size: 12px; color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>가격을 스토어에서 받아 오기</h1>
+    <p class="muted">지금은 버튼에 「2,200원」 「5,500원」을 코드에 적어 두었습니다. 이제 앱을 열 때 스토어(App Store·Google Play, 개발 중에는 RevenueCat 테스트 스토어)에 가격을 물어 받아 온 값을 씁니다(결정 B). 원화면 지금 디자인대로 「2,200원」, 다른 통화면 스토어가 준 글자 그대로입니다. 남은 것은 <b>가격을 못 받아 왔을 때</b>(인터넷이 없을 때, 스토어 오류, 상품을 아직 안 만들었을 때) 어떻게 보일지입니다. 캡처는 지금 앱 컴포넌트로 그렸습니다(390pt).</p>
+    <div class="decided">
+      <b>정해 둔 것</b>
+      <ul>
+        <li>가격은 묶음 카드 배지 · 묶음 화면 버튼 · 사기 전 확인 창 버튼 · 앱 설정 [광고 없애기] 네 곳에 씁니다.</li>
+        <li>한 번 받아 온 가격은 앱이 켜져 있는 동안 씁니다. 그 뒤에 인터넷이 끊겨도 가격은 그대로 보입니다.</li>
+        <li>결제 창은 스토어가 그리고, 거기에는 늘 실제 가격이 나옵니다.</li>
+      </ul>
+    </div>
+    <h2 style="margin-top:8px">받아 왔을 때 (참고)</h2>
+    <div id="ref"></div>
+  </header>
+  <div id="groups"></div>
+</main>
+<div class="bar"><div id="summary"></div><span id="store-state">불러오는 중</span><button class="btn" id="copy" type="button">메모까지 복사</button></div>
+
+<script>
+const IMG = __IMG__;
+const REF = [['krw-chooser', '원화 · 묶음 카드 「2,200원」'], ['krw-pack', '원화 · 묶음 화면'], ['krw-settings', '원화 · 앱 설정'], ['usd-pack', '미국 계정 · 「$1.99에 열기」'], ['usd-settings', '미국 계정 · 「$4.99에 광고 없애기」']];
+const GROUPS = [
+  { key: 'fallback', short: '못 받아 왔을 때', pick: 'one', title: '가격을 못 받아 왔을 때', intro: '앱을 처음 켤 때부터 인터넷이 없거나 스토어가 답하지 않는 경우입니다. 이때는 결제도 대개 실패합니다(이미 정한 「묶음을 열지 못했어요」 안내가 뜹니다).',
+    opts: [
+      { id: 'fb-a', code: 'A', name: '가격만 빼고 그대로', rec: true, shots: [['a-chooser', '묶음 카드 · 배지 없이 [>]'], ['a-pack', '[묶음 열기]'], ['a-confirm', '확인 창 · [열기]'], ['a-settings', '[광고 없애기]']],
+        good: '화면이 거의 같고 막히는 곳이 없다. 누르면 스토어 결제 창이 실제 가격을 보여 준다. 만들 것이 가장 적다.', bad: '가격을 모른 채 확인 창까지 간다(결제 창에서는 보인다). 오프라인이면 누른 뒤에야 「묶음을 열지 못했어요」를 본다.' },
+      { id: 'fb-b', code: 'B', name: '가격을 받아 올 때까지 살 수 없게', shots: [['b-chooser', '묶음 카드 · 배지 없이 [>]'], ['b-pack', '[묶음 열기] 흐리게 + 안내'], ['b-settings', '[광고 없애기] 흐리게 + 안내']],
+        good: '가격을 보기 전에는 사는 단계로 못 간다. 왜 안 되는지와 할 일(인터넷 연결)을 바로 알려 준다.', bad: '스토어 상품을 아직 안 만든 개발 중에도 막힌다. 인터넷이 돌아와도 화면을 다시 열어야 풀린다. 안내 한 줄이 더 생긴다.' },
+      { id: 'fb-c', code: 'C', name: '정해 둔 가격으로 보이기', shots: [['c-chooser', '묶음 카드 「2,200원」'], ['c-pack', '[2,200원에 열기]'], ['c-settings', '[5,500원에 광고 없애기]']],
+        good: '늘 지금과 똑같이 보인다.', bad: '스토어에서 가격을 바꾸거나 다른 나라 계정이면 화면과 결제 창 가격이 다르다 — 이번에 받아 오기로 한 이유가 사라진다. 가격을 바꿀 때마다 앱도 고쳐야 한다.' },
+    ] },
+];
+const $ = id => document.getElementById(id);
+const LS = 'chagok-no-price-review';
+const ALL = GROUPS.flatMap(g => g.opts.map(o => o.id));
+const KEYS = GROUPS.flatMap(g => g.pick === 'one' ? [g.key] : g.opts.map(o => o.id));
+let state = { choice: Object.fromEntries(KEYS.map(k => [k, ''])), notes: Object.fromEntries(ALL.map(id => [id, ''])) };
+try { const s = JSON.parse(localStorage.getItem(LS) || 'null'); if (s && s.choice && s.notes) state = { choice: { ...state.choice, ...s.choice }, notes: { ...state.notes, ...s.notes } }; } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shots = list => `<div class="shots">${list.map(([k, cap]) => `<figure><img src="${IMG[k]}" alt="${esc(cap)}" ><figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+const keyOf = (g, o) => g.pick === 'one' ? g.key : o.id;
+const valOf = (g, o) => g.pick === 'one' ? o.id : 'ok';
+function render() {
+  $('groups').innerHTML = GROUPS.map(g => `<section class="group"><h2>${esc(g.title)}</h2><p class="muted">${esc(g.intro)}</p><div class="row">
+    ${g.opts.map(o => `<article class="opt" id="g-${o.id}"><div class="head"><span class="code">${esc(o.code)}</span><b>${esc(o.name)}</b>${o.rec ? '<span class="tag">추천</span>' : ''}${o.newEl ? `<span class="tag new">${esc(o.newEl)}</span>` : ''}</div>
+      ${shots(o.shots)}${o.text ? `<p>${esc(o.text)}</p>${o.why ? `<p class="muted" style="font-size:14px">${esc(o.why)}</p>` : ''}` : `<dl><dt>좋은 점</dt><dd>${esc(o.good)}</dd><dt>걸리는 점</dt><dd>${esc(o.bad)}</dd></dl>`}
+      <button class="btn ok-btn" type="button" id="ok-${o.id}" data-g="${g.key}" data-o="${o.id}" aria-pressed="false"></button>
+      <label class="muted" for="note-${o.id}" style="font-size:13px">${esc(o.code)} 메모</label><textarea id="note-${o.id}" data-o="${o.id}" placeholder="${g.pick === 'one' ? '바꿀 점 등' : '바꿀 문구 등'}"></textarea><div class="state" id="state-${o.id}"></div></article>`).join('')}
+  </div></section>`).join('');
+  paint();
+}
+const groupOf = id => GROUPS.find(g => g.opts.some(o => o.id === id));
+const optOf = id => { const g = groupOf(id); return g ? g.opts.find(o => o.id === id) : undefined; };
+function label() {
+  const short = {};
+  const parts = GROUPS.filter(g => g.pick === 'one').map(g => `${g.short || short[g.key]} ${(optOf(state.choice[g.key] || 'x-x') || {}).code || '아직'}`);
+  const each = GROUPS.filter(g => g.pick === 'each').flatMap(g => g.opts).filter(o => state.choice[o.id] === 'ok').map(o => `${o.code} 이대로`);
+  return parts.concat(each).join(' · ');
+}
+function paint() {
+  for (const g of GROUPS) for (const o of g.opts) {
+    const picked = state.choice[keyOf(g, o)] === valOf(g, o);
+    $(`g-${o.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${o.id}`); b.setAttribute('aria-pressed', String(picked));
+    b.textContent = g.pick === 'one' ? (picked ? '고른 안' : '이 안 고르기') : (picked ? '이대로 ✓' : '이대로');
+    const t = $(`note-${o.id}`); if (document.activeElement !== t && t.value !== state.notes[o.id]) t.value = state.notes[o.id];
+  }
+  const n = ALL.filter(id => state.notes[id].trim()).length;
+  $('summary').textContent = label() + (n ? ` · 메모 ${n}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-np-fallback {value}, review/note-np-<안 id> {note}
+async function persist(doc, statusId, data) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[doc]) { queued[doc] = [statusId, data]; return; }
+  writing[doc] = true; setStatus(statusId, '저장 중…');
+  try { await db.doc(`review/${doc}`).set({ ...data(), updatedAt: new Date().toISOString() }); setStatus(statusId, '저장됨'); }
+  catch (e) { setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true); }
+  finally { writing[doc] = false; if (queued[doc]) { const [s, d] = queued[doc]; queued[doc] = null; persist(doc, s, d); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn'); if (!b) return;
+  const g = GROUPS.find(x => x.key === b.dataset.g), o = optOf(b.dataset.o), k = keyOf(g, o), v = valOf(g, o);
+  state.choice[k] = state.choice[k] === v ? '' : v; paint(); persist(`choice-np-${k}`, o.id, () => ({ value: state.choice[k] }));
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t) return;
+  const id = t.dataset.o; state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-np-${id}`, id, () => ({ note: state.notes[id] })); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t || !timers[t.dataset.o]) return;
+  const id = t.dataset.o; clearTimeout(timers[id]); timers[id] = null; persist(`note-np-${id}`, id, () => ({ note: state.notes[id] }));
+});
+$('copy').addEventListener('click', () => {
+  const text = label() + '\n' + ALL.filter(id => state.notes[id].trim()).map(id => `${optOf(id).code} ${optOf(id).name} 메모: ${state.notes[id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+document.getElementById('ref').innerHTML = shots(REF);
+render();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장 · 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-np-')) { const k = d.id.slice(10); if (k in state.choice && typeof v.value === 'string') state.choice[k] = v.value; continue; }
+      if (!d.id.startsWith('note-np-')) continue;
+      const id = d.id.slice(8); if (!(id in state.notes)) continue;
+      const t = document.activeElement; state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요 · 메모까지 복사로 보내 주세요'; });
+})();
+</script>

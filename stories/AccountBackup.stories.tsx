@@ -35,10 +35,10 @@ function Start({initial='account'}:{initial?:AccountStartChoice}) {
   const [value,setValue]=useState(initial);
   return <AccountStartScreen value={value} onChange={setValue} onContinue={noop}/>;
 }
-function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore'}) {
+function Settings({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy,price='5,500원'}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore';/** 스토어가 준 가격. 원화 계정 */price?:string|null}) {
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title="앱 설정" onBack={noop}/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
-    <PurchasePanel adFree={adFree} onRemoveAds={noop} onRestore={noop} busy={busy}/>
+    <PurchasePanel adFree={adFree} price={price??undefined} onRemoveAds={noop} onRestore={noop} busy={busy}/>
     <PixelPanel title="도움말"><SettingRow label="사용법 다시 보기" onPress={noop}/></PixelPanel>
     <PixelPanel title="정보"><SettingRow label="약관과 라이선스" onPress={noop}/></PixelPanel>
   </RetroScreen>;
@@ -106,6 +106,7 @@ export const RestoreNone:Story={name:'8 구매 복원 · 없음',render:()=><Sta
 export const RestoreWaiting:Story={name:'8 구매 복원 · 기다리는 중',render:()=><Stage><Settings busy="restore"/></Stage>};
 export const RestorePurchaseFailed:Story={name:'8 구매 복원 · 실패',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.restoreFailed}/></Stage>};
 export const AdFreeConfirm:Story={name:'8 광고 제거 · 사기 전 확인',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.confirmAdFree}/></Stage>};
+export const AdFreeNoPrice:Story={name:'8 광고 제거 · 가격을 못 받아 왔을 때',render:()=><Stage><Settings price={null}/></Stage>};
 export const AdFreeWaiting:Story={name:'8 광고 제거 · 결제 기다리는 중',render:()=><Stage><Settings busy="adFree"/></Stage>};
 export const AdFreeFailed:Story={name:'8 광고 제거 · 결제 실패',render:()=><Stage><Settings/><Dialog {...stickerShopDialogs.adFreeFailed}/></Stage>};
 

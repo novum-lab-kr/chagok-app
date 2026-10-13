@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LoadingScreen, PackScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import { endLabel, packViews, samplePlacement } from '../../../src/app-data/packViews';
+import { usePrices } from '../../../src/app-data/usePrices';
 import { offerOpenPack } from '../../../src/app-data/stickerChoice';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
@@ -24,6 +25,7 @@ export default function Pack() {
   const [busy, setBusy] = useState<'buy' | 'ad'>();
   const { ask, confirm, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
+  const prices = usePrices();
 
   useFocusEffect(useCallback(() => {
     let alive = true;
@@ -35,7 +37,7 @@ export default function Pack() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt, fail]));
 
-  const view = state ? packViews(state.pack.access, state.now).find((p) => p.id === packId) : undefined;
+  const view = state ? packViews(state.pack.access, state.now, prices).find((p) => p.id === packId) : undefined;
   if (!state || !view) {
     // 읽었는데 그런 묶음이 없으면(잘못된 링크) 기다려도 소용없으니 바로 안내한다.
     return <LoadingScreen failed={failed || state !== null} kind="stickers" onRetry={retry} onHome={goHome} />;
@@ -48,7 +50,7 @@ export default function Pack() {
    * 기다리는 동안 누른 버튼에 로딩 점. 취소하면 아무것도 하지 않는다 (2026-10-13).
    */
   async function buy() {
-    if (!(await confirm(stickerShopDialogs.confirmBuy(view!.label, view!.stickers.length)))) return;
+    if (!(await confirm(stickerShopDialogs.confirmBuy(view!.label, view!.stickers.length, view!.price)))) return;
     setBusy('buy');
     const r = await buyPack(packId).finally(() => setBusy(undefined));
     if (!r.ok) {

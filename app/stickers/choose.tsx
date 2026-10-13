@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LoadingScreen, StickerChooserScreen, togglePack, useLoadRetry } from '../../src/design-system';
 import { initialChoice, packViews } from '../../src/app-data/packViews';
+import { usePrices } from '../../src/app-data/usePrices';
 import { offerSticker, takeOpenPack } from '../../src/app-data/stickerChoice';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../../src/app-data/goBack';
@@ -27,6 +28,7 @@ export default function ChooseSticker() {
   const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
+  const prices = usePrices();
 
   // 묶음 화면에서 열고 돌아오면 다시 읽고 그 묶음을 펼친다.
   useFocusEffect(useCallback(() => {
@@ -66,7 +68,7 @@ export default function ChooseSticker() {
   return (
     <>
       <StickerChooserScreen
-        packs={packViews(state.pack.access, state.now)}
+        packs={packViews(state.pack.access, state.now, prices)}
         mine={mine}
         onChangeMine={setMine}
         selected={selected}
