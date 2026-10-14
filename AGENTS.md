@@ -15,6 +15,7 @@
 | [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | 개발 빌드·시뮬레이터·개발 서버 실행 |
 | [docs/RELEASE-DECISIONS.md](docs/RELEASE-DECISIONS.md) | 식별자·계정·가격·광고 같은 출시 결정 |
 | [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 스토어에 내기 직전. 출시 전 최종 점검 목록 |
+| [docs/LEGAL-REVIEW.md](docs/LEGAL-REVIEW.md) | 출시·업데이트 때마다. 약관·처리방침이 기대는 법령의 개정 확인과 문서 유효성 점검 |
 | [docs/migration/README.md](docs/migration/README.md) | 레포를 옮긴 직후에만 |
 
 Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](https://docs.expo.dev/versions/v57.0.0/)를 확인한다. 지금 Expo ~57 / RN 0.86 / React 19.2.3.
