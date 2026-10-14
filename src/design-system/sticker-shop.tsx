@@ -174,7 +174,7 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
 /** 화면 위에 PixelDialogModal로 띄운다. 결제 팝업은 Apple·Google이 그린다. */
 export const stickerShopDialogs={
   /**
-   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안). 쓰기 시작하면 환불이 어려울 수 있음을 사기 전에 알린다(약관 2판 11조).
+   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안). 쓰기 시작하면 환불이 어려울 수 있음을 사기 전에 알린다(약관 11조).
    * 제목은 무엇을 사는지, 설명 첫 줄은 얻는 것, 둘째 줄이 환불. 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다.
    */
   confirmBuy:(label:string,count:number,price?:string)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.`,primaryLabel:price?`${price}에 열기`:'열기',secondaryLabel:'취소'}),
