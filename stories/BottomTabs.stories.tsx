@@ -8,7 +8,7 @@ import type {ColorStickerPackId} from '../src/stickers/color/catalog';
 import {SettingsTab as Settings,Stage,noop} from './support/frame';
 import {boardOf,cardFor,goals as fixtures,stickersOf} from './support/goals';
 
-const meta={title:'Screens/Bottom Tabs',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'하단 탭 (2026-10-12 확정 시안 4차: 떠 있는 바 + 살구색 아이콘, 목표·기록·스티커·설정). 판·기록·묶음 화면은 탭 위에 쌓여 탭 바가 없다. 광고는 목표 탭에서만 탭 바 바로 위(8pt 띄움). 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
+const meta={title:'Screens/Bottom Tabs',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'하단 탭 (2026-10-12 확정 시안 4차: 떠 있는 바 + 살구색 아이콘, 목표·기록·스티커·설정. 2026-10-15: 글자 없이 아이콘 32, 기록 아이콘은 노트, 누른 채 끌면 민트 도트 칸이 따라오고 놓으면 바뀜). 판·기록·묶음 화면은 탭 위에 쌓여 탭 바가 없다. 광고는 목표 탭에서만 탭 바 바로 위(8pt 띄움). 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
 export default meta;
 type Story=StoryObj<typeof meta>;
 const active:GoalCardItem[]=[cardFor('reading'),cardFor('walk'),cardFor('water')];
