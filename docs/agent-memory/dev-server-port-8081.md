@@ -15,3 +15,5 @@ Before swapping: tell the user what 8081 currently serves (which folder/branch/c
 **Why:** 2026-10-13 the user got confused by addresses changing per task ("포트를 왜 계속 다른걸로 띄우는거야?"); they want one fixed address on the phone.
 
 **How to apply:** Applies to Metro the user tests on. Storybook ports for my own captures are separate. Still never touch other sessions' servers without asking. Related: [[worktree-before-writing]], [[worktree-env-local]].
+
+**Cellular via Tailscale (2026-10-15):** the user opens the dev build from anywhere at `https://eunjukims-macbook-air.tail4eb32b.ts.net` (Tailscale Serve proxies 443 to 127.0.0.1:8081). iOS ATS blocks plain `http://100.x` because only LAN ranges are exempt. Start 8081 with `EXPO_PACKAGER_PROXY_URL=https://eunjukims-macbook-air.tail4eb32b.ts.net npx expo start --dev-client --port 8081`; without it the manifest points at `…ts.net:8081` and the bundle fails. Check with `/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status`.

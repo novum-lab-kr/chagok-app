@@ -12,5 +12,5 @@
 - [Plain words, not jargon](plain-words-not-jargon.md) — say 시험 구현 not spike; always flag test vs real implementation
 - [Worktree before writing](worktree-before-writing.md) — new worktree + branch before the first file write, even drafts; main checkout is shared with other sessions
 - [Widget tap timing](widget-tap-timing.md) — measure widget taps via chronod logs; month widget ~3s, 32 archives per reload
-- [Dev server on 8081](dev-server-port-8081.md) — user tests on 8081 only; say what's on it and ask before swapping
+- [Dev server on 8081](dev-server-port-8081.md) — user tests on 8081 only; ask before swapping; cellular via Tailscale https + EXPO_PACKAGER_PROXY_URL
 - [Policy stays 1판 until launch](policy-v1-until-launch.md) — pre-launch terms/privacy edits go into v1; no v2 folders or version bumps
