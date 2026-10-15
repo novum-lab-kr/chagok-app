@@ -95,7 +95,7 @@
         ],
         "stories": [
           {
-            "id": "screens-account-consent--ready-44",
+            "id": "screens-account-consent--ready",
             "label": "iOS · 모두 체크"
           },
           {
@@ -104,7 +104,7 @@
           },
           {
             "id": "screens-account-consent--android",
-            "label": "Android · Google만"
+            "label": "Android 카카오와 Google"
           }
         ],
         "scenarios": [
