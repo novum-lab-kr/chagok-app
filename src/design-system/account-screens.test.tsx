@@ -1,9 +1,9 @@
 import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
-import {AccountBackupPanel,AccountStartScreen,ConsentScreen,DeleteAccountScreen,RestoreConflictScreen} from './account-screens';
+import {AccountBackupPanel,AccountStartScreen,ConsentScreen,DeleteAccountScreen,LoginCircles,RestoreConflictScreen,type LoginProvider} from './account-screens';
 afterEach(cleanup);
-const base={onToggleAge:vi.fn(),onToggleTerms:vi.fn(),onViewTerms:vi.fn(),onViewPrivacy:vi.fn(),onUnder14:vi.fn(),onBack:vi.fn(),loginButtons:<button>Google로 계속</button>};
+const base={onToggleAge:vi.fn(),onToggleTerms:vi.fn(),onViewTerms:vi.fn(),onViewPrivacy:vi.fn(),onUnder14:vi.fn(),onBack:vi.fn(),loginButtons:<button>Google로 계속</button>,providers:['kakao','apple','google'] as LoginProvider[]};
 describe('동의 화면',()=>{
   it('두 체크가 모두 켜지기 전에는 로그인 영역이 비활성이다',()=>{
     const {rerender}=render(<ConsentScreen {...base} ageChecked termsChecked={false}/>);
@@ -33,7 +33,7 @@ describe('계정 시작 화면',()=>{
   it('고른 쪽을 체크 상태로 보이고 다른 쪽을 고르면 알린다',()=>{
     const change=vi.fn(),next=vi.fn();
     render(<AccountStartScreen value="account" onChange={change} onContinue={next}/>);
-    expect(screen.getByRole('radio',{name:'계정 연결하기'}).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('radio',{name:'계정으로 시작하기'}).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(screen.getByRole('radio',{name:'이 기기에서만 쓰기'}));expect(change).toHaveBeenCalledWith('local');
     fireEvent.click(screen.getByRole('button',{name:'계속'}));expect(next).toHaveBeenCalled();
   });
@@ -79,5 +79,27 @@ describe('계정 삭제 화면',()=>{
     render(<DeleteAccountScreen onDelete={del} onCancel={cancel} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button',{name:'계정 삭제하기'}));fireEvent.click(screen.getByRole('button',{name:'취소'}));
     expect(del).toHaveBeenCalled();expect(cancel).toHaveBeenCalled();
+  });
+});
+describe('시작하기 화면 이름 (2026-10-15 시안 2안)',()=>{
+  it('제목은 시작하기, 소개에 쓸 수 있는 계정을 적는다',()=>{
+    const {rerender}=render(<ConsentScreen {...base} ageChecked={false} termsChecked={false}/>);
+    expect(screen.getByText('시작하기')).toBeTruthy();
+    expect(screen.getByText(/^카카오, Apple, Google 계정으로 시작하면/)).toBeTruthy();
+    rerender(<ConsentScreen {...base} providers={['kakao','google']} ageChecked={false} termsChecked={false}/>);
+    expect(screen.getByText(/^카카오, Google 계정으로 시작하면/)).toBeTruthy();
+  });
+});
+describe('로그인 동그라미 버튼',()=>{
+  it('받은 순서대로 그리고, 누른 회사를 알린다 (2026-10-15 틀4)',()=>{
+    const press=vi.fn();
+    render(<LoginCircles providers={['kakao','apple','google']} onPress={press}/>);
+    expect(screen.getAllByRole('button').map((b)=>b.getAttribute('aria-label'))).toEqual(['카카오로 로그인','Apple로 로그인','Google로 로그인']);
+    fireEvent.click(screen.getByRole('button',{name:'Apple로 로그인'}));expect(press).toHaveBeenCalledWith('apple');
+  });
+  it('Android처럼 Apple을 빼면 두 개만 그린다',()=>{
+    render(<LoginCircles providers={['kakao','google']} onPress={vi.fn()}/>);
+    expect(screen.queryByRole('button',{name:'Apple로 로그인'})).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 });

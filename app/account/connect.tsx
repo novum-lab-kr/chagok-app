@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import {
   ConsentScreen, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
@@ -264,6 +264,7 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
   return (
     <>
       <ConsentScreen
+        providers={Platform.OS === 'ios' ? ['kakao', 'apple', 'google'] : ['kakao', 'google']}
         ageChecked={age}
         termsChecked={terms}
         onToggleAge={() => setAge(!age)}

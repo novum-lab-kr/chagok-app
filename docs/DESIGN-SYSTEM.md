@@ -34,7 +34,7 @@ npm run storybook
 
 - 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤·패널·칸 테두리와 패널 제목 구분선은 3px.
 - `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3. 달력판 오늘 칸은 같은 링을 칸 밖으로 격자선 두께(3)만큼 넓혀 격자선 위에 겹쳐 그리고 그 칸을 `zIndex: 1`로 올린다(2026-10-09, [달력 포커스 시안](https://claude.ai/artifact/6QcCHwy2WZaMTz3vQojz4c)).
-- 탭 대상은 iOS 44pt · Android 48dp 이상(2026-10-12). 모양이 작은 버튼은 `touchSlop`(`hitSlop`)으로 누르는 영역만 넓힌다. 달력 날짜 칸(7열)은 옆 칸과 겹쳐 넓히지 않는다. 로그인 버튼 높이 44, 두 버튼 글자 19(Apple은 높이의 43%, Google은 기본 14/20을 1.2배로 — 2026-10-12). 버튼 폭이 모자라면 Google 버튼 안 글자·로고·여백을 같은 비율로 줄인다.
+- 탭 대상은 iOS 44pt · Android 48dp 이상(2026-10-12). 모양이 작은 버튼은 `touchSlop`(`hitSlop`)으로 누르는 영역만 넓힌다. 달력 날짜 칸(7열)은 옆 칸과 겹쳐 넓히지 않는다. 로그인 버튼은 지름 52 동그라미 안에 회사 로고(24)만, 사이 20, 글자 없이(`LoginCircles`, 2026-10-15 [시안](https://claude.ai/artifact/DN5XkTrJ8K5tN69Px7MSJN) 틀4). 순서 카카오 → Apple → Google, Android는 Apple 없이. 회사 색은 디자인 시스템의 예외 — 카카오 노란 원 #FEE500 + 검정 말풍선(가이드상 고정), Apple·Google 흰 원 + 테두리 #747775. 세 원과 로고 크기를 같게 둔다(카카오가 아이콘만 쓰는 버튼을 허용하는 조건). 버튼 뜻은 화면 제목 「시작하기」와 소개 「카카오, Apple, Google 계정으로 시작하면…」이 알린다(2026-10-15 [시안](https://claude.ai/artifact/RcJJKYo5mz87nvjN2hRXyv) 2안).
 - 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 `SCREEN_PADDING` 20pt. 더 넓은 화면은 가운데로 모은다.
 - 제목 줄(`RetroScreen header`)과 본문 사이 24pt, 모든 화면(2026-10-10). 제목 아래에 탭이 붙는 「기본 스티커」는 제목–탭 24, 탭–본문 14(`headerGap`).
 - iOS 시트(`presentation: 'modal'` — 새 목표, 기본 스티커, 묶음)는 위쪽 안전 영역을 비우지 않는다(`SheetSafeArea`, 2026-10-10). Android 모달은 화면 전체라 그대로 둔다.

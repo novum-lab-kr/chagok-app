@@ -64,7 +64,7 @@ export function AccountStartScreen({value,onChange,onContinue}:{value:AccountSta
     <AppHeader/>
     <Heading>어떻게 시작할까요?</Heading>
     <View accessibilityRole="radiogroup" style={{gap:16}}>
-      <ChoiceCard title="계정 연결하기" selected={value==='account'} onPress={()=>onChange('account')}>
+      <ChoiceCard title="계정으로 시작하기" selected={value==='account'} onPress={()=>onChange('account')}>
         <Caption>기기를 바꾸거나 앱을 다시 깔아도 기록을 다시 가져와요.</Caption>
       </ChoiceCard>
       <ChoiceCard title="이 기기에서만 쓰기" selected={value==='local'} onPress={()=>onChange('local')}>
@@ -175,15 +175,53 @@ function ViewChevron({label,onPress}:{label:string;onPress:()=>void}) {
   </Pressable>;
 }
 
+export type LoginProvider='kakao'|'apple'|'google';
+const PROVIDER_NAME:Record<LoginProvider,string>={kakao:'카카오',apple:'Apple',google:'Google'};
+const LOGIN_LABEL:Record<LoginProvider,string>={kakao:'카카오로 로그인',apple:'Apple로 로그인',google:'Google로 로그인'};
+const CIRCLE=52,LOGO=24;
+// 카카오 말풍선: 카카오 리소스(login-complete-ko.svg) 모양 그대로. 색·모양을 바꾸지 않는다.
+const KAKAO_SYMBOL='M6.4785 0C2.8997 0 0 2.4812 0 5.5416C0 7.5087 1.1994 9.2371 3.0067 10.2198L2.3956 12.6888C2.3729 12.7625 2.3907 12.8415 2.4394 12.8959C2.475 12.9345 2.5236 12.9555 2.5706 12.9555C2.6112 12.9555 2.6517 12.9415 2.6857 12.9116L5.3115 10.9919C5.6892 11.0498 6.0782 11.0814 6.4769 11.0814C10.0542 11.0814 12.9555 8.6001 12.9555 5.5398C12.9555 2.4795 10.0558 0 6.4785 0Z';
+// Apple 로고: 임시 경로. 출시 전 Apple이 내려 주는 Sign in with Apple 로고 자산으로 바꾼다 (HANDOFF).
+const APPLE_LOGO='M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701';
+// Google G: Google 로그인 버튼의 네 색 로고 그대로(단색 금지).
+const GOOGLE_G:[string,string][]=[
+  ['#EA4335','M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'],
+  ['#4285F4','M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'],
+  ['#FBBC05','M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'],
+  ['#34A853','M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'],
+];
+function LoginLogo({provider}:{provider:LoginProvider}) {
+  if(provider==='kakao') return <Svg width={LOGO} height={LOGO} viewBox="0 0 12.956 12.956"><Path d={KAKAO_SYMBOL} fill="#000000"/></Svg>;
+  if(provider==='apple') return <Svg width={LOGO} height={LOGO} viewBox="0 0 24 24"><Path d={APPLE_LOGO} fill="#000000"/></Svg>;
+  return <Svg width={LOGO*0.9} height={LOGO*0.9} viewBox="0 0 48 48">{GOOGLE_G.map(([fill,d])=><Path key={fill} d={d} fill={fill}/>)}</Svg>;
+}
+/**
+ * 로그인 버튼: 지름 52 동그라미 안에 회사 로고만 (2026-10-15 시안 틀4).
+ * 각 회사의 색은 디자인 시스템의 예외다 — 카카오는 노란 원 #FEE500(가이드상 바꿀 수 없음), Apple·Google은 흰 원 + 테두리 #747775.
+ * 카카오는 가이드 본문에 아이콘만 쓰는 형태가 없지만, 데브톡 답변(2021-06-08)이 「타사 아이콘과 비율 차이 없다면」 허용한다 — 세 원의 크기·로고 크기를 같게 둔다.
+ * 글자 없이 원만 둔다 — 화면 제목 「시작하기」와 소개 문구가 버튼 뜻을 알린다(2026-10-15, 「간편 로그인」 문구는 뺐다). 순서는 부르는 쪽이 정한다(카카오 → Apple → Google).
+ */
+export function LoginCircles({providers,onPress}:{providers:LoginProvider[];onPress:(provider:LoginProvider)=>void}) {
+  return <View style={{alignItems:'center'}}>
+    <View style={{flexDirection:'row',gap:20}}>
+      {providers.map((p)=><Pressable key={p} accessibilityRole="button" accessibilityLabel={LOGIN_LABEL[p]} onPress={()=>onPress(p)}
+        style={({pressed})=>({width:CIRCLE,height:CIRCLE,borderRadius:CIRCLE/2,backgroundColor:p==='kakao'?'#FEE500':'#FFFFFF',borderWidth:p==='kakao'?0:1,borderColor:'#747775',alignItems:'center',justifyContent:'center',opacity:pressed?0.7:1})}>
+        <LoginLogo provider={p}/>
+      </Pressable>)}
+    </View>
+  </View>;
+}
+
 /**
  * 계정 연결 직전 한 화면 (약관 설계, 2026-10-01 시안 2안). 두 필수 체크가 켜져야 로그인 버튼을 누를 수 있다.
- * 판 없이 위아래 선으로 동의 목록을 묶고 버튼을 바로 아래 잇는다 — 로그인 수단이 늘어도(카카오·네이버) 아래로 쌓인다.
- * 로그인 버튼은 Apple·Google 공식 버튼이라 슬롯으로 받는다 — 디자인 시스템의 예외 (HANDOFF).
+ * 판 없이 위아래 선으로 동의 목록을 묶고 버튼을 바로 아래 잇는다.
+ * 처음 누르면 계정이 만들어지고 이미 있으면 로그인돼서, 두 일을 묶어 제목을 「시작하기」로 쓴다(2026-10-15 시안 2안). 소개에 쓸 수 있는 계정을 적는다.
+ * 로그인 버튼은 슬롯으로 받는다 — 앱은 LoginCircles를, 개발 빌드는 개발 계정 버튼을 더 넣는다.
  */
-export function ConsentScreen({ageChecked,termsChecked,onToggleAge,onToggleTerms,onViewTerms,onViewPrivacy,onUnder14,onBack,loginButtons}:{ageChecked:boolean;termsChecked:boolean;onToggleAge:()=>void;onToggleTerms:()=>void;onViewTerms:()=>void;onViewPrivacy:()=>void;onUnder14:()=>void;onBack:()=>void;loginButtons:ReactNode}) {
+export function ConsentScreen({ageChecked,termsChecked,onToggleAge,onToggleTerms,onViewTerms,onViewPrivacy,onUnder14,onBack,loginButtons,providers}:{providers:LoginProvider[];ageChecked:boolean;termsChecked:boolean;onToggleAge:()=>void;onToggleTerms:()=>void;onViewTerms:()=>void;onViewPrivacy:()=>void;onUnder14:()=>void;onBack:()=>void;loginButtons:ReactNode}) {
   const enabled=ageChecked&&termsChecked;
-  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="계정 연결" onBack={onBack}/>}>
-    <PixelText>로그인하면 기록이 백업되고, 새 기기에서 다시 가져올 수 있어요.</PixelText>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="시작하기" onBack={onBack}/>}>
+    <PixelText>{providers.map((p)=>PROVIDER_NAME[p]).join(', ')} 계정으로 시작하면 기록이 백업되고, 새 기기에서 다시 가져올 수 있어요.</PixelText>
     {/* 체크와 보기를 한 행에 둬 이용약관이 한 번만 나온다. 처리방침은 동의가 아니라 안내라 체크 없이 행 전체가 보기다. */}
     <View>
       <Rule/>
