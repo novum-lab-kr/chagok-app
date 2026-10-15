@@ -1,10 +1,11 @@
 import React,{type ReactNode} from 'react';
-import {Pressable,View} from 'react-native';
+import {Image,Pressable,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
 import {AppHeader,InfoRow,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
 import {pixelOutline} from './geometry';
 import {retro} from './tokens';
+import {APPLE_LOGO_PNG} from './apple-logo';
 
 /**
  * 계정 흐름의 다이얼로그 문구 (2026-10-01 확정 시안). 화면 위에 PixelDialogModal·PixelBusyModal로 띄운다.
@@ -179,10 +180,10 @@ export type LoginProvider='kakao'|'apple'|'google';
 const PROVIDER_NAME:Record<LoginProvider,string>={kakao:'카카오',apple:'Apple',google:'Google'};
 const LOGIN_LABEL:Record<LoginProvider,string>={kakao:'카카오로 로그인',apple:'Apple로 로그인',google:'Google로 로그인'};
 const CIRCLE=52,LOGO=24;
+// 세 원 모두 줄 없음 (2026-10-16 테두리 시안 3안). Google은 줄 없는 neutral 바탕 #F2F2F2만 가이드에 있어 흰색 대신 쓴다.
+const CIRCLE_FILL:Record<LoginProvider,string>={kakao:'#FEE500',apple:'#FFFFFF',google:'#F2F2F2'};
 // 카카오 말풍선: 카카오 리소스(login-complete-ko.svg) 모양 그대로. 색·모양을 바꾸지 않는다.
 const KAKAO_SYMBOL='M6.4785 0C2.8997 0 0 2.4812 0 5.5416C0 7.5087 1.1994 9.2371 3.0067 10.2198L2.3956 12.6888C2.3729 12.7625 2.3907 12.8415 2.4394 12.8959C2.475 12.9345 2.5236 12.9555 2.5706 12.9555C2.6112 12.9555 2.6517 12.9415 2.6857 12.9116L5.3115 10.9919C5.6892 11.0498 6.0782 11.0814 6.4769 11.0814C10.0542 11.0814 12.9555 8.6001 12.9555 5.5398C12.9555 2.4795 10.0558 0 6.4785 0Z';
-// Apple 로고: 임시 경로. 출시 전 Apple이 내려 주는 Sign in with Apple 로고 자산으로 바꾼다 (HANDOFF).
-const APPLE_LOGO='M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701';
 // Google G: Google 로그인 버튼의 네 색 로고 그대로(단색 금지).
 const GOOGLE_G:[string,string][]=[
   ['#EA4335','M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'],
@@ -192,12 +193,14 @@ const GOOGLE_G:[string,string][]=[
 ];
 function LoginLogo({provider}:{provider:LoginProvider}) {
   if(provider==='kakao') return <Svg width={LOGO} height={LOGO} viewBox="0 0 12.956 12.956"><Path d={KAKAO_SYMBOL} fill="#000000"/></Svg>;
-  if(provider==='apple') return <Svg width={LOGO} height={LOGO} viewBox="0 0 24 24"><Path d={APPLE_LOGO} fill="#000000"/></Svg>;
+  // Apple: 공식 로고 버튼 그림(흰 둥근 사각형 + 로고)을 원 크기 그대로 깔고, 원이 모서리를 잘라 낸다(overflow hidden).
+  // 로고 크기와 위치는 그림 안의 Apple 여백이 정한다. 로고만 있는 버튼은 모양을 씌워 써도 된다(HIG).
+  if(provider==='apple') return <Image source={{uri:APPLE_LOGO_PNG}} style={{width:CIRCLE,height:CIRCLE}} accessibilityIgnoresInvertColors/>;
   return <Svg width={LOGO*0.9} height={LOGO*0.9} viewBox="0 0 48 48">{GOOGLE_G.map(([fill,d])=><Path key={fill} d={d} fill={fill}/>)}</Svg>;
 }
 /**
  * 로그인 버튼: 지름 52 동그라미 안에 회사 로고만 (2026-10-15 시안 틀4).
- * 각 회사의 색은 디자인 시스템의 예외다 — 카카오는 노란 원 #FEE500(가이드상 바꿀 수 없음), Apple·Google은 흰 원 + 테두리 #747775.
+ * 각 회사의 색은 디자인 시스템의 예외다 — 카카오는 노란 원 #FEE500(가이드상 바꿀 수 없음), Apple은 흰 원, Google은 연회색 원 #F2F2F2이고 셋 다 줄이 없다(2026-10-16 테두리 시안 3안).
  * 카카오는 가이드 본문에 아이콘만 쓰는 형태가 없지만, 데브톡 답변(2021-06-08)이 「타사 아이콘과 비율 차이 없다면」 허용한다 — 세 원의 크기·로고 크기를 같게 둔다.
  * 글자 없이 원만 둔다 — 화면 제목 「시작하기」와 소개 문구가 버튼 뜻을 알린다(2026-10-15, 「간편 로그인」 문구는 뺐다). 순서는 부르는 쪽이 정한다(카카오 → Apple → Google).
  */
@@ -205,7 +208,7 @@ export function LoginCircles({providers,onPress}:{providers:LoginProvider[];onPr
   return <View style={{alignItems:'center'}}>
     <View style={{flexDirection:'row',gap:20}}>
       {providers.map((p)=><Pressable key={p} accessibilityRole="button" accessibilityLabel={LOGIN_LABEL[p]} onPress={()=>onPress(p)}
-        style={({pressed})=>({width:CIRCLE,height:CIRCLE,borderRadius:CIRCLE/2,backgroundColor:p==='kakao'?'#FEE500':'#FFFFFF',borderWidth:p==='kakao'?0:1,borderColor:'#747775',alignItems:'center',justifyContent:'center',opacity:pressed?0.7:1})}>
+        style={({pressed})=>({width:CIRCLE,height:CIRCLE,borderRadius:CIRCLE/2,backgroundColor:CIRCLE_FILL[p],alignItems:'center',justifyContent:'center',overflow:'hidden',opacity:pressed?0.7:1})}>
         <LoginLogo provider={p}/>
       </Pressable>)}
     </View>
