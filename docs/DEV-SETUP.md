@@ -135,6 +135,25 @@ Expo Go iOS에서 로그인이 곧바로 풀리는 버그가 보고되어 있다
 
 ---
 
+### 셀룰러·다른 Wi-Fi에서 개발 빌드 열기 (Tailscale, 2026-10-15~)
+
+Mac과 사용자 iPhone이 Tailscale(`kejgood77@` 계정)에 붙어 있다. Mac `100.93.114.95`, iPhone `100.120.222.17`.
+iOS 보안 규칙(ATS)은 같은 공유기 주소만 `http`를 허용하고 `100.x`는 `https`만 받으므로,
+Tailscale Serve로 `https` 주소를 만들어 8081로 넘긴다. 이 주소는 내 Tailscale 기기에서만 열린다.
+
+```sh
+TS=/Applications/Tailscale.app/Contents/MacOS/Tailscale
+$TS serve status                      # https://eunjukims-macbook-air.tail4eb32b.ts.net → 127.0.0.1:8081
+$TS serve --bg 8081                   # 꺼져 있으면 켠다 (끄기: $TS serve --https=443 off)
+EXPO_PACKAGER_PROXY_URL=https://eunjukims-macbook-air.tail4eb32b.ts.net \
+  npx expo start --dev-client --port 8081
+```
+
+- 폰 개발 앱에서 `https://eunjukims-macbook-air.tail4eb32b.ts.net`을 연다(`:8081` 없이).
+- `EXPO_PACKAGER_PROXY_URL`을 빼면 매니페스트가 `…ts.net:8081`을 가리켜 번들을 못 받는다.
+- 이 설정으로 띄우면 시뮬레이터도 같은 주소로 받으므로 Mac의 Tailscale을 켜 둔다.
+- Mac이 잠자기에 들어가면 끊긴다.
+
 ## 방법 2 — Android 에뮬레이터 (이미 준비됨)
 
 `Pixel_7` AVD가 있으므로 추가 설치가 필요 없다.
