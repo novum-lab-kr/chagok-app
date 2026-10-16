@@ -34,7 +34,7 @@ npm run storybook
 
 - 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤·패널·칸 테두리와 패널 제목 구분선은 3px.
 - `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3. 달력판 오늘 칸은 같은 링을 칸 밖으로 격자선 두께(3)만큼 넓혀 격자선 위에 겹쳐 그리고 그 칸을 `zIndex: 1`로 올린다(2026-10-09, [달력 포커스 시안](https://claude.ai/artifact/6QcCHwy2WZaMTz3vQojz4c)).
-- 탭 대상은 iOS 44pt · Android 48dp 이상(2026-10-12). 모양이 작은 버튼은 `touchSlop`(`hitSlop`)으로 누르는 영역만 넓힌다. 달력 날짜 칸(7열)은 옆 칸과 겹쳐 넓히지 않는다. 로그인 버튼 높이 44, 두 버튼 글자 19(Apple은 높이의 43%, Google은 기본 14/20을 1.2배로 — 2026-10-12). 버튼 폭이 모자라면 Google 버튼 안 글자·로고·여백을 같은 비율로 줄인다.
+- 탭 대상은 iOS 44pt · Android 48dp 이상(2026-10-12). 모양이 작은 버튼은 `touchSlop`(`hitSlop`)으로 누르는 영역만 넓힌다. 달력 날짜 칸(7열)은 옆 칸과 겹쳐 넓히지 않는다. 로그인 버튼은 지름 52 동그라미 안에 회사 로고(24)만, 사이 20, 글자 없이(`LoginCircles`, 2026-10-15 [시안](https://claude.ai/artifact/DN5XkTrJ8K5tN69Px7MSJN) 틀4). 순서 카카오 → Apple → Google, Android는 Apple 없이. 회사 색은 디자인 시스템의 예외 — 카카오 노란 원 #FEE500 + 검정 말풍선(가이드상 고정), Apple 흰 원, Google 연회색 원 #F2F2F2이고 셋 다 줄이 없다(2026-10-16 [테두리 시안](https://claude.ai/artifact/WZuXy4EthW7Uge1N6uxucM) 3안. Google 가이드에서 줄 없는 모양은 연회색 바탕뿐이다). 세 원과 로고 크기를 같게 둔다(카카오가 아이콘만 쓰는 버튼을 허용하는 조건). Apple은 Apple 서버의 공식 로고 버튼 그림(흰 둥근 사각형, 여백 포함)을 원 크기(52)로 깔고 원으로 잘라서, 로고 높이가 약 22다. 버튼 뜻은 화면 제목 「시작하기」와 소개 「카카오, Apple, Google 계정으로 시작하면…」이 알린다(2026-10-15 [시안](https://claude.ai/artifact/RcJJKYo5mz87nvjN2hRXyv) 2안).
 - 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 `SCREEN_PADDING` 20pt. 더 넓은 화면은 가운데로 모은다.
 - 제목 줄(`RetroScreen header`)과 본문 사이 24pt, 모든 화면(2026-10-10). 제목 아래에 탭이 붙는 「기본 스티커」는 제목–탭 24, 탭–본문 14(`headerGap`).
 - iOS 시트(`presentation: 'modal'` — 새 목표, 기본 스티커, 묶음)는 위쪽 안전 영역을 비우지 않는다(`SheetSafeArea`, 2026-10-10). Android 모달은 화면 전체라 그대로 둔다.
@@ -102,7 +102,7 @@ npm run storybook
 | PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |
 | CompletionSticker | 판의 기본 스티커 + `primary` 「완성」 배지. `tilted`는 붙인 듯 비스듬히 |
 | AppHeader / GoalListHeader | 앱 최상단(차곡이·차곡차곡. 앱은 톱니바퀴 없이 쓴다) / 목록 탭 `내 목표 n · 완성한 판 n` + 오른쪽 끝 `+` |
-| FloatingTabBar / TabIcon / TabTitle | 하단 탭(2026-10-12): 화면 가장자리에서 16pt 떨어진 `dialog` 판 모양 바, 탭마다 아이콘 24 + 이름 13. 고른 탭은 아이콘만 `primary`(살구), 나머지는 0.45 투명도 — 위 PixelTabs의 잉크 채움과 겹쳐 보이지 않게 채우지 않는다. 누르는 높이 52. 탭 화면 제목은 `TabTitle`(brand 글씨). 탭 안 화면은 `TabSafeArea`로 아래 안전 영역을 탭 바에 맡긴다 |
+| FloatingTabBar / TabIcon / TabTitle | 하단 탭(2026-10-12): 화면 가장자리에서 16pt 떨어진 `dialog` 판 모양 바, 탭마다 아이콘 32(16칸 그림의 2배)만, 이름은 화면 낭독용으로만(2026-10-15, 이전: 아이콘 24 + 이름 13). 고른 탭은 아이콘 `primary`(살구) + 바탕 `screen`(민트) `selection` 도트 칸, 나머지는 0.45 투명도 — 위 PixelTabs의 잉크 채움과 겹쳐 보이지 않게 잉크로 채우지 않는다. 누르는 높이 48. 누른 채 끌면 칸이 손가락을 따라오고(누르는 동안 칸 세로 1.12·가로 1.06배, 지나가는 아이콘 위로 4·1.2배), 놓으면 스프링으로 제자리. `onTick`은 누를 때·탭 경계마다(앱은 `Haptics.selectionAsync`). 「동작 줄이기」면 움직임 없이 바로 옮겨 간다. 탭 화면 제목은 `TabTitle`(brand 글씨). 탭 안 화면은 `TabSafeArea`로 아래 안전 영역을 탭 바에 맡긴다 |
 | RecordTimelineScreen / StickerCollectionScreen | 기록 탭(날짜 머리글 + 기록 줄: 스티커 40 · 목표 이름 · 메모 2줄 · 사진 64) / 스티커 탭(기본 스티커 화면에서 고르기 줄을 뺀 둘러보기, `PackCard selectable={false}`) |
 | TrialReadyCard / CompletionNudge | 목표 탭 맨 위 체험 열림 카드 / 판 완성 뒤 판 아래에 뜨는 「다음 판은 새 스티커로」. 둘 다 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 모서리 ×(44pt, 글자 폭을 빼앗지 않게 겹쳐 둔다) |
 | GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대 |

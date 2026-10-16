@@ -1,5 +1,5 @@
-import React,{useContext,type ReactNode} from 'react';
-import {Image,Pressable,ScrollView,View,type ImageSourcePropType} from 'react-native';
+import React,{useCallback,useContext,useEffect,useRef,useState,type ReactNode} from 'react';
+import {AccessibilityInfo,Animated,Image,Pressable,ScrollView,View,type GestureResponderEvent,type ImageSourcePropType} from 'react-native';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import Svg,{Path} from 'react-native-svg';
 import {retro} from './tokens';
@@ -23,30 +23,93 @@ const caption={color:c.buttonText};
 export type TabIconName='goal'|'record'|'sticker'|'settings';
 const TAB_PATHS={
   goal:'M1 1H7V7H1Z M9 1H15V7H9Z M1 9H7V15H1Z M9 9H15V15H9Z M3 3V5H5V3Z M11 11V13H13V11Z',
+  // 기록: 노트 (2026-10-15 아이콘 시안 2차)
+  record:'M2 1H14V14H2Z M4 3V12H12V3Z M5 5H11V6H5Z M5 7H11V8H5Z M5 9H9V10H5Z M3 0H4V1H3Z M6 0H7V1H6Z M9 0H10V1H9Z M12 0H13V1H12Z',
   sticker:'M7 1H9V4H10V5H15V7H14V8H13V9H12V11H13V15H11V14H10V13H9V12H7V13H6V14H5V15H3V11H4V9H3V8H2V7H1V5H6V4H7Z',
 };
 /** 탭 아이콘. 고른 탭은 살구색으로 칠하므로 색을 받는다(설정 톱니바퀴도 PixelIcon과 같은 그림을 색만 바꿔 쓴다). */
-export function TabIcon({name,color,size=24}:{name:TabIconName;color:string;size?:number}) {
-  if(name==='record') return <ActionSymbol name="photo" size={size} color={color}/>;
+export function TabIcon({name,color,size=32}:{name:TabIconName;color:string;size?:number}) {
   const [d,viewBox]=name==='settings'?[gearPath,gearViewBox]:[TAB_PATHS[name],'0 0 16 16'];
   return <Svg width={size} height={size} viewBox={viewBox} accessible={false}><Path d={d} fill={color} fillRule="evenodd"/></Svg>;
 }
 export type TabItem<K extends string>={key:K;label:string;icon:TabIconName};
+function useReduceMotion(forced?:boolean) {
+  const [device,setDevice]=useState(false);
+  useEffect(()=>{
+    if(forced!==undefined) return;
+    let alive=true;
+    AccessibilityInfo.isReduceMotionEnabled().then(v=>{if(alive) setDevice(v);}).catch(()=>{});
+    return ()=>{alive=false;};
+  },[forced]);
+  return forced??device;
+}
 /**
- * 떠 있는 하단 탭 바. 화면 가장자리에서 떨어진 판 모양 테두리 안에 아이콘 + 이름.
- * 고른 탭은 아이콘만 살구색, 나머지는 흐리게 — 위쪽 「내 목표 / 완성한 판」 잉크 알약과 겹쳐 보이지 않게 채우지 않는다.
+ * 떠 있는 하단 탭 바 (2026-10-15 시안: 글자 없이 아이콘 32 + 미끄러지는 도트 칸).
+ * 고른 탭은 아이콘 살구색 + 바탕 민트 도트 칸 — 위쪽 「내 목표 / 완성한 판」 잉크 알약과 겹쳐 보이지 않게 잉크로 채우지 않는다.
+ * 바 위를 누른 채 옆으로 끌면 칸이 손가락을 따라오고 지나가는 아이콘이 들리며, 손을 떼면 그 탭으로 바뀐다(App Store 탭 바의 끌어서 고르기).
+ * 그냥 누르기도 된다. onTick은 누를 때와 탭 경계를 넘을 때마다(햅틱). 「동작 줄이기」가 켜져 있으면 칸이 움직이지 않고 바로 옮겨 간다.
+ * 글자는 없지만 화면 낭독 이름(label)은 그대로 둔다.
  */
-export function FloatingTabBar<K extends string>({items,value,onChange}:{items:readonly TabItem<K>[];value:K;onChange:(key:K)=>void}) {
+export function FloatingTabBar<K extends string>({items,value,onChange,onTick,reduceMotion}:{items:readonly TabItem<K>[];value:K;onChange:(key:K)=>void;onTick?:()=>void;reduceMotion?:boolean}) {
   const bottom=useContext(SafeAreaInsetsContext)?.bottom??0;
+  const reduced=useReduceMotion(reduceMotion);
+  const selected=Math.max(0,items.findIndex(i=>i.key===value));
+  const [width,setWidth]=useState(0);
+  const slot=width/items.length;
+  const [hover,setHover]=useState<number|null>(null);
+  const [x]=useState(()=>new Animated.Value(0));
+  const [lift]=useState(()=>new Animated.Value(0));
+  const row=useRef<View>(null);
+  const origin=useRef(0);
+  const shown=hover??selected;
+  const glide=useCallback((i:number)=>{
+    const toValue=i*slot;
+    if(reduced) x.setValue(toValue);
+    else Animated.spring(x,{toValue,speed:22,bounciness:5,useNativeDriver:false}).start();
+  },[reduced,slot,x]);
+  useEffect(()=>{if(hover===null) glide(selected);},[glide,hover,selected]);
+  const indexAt=(pageX:number)=>Math.min(items.length-1,Math.max(0,Math.floor((pageX-origin.current)/slot)));
+  const follow=(pageX:number,i:number)=>{
+    if(reduced) {if(i!==hover) glide(i);return;}
+    x.setValue(Math.min((items.length-1)*slot,Math.max(0,pageX-origin.current-slot/2)));
+  };
+  const pressTo=(v:number)=>reduced?lift.setValue(v):Animated.spring(lift,{toValue:v,speed:30,bounciness:6,useNativeDriver:false}).start();
+  const grant=(e:GestureResponderEvent)=>{
+    if(!slot) return;
+    const i=indexAt(e.nativeEvent.pageX);
+    setHover(i);pressTo(1);follow(e.nativeEvent.pageX,i);onTick?.();
+  };
+  const move=(e:GestureResponderEvent)=>{
+    if(hover===null) return;
+    const i=indexAt(e.nativeEvent.pageX);
+    if(i!==hover) onTick?.();
+    follow(e.nativeEvent.pageX,i);setHover(i);
+  };
+  const release=(commit:boolean)=>{
+    const i=hover;
+    setHover(null);pressTo(0);
+    if(i===null) return;
+    if(commit&&i!==selected) onChange(items[i].key);
+    glide(commit?i:selected);
+  };
   return <View style={{paddingHorizontal:16,paddingTop:8,paddingBottom:Math.max(bottom,12),backgroundColor:c.screen}}>
     <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{flexDirection:'row',paddingVertical:8,paddingHorizontal:6}}>
-      <View accessibilityRole="tablist" style={{flex:1,flexDirection:'row'}}>
-        {items.map(item=>{
-          const on=item.key===value;
-          return <Pressable key={item.key} accessibilityRole="tab" accessibilityLabel={item.label} aria-selected={on} accessibilityState={{selected:on}} onPress={()=>onChange(item.key)}
-            style={{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',gap:2,opacity:on?1:0.45}}>
-            <TabIcon name={item.icon} color={on?c.primary:c.ink}/>
-            <PixelText style={{fontSize:13,lineHeight:16,color:c.ink}}>{item.label}</PixelText>
+      <View ref={row} accessibilityRole="tablist" style={{flex:1,flexDirection:'row'}}
+        onLayout={e=>{setWidth(e.nativeEvent.layout.width);row.current?.measureInWindow(px=>{origin.current=px;});}}
+        onStartShouldSetResponderCapture={()=>true} onMoveShouldSetResponderCapture={()=>true} onResponderTerminationRequest={()=>false}
+        onResponderGrant={e=>{row.current?.measureInWindow(px=>{origin.current=px;});grant(e);}} onResponderMove={move}
+        onResponderRelease={()=>release(true)} onResponderTerminate={()=>release(false)}>
+        {slot>0&&<Animated.View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,width:slot,padding:2,
+          transform:[{translateX:x},{scaleY:lift.interpolate({inputRange:[0,1],outputRange:[1,1.12]})},{scaleX:lift.interpolate({inputRange:[0,1],outputRange:[1,1.06]})}]}}>
+          <PixelFrame variant="selection" fill={c.screen} style={{flex:1}}/>
+        </Animated.View>}
+        {items.map((item,i)=>{
+          const on=i===shown,lifted=hover===i;
+          return <Pressable key={item.key} accessibilityRole="tab" accessibilityLabel={item.label} aria-selected={i===selected} accessibilityState={{selected:i===selected}} onPress={()=>onChange(item.key)}
+            style={{flex:1,minHeight:48,alignItems:'center',justifyContent:'center',opacity:on?1:0.45}}>
+            <Animated.View style={{transform:lifted?[{translateY:lift.interpolate({inputRange:[0,1],outputRange:[0,-4]})},{scale:lift.interpolate({inputRange:[0,1],outputRange:[1,1.2]})}]:[]}}>
+              <TabIcon name={item.icon} color={on?c.primary:c.ink}/>
+            </Animated.View>
           </Pressable>;
         })}
       </View>

@@ -18,6 +18,11 @@ describe('하단 탭 (2026-10-12)',()=>{
     expect(screen.getByRole('tab',{name:'설정'}).getAttribute('aria-selected')).toBe('false');
     fireEvent.click(screen.getByRole('tab',{name:'기록'}));expect(change).toHaveBeenCalledWith('records');
   });
+  it('탭 이름은 글자로 보이지 않고 화면 낭독 이름으로만 남는다 (2026-10-15)',()=>{
+    render(<FloatingTabBar items={tabs} value="goals" onChange={vi.fn()}/>);
+    expect(screen.queryByText('목표')).toBeNull();
+    expect(screen.getAllByRole('tab').map(t=>t.getAttribute('aria-label'))).toEqual(['목표','기록','스티커','설정']);
+  });
 });
 
 describe('기록 탭',()=>{

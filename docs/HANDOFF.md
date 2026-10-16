@@ -31,8 +31,6 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 | (worktree 없음) | `fix/light-mode-font-scale` | 2026-10-01 옛 브랜치. 같은 내용을 최신 main에 `fix/fixed-text-size`로 다시 넣어 필요 없다. 지울지 사용자 확인 |
 | (worktree 없음) | `spike/widgets` | 위젯 시험 구현. 코드는 합치지 않는다(결과 문서는 main `docs/superpowers/specs/2026-10-05-widget-spike-results.md`) |
 | (worktree 없음) | `docs/scope-decisions`, `integration/expo-go-phase` | 내용이 main에 있다. 합치지 않는다. 지울지는 사용자 확인 |
-| `chagok-wt-watch` | `docs/watch-plan` | 워치 설계(spec 승인 2026-10-16)와 계획 1(폰 쪽 준비, 시험 구현). 계획: `docs/superpowers/plans/2026-10-16-watch-growth.md`. 사용자 확인 뒤 커밋함, main에 아직 안 합침 |
-| `chagok-wt-watch-app` | `feat/watch-app` | 워치 계획 2(워치 앱 본 구현): `docs/superpowers/plans/2026-10-16-watch-app.md`. `docs/watch-plan` 위에서 시작. 커밋 전, 사용자 확인 대기 |
 | `chagok-wt-watch-spike` | `spike/watch` | 워치 시험 구현. 커밋하지 않았고 합치지 않는다. 지울지 사용자 확인 |
 
 ## 다음 할 일
@@ -46,7 +44,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 3. **앱 설정 마무리** — 전체 배치 시안 확정(배지 크기 12·14·18), 문의하기·앱 버전 줄.
 4. **접근성** — 스크린리더 레이블(문안 사용자 확인). 로그인 버튼 높이 33·38·44 고르기(Storybook `Screens / Account consent`). 탭 대상 크기는 2026-10-11 Android에서 쟀다(dp): 홈 [앱 설정] 36×40, 판 [목표 설정] 40×40, 달력 날짜 칸 41×55(7열이라 폭 한계), [이전 달]·[접기]·홈 탭·[스티커 떼기] 높이 44. 기준(iOS 44 / Android 48)과 넓히는 방법(`hitSlop`이면 모양은 그대로) 사용자 결정 대기.
 5. **출시 준비 문서** — 개인정보 라벨·데이터 보안·연령 등급·Privacy Manifest 답안 초안: [스토어 개인정보 신고 초안](release-store-privacy-draft.md)(2026-10-11 두 스토어 공식 정의와 대조 완료, 사용자 승인). Privacy Manifest는 `app.json`과 `plugins/widget-goal`로 앱·위젯 확장 둘 다에 들어간다(2026-10-15 prebuild 결과에서 두 `PrivacyInfo.xcprivacy`가 각 타깃 Resources에 있는 것 확인, ITMS-91053). 처리방침 5절 수탁자·보관 위치는 운영 서버를 고를 때 함께 정한다(서울 지역이면 지금 문구 그대로). 2026-10-11 기록에 **카메라 촬영**이 들어갔다 — 찍은 사진도 스토어 라벨의 「사진」이라 답안은 그대로이고, 처리방침 9절(사진 접근 권한)에 카메라 접근을 더한다. 남은 것: 스티커 원본 권리, KIPRIS 상표(9류·42류), 스토어 이름·설명·스크린샷 초안, `LICENSE` 종류(사용자 결정).
-6. **워치** — 설계 승인(2026-10-16, PRD 4.14). 계획 1: 폰 쪽 TS(완성 요청, 성장 수, 블록 색, 스냅샷, 동기화)와 시험 구현(watchOS 타깃, WatchConnectivity, 글꼴과 그림, 시뮬레이터 짝짓기). 계획 2(워치 앱 본 구현): 폰 네이티브 모듈 `modules/chagok-watch`, 워치 SwiftUI 앱 `targets/watch`(Logic은 `sh scripts/test-watch-logic.sh`로 테스트). 사용자가 정할 것과 임시로 정한 것은 [워치 앱 질문](superpowers/specs/2026-10-16-watch-app-questions.md). 워치 → 폰 요청 전달은 실기기에서 확인해야 한다(시뮬레이터에서는 안 옴).
+6. **워치** — 설계 승인(2026-10-16, PRD 4.14). 계획 1: 폰 쪽 TS(완성 요청, 성장 수, 블록 색, 스냅샷, 동기화)와 시험 구현(watchOS 타깃, WatchConnectivity, 글꼴과 그림, 시뮬레이터 짝짓기). 계획 1과 계획 2를 2026-10-17 main에 합쳤다. 계획 2(워치 앱 본 구현): 폰 네이티브 모듈 `modules/chagok-watch`, 워치 SwiftUI 앱 `targets/watch`(Logic은 `sh scripts/test-watch-logic.sh`로 테스트). 사용자가 정할 것과 임시로 정한 것은 [워치 앱 질문](superpowers/specs/2026-10-16-watch-app-questions.md). 워치 → 폰 요청은 시뮬레이터에서 폰 앱이 켜져 있을 때 도착했다. 실기기는 개발 빌드로 워치 등록(UDID)이 막혀서 TestFlight로 확인한다(2026-10-17, Xcode 27과 26.6 모두 워치를 못 알아봄).
 
 **계정·외부 준비가 끝난 뒤**
 
@@ -54,7 +52,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 - **Apple 로그인**(다른 세션 진행 중), `apple-link`, Apple 토큰 폐기(그전에는 토큰이 있으면 계정 삭제가 멈춘다). 버튼은 연결 화면의 [개발 계정으로 계속] 자리에. 버튼 높이 44, Google 버튼 글자 19·로고 24·여백 19·14·19, 좁은 화면에서는 Google 버튼 안 전체를 같은 비율로 줄인다(2026-10-12 사용자 결정, Storybook `Screens/Account consent`·[시안](https://claude.ai/artifact/Masmo48AjPKNvZihxUobwR)).
 - **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
 - **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다. **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, Apple ID `6822964802` — `eas.json` `submit.production.ios.ascAppId`). 아직 업로드하지 않았다(사용자 결정). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드에는 Apple 로그인이 main에 들어오기 전까지 로그인이 없다.
-- **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`, 계획 `docs/superpowers/plans/2026-10-15-social-login.md`. 카카오 버튼은 시안 먼저.
+- **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`, 계획 `docs/superpowers/plans/2026-10-15-social-login.md`. 로그인 버튼은 동그라미 아이콘(`LoginCircles`, 2026-10-15 틀4) — Apple 기본 버튼(`AppleAuthenticationButton`) 대신 이것을 쓴다. Apple 로고는 Apple 서버가 내려 주는 공식 로고 버튼 그림이다(`src/design-system/apple-logo.ts`, 2026-10-15).
 
 **출시 직전에는** [출시 전 최종 점검](RELEASE-CHECKLIST.md)을 위에서부터 확인한다.
 
