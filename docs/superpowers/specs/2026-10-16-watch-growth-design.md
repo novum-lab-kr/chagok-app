@@ -60,7 +60,7 @@
 ```
 
 - **원칙은 위젯과 같다.** 워치(Swift)는 「눌렀다」는 사실만 보내고, 칸 번호와 날짜 규칙, 완성, 백업 outbox는 모두 폰의 TS가 정한다. Swift에 규칙을 한 벌 더 만들지 않는다.
-- **요청 모양은 위젯과 같다:** `{id, goalId, kind: add|undo, at, dateKey}`. 워치에서 완성 확인을 받은 요청만 `complete: true`를 더한다. 스티커 id = 요청 id라 두 번 처리해도 두 번 붙지 않는다.
+- **요청 모양은 위젯과 같다:** `{id, goalId, kind: add|undo|remove, at, dateKey, slotIndex?}`. 오늘 붙인 칸을 다시 누르면 `remove`와 그 칸 번호(달력판은 날짜 - 1)를 보낸다. 워치에서 완성 확인을 받은 요청만 `complete: true`를 더한다. 스티커 id = 요청 id라 두 번 처리해도 두 번 붙지 않는다.
 - **전달:**
   - 워치 → 폰은 `transferUserInfo`. 폰이 멀리 있거나 꺼져 있어도 줄을 서서 나중에 도착한다. 폰 쪽 네이티브는 받은 요청을 위젯과 같은 요청 목록에 더하고, 앱이 열릴 때 기존 `applyRequests`가 처리한다.
   - 폰 → 워치는 `updateApplicationContext`. 마지막 스냅샷 하나만 유지한다.
