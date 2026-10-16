@@ -78,28 +78,32 @@ describe('buildWatchDay: 목록', () => {
 });
 
 describe('buildWatchSnapshot', () => {
-  it('성장 수, 최근 블록 색, 마지막으로 붙인 목표', () => {
+  it('성장 수와 마지막으로 붙인 목표', () => {
     const date = new Date(t(2026, 10, 16, 23, 59));
     const a = goal({ id: 'a', lastPlacedAt: t(2026, 10, 10) });
     const b = tally({ id: 'b', lastPlacedAt: t(2026, 10, 16, 9) });
     const s = buildWatchSnapshot({
       now: [input(a), input(b)], afterMidnight: [input(a), input(b)],
-      growth: 7, recentStickers: ['basic.book', 'sports_normal.walk'], date,
+      growth: 7, date,
     });
     expect(s).toMatchObject({ v: 1, today: '2026-10-16', growth: 7, lastGoalId: 'b' });
-    expect(s.recentColors).toEqual([blockColorOf('basic.book'), blockColorOf('sports_normal.walk')]);
     expect(s.afterMidnight.today).toBe('2026-10-17');
   });
 
+  it('처리한 요청 id를 담는다 — 워치가 아직 처리 안 된 요청에서 지운다 (워치 계획 2 Review Focus 1)', () => {
+    const s = buildWatchSnapshot({ now: [input(goal())], afterMidnight: [input(goal())], growth: 0, handled: ['r1', 'r2'], date: new Date(t(2026, 10, 16)) });
+    expect(s.handled).toEqual(['r1', 'r2']);
+  });
+
   it('아무것도 붙이지 않았으면 lastGoalId는 null', () => {
-    const s = buildWatchSnapshot({ now: [input(goal())], afterMidnight: [input(goal())], growth: 0, recentStickers: [], date: new Date(t(2026, 10, 16)) });
+    const s = buildWatchSnapshot({ now: [input(goal())], afterMidnight: [input(goal())], growth: 0, date: new Date(t(2026, 10, 16)) });
     expect(s.lastGoalId).toBeNull();
   });
 
   it('자정 뒤에는 오늘 붙인 칸이 지난 칸이 된다 (Review Focus 4)', () => {
     const date = new Date(t(2026, 10, 16, 23, 59));
     const stickers = [{ slotIndex: 0, dateKey: '2026-10-16', recorded: false }];
-    const s = buildWatchSnapshot({ now: [input(tally(), stickers)], afterMidnight: [input(tally(), stickers)], growth: 1, recentStickers: [], date });
+    const s = buildWatchSnapshot({ now: [input(tally(), stickers)], afterMidnight: [input(tally(), stickers)], growth: 1, date });
     const before = s.goals[0].board;
     const after = s.afterMidnight.goals[0].board;
     if (before.type !== 'tally' || after.type !== 'tally') throw new Error('tally');
@@ -109,7 +113,7 @@ describe('buildWatchSnapshot', () => {
 
   it('10월 31일 자정 뒤는 11월 달력 (Review Focus 4)', () => {
     const date = new Date(t(2026, 10, 31, 23, 59));
-    const s = buildWatchSnapshot({ now: [input(goal())], afterMidnight: [input(goal())], growth: 0, recentStickers: [], date });
+    const s = buildWatchSnapshot({ now: [input(goal())], afterMidnight: [input(goal())], growth: 0, date });
     const after = s.afterMidnight.goals[0].board;
     if (after.type !== 'calendar') throw new Error('calendar');
     expect([after.year, after.month, after.days.length]).toEqual([2026, 11, 30]);

@@ -30,10 +30,10 @@ export type WatchSnapshot = WatchDayView & {
   v: 1;
   /** 성장 수 = 블록 수 (growth.ts) */
   growth: number;
-  /** 최근 붙인 스티커의 블록 색, 최근순. 머리 위 블록 색에 쓴다 */
-  recentColors: string[];
   /** 마지막으로 붙인 진행 중 목표. 차곡이 화면 아래 작은 판 */
   lastGoalId: string | null;
+  /** 폰이 처리한 위젯과 워치 요청 id(최근 200개). 워치는 여기 든 요청을 「아직 처리 안 됨」에서 지운다 */
+  handled: string[];
   afterMidnight: WatchDayView;
 };
 
@@ -88,7 +88,7 @@ export function buildWatchDay(inputs: readonly WatchInput[], now: Date): WatchDa
   return { today, goals };
 }
 
-export function buildWatchSnapshot(args: { now: WatchInput[]; afterMidnight: WatchInput[]; growth: number; recentStickers: string[]; date: Date }): WatchSnapshot {
+export function buildWatchSnapshot(args: { now: WatchInput[]; afterMidnight: WatchInput[]; growth: number; handled?: string[]; date: Date }): WatchSnapshot {
   const day = buildWatchDay(args.now, args.date);
   const placed = args.now.map((i) => i.goal).filter((g) => g.completedAt === null && g.lastPlacedAt !== null);
   const last = placed.reduce<Goal | null>((a, g) => (a === null || g.lastPlacedAt! > a.lastPlacedAt! ? g : a), null);
@@ -96,8 +96,8 @@ export function buildWatchSnapshot(args: { now: WatchInput[]; afterMidnight: Wat
     v: 1,
     ...day,
     growth: args.growth,
-    recentColors: args.recentStickers.map(blockColorOf),
     lastGoalId: last?.id ?? null,
+    handled: args.handled ?? [],
     afterMidnight: buildWatchDay(args.afterMidnight, nextMidnight(args.date)),
   };
 }

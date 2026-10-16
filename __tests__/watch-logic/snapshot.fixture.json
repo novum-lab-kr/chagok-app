@@ -1,0 +1,172 @@
+{
+  "v": 1,
+  "today": "2026-10-16",
+  "goals": [
+    {
+      "id": "tally",
+      "name": "산책",
+      "sticker": "sports_normal.walk",
+      "color": "#FFF2D2",
+      "remaining": 10,
+      "locked": false,
+      "board": {
+        "type": "tally",
+        "cells": [
+          "placed",
+          "placedToday",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty"
+        ],
+        "recorded": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "cal",
+      "name": "일기 쓰기",
+      "sticker": "objects_normal.notebook",
+      "color": "#80B879",
+      "remaining": 28,
+      "locked": true,
+      "board": {
+        "type": "calendar",
+        "year": 2026,
+        "month": 10,
+        "firstWeekday": 4,
+        "days": [
+          "outside",
+          "outside",
+          "empty",
+          "placed",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "empty",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future",
+          "future"
+        ],
+        "recorded": [],
+        "startDate": "2026-10-03",
+        "endDate": "2026-10-31"
+      }
+    }
+  ],
+  "growth": 5,
+  "lastGoalId": "tally",
+  "handled": [
+    "r1"
+  ],
+  "afterMidnight": {
+    "today": "2026-10-17",
+    "goals": [
+      {
+        "id": "tally",
+        "name": "산책",
+        "sticker": "sports_normal.walk",
+        "color": "#FFF2D2",
+        "remaining": 10,
+        "locked": false,
+        "board": {
+          "type": "tally",
+          "cells": [
+            "placed",
+            "placed",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty"
+          ],
+          "recorded": [
+            0
+          ]
+        }
+      },
+      {
+        "id": "cal",
+        "name": "일기 쓰기",
+        "sticker": "objects_normal.notebook",
+        "color": "#80B879",
+        "remaining": 28,
+        "locked": true,
+        "board": {
+          "type": "calendar",
+          "year": 2026,
+          "month": 10,
+          "firstWeekday": 4,
+          "days": [
+            "outside",
+            "outside",
+            "empty",
+            "placed",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "empty",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future",
+            "future"
+          ],
+          "recorded": [],
+          "startDate": "2026-10-03",
+          "endDate": "2026-10-31"
+        }
+      }
+    ]
+  }
+}

@@ -2,6 +2,7 @@ import { createGoal } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
 import { loadWatchInputs, loadWatchSnapshot } from '../src/watch/loadSnapshot';
+import { setSetting } from '../src/repositories/appSettingsRepository';
 import { withFreshDb } from './support/setup';
 
 withFreshDb();
@@ -26,13 +27,18 @@ describe('loadWatchInputs', () => {
 });
 
 describe('loadWatchSnapshot', () => {
-  it('성장 수와 최근 블록 색을 담는다', async () => {
+  it('성장 수와 마지막으로 붙인 목표를 담는다', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 5 });
     await placeSticker(g.id, 0, 'basic.book');
     const s = await loadWatchSnapshot(new Date(), 9);
     expect(s.growth).toBe(9);
-    expect(s.recentColors).toHaveLength(1);
     expect(s.goals.map((x) => x.id)).toEqual([g.id]);
     expect(s.lastGoalId).toBe(g.id);
+  });
+
+  it('위젯과 워치가 함께 쓰는 처리한 요청 id 목록을 담는다', async () => {
+    await setSetting('widgetHandledRequests', JSON.stringify(['w1', 'w2']));
+    const s = await loadWatchSnapshot(new Date(), 0);
+    expect(s.handled).toEqual(['w1', 'w2']);
   });
 });

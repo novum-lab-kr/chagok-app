@@ -140,9 +140,3 @@ export async function countStickers(goalId: string): Promise<number> {
   return row?.n ?? 0;
 }
 
-/** 목표와 상관없이 붙인 시각 최근순. 워치 머리 위 블록 색에 쓴다. */
-export async function listRecentStickers(limit: number): Promise<Sticker[]> {
-  const db = await getDb();
-  const rows = await db.all<StickerRow>('SELECT * FROM stickers ORDER BY placed_at DESC, id DESC LIMIT ?', limit);
-  return rows.map(toSticker);
-}

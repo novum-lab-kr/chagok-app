@@ -22,3 +22,5 @@ expo-env.d.ts
 # 개발 빌드 네이티브 폴더 — CNG로 매번 만든다(커밋하지 않음)
 /ios
 /android
+# 워치 타깃 그림 — prebuild가 expo-target.config.js의 images(assets/widget-art)로 매번 만든다
+/targets/watch/Assets.xcassets

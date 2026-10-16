@@ -13,7 +13,8 @@ const MAX_FAILURES = 3;
 /** 요청 id별 실패 횟수. 앱을 다시 켜면 처음부터 센다. */
 const failures = new Map<string, number>();
 
-async function readHandledIds(): Promise<string[]> {
+/** 처리한 위젯과 워치 요청 id (최근 200개). 워치 스냅샷에도 실어 보낸다 (PRD 4.14). */
+export async function readHandledRequestIds(): Promise<string[]> {
   try {
     const parsed: unknown = JSON.parse((await getSetting('widgetHandledRequests')) ?? '[]');
     return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
@@ -43,7 +44,7 @@ let queue: Promise<void> = Promise.resolve();
 async function applyInOrder(requests: readonly WidgetRequest[]): Promise<{ handled: string[]; changed: boolean }> {
   const handled: string[] = [];
   let changed = false;
-  const done = await readHandledIds();
+  const done = await readHandledRequestIds();
   const remember = async (id: string) => {
     done.push(id);
     if (done.length > HANDLED_LIMIT) done.splice(0, done.length - HANDLED_LIMIT);

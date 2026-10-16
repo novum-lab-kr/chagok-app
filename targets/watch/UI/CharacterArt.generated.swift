@@ -1,0 +1,91 @@
+// 생성 파일 — 직접 고치지 않는다. node scripts/build-watch-art.mjs로 다시 만든다.
+// 원본: docs/design/character/character-data.json. 글자: . 투명, # 잉크, g LCD, o 살구, w 아이보리, m 민트
+
+enum CharacterArt {
+  /** 표정별 몸 11줄 × 24칸 */
+  static let bodies: [String: [String]] = [
+    "basic": [
+      "......##gggggggg##......",
+      ".....#gggggggggggg#.....",
+      ".....#gg##gggg##gg#.....",
+      "....#ggg##gggg##ggg#....",
+      "....#googgggggggoog#....",
+      "....#gggggg##gggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      ".....##############.....",
+      "........##....##........",
+    ],
+    "smile": [
+      "......##gggggggg##......",
+      ".....#gggggggggggg#.....",
+      ".....#gg##gggg##gg#.....",
+      "....#ggg##gggg##ggg#....",
+      "....#googgggggggoog#....",
+      "....#gggg#gggg#gggg#....",
+      "....#ggggg####ggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      ".....##############.....",
+      "........##....##........",
+    ],
+    "grin": [
+      "......##gggggggg##......",
+      ".....#gggggggggggg#.....",
+      ".....#gg##gggg##gg#.....",
+      "....#ggg##gggg##ggg#....",
+      "....#googgggggggoog#....",
+      "....#ggggg#gg#ggggg#....",
+      "....#ggggg####ggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      ".....##############.....",
+      "........##....##........",
+    ],
+    "excited": [
+      "......##gggggggg##......",
+      ".....#gg#gggggg#gg#.....",
+      ".....#ggg#gggg#ggg#.....",
+      "....#ggg#gggggg#ggg#....",
+      "....#googgggggggoog#....",
+      "....#gggg#gggg#gggg#....",
+      "....#ggggg####ggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      ".....##############.....",
+      "........##....##........",
+    ],
+    "surprised": [
+      "......##gggggggg##......",
+      ".....#gggggggggggg#.....",
+      ".....#gg##gggg##gg#.....",
+      "....#ggg##gggg##ggg#....",
+      "....#googgggggggoog#....",
+      "....#gggggg##gggggg#....",
+      "....#gggggg##gggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      ".....##############.....",
+      "........##....##........",
+    ],
+    "sleepy": [
+      "......##gggggggg##......",
+      ".....#gggggggggggg#.....",
+      ".....#gggggggggggg#.....",
+      "....#ggg##gggg##ggg#....",
+      "....#googgggggggoog#....",
+      "....#gggggggggggggg#....",
+      "....#gggggg##gggggg#....",
+      "....#gggggggggggggg#....",
+      "....#gggggggggggggg#....",
+      ".....##############.....",
+      "........##....##........",
+    ],
+  ]
+  /** 머리 위 블록이 없을 때 몸 위 2줄(정수리) */
+  static let crown: [String] = [
+      "..........####..........",
+      "........##gggg##........",
+  ]
+}

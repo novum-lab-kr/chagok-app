@@ -1,5 +1,5 @@
 import { createGoal, deleteGoal } from '../src/repositories/goalRepository';
-import { listRecentStickers, placeSticker, removeSticker } from '../src/repositories/stickerRepository';
+import { placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { getSetting, setSetting } from '../src/repositories/appSettingsRepository';
 import { getDb } from '../src/db/client';
 import { pushOnce } from '../src/sync/push';
@@ -76,13 +76,3 @@ describe('updateGrowth (워치 설계 「성장 수」)', () => {
   });
 });
 
-describe('listRecentStickers', () => {
-  it('목표와 상관없이 붙인 시각 최근순', async () => {
-    const a = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 5 });
-    const b = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 5 });
-    await placeSticker(a.id, 0, 'basic.book', { placedAt: 1000 });
-    await placeSticker(b.id, 0, 'sports_normal.walk', { placedAt: 3000 });
-    await placeSticker(a.id, 1, 'basic.book', { placedAt: 2000 });
-    expect((await listRecentStickers(2)).map((s) => s.placedAt)).toEqual([3000, 2000]);
-  });
-});

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@bacons/apple-targets": "^5.0.0",
     "@expo-google-fonts/gaegu": "^0.4.1",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.24",

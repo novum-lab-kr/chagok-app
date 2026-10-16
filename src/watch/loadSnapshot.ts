@@ -1,15 +1,13 @@
 import { listGoals } from '../repositories/goalRepository';
-import { listRecentStickers, listStickers, listStickersInMonth } from '../repositories/stickerRepository';
+import { listStickers, listStickersInMonth } from '../repositories/stickerRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
 import { listPackAccess } from '../repositories/packRepository';
 import { stickerUsableUntil } from '../app-data/placeGate';
 import { isCompleted } from '../domain/board';
 import { nextMidnight } from '../widgets/widgetProps';
+import { readHandledRequestIds } from '../widgets/applyRequests';
 import { buildWatchSnapshot } from './snapshot';
 import type { WatchInput, WatchSnapshot } from './snapshot';
-
-/** 머리 위 블록은 0~2개다. 셋째가 막 묶였을 때 그 묶음 색까지 보이도록 셋을 보낸다. */
-const RECENT = 3;
 
 /** 진행 중인 목표의 워치 입력. 달력판은 date가 속한 달만 보이고, 남은 칸은 전체 수로 센다. */
 export async function loadWatchInputs(date: Date): Promise<WatchInput[]> {
@@ -34,6 +32,5 @@ export async function loadWatchSnapshot(date: Date, growth: number): Promise<Wat
   const midnight = nextMidnight(date);
   const now = await loadWatchInputs(date);
   const afterMidnight = midnight.getMonth() === date.getMonth() ? now : await loadWatchInputs(midnight);
-  const recentStickers = (await listRecentStickers(RECENT)).map((s) => s.stickerType);
-  return buildWatchSnapshot({ now, afterMidnight, growth, recentStickers, date });
+  return buildWatchSnapshot({ now, afterMidnight, growth, handled: await readHandledRequestIds(), date });
 }
