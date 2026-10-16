@@ -1,0 +1,746 @@
+<title>워치 성장 시안</title>
+<style>
+/* 안마다 워치 화면(첫 화면과 차곡이 화면), 좋은 점과 걸리는 점, 고르기, 메모. 맨 위 막대로 쌓인 스티커 수를 바꾸면 모든 안이 같이 바뀐다. */
+@font-face { font-family: 'NeoDunggeunmo'; src: url(data:font/ttf;base64,__FONT__) format('truetype'); font-display: block; }
+:root {
+  --mint: #AFE1CB; --lcd: #C7DE94; --coral: #FD855F; --ivory: #FEF1D1; --ink: #06261C;
+  --bg: #EAF5EE; --card: #FFFFFF; --fg: #06261C; --muted: #4C6A5E; --line: #B9D6C6; --pick: #FD855F; --pick-bg: #FFF1EA;
+  --pixel: 'NeoDunggeunmo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); margin: 0; }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 120px; display: grid; gap: 28px; }
+h1, h2, .code, .btn, .tag, .wt { font-family: var(--pixel); font-weight: normal; }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 70ch; }
+.muted { color: var(--muted); }
+.decided { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decided ul { margin: 0; padding-left: 20px; }
+.ctrl { position: sticky; top: 0; z-index: 5; background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 10px 14px; display: grid; gap: 8px; }
+.ctrl .line { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ctrl input[type=range] { flex: 1 1 220px; accent-color: var(--coral); }
+.ctrl .now { font-family: var(--pixel); font-size: 17px; min-width: 15ch; }
+.chip { font: 13px var(--body); padding: 3px 9px; border: 2px solid var(--line); border-radius: 99px; background: var(--bg); color: var(--fg); cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--pick); background: var(--pick-bg); }
+.opt { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.opt.ok { border-color: var(--pick); background: var(--pick-bg); }
+.head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code { font-size: 20px; }
+.tag { font-size: 12px; padding: 1px 6px; border: 2px solid var(--ink); background: var(--lcd); color: var(--ink); border-radius: 3px; }
+.tag.new { background: var(--ivory); }
+.watches { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+figure { margin: 0; display: grid; gap: 6px; justify-items: center; }
+figcaption { font-size: 12px; color: var(--muted); text-align: center; max-width: 230px; }
+/* Apple Watch 46mm 화면 208×248pt를 1배로 */
+.watch { position: relative; width: 208px; height: 248px; padding: 10px; border-radius: 52px; background: #1c1c1e; box-shadow: inset 0 0 0 2px #3a3a3c; }
+.watch::after { content: ''; position: absolute; right: -7px; top: 62px; width: 7px; height: 30px; border-radius: 0 4px 4px 0; background: #48484a; }
+.screen { width: 208px; height: 248px; border-radius: 42px; overflow: hidden; position: relative; background: var(--lcd); color: var(--ink); }
+.screen svg { display: block; image-rendering: pixelated; shape-rendering: crispEdges; }
+.wt { font-size: 13px; line-height: 1.2; }
+.home { padding: 22px 14px 0; display: grid; gap: 7px; }
+.home .top { display: flex; align-items: flex-end; gap: 6px; height: 64px; justify-content: center; }
+.row { display: flex; align-items: center; gap: 8px; border: 2px solid var(--ink); border-radius: 10px; background: var(--ivory); padding: 6px 8px; }
+.row .dot { width: 20px; height: 20px; border: 2px solid var(--ink); border-radius: 50%; flex: none; box-sizing: border-box; }
+.row .dot.on { background: var(--coral); }
+.row .wt { flex: 1; }
+.scroll { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; touch-action: none; cursor: ns-resize; }
+.scroll::-webkit-scrollbar { display: none; }
+.hint { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font: 11px var(--pixel); color: var(--ink); background: var(--ivory); border: 1px solid var(--ink); border-radius: 99px; padding: 0 6px; pointer-events: none; }
+.scene { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 4px 20px; font-size: 14px; }
+dt { font-weight: 600; }
+dd { margin: 0 0 4px; color: var(--muted); }
+dd ul { margin: 0; padding-left: 18px; }
+.btn { font-size: 15px; padding: 8px 12px; border: 3px solid var(--ink); background: var(--ivory); color: var(--ink); border-radius: 6px; cursor: pointer; justify-self: start; }
+.btn[aria-pressed="true"] { background: var(--coral); }
+.btn:focus-visible, textarea:focus-visible, .chip:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: 14px/1.5 var(--body); padding: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); resize: vertical; }
+.state { font-size: 12px; color: var(--muted); min-height: 1em; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line); z-index: 6;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar #summary { flex: 1 1 260px; min-width: 0; font-size: 14px; }
+.bar #store-state { font-size: 12px; color: var(--muted); }
+</style>
+
+<style>
+.grp { display: grid; gap: 14px; }
+.grp > p { color: var(--muted); }
+.answer { background: var(--card); border: 2px solid var(--pick); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.arrow { align-self: center; font: 20px var(--pixel); color: var(--muted); }
+/* 목표 판 화면 */
+.gb { padding: 24px 14px 0; display: grid; gap: 9px; justify-items: center; }
+.gname { font: 15px var(--pixel); }
+.cells { display: grid; grid-template-columns: repeat(5, 30px); gap: 5px; }
+/* 앱 StickerSlot과 같은 모양: 모서리를 3px 깎은 칸, 테두리 3px, 칸 번호. 다음 빈칸은 테두리 없이 네 귀퉁이 괄호(PixelFocusRing) */
+.cell { position: relative; width: 30px; height: 30px; box-sizing: border-box; border: 3px solid var(--ink); background: var(--lcd) center / 22px no-repeat; display: grid; place-items: center; font: 11px var(--pixel); color: var(--ink);
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px); }
+.cell.next { border: none; clip-path: none; background:
+  linear-gradient(var(--ink), var(--ink)) left top / 9px 3px, linear-gradient(var(--ink), var(--ink)) left top / 3px 9px,
+  linear-gradient(var(--ink), var(--ink)) right top / 9px 3px, linear-gradient(var(--ink), var(--ink)) right top / 3px 9px,
+  linear-gradient(var(--ink), var(--ink)) left bottom / 9px 3px, linear-gradient(var(--ink), var(--ink)) left bottom / 3px 9px,
+  linear-gradient(var(--ink), var(--ink)) right bottom / 9px 3px, linear-gradient(var(--ink), var(--ink)) right bottom / 3px 9px; background-repeat: no-repeat; }
+.stk { width: 24px; height: 24px; flex: none; }
+.stk.off { opacity: .3; filter: grayscale(1); }
+.cell.pop { transform: scale(1.18); }
+.chunks { display: flex; gap: 4px; }
+.chunks i { width: 14px; height: 4px; border-radius: 2px; background: #7f9a6a; }
+.chunks i.on { background: var(--ink); }
+.big { width: 150px; height: 42px; border-radius: 21px; background: var(--coral); border: 3px solid var(--ink); box-sizing: border-box; font: 16px var(--pixel); color: var(--ink); display: flex; align-items: center; justify-content: center; }
+.big.done { background: var(--ivory); }
+.undo { font: 12px var(--pixel); border: 2px solid var(--ink); border-radius: 99px; padding: 2px 10px; background: var(--ivory); }
+/* 보관함 더미 */
+.deck { isolation: isolate; position: absolute; left: 0; right: 0; top: 58px; height: 120px; cursor: ns-resize; touch-action: none; }
+.deck .card { position: absolute; left: 50%; top: 24px; margin-left: -62px; transition: transform .35s ease, opacity .35s ease, filter .35s ease; transform-origin: 50% 50%; }
+.deck .card svg { display: block; }
+.decktop { position: absolute; left: 0; right: 0; top: 18px; display: flex; justify-content: center; }
+.decklabel { position: absolute; left: 0; right: 0; bottom: 64px; text-align: center; font: 11px var(--pixel); }
+@media (prefers-reduced-motion: reduce) { .deck .card { transition: none; } }
+/* C3 차곡이 화면: 차곡이(머리 위 판) → 지금 보관함 → 만드는 중인 판 */
+.c3top { position: absolute; left: 0; right: 0; top: 0; height: 74px; display: flex; align-items: flex-end; justify-content: center; }
+.deck.sm { top: 76px; height: 68px; }
+.deck.sm .card { top: 8px; margin-left: -47px; }
+.c3 .decklabel { bottom: auto; top: 144px; }
+.wip { position: absolute; left: 0; right: 0; top: 164px; display: flex; justify-content: center; gap: 6px; }
+.mb { display: grid; justify-items: center; gap: 2px; width: 50px; transition: transform .2s ease; }
+.mb img { width: 16px; height: 16px; }
+.mb .n { font: 10px var(--pixel); }
+.mb.pop { transform: scale(1.18); }
+.fly { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; transition: transform .6s ease; }
+.fly svg { display: block; }
+.c3btns { display: grid; gap: 6px; }
+.c3btns .turn:disabled { opacity: .45; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .mb, .fly { transition: none; } }
+.turn { font: 13px var(--body); padding: 4px 10px; border: 2px solid var(--line); border-radius: 99px; background: var(--bg); color: var(--fg); cursor: pointer; }
+</style>
+<style>
+.story { display: grid; gap: 10px; }
+.story h3 { font: 17px var(--pixel); margin: 0; }
+.story > p { color: var(--muted); }
+.back { position: absolute; left: 22px; top: 14px; z-index: 4; width: 26px; height: 26px; border-radius: 13px; border: 2px solid var(--ink); background: var(--ivory); color: var(--ink); font: 16px/1 var(--pixel); display: grid; place-items: center; padding: 0; cursor: pointer; }
+button.big { cursor: pointer; padding: 0; }
+.sub { font: 11px var(--pixel); text-align: center; }
+.cf { padding: 40px 18px 0; display: grid; gap: 10px; justify-items: center; text-align: center; }
+.cf .big { width: 140px; height: 38px; }
+.home .row, .home .tapc { cursor: pointer; }
+.proto-wrap { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.proto-side { display: grid; gap: 10px; max-width: 360px; font-size: 14px; }
+.proto-side ol { margin: 0; padding-left: 20px; }
+.n { font: 10px var(--pixel); }
+.prog { display: flex; align-items: center; gap: 4px; }
+.prog svg { display: block; }
+.chk { flex: none; display: block; }
+.l1 { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.l1::-webkit-scrollbar { display: none; }
+.l1in { padding: 16px 14px 34px; display: grid; gap: 6px; }
+.l1in .top { height: 52px; display: flex; align-items: flex-end; justify-content: center; }
+.l1row { padding: 5px 8px; cursor: pointer; }
+.l1mid { flex: 1; display: grid; gap: 3px; min-width: 0; }
+.l2top { position: absolute; left: 0; right: 0; top: 10px; height: 48px; display: flex; align-items: flex-end; justify-content: center; }
+.l2card { position: absolute; left: 22px; right: 22px; top: 64px; display: grid; justify-items: center; gap: 7px; }
+.l2card .stk2 { width: 36px; height: 36px; }
+.l2card .big { width: 140px; height: 40px; }
+.l2name { display: flex; align-items: center; gap: 4px; }
+.dots { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: grid; gap: 4px; }
+.dots i { width: 6px; height: 6px; border-radius: 3px; background: #7f9a6a; }
+.dots i.on { background: var(--ink); height: 12px; }
+.l3top { height: 56px; padding-top: 12px; display: flex; align-items: flex-end; justify-content: center; }
+.tiles { display: grid; grid-template-columns: repeat(2, 80px); gap: 6px; justify-content: center; margin-top: 8px; }
+.tile { position: relative; height: 68px; box-sizing: border-box; border: 2px solid var(--ink); border-radius: 10px; background: var(--ivory); display: grid; justify-items: center; align-content: center; gap: 3px; cursor: pointer; }
+.tile .stk3 { width: 34px; height: 34px; }
+.tile .tn { font: 11px var(--pixel); max-width: 72px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tile .chk { position: absolute; right: 4px; top: 4px; }
+.hvsw { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+</style>
+<style>
+.story { display: grid; gap: 10px; }
+.story h3 { font: 17px var(--pixel); margin: 0; }
+.story > p { color: var(--muted); }
+/* 앱 PixelButton과 같은 틀: 계단 모서리(5px 두 단), 잉크 3px, 오른쪽 아래 잉크 그림자 2px, 안쪽 위와 왼쪽 밝은 선, 누르면 2px 내려감 */
+.pb { position: relative; border: 0; background: none; padding: 0; cursor: pointer; color: #01241C; font: 15px var(--pixel); display: block; }
+.pb .fr { position: absolute; left: 0; top: 0; overflow: visible; }
+.pb .in { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; height: calc(100% - 2px); padding: 0 12px; box-sizing: border-box; }
+.pb:active .fr .face, .pb:active .in, .pb.down .fr .face, .pb.down .in { transform: translateY(2px); }
+.pb:focus-visible { outline: 2px dashed var(--ink); outline-offset: 2px; }
+.pb.grow .in { justify-content: flex-start; padding: 0 12px 0 10px; }
+.pb.grow .stk { width: 22px; height: 22px; }
+.list { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.list::-webkit-scrollbar { display: none; }
+.listin { padding: 14px 15px 36px; display: grid; gap: 7px; justify-items: center; }
+.listin .top { height: 54px; display: flex; align-items: flex-end; justify-content: center; }
+.tapc { cursor: pointer; border-radius: 8px; }
+.gb2 { padding: 22px 14px 0; display: grid; gap: 10px; justify-items: center; }
+.cf2 { padding: 34px 18px 0; display: grid; gap: 9px; justify-items: center; text-align: center; }
+.sub { font: 11px var(--pixel); text-align: center; }
+.backb { position: absolute; left: 20px; top: 12px; z-index: 4; }
+.recent { position: absolute; left: 0; right: 0; top: 166px; display: flex; justify-content: center; align-items: center; gap: 6px; transition: transform .2s ease; }
+.recent img { width: 20px; height: 20px; }
+.recent svg { display: block; }
+.recent.pop { transform: scale(1.15); }
+.c3top svg { transition: transform .18s ease; }
+.c3top.hop svg { transform: translateY(-8px); }
+.deck .card.bump svg { transform: scale(1.05); transition: transform .15s ease; }
+.proto-wrap { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.proto-side { display: grid; gap: 10px; max-width: 360px; font-size: 14px; }
+.proto-side ol { margin: 0; padding-left: 20px; }
+.live { position: absolute; right: 18px; top: 16px; font: 10px var(--pixel); background: var(--coral); border: 2px solid var(--ink); border-radius: 99px; padding: 0 5px; z-index: 5; }
+.c3 .decklabel { top: 152px; }
+.recent { top: 174px; }
+.pb .chev { display: block; }
+.cal { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.cal::-webkit-scrollbar { display: none; }
+.calin { padding: 22px 14px 34px; display: grid; gap: 8px; justify-items: center; }
+.mon { font: 12px var(--pixel); }
+.wk, .days { display: grid; grid-template-columns: repeat(7, 22px); gap: 2px; }
+.wk span { font: 9px var(--pixel); text-align: center; }
+.day { width: 22px; height: 22px; box-sizing: border-box; display: grid; place-items: center; font: 9px var(--pixel); background: center / 18px no-repeat; cursor: pointer; }
+.day.fut, .day.out { opacity: .35; cursor: default; }
+.day.today { border: 2px solid var(--coral); }
+.cell { cursor: pointer; }
+.gt { position: absolute; left: 56px; right: 56px; top: 18px; text-align: center; font: 15px var(--pixel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.gmid { position: absolute; left: 0; right: 0; top: 44px; bottom: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.wk.lg, .days.lg { grid-template-columns: repeat(7, 24px); }
+.day.lg { width: 24px; height: 24px; background-size: 20px; }
+.cell.lg { width: 64px; height: 64px; background-size: 52px; font-size: 16px; cursor: pointer; }
+.cell.lg.next { background-size: 14px 3px, 3px 14px, 14px 3px, 3px 14px, 14px 3px, 3px 14px, 14px 3px, 3px 14px; }
+.wkrow { display: flex; gap: 3px; }
+.wkrow .day { width: 20px; height: 20px; background-size: 16px; }
+/* 10판 차곡이 화면: 바닥 선 위에 차곡이(왼쪽)와 보관함(오른쪽)을 나란히 */
+.floor { position: absolute; left: 16px; right: 16px; top: 140px; height: 3px; background: var(--ink); }
+.ch { position: absolute; left: 20px; bottom: 108px; z-index: 3; transition: transform .7s linear; }
+.ch svg { display: block; transform-origin: 50% 100%; transition: transform .12s ease; }
+.ch.walk svg { animation: bob .24s steps(2) infinite; }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+.ch.land svg { transform: scaleY(.9); }
+.deck.side { left: 100px; right: auto; width: 93px; top: 76px; height: 64px; }
+.deck.side .card { left: 0; margin-left: 0; top: 7px; }
+.c3 .decklabel { top: 150px; }
+.recent { top: 172px; transition: transform .3s ease, opacity .3s ease; }
+.recent.gone { opacity: 0; transform: scale(.6); }
+.fly.drop { transition: transform .5s cubic-bezier(.55, 0, 1, .45); }
+@media (prefers-reduced-motion: reduce) { .ch, .ch svg, .fly.drop { transition: none; } .ch.walk svg { animation: none; } }
+.skipb { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; z-index: 5; }
+.skipb .pb { font-size: 12px; }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 30px; z-index: 6; text-align: center; font: 11px var(--pixel); background: var(--ivory); border: 2px solid var(--ink); border-radius: 8px; padding: 4px 6px; }
+@media (prefers-reduced-motion: reduce) { .c3top svg, .recent, .deck .card.bump svg { transition: none; } }
+</style>
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>워치 성장 14판: 꽂을 칸까지 걸어가기</h1>
+    <p class="muted">남은 결정 1~4번을 추천안으로 정했고, 4번(보관함 크기)은 진행 전에 모양을 보여 드립니다. 1에서 흐름을 보고(④는 저절로 움직입니다), 2에서 직접 눌러 봅니다. 워치 화면은 Apple Watch 46mm(208×248pt) 시안용 그림입니다.</p>
+    <div class="answer">
+      <b>이번에 정한 것(1~4번 추천안)</b>
+      <ul style="margin:0;padding-left:20px">
+        <li><b>보관하는 때는 S2.</b> 머리 위 0~2개, 셋째 블록이 오면 바로 세 개를 다 넣습니다. 아래 흐름과 눌러 보기는 모두 S2입니다.</li>
+        <li><b>폰과 위젯에서 붙인 스티커도 블록 하나.</b> 어디서 붙여도 한 개는 한 개입니다. 워치를 열었을 때 그사이 쌓인 블록은 몰아서 한 번만 떨어뜨리고, 늘어난 수를 문구로 알려 줍니다.</li>
+        <li><b>처음 시작 값은 지금까지 붙인 스티커 전체.</b> 오래 쓴 사람은 보관함 여러 개를 가진 채로 시작합니다.</li>
+        <li><b>보관함 크기는 스티커 48개, 모양은 X1(칸 하나에 얇은 묶음 둘을 나란히).</b> X1 메모 「꽂는 칸까지 움직일 수 있도록, 맨 오른쪽에 꽂을 때 던지는 것처럼 보임」에 따라 차곡이가 꽂을 칸 바로 아래까지 걸어가서 넣습니다. 오른쪽 칸일수록 더 멀리 걷고, 걷는 시간도 거리에 맞췄습니다. 맨 오른쪽 칸은 화면 끝 때문에 칸 바로 앞까지 갑니다.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="grp">
+    <h2>0. 보관함 크기: 칸 하나에 묶음 둘, 모양을 골라 주세요</h2>
+    <p>보관함은 지금과 같은 2단 × 4칸입니다. 칸 하나에 묶음(블록 세 개)을 둘씩 넣어, 보관함 하나가 스티커 48개면 찹니다. 하루에 두세 개 붙이면 3주쯤입니다. 비교를 위해 지금 크기(24개)도 함께 둡니다. 각 안의 셋째 화면은 저절로 되풀이됩니다.</p>
+    <div id="boxes" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section class="opt">
+    <h2>1. 흐름 한눈에 보기</h2>
+    <div class="story">
+      <h3>가. 매일 붙일 때</h3>
+      <div class="watches" id="story-a"></div>
+    </div>
+    <div class="story">
+      <h3>나. 판을 완성할 때</h3>
+      <p>마지막 칸은 앱과 같이 완성할지 한 번 묻습니다. 완성해도 블록은 다른 스티커와 똑같이 하나 떨어지고, 판을 완성했다고 알려 줍니다.</p>
+      <div class="watches" id="story-b"></div>
+    </div>
+    <div class="story">
+      <h3>다. 달력판일 때(K2)</h3>
+      <p>붙이는 기준은 위젯과 같습니다. 같은 날에는 하나만, 시작일부터 오늘까지의 빈 날을 누르면 그날에, 오늘 칸을 다시 누르면 뗍니다. 종료일이 없는 달력판은 워치에서 완성되지 않고 폰의 목표 설정에서 완성합니다.</p>
+      <div class="watches" id="story-d"></div>
+    </div>
+    <div class="story">
+      <h3>라. 쌓인 걸 볼 때</h3>
+      <div class="watches" id="story-c"></div>
+    </div>
+    <textarea data-k="note-wg-b13-flow" aria-label="흐름 메모" placeholder="흐름 메모. 몇 번 화면인지 같이 적어 주세요"></textarea>
+    <span class="state" id="state-note-wg-b13-flow"></span>
+  </section>
+
+  <section class="opt">
+    <h2>2. 직접 눌러 보기</h2>
+    <div class="proto-wrap">
+      <figure><div class="watch" id="proto"></div><figcaption id="pcap"></figcaption></figure>
+      <div class="proto-side">
+        <ol>
+          <li>목표를 누르고 [붙이기]나 빈칸을 누르면 차곡이 화면으로 넘어가 블록이 떨어지고, 잠시 뒤 판으로 돌아옵니다. [건너뛰기]를 누르면 바로 돌아옵니다. 오늘 붙인 칸을 다시 누르면 뗍니다(블록은 그대로). 목표가 넷이라 휠로 목록을 내립니다.</li>
+          <li>일기 쓰기는 달력판(K2)입니다. 큰 오늘 칸을 누르거나, 휠로 내려 지난 빈 날을 누릅니다.</li>
+          <li>물 마시기는 한 번만 더 붙이면 완성 확인이 나옵니다.</li>
+          <li>첫 화면의 차곡이를 누르면 언제든 차곡이 화면을 봅니다. 보관함은 화면을 위아래로 끌거나 휠, 아래 버튼으로 넘깁니다.</li>
+        </ol>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" class="chip" data-start="2">머리 위 2개에서 시작</button>
+          <button type="button" class="chip" data-start="pre">보관하기 바로 전에서 시작</button>
+          <button type="button" class="chip" data-start="40">보관함 여러 개에서 시작</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="turn" data-rot="1">크라운 ↓ 돌리기</button>
+          <button type="button" class="turn" data-rot="-1">크라운 ↑</button>
+        </div>
+      </div>
+    </div>
+    <textarea data-k="note-wg-b13-proto" aria-label="눌러 보기 메모" placeholder="눌러 보며 걸린 점"></textarea>
+    <span class="state" id="state-note-wg-b13-proto"></span>
+  </section>
+
+  <section class="opt">
+    <h2>아직 안 정한 것</h2>
+    <ul style="margin:0;padding-left:20px">
+      <li>「보관함」이라는 이름.</li>
+      <li>오늘 칸 표시. 위젯은 살구색 테두리, 앱 판은 네 귀퉁이 괄호라 하나로 맞춰야 합니다. 시안은 적립판 다음 빈칸과 큰 오늘 칸은 괄호, 달력의 오늘은 살구색 테두리로 그렸습니다.</li>
+      <li>목표를 고른 다음 화면(F1로 그림, F2와 F3는 5판에 있음).</li>
+      <li>목표마다 블록 색. 시안은 책 읽기 살구, 산책 민트, 물 마시기 하늘, 일기 쓰기 노랑.</li>
+      <li>컴플리케이션, 폰이 멀리 있을 때 붙이면 어떻게 할지.</li>
+    </ul>
+  </section>
+
+  <section class="opt">
+    <h2>이 흐름으로 정할까요?</h2>
+    <button type="button" class="btn" id="pick" aria-pressed="false">이 흐름으로 정하기</button>
+    <textarea data-k="note-wg-b13-all" aria-label="전체 메모" placeholder="전체 메모"></textarea>
+    <span class="state" id="state-note-wg-b13-all"></span>
+  </section>
+</main>
+
+<div class="bar">
+  <span id="summary">아직 안 정했어요</span>
+  <span id="store-state">저장소 연결 중…</span>
+  <button type="button" class="btn" id="copy">메모까지 복사</button>
+</div>
+
+<script>
+const CH = __CHAR__;
+const STK = __STICKERS__; // assets/widget-art 의 실제 스티커(위젯과 같은 그림)
+const COL = {'#': '#06261C', g: '#C7DE94', o: '#FD855F', w: '#FEF1D1', m: '#AFE1CB'};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+// 칸 지도: 칸 단위로 찍고 svg로 그린다. 좌표는 음수도 된다.
+function Pix() { const m = new Map(); return {
+  put(x, y, c) { if (c && c !== '.') m.set(x + ',' + y, c); },
+  grid(rows, ox, oy) { rows.forEach((r, y) => [...r].forEach((c, x) => this.put(ox + x, oy + y, c))); },
+  rect(x, y, w, h, c) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.put(x + i, y + j, c); },
+  cells() { return [...m].map(([k, c]) => { const [x, y] = k.split(',').map(Number); return [x, y, c]; }); },
+  merge(q) { for (const [x, y, c] of q.cells()) this.put(x, y, c); },
+  halo(q, c) { // q 둘레 한 칸을 c로(어두운 하늘에서 잉크 윤곽이 묻히지 않게)
+    const on = new Set(q.cells().map(([x, y]) => x + ',' + y));
+    for (const [x, y] of q.cells()) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!on.has((x + dx) + ',' + (y + dy))) this.put(x + dx, y + dy, c);
+  },
+  svg(cell, box) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const k of m.keys()) { const [x, y] = k.split(',').map(Number); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    if (box) [x0, y0, x1, y1] = box;
+    if (x0 === Infinity) return '';
+    const w = x1 - x0 + 1, h = y1 - y0 + 1; let out = '';
+    for (const [k, c] of m) { const [x, y] = k.split(',').map(Number); if (x < x0 || x > x1 || y < y0 || y > y1) continue; out += `<rect x="${x - x0}" y="${y - y0}" width="1.02" height="1.02" fill="${COL[c] || c}"/>`; }
+    return `<svg width="${w * cell}" height="${h * cell}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${out}</svg>`;
+  }}; }
+
+// 판 한 장: 8×4, 윗판의 아랫줄이 아랫판의 윗줄과 겹친다(b3과 같은 모양).
+const BX = [8, 9, 7], BC = ['m', 'w', 'o'];
+function board(p, x, y, c) { p.rect(x, y, 8, 4, '#'); p.rect(x + 1, y + 1, 6, 2, c); }
+// 차곡이: 몸 윗줄(원본 12줄)이 oy. head = 머리 위 판 수, under = 발밑 판 수.
+function chagok(p, {face = 'basic', ox = 0, oy = 0, head = 0, under = 0, colors = null}) {
+  if (head === 0) p.grid(CH.blockStates.b0.slice(10, 12), ox, oy - 2);
+  p.grid(CH.faces[face].slice(12, 23), ox, oy);
+  for (let i = 0; i < head; i++) board(p, ox + BX[i % 3], oy - 4 - 3 * i, colors ? colors[i] : BC[i % 3]);
+  for (let j = 0; j < under; j++) board(p, ox + [8, 7, 9][j % 3], oy + 11 + 3 * j, BC[j % 3]);
+}
+// 판 묶음(B안): 6×7, 판 세 장을 눌러 꽂은 모양
+function bundle(p, x, y) { p.rect(x, y, 6, 7, '#'); p.rect(x + 1, y + 1, 4, 1, 'o'); p.rect(x + 1, y + 3, 4, 1, 'w'); p.rect(x + 1, y + 5, 4, 1, 'm'); }
+function shelf(p, x, y, filled) { // 2단 × 4칸
+  p.rect(x, y, 31, 19, '#'); p.rect(x + 1, y + 1, 29, 8, 'w'); p.rect(x + 1, y + 10, 29, 8, 'w');
+  for (let i = 0; i < filled; i++) bundle(p, x + 2 + (i % 4) * 7, y + 2 + Math.floor(i / 4) * 9);
+}
+
+const SHELF = 8;
+const headOf = b => b === 0 ? 0 : b - 3 * Math.floor((b - 1) / 3);
+const faceOf = c => c === 0 ? 'sleepy' : 'smile';
+// 완성한 판 c장 → 보관함들(0 = 지금 보관함, 1부터 지난 보관함)
+function shelvesOf(c) { const bun = c > 0 ? Math.floor((c - 1) / 3) : 0; if (bun === 0) return [0];
+  const k = Math.floor((bun - 1) / SHELF) + 1, last = ((bun - 1) % SHELF) + 1; return [last, ...Array(k - 1).fill(SHELF)]; }
+function charSvg(c, cell = 2.6) { const p = Pix(); chagok(p, {face: faceOf(c), head: headOf(c), oy: 12}); return p.svg(cell); }
+
+
+const fig = (inner, cap, id = '') => `<figure><div class="watch"${id ? ` id="${id}"` : ''}>${inner}</div><figcaption>${cap}</figcaption></figure>`;
+const arrow = '<span class="arrow" aria-hidden="true">→</span>';
+const chunks = (n, at) => `<div class="chunks">${Array.from({length: n}, (_, i) => `<i class="${i <= at ? 'on' : ''}"></i>`).join('')}</div>`;
+const ring = ''; // 8판 메모: 누를 곳 주황 테두리는 뺀다
+const INK = '#06261C', APRICOT = '#FD855F', IVORY = '#FEF1D1', MINT = '#AFE1CB';
+
+// ---- 앱 PixelButton 틀 (src/design-system/geometry.ts pixelOutline, components.tsx PixelFrame button) ----
+function outline(w, h, inset = 0, unit = 3) {
+  const x = inset, y = inset, r = w - inset, b = h - inset; if (r <= x || b <= y) return '';
+  const u = Math.min(unit, (r - x) / 4, (b - y) / 4);
+  return `M${x + 2 * u} ${y} H${r - 2 * u} V${y + u} H${r - u} V${y + 2 * u} H${r} V${b - 2 * u} H${r - u} V${b - u} H${r - 2 * u} V${b} H${x + 2 * u} V${b - u} H${x + u} V${b - 2 * u} H${x} V${y + 2 * u} H${x + u} V${y + u} H${x + 2 * u} Z`;
+}
+function frame(w, h, fill, unit = 5) {
+  const border = 3, depth = 2, W = w - 1, H = h - depth, d = outline(W, H, border / 2, unit);
+  return `<svg class="fr" width="${w}" height="${h}" aria-hidden="true"><path d="${d}" fill="${INK}" stroke="${INK}" stroke-width="${border}" stroke-linejoin="miter" transform="translate(1,${depth})"/><g class="face"><path d="${d}" fill="${fill}" stroke="${INK}" stroke-width="${border}" stroke-linejoin="miter"/><path d="M${2 * unit + border + 2} ${border + 2} H${W - 2 * unit - border - 2} M${border + 2} ${2 * unit + border + 2} V${H - 2 * unit - border - 2}" stroke="${IVORY}" stroke-width="2"/></g></svg>`;
+}
+// variant: primary(살구) / secondary(아이보리), fill로 바탕을 바꿀 수 있다
+const pbtn = (label, {w = 150, h = 44, variant = 'primary', fill = null, act = '', attrs = '', cls = '', inner = null, unit = 5} = {}) =>
+  `<button type="button" class="pb ${cls}" ${act ? `data-act="${act}"` : ''} ${attrs} style="width:${w}px;height:${h}px">${frame(w, h, fill || (variant === 'primary' ? APRICOT : IVORY), unit)}<span class="in">${inner ?? label}</span></button>`;
+const CHEV = (() => { const p = Pix(); p.grid(['...##', '..##.', '.##..', '##...', '.##..', '..##.', '...##'], 0, 0); return p.svg(2).replace('<svg', '<svg class="chev"'); })();
+const backBtn = `<span class="backb">${pbtn('', {w: 30, h: 30, unit: 2, variant: 'secondary', act: 'back', attrs: 'aria-label="뒤로"', inner: CHEV})}</span>`;
+
+// ---- 상태 ----
+const GC = {book: 'o', walk: 'm', mug: '#8EC5E8', note: '#F2C94C'}; // 목표마다 판 색(시안용)
+// 오늘은 10월 16일, 10월 1일은 목요일(앞에 빈칸 4개). 칸 값: 'p' 지난날 붙임, 't' 오늘 붙임, null 빈칸
+const T = 16, MON0 = 4;
+const cnt = (p, t, n) => Array.from({length: n}, (_, i) => i < p ? 'p' : i < p + t ? 't' : null);
+// 보관하는 때: 'a' = 머리 위 1~3개, 넷째 블록에서 세 개를 넣는다(11판) / 'b' = 머리 위 0~2개, 셋째 블록에서 세 개를 다 넣는다
+let SM = 'b'; // 13판: S2로 정함
+const headOfM = (c, m) => m === 'a' ? headOf(c) : c % 3;
+const bunOf = (c, m) => m === 'a' ? (c > 0 ? Math.floor((c - 1) / 3) : 0) : Math.floor(c / 3);
+// 보관함 크기 안: x1 = 칸마다 얇은 묶음 둘 나란히(48개), x2 = 칸마다 납작한 묶음 둘 위아래(48개), x3 = 지금(칸마다 묶음 하나, 24개)
+let BV = 'x1';
+const BOXN = bv => bv === 'x3' ? 8 : 16;
+function shelvesM(c, m, bv) { const n = BOXN(bv), bun = bunOf(c, m); if (bun === 0) return [0]; const k = Math.floor((bun - 1) / n) + 1, last = ((bun - 1) % n) + 1; return [last, ...Array(k - 1).fill(n)]; }
+function slotPos(j, bv) { if (bv === 'x3') return [2 + (j % 4) * 7, 2 + Math.floor(j / 4) * 9]; const c = Math.floor(j / 2), h = j % 2;
+  return bv === 'x1' ? [2 + (c % 4) * 7 + h * 3, 2 + Math.floor(c / 4) * 9] : [2 + (c % 4) * 7, 1 + Math.floor(c / 4) * 9 + h * 4]; }
+function bundleOf(p, x, y, bv) {
+  if (bv === 'x3') return bundle(p, x, y);
+  if (bv === 'x1') { p.rect(x, y, 3, 7, '#'); p.put(x + 1, y + 1, 'o'); p.put(x + 1, y + 3, 'w'); p.put(x + 1, y + 5, 'm'); return; }
+  p.rect(x, y, 6, 4, '#'); ['o', 'w', 'm', 'o'].forEach((c, i) => p.rect(x + 1 + i, y + 1, 1, 2, c));
+}
+const storeAt = m => m === 'a' ? 4 : 3;
+const mkState = (c, m = SM, bv = BV) => ({c, m, bv, face: faceOf(c), heads: Array.from({length: headOfM(c, m)}, (_, i) => BC[i % 3]), recent: 'walk',
+  goals: [{name: '책 읽기', s: 'book', kind: 'count', cells: cnt(28, 0, 30)}, {name: '산책', s: 'walk', kind: 'count', cells: cnt(16, 1, 20)},
+    {name: '물 마시기', s: 'mug', kind: 'count', cells: cnt(9, 0, 10)},
+    {name: '일기 쓰기', s: 'note', kind: 'cal', start: 3, days: {3: 'p', 4: 'p', 6: 'p', 7: 'p', 9: 'p', 10: 'p', 11: 'p', 13: 'p', 14: 'p', 15: 'p'}}]});
+const isToday = g => g.kind === 'cal' ? g.days[T] === 't' : g.cells.includes('t');
+const nextOf = g => g.cells.indexOf(null);
+const leftOf = g => g.cells.filter(x => !x).length;
+const clone = S => JSON.parse(JSON.stringify(S));
+
+// ---- 화면 ----
+function charOf(S, cell) { const p = Pix(); chagok(p, {face: S.face, head: S.heads.length, oy: 12, colors: S.heads}); return p.svg(cell); }
+function homeScr(S, {tapGoal = -1, tapChar = false} = {}) {
+  return `<div class="screen"><div class="list"><div class="listin"><div class="top"><span class="tapc" data-act="char" style="${tapChar ? ring : ''}">${charOf(S, 2.4)}</span></div>
+    ${S.goals.map((g, i) => `<span style="${i === tapGoal ? ring + ';border-radius:8px' : ''}">${pbtn('', {w: 176, h: 40, fill: isToday(g) ? MINT : IVORY, act: 'goal', cls: 'grow', attrs: `data-g="${i}" aria-label="${g.name}${isToday(g) ? ', 오늘 붙였어요' : ''}"`, inner: `<img class="stk" src="${STK[g.s]}" alt=""><span class="wt">${g.name}</span>`})}</span>`).join('')}
+    ${S.goals.length ? '' : '<span class="sub">진행 중인 목표가 없어요</span>'}</div></div></div>`;
+}
+// 앱 StickerSlot 모양의 칸. 다음 빈칸이 든 10칸 묶음. 칸을 누르면 위젯과 같이 동작한다. pop = 방금 붙인 칸
+function cellsOf(g, pop = -1) {
+  const nx = nextOf(g), at = pop >= 0 ? pop : Math.max(nx, 0), start = Math.floor(at / 10) * 10, n = Math.min(10, g.cells.length - start);
+  return `<div class="cells">${Array.from({length: n}, (_, i) => { const k = start + i, v = g.cells[k];
+    return `<span class="cell ${k === pop ? 'pop' : k === nx ? 'next' : ''}" data-act="cell" data-i="${k}"${v ? ` style="background-image:url(${STK[g.s]})"` : ''}>${v ? '' : k + 1}</span>`; }).join('')}</div>`;
+}
+function goalScr(S, gi, pop = -1, scroll = 0) {
+  const g = S.goals[gi]; if (g.kind === 'cal') return calScr(S, gi, {scroll});
+  const at = Math.floor((pop >= 0 ? pop : Math.max(nextOf(g), 0)) / 10);
+  return `<div class="screen">${backBtn}<span class="gt">${g.name}</span><div class="gmid"><div style="display:grid;gap:9px;justify-items:center">${cellsOf(g, pop)}${chunks(Math.ceil(g.cells.length / 10), at)}</div>${pbtn('붙이기', {act: 'stick'})}</div></div>`;
+}
+// 달력판(K2): 앱 칸 모양의 큰 오늘 칸을 세로 가운데에, 크라운으로 내리면 이번 달. 달력의 오늘은 위젯처럼 살구색 테두리
+function dayCell(g, d) { const v = g.days[d], c = [d < g.start ? 'out' : '', d > T ? 'fut' : '', d === T ? 'today' : ''].join(' ');
+  return `<span class="day ${c}" data-act="day" data-d="${d}"${v ? ` style="background-image:url(${STK[g.s]})"` : ''}>${v ? '' : d}</span>`; }
+const monthGrid = g => `<div class="wk">${[...'일월화수목금토'].map(x => `<span>${x}</span>`).join('')}</div><div class="days">${'<span></span>'.repeat(MON0)}${Array.from({length: 31}, (_, i) => dayCell(g, i + 1)).join('')}</div>`;
+function calScr(S, gi, {scroll = 0} = {}) {
+  const g = S.goals[gi], v = g.days[T], off = scroll ? `margin-top:-${scroll}px;` : '';
+  return `<div class="screen">${backBtn}<span class="gt">${g.name}</span><div class="cal" style="top:40px"><div class="calin" style="padding-top:52px;${off}"><span class="cell lg ${v ? '' : 'next'}" data-act="today"${v ? ` style="background-image:url(${STK[g.s]})"` : ''}>${v ? '' : T}</span><span class="sub">오늘, 10월 ${T}일</span><span class="mon" style="margin-top:30px">10월</span>${monthGrid(g)}</div></div></div>`;
+}
+
+function confirmScr(S, gi) {
+  const g = S.goals[gi];
+  return `<div class="screen">${backBtn}<div class="cf2"><img class="stk" src="${STK[g.s]}" alt=""><span class="gname">이 판을 완성할까요?</span><span class="sub">완성한 뒤에도 칸과 기록은 고칠 수 있어요</span>${pbtn('완성하기', {w: 140, h: 40, act: 'finish'})}${pbtn('취소', {w: 140, h: 40, variant: 'secondary', act: 'back'})}</div></div>`;
+}
+// 마지막으로 붙인 판: 판의 실제 칸 수만큼 작은 칸. 붙인 칸은 목표 색
+function boardMini(g) {
+  const q = Pix();
+  if (g.kind === 'cal') { // 이번 달: 붙인 날은 목표 색, 앞날과 시작 전은 어둡게
+    q.rect(0, 0, 15, 11, '#');
+    for (let d = 1; d <= 31; d++) { const k = MON0 + d - 1; q.put(1 + (k % 7) * 2, 1 + Math.floor(k / 7) * 2, g.days[d] ? GC[g.s] : d > T || d < g.start ? '#5f7a52' : 'g'); }
+    return q.svg(3);
+  }
+  const n = g.cells.length, cols = n <= 10 ? 5 : 10, rows = Math.ceil(n / cols);
+  q.rect(0, 0, cols * 2 + 1, rows * 2 + 1, '#');
+  for (let i = 0; i < n; i++) q.put(1 + (i % cols) * 2, 1 + Math.floor(i / cols) * 2, g.cells[i] ? GC[g.s] : 'g');
+  return q.svg(Math.max(2, Math.min(4, Math.floor(30 / (rows * 2 + 1)))));
+}
+function recentOf(S, pop) {
+  const g = S.goals.find(x => x.s === S.recent);
+  return `<div class="recent ${pop ? 'pop' : ''}" data-recent="${g ? g.s : ''}">${g ? `<img src="${STK[g.s]}" alt="">${boardMini(g)}` : ''}</div>`;
+}
+const R1 = d => d > 3 ? {t: 'translate(24px,-15px)', o: 0, f: .7} : {t: `translate(${8 * d}px,${-5 * d}px)`, o: 1, f: 1 - .12 * d};
+function shelfSvg(fill, bv = 'x3') { const q = Pix(); q.rect(0, 0, 31, 19, '#'); q.rect(1, 1, 29, 8, 'w'); q.rect(1, 10, 29, 8, 'w');
+  for (let j = 0; j < fill; j++) { const [x, y] = slotPos(j, bv); bundleOf(q, x, y, bv); } return q.svg(3); }
+function cardStyle(i, idx, k) { const d = ((i - idx) % k + k) % k, s = R1(d); return `transform:${s.t};opacity:${s.o};filter:brightness(${s.f});z-index:${10 - d}`; }
+const boxLabel = idx => idx === 0 ? '지금 채우는 보관함이에요' : '다 채운 보관함이에요';
+function charScr(S, {idx = 0, label = null, pop = false, back = true, skip = false} = {}) {
+  const list = shelvesM(S.c, S.m, S.bv);
+  return `<div class="screen c3">${back ? backBtn : ''}<div class="floor"></div><div class="deck side">${list.map((f, i) => `<div class="card" data-i="${i}" style="${cardStyle(i, idx, list.length)}">${shelfSvg(f, S.bv)}</div>`).join('')}</div><div class="ch">${charOf(S, 2.4)}</div><span class="decklabel">${label || boxLabel(idx)}</span>${recentOf(S, pop)}${skip ? `<span class="skipb">${pbtn('건너뛰기', {w: 104, h: 32, variant: 'secondary', act: 'skip'})}</span>` : '<span class="hint">크라운</span>'}</div>`;
+}
+
+// ---- 붙일 때마다: 차곡이 화면에서 그 목표 색 블록 하나가 위에서 떨어져 머리 위에 쌓인다. 넷째 블록이면 걸어가서 세 개를 보관함에 넣는다 ----
+const wait = ms => new Promise(r => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : ms));
+async function fly(box, svg, from, to, scale = 1) {
+  const scr = box.querySelector('.screen'), o = scr.getBoundingClientRect(), el = document.createElement('div');
+  el.className = 'fly'; el.innerHTML = svg; scr.appendChild(el);
+  el.style.transform = `translate(${from.left - o.left}px,${from.top - o.top}px)`; el.getBoundingClientRect();
+  el.style.transform = `translate(${to.left - o.left}px,${to.top - o.top}px) scale(${scale})`;
+  await wait(650); el.remove();
+}
+// box: .watch, S: 상태(S.recent = 방금 붙인 목표), draw(label, pop): 다시 그리기, alive(): 건너뛰면 false
+async function playDrop(box, S, draw, label, alive = () => true) {
+  const step = async ms => { await wait(ms); if (!alive()) throw 'skip'; };
+  draw(label, true); await step(450);
+  const scr = box.querySelector('.screen'), o = scr.getBoundingClientRect(), ch = box.querySelector('.ch'), before = ch.querySelector('svg').getBoundingClientRect();
+  const h0 = S.heads.length, col = GC[S.recent];
+  S.c++; S.heads.push(col); S.face = 'surprised';
+  const nh = +charOf(S, 2.4).match(/height="([\d.]+)"/)[1];
+  const p = Pix(); board(p, 0, 0, col);
+  const land = {left: before.left + BX[h0 % 3] * 2.4, top: before.bottom - nh};
+  const el = document.createElement('div'); el.className = 'fly drop'; el.innerHTML = p.svg(2.4); scr.appendChild(el);
+  el.style.transform = `translate(${land.left - o.left}px,-30px)`; el.getBoundingClientRect();
+  el.style.transform = `translate(${land.left - o.left}px,${land.top - o.top}px)`;
+  await step(520); el.remove();
+  S.face = 'excited'; ch.innerHTML = charOf(S, 2.4); ch.classList.add('land'); await step(130); ch.classList.remove('land');
+  if (S.heads.length < storeAt(S.m)) { await step(300); S.face = 'smile'; draw(label); return false; }
+  await step(600);
+  // 보관함 앞까지 걸어가기
+  const front = box.querySelector('.card[data-i="0"]'), r = front.getBoundingClientRect(), cr = ch.getBoundingClientRect();
+  const list0 = shelvesM(S.c - 1, S.m, S.bv).length, list = shelvesM(S.c, S.m, S.bv), i = list[0] - 1, [sx, sy] = slotPos(i, S.bv);
+  // 꽂을 칸 바로 아래까지 걸어간다(화면 오른쪽 끝은 넘지 않는다). 걷는 시간은 거리에 맞춘다
+  const tx = r.left + sx * 3 + 4, maxC = o.right - 14 - cr.width / 2;
+  const dx = Math.round(Math.min(tx, maxC) - (cr.left + cr.width / 2)), dur = Math.max(450, Math.abs(dx) * 10);
+  ch.style.transitionDuration = dur + 'ms'; ch.classList.add('walk'); ch.style.transform = `translateX(${dx}px)`; await step(dur + 30); ch.classList.remove('walk');
+  // 머리 위 세 개를 묶어 보관함 칸에 넣기
+  const hr = ch.querySelector('svg').getBoundingClientRect(), q = Pix(); bundleOf(q, 0, 0, S.bv);
+  S.heads = S.heads.slice(3); S.face = 'grin'; ch.innerHTML = charOf(S, 2.4);
+  box.querySelector('.decklabel').textContent = '세 개를 보관함에 넣었어요';
+  await fly(box, q.svg(3), {left: hr.left + 10, top: hr.top - 8}, {left: r.left + sx * 3, top: r.top + sy * 3});
+  if (!alive()) throw 'skip';
+  if (list.length === list0) { front.innerHTML = shelfSvg(list[0], S.bv); front.classList.add('bump'); await step(160); front.classList.remove('bump'); }
+  await step(250);
+  // 제자리로 돌아오기
+  ch.classList.add('walk'); ch.style.transform = 'translateX(0)'; await step(dur + 30); ch.classList.remove('walk');
+  S.face = 'smile'; draw('세 개를 보관함에 넣었어요');
+  return true;
+}
+// 건너뛸 때 쓰는 결과: 블록 하나를 쌓고, 보관할 때가 되면 세 개를 넣는다
+function applyDrop(S) { S.c++; S.heads.push(GC[S.recent]); if (S.heads.length >= storeAt(S.m)) S.heads = S.heads.slice(3); S.face = 'smile'; }
+const stuckLabel = g => `${g.name} 스티커를 붙였어요`;
+
+// ---- 1. 흐름 ----
+let s0;
+function renderStory() {
+  s0 = mkState(2);
+  const s1 = clone(s0); s1.goals[1].cells[17] = 't'; s1.recent = 'walk'; s1.face = 'smile';
+  $('story-a').innerHTML = [
+    fig(homeScr(s0), '① 첫 화면. 오늘 붙인 목표는 줄 바탕이 민트. 목표를 누른다'), arrow,
+    fig(goalScr(s0, 1), '② 그 목표의 판. 다음 빈칸이 든 10칸과 [붙이기]. 빈칸 아무 데를 눌러도 다음 빈칸에 붙는다'), arrow,
+    fig(goalScr(s1, 1, 17), '③ 붙이면 칸이 차고 톡'), arrow,
+    fig('<span class="live">움직여요</span>', '④ 바로 차곡이 화면으로 넘어가 블록 하나가 머리 위에 떨어진다. 보관할 때가 되면 차곡이가 걸어가 세 개를 보관함에 넣는다. 아래 [건너뛰기]로 바로 판에 돌아갈 수 있다', 'loop'), arrow,
+    fig(goalScr(s1, 1), '⑤ 1.5초쯤 뒤 판으로 돌아온다. 또 붙일 수 있고, 오늘 붙인 칸을 다시 누르면 뗀다(블록은 그대로)'),
+  ].join('');
+  const s2 = clone(s0); s2.goals[2].cells[9] = 't'; s2.recent = 'mug'; s2.c++; s2.heads.push(GC.mug); s2.face = 'excited';
+  const s4 = clone(s2); s4.goals.splice(2, 1); s4.recent = 'walk'; s4.face = 'smile';
+  $('story-b').innerHTML = [
+    fig(goalScr(s0, 2), '⑥ 마지막 한 칸이 남은 판에서 [붙이기]'), arrow,
+    fig(confirmScr(s0, 2), '⑦ 완성할지 묻는다(앱과 같음). 취소하면 붙이지 않는다'), arrow,
+    fig(charScr(s2, {label: '물 마시기 판을 완성했어요'}), '⑧ 다른 스티커처럼 블록이 하나 떨어지고, 판을 완성했다고 알려 준다'), arrow,
+    fig(homeScr(s4), '⑨ 첫 화면으로. 완성한 목표는 목록에서 빠진다'),
+  ].join('');
+  const c2 = clone(s0); c2.goals[3].days[T] = 't'; c2.recent = 'note'; c2.c++; c2.heads.push(GC.note); c2.face = 'smile';
+  $('story-d').innerHTML = [
+    fig(goalScr(s0, 3), '⑩ 앱 칸 모양의 큰 오늘 칸. 누르면 붙고, 다시 누르면 뗀다'), arrow,
+    fig(charScr(c2, {label: stuckLabel(c2.goals[3])}), '⑪ 적립판처럼 차곡이 화면으로 넘어가 블록이 떨어진다'), arrow,
+    fig(goalScr(c2, 3, -1, 150), '⑫ 크라운으로 내리면 이번 달. 지난 빈 날을 누르면 그날에 붙는다. 앞날과 시작 전은 흐리다'),
+  ].join('');
+  const s5 = mkState(40);
+  $('story-c').innerHTML = [
+    fig(homeScr(s5, {tapChar: true}), '⑬ 첫 화면에서 차곡이를 누른다'), arrow,
+    fig(charScr(s5), '⑭ 바닥 선 위에 차곡이와 지금 채우는 보관함, 뒤로 겹친 다 채운 보관함, 아래에 마지막으로 붙인 판'), arrow,
+    fig(charScr(s5, {idx: 1}), '⑮ 크라운을 돌리면 맨 앞 보관함이 빠져 맨 뒤로 가고 다음 보관함이 앞으로'),
+  ].join('');
+}
+// 저절로 되풀이: 산책을 두 번 붙인다. 두 번째에 보관할 때가 된다. m이 없으면 지금 고른 안
+function loopOn(id, mm, bb) {
+  const box = $(id), badge = box.innerHTML;
+  (async () => {
+    for (;;) {
+      const m = mm || SM, b = bb || BV, S = mkState(b === 'x3' ? 1 : 22, m, b); S.recent = 'walk'; const w = S.goals[1];
+      const draw = (label, pop) => { box.innerHTML = badge + charScr(S, {label, pop, back: false}); };
+      draw(null); await wait(1200);
+      w.cells[nextOf(w)] = 't'; await playDrop(box, S, draw, stuckLabel(w)); await wait(1400);
+      w.cells[nextOf(w)] = 't'; await playDrop(box, S, draw, stuckLabel(w)); await wait(2200);
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    }
+  })();
+}
+const BOXES = [
+  {id: 'x1', code: 'X1', title: '칸 하나에 얇은 묶음 둘을 나란히', tags: ['추천'],
+    pro: ['보관함 모양과 크기가 지금 그대로라 화면 배치를 바꾸지 않아도 됩니다.', '묶음이 세로로 꽂혀 차곡차곡 쌓이는 느낌이 납니다.'],
+    con: ['묶음이 얇아져 묶음 안의 세 줄 무늬가 한 줄로 보입니다.']},
+  {id: 'x2', code: 'X2', title: '칸 하나에 납작한 묶음 둘을 위아래로', tags: [],
+    pro: ['묶음이 넓어 무늬가 잘 보입니다.', '위아래로 포개져 쌓는다는 느낌이 납니다.'],
+    con: ['칸 안이 꽉 차 묶음 사이 틈이 거의 없어 답답해 보입니다.']},
+  {id: 'x3', code: 'X3', title: '지금 그대로(칸마다 묶음 하나, 24개)', tags: ['비교용'],
+    pro: ['묶음이 가장 크고 또렷합니다.'],
+    con: ['보관함 하나가 스티커 24개면 차, 하루에 두세 개면 열흘 안팎입니다. 크라운으로 넘길 보관함이 빨리 늘어납니다.']},
+];
+$('boxes').innerHTML = BOXES.map(o => { const n = BOXN(o.id) * 3, half = mkState(o.id === 'x3' ? 15 : 27, 'b', o.id), full = mkState(n, 'b', o.id);
+  return `<section class="opt" id="card-${o.id}">
+  <div class="head"><span class="code">${o.code}</span><h2>${esc(o.title)}</h2>${o.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+  <div class="watches">${fig(charScr(half, {back: false}), `블록 ${half.c}개(묶음 ${Math.floor(half.c / 3)}개)`)}${arrow}${fig(charScr(full, {back: false}), `블록 ${n}개면 보관함 하나가 가득`)}${arrow}${fig('<span class="live">움직여요</span>', '셋째 블록이 오면 묶음을 칸에 넣는다', 'loop-' + o.id)}</div>
+  <dl><div><dt>좋은 점</dt><dd><ul>${o.pro.map(x => `<li>${esc(x)}</li>`).join('')}</ul></dd></div><div><dt>걸리는 점</dt><dd><ul>${o.con.map(x => `<li>${esc(x)}</li>`).join('')}</ul></dd></div></dl>
+  <button type="button" class="btn" data-boxpick="${o.id}" aria-pressed="false">${o.code}로 하기</button>
+  <textarea data-k="note-wg-${o.id}" aria-label="${o.code} 메모" placeholder="${o.code} 메모"></textarea>
+  <span class="state" id="state-note-wg-${o.id}"></span>
+</section>`; }).join('');
+renderStory();
+for (const o of BOXES) loopOn('loop-' + o.id, 'b', o.id);
+loopOn('loop');
+
+// ---- 2. 직접 눌러 보기 ----
+const P = {};
+const CAP = {home: '첫 화면', goal: '목표 판', confirm: '완성 확인', char: '차곡이 화면'};
+function startProto(c) { if (c === 'pre') c = SM === 'a' ? 3 : 2; P.run = (P.run || 0) + 1; Object.assign(P, {S: mkState(+c), scr: 'home', g: 0, pop: -1, idx: 0, label: null, busy: false, auto: false, fin: null, toast: '', kept: ''}); show(); }
+function show(pop = false) {
+  const sc = $('proto').querySelector('.cal, .list'), keep = sc && P.kept === P.scr + P.g ? sc.scrollTop : 0;
+  $('proto').innerHTML = P.scr === 'home' ? homeScr(P.S) : P.scr === 'goal' ? goalScr(P.S, P.g, P.pop) : P.scr === 'confirm' ? confirmScr(P.S, P.g) : charScr(P.S, {idx: P.idx, label: P.label, pop, skip: P.auto});
+  $('pcap').textContent = `지금 화면: ${CAP[P.scr]}`;
+  P.kept = P.scr + P.g; const ns = $('proto').querySelector('.cal, .list'); if (ns) ns.scrollTop = keep;
+  if (P.toast) { $('proto').querySelector('.screen').insertAdjacentHTML('beforeend', `<span class="toast">${P.toast}</span>`); }
+}
+let toastTimer = 0;
+function toast(t) { P.toast = t; show(); clearTimeout(toastTimer); toastTimer = setTimeout(() => { P.toast = ''; show(); }, 1600); }
+// 붙인 뒤: 차곡이 화면으로 넘어가 블록을 떨어뜨리고, 판(완성이면 첫 화면)으로 돌아온다. [건너뛰기]면 결과만 남기고 바로 돌아온다
+async function afterStick(g, done = false) {
+  P.S.recent = g.s;
+  const fin = clone(P.S); applyDrop(fin);
+  if (done) { fin.goals = fin.goals.filter(x => x.s !== g.s); fin.recent = fin.goals[0] ? fin.goals[0].s : null; }
+  const run = ++P.run, alive = () => run === P.run;
+  Object.assign(P, {busy: true, auto: true, fin, back: done ? 'home' : 'goal'});
+  try {
+    await wait(320); if (!alive()) return;
+    P.S = clone(P.S); Object.assign(P, {scr: 'char', idx: 0, pop: -1});
+    const stored = await playDrop($('proto'), P.S, (l, pop) => { if (alive()) { P.label = l; show(pop); } }, done ? `${g.name} 판을 완성했어요` : stuckLabel(g), alive);
+    await wait(stored ? 900 : 1500); if (!alive()) return;
+    finishAuto();
+  } catch (e) { if (e !== 'skip') throw e; }
+}
+function finishAuto() { Object.assign(P, {S: P.fin, scr: P.back, label: null, busy: false, auto: false, fin: null}); show(); }
+function skipNow() { if (!P.auto) return; P.run++; finishAuto(); }
+function stickCount(g) { // 다음 빈칸에 붙인다. 마지막 빈칸이면 완성 확인
+  const nx = nextOf(g); if (nx < 0) return;
+  if (leftOf(g) === 1) { P.scr = 'confirm'; show(); return; }
+  g.cells[nx] = 't'; P.S.face = 'smile'; P.pop = nx; show(); afterStick(g);
+}
+function rotate(dir) {
+  if (P.scr !== 'char' || P.busy) return; const k = shelvesM(P.S.c, P.S.m, P.S.bv).length; if (k < 2) return;
+  const cards = [...$('proto').querySelectorAll('.card')];
+  const lay = () => { for (const cd of cards) cd.style.cssText = cardStyle(+cd.dataset.i, P.idx, k); $('proto').querySelector('.decklabel').textContent = boxLabel(P.idx); };
+  P.label = null;
+  if (dir > 0) { const front = cards.find(cd => +cd.dataset.i === P.idx); front.style.transform = 'translate(0,40px)'; front.style.opacity = 0;
+    P.busy = true; wait(220).then(() => { P.idx = (P.idx + 1) % k; lay(); P.busy = false; }); }
+  else { P.idx = (P.idx - 1 + k) % k; lay(); }
+}
+$('proto').addEventListener('click', e => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  if (a.dataset.act === 'skip') { skipNow(); return; }
+  if (P.busy) return;
+  const act = a.dataset.act, S = P.S;
+  if (act === 'goal') Object.assign(P, {scr: 'goal', g: +a.dataset.g, pop: -1, toast: ''});
+  else if (act === 'char') Object.assign(P, {scr: 'char', idx: 0, label: null});
+  else if (act === 'back') { P.scr = P.scr === 'confirm' ? 'goal' : 'home'; P.pop = -1; }
+  else if (act === 'stick') { stickCount(S.goals[P.g]); return; }
+  else if (act === 'cell') { const g = S.goals[P.g], i = +a.dataset.i, v = g.cells[i];
+    if (!v) { stickCount(g); return; }
+    if (v === 't') { g.cells[i] = null; P.pop = -1; }
+    else { toast('지난 칸은 폰에서 고칠 수 있어요'); return; } }
+  else if (act === 'today' || act === 'day') { const g = S.goals[P.g], d = act === 'today' ? T : +a.dataset.d;
+    if (d < g.start || d > T) return;
+    const v = g.days[d];
+    if (!v) { g.days[d] = d === T ? 't' : 'p'; S.face = 'smile'; show(); afterStick(g); return; }
+    if (v === 't') delete g.days[d];
+    else { toast('지난 날은 폰에서 고칠 수 있어요'); return; } }
+  else if (act === 'finish') { const g = S.goals[P.g]; g.cells[nextOf(g)] = 't'; P.scr = 'goal'; show(); afterStick(g, true); return; }
+  show();
+});
+let wheelAt = 0;
+$('proto').addEventListener('wheel', e => { if (P.scr !== 'char') return; e.preventDefault(); const now = Date.now(); if (now - wheelAt < 300) return; wheelAt = now; rotate(Math.sign(e.deltaY)); }, {passive: false});
+let y0 = null;
+$('proto').addEventListener('pointerdown', e => { y0 = P.scr === 'char' ? e.clientY : null; });
+$('proto').addEventListener('pointerup', e => { if (y0 === null) return; const dy = e.clientY - y0; y0 = null; if (Math.abs(dy) > 20) rotate(dy < 0 ? 1 : -1); });
+document.addEventListener('click', e => {
+  const s = e.target.closest('[data-start]'); if (s) startProto(s.dataset.start);
+  const r = e.target.closest('[data-rot]'); if (r) rotate(+r.dataset.rot);
+});
+startProto(2);
+
+// ---- 고르기와 메모 저장 ----
+const state = {pick: '', box: '', notes: {}};
+const LS = 'chagok-watch-growth-b13';
+try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); if (l.pick) state.pick = l.pick; if (l.box) state.box = l.box; if (l.notes) Object.assign(state.notes, l.notes); } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+function paint() {
+  $('pick').setAttribute('aria-pressed', String(state.pick === 'ok'));
+  for (const o of BOXES) { $(`card-${o.id}`).classList.toggle('ok', state.box === o.id); document.querySelector(`[data-boxpick="${o.id}"]`).setAttribute('aria-pressed', String(state.box === o.id)); }
+  const sc = (BOXES.find(o => o.id === state.box) || {}).code;
+  for (const t of document.querySelectorAll('textarea[data-k]')) { const x = state.notes[t.dataset.k] || ''; if (document.activeElement !== t && t.value !== x) t.value = x; }
+  const n = Object.values(state.notes).filter(x => x && x.trim()).length;
+  $('summary').textContent = `보관함 모양은 ${sc || '아직'}, 흐름은 ${state.pick === 'ok' ? '정했어요' : '아직'}` + (n ? `, 메모 ${n}개` : '');
+}
+function setStatus(k, t) { const el = $(`state-${k}`); if (el) el.textContent = t; }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+async function persist(k) {
+  saveLocal();
+  if (!db) { setStatus(k, '이 브라우저에만 저장됨'); return; }
+  if (writing[k]) { queued[k] = true; return; }
+  writing[k] = true; setStatus(k, '저장 중…');
+  const at = new Date().toISOString();
+  try {
+    await db.doc(`review/${k}`).set(k === 'choice-wg-b13' ? {value: state.pick, updatedAt: at} : k === 'choice-wg-box' ? {value: state.box, updatedAt: at} : {note: state.notes[k] || '', updatedAt: at});
+    setStatus(k, '저장됨');
+  } catch (e) { setStatus(k, '저장하지 못했어요. 메모까지 복사로 보내 주세요.'); }
+  finally { writing[k] = false; if (queued[k]) { queued[k] = false; persist(k); } }
+}
+$('pick').addEventListener('click', () => { state.pick = state.pick === 'ok' ? '' : 'ok'; paint(); persist('choice-wg-b13'); });
+function applyBox() { const v = state.box || 'x1'; if (v === BV) return; BV = v; renderStory(); startProto(2); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-boxpick]'); if (!b) return;
+  state.box = state.box === b.dataset.boxpick ? '' : b.dataset.boxpick; paint(); persist('choice-wg-box'); applyBox(); });
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-k]'); if (!t) return;
+  const k = t.dataset.k; state.notes[k] = t.value; setStatus(k, '적는 중…'); paint();
+  clearTimeout(timers[k]); timers[k] = setTimeout(() => persist(k), 800);
+});
+$('copy').addEventListener('click', () => {
+  const text = '워치 성장 13판: ' + $('summary').textContent + '\n' + Object.entries(state.notes).filter(([, v]) => v && v.trim()).map(([k, v]) => `${k}: ${v.trim()}`).join('\n');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(() => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); }, fallback); } catch (err) { fallback(); }
+});
+applyBox();
+paint();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장돼요. 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id === 'choice-wg-b13') { if (typeof v.value === 'string') state.pick = v.value; continue; }
+      if (d.id === 'choice-wg-box') { if (typeof v.value === 'string') { state.box = v.value; applyBox(); } continue; }
+      if (!/^note-wg-(b13-(flow|proto|all)|x[1-3])$/.test(d.id)) continue;
+      const t = document.activeElement; state.notes[d.id] = t && t.dataset && t.dataset.k === d.id ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요. 메모까지 복사로 보내 주세요'; });
+})();
+</script>
