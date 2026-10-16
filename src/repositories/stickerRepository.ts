@@ -139,3 +139,4 @@ export async function countStickers(goalId: string): Promise<number> {
   );
   return row?.n ?? 0;
 }
+

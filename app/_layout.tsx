@@ -19,6 +19,7 @@ import { pushOnce } from '../src/sync/push';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
 import { startWidgetSync } from '../src/widgets/syncWidgets';
+import { startWatchSync } from '../src/watch/syncWatch';
 
 // OS 스플래시(윤곽선만 있는 차곡이)를 앱이 그릴 때까지 잡아 둔다. 같은 자리의 애니메이션 첫 장면이
 // 그려지는 순간 페이드 없이 내려서 끊김 없이 이어지게 한다 (docs/design/character/README.md 「스플래시」).
@@ -74,10 +75,12 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const finishSplash = useCallback(() => setSplashDone(true), []);
   const handOff = useCallback(() => { SplashScreen.hideAsync().catch(() => {}); }, []);
-  // 위젯에서 누른 스티커를 기록에 반영하고 위젯을 맞춘다 (위젯 설계 「위젯에서 붙이기」). DB 준비가 끝난 뒤.
+  // 위젯과 워치에서 누른 스티커를 기록에 반영하고 위젯과 워치를 맞춘다 (위젯 설계 「위젯에서 붙이기」, PRD 4.14). DB 준비가 끝난 뒤.
   useEffect(() => {
     if (!splashDone) return;
-    return startWidgetSync();
+    const stopWidgets = startWidgetSync();
+    const stopWatch = startWatchSync();
+    return () => { stopWidgets(); stopWatch(); };
   }, [splashDone]);
   // 구매를 로그인한 계정에 묶는다 — 다른 기기에서 [구매 복원]하면 되살아난다 (2026-10-13).
   useEffect(() => {

@@ -178,3 +178,21 @@ describe('체험이 끝난 묶음 (2026-10-08)', () => {
     expect(hasPlaceLink(ChagokTally({ ...shared, goals: { run: tally }, requests: [] } as unknown as TallyWidgetProps, env(t(7, 9))))).toBe(true);
   });
 });
+
+describe('지금 붙일 칸 표시 (2026-10-16 결정 6 T1: 앱처럼 네 귀퉁이 괄호)', () => {
+  const props = (root: unknown) => JSON.stringify(all(root).map((e) => e.props));
+  const rects = (root: unknown) => all(root).filter((e) => e.type === 'Rectangle').length;
+  it('달력 위젯의 오늘 빈 칸은 괄호, 살구 테두리 없음', () => {
+    const days = Array.from({ length: 31 }, (_, i) => (i < 6 ? 'missed' : 'future'));
+    const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
+    const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [] } as unknown as MonthWidgetProps, env(t(7, 9)));
+    expect(props(root)).not.toContain('#FD855F');
+    expect(rects(root)).toBe(8);
+  });
+  it('적립판 위젯의 다음 빈칸은 괄호, 살구 테두리 없음', () => {
+    const tally = { ...card, from: 1, cells: ['filled', 'empty', 'empty'], todaySlots: [], removableSlots: [], remaining: 10 };
+    const root = ChagokTally({ ...shared, goals: { run: tally }, requests: [] } as unknown as TallyWidgetProps, env(t(7, 9)));
+    expect(props(root)).not.toContain('#FD855F');
+    expect(rects(root)).toBe(8);
+  });
+});

@@ -126,3 +126,37 @@ describe('isWidgetRequest', () => {
     expect(isWidgetRequest(null)).toBe(false);
   });
 });
+
+describe('planRequest: 워치 완성 확인 (워치 설계 「마지막 칸」)', () => {
+  it('complete가 있으면 적립판 마지막 칸에 붙이고 완성한다', () => {
+    const stickers = [0, 1, 2, 3].map((i) => st(`s${i}`, t(2026, 10, 5), i));
+    expect(planRequest(tally(), stickers, none, req({ complete: true })))
+      .toEqual({ action: 'place', slotIndex: 4, placedAt: t(2026, 10, 6, 9), complete: true });
+  });
+
+  it('complete가 없으면 지금처럼 마지막 칸은 건너뛴다', () => {
+    const stickers = [0, 1, 2, 3].map((i) => st(`s${i}`, t(2026, 10, 5), i));
+    expect(planRequest(tally(), stickers, none, req())).toEqual({ action: 'skip', reason: 'last' });
+  });
+
+  it('그사이 칸을 늘려 마지막이 아니면 완성하지 않고 붙이기만 한다 (Review Focus 1)', () => {
+    const stickers = [0, 1, 2, 3].map((i) => st(`s${i}`, t(2026, 10, 5), i));
+    expect(planRequest(tally({ totalSlots: 10 }), stickers, none, req({ complete: true })))
+      .toEqual({ action: 'place', slotIndex: 4, placedAt: t(2026, 10, 6, 9) });
+  });
+
+  it('종료일 있는 달력판의 마지막 날도 complete로 완성한다', () => {
+    const g = goal({ endDate: '2026-10-06' });
+    const stickers = [1, 2, 3, 4, 5].map((d) => st(`s${d}`, t(2026, 10, d), d - 1));
+    expect(planRequest(g, stickers, none, req({ complete: true })))
+      .toEqual({ action: 'place', slotIndex: 5, placedAt: t(2026, 10, 6, 9), complete: true });
+  });
+});
+
+describe('isWidgetRequest: complete', () => {
+  it('complete는 true만 받는다 (Review Focus 5)', () => {
+    expect(isWidgetRequest(req({ complete: true }))).toBe(true);
+    expect(isWidgetRequest({ ...req(), complete: 'true' })).toBe(false);
+    expect(isWidgetRequest({ ...req(), complete: false })).toBe(false);
+  });
+});

@@ -5,6 +5,7 @@
   },
   "build": {
     "development": {
+      "node": "24.18.0",
       "developmentClient": true,
       "distribution": "internal"
     },
@@ -15,9 +16,11 @@
       }
     },
     "preview": {
+      "node": "24.18.0",
       "distribution": "internal"
     },
     "production": {
+      "node": "24.18.0",
       "autoIncrement": true
     }
   },

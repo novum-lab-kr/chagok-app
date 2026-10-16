@@ -13,7 +13,8 @@ const MAX_FAILURES = 3;
 /** 요청 id별 실패 횟수. 앱을 다시 켜면 처음부터 센다. */
 const failures = new Map<string, number>();
 
-async function readHandledIds(): Promise<string[]> {
+/** 처리한 위젯과 워치 요청 id (최근 200개). 워치 스냅샷에도 실어 보낸다 (PRD 4.14). */
+export async function readHandledRequestIds(): Promise<string[]> {
   try {
     const parsed: unknown = JSON.parse((await getSetting('widgetHandledRequests')) ?? '[]');
     return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
@@ -31,10 +32,19 @@ async function readHandledIds(): Promise<string[]> {
  * 되돌리기는 id를 먼저 남긴 뒤 떼고(앱이 꺼지면 되돌리기만 사라지고 기록은 남는다), 나머지는 처리한 뒤에 남긴다.
  * 같은 요청이 앱을 켠 동안 세 번 실패하면 그 탭은 버리고(처리한 것으로 남기고) 뒤 요청으로 넘어간다.
  */
-export async function applyWidgetRequests(requests: readonly WidgetRequest[]): Promise<{ handled: string[]; changed: boolean }> {
+export function applyWidgetRequests(requests: readonly WidgetRequest[]): Promise<{ handled: string[]; changed: boolean }> {
+  // 위젯 동기화와 워치 동기화가 따로 불러도 한 번에 하나씩 — 처리한 id 목록을 서로 덮어쓰지 않게 (PRD 4.14).
+  const run = queue.then(() => applyInOrder(requests));
+  queue = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+let queue: Promise<void> = Promise.resolve();
+
+async function applyInOrder(requests: readonly WidgetRequest[]): Promise<{ handled: string[]; changed: boolean }> {
   const handled: string[] = [];
   let changed = false;
-  const done = await readHandledIds();
+  const done = await readHandledRequestIds();
   const remember = async (id: string) => {
     done.push(id);
     if (done.length > HANDLED_LIMIT) done.splice(0, done.length - HANDLED_LIMIT);
@@ -58,7 +68,7 @@ export async function applyWidgetRequests(requests: readonly WidgetRequest[]): P
       } else {
         // 기본 스티커 묶음의 체험이 끝났으면 붙이지 않는다. 위젯은 이미 앱 열기 링크로 바뀌어 있다 (2026-10-08).
         if (plan.action === 'place' && goal && (await checkPlaceGate(goal, req.at)).ok) {
-          await placeSticker(goal.id, plan.slotIndex, normalizeStickerId(goal.defaultStickerId), { id: req.id, placedAt: plan.placedAt, pressedAt: req.at });
+          await placeSticker(goal.id, plan.slotIndex, normalizeStickerId(goal.defaultStickerId), { id: req.id, placedAt: plan.placedAt, pressedAt: req.at, complete: plan.complete });
           changed = true;
         }
         await remember(req.id);

@@ -72,6 +72,15 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
   ([PITFALLS](PITFALLS.md)).
 - Metro를 다시 띄우면 폰 앱도 다시 불러와져 마지막 화면부터 열린다. 그때 이상하게 보이면 재시작 직후인지 먼저 본다.
 
+**실기기 Apple Watch** (2026-10-16 안내, 아직 해 보지 않음)
+
+워치 앱은 폰 앱 개발 빌드 안에 같이 들어가고, 워치에는 iPhone의 Watch 앱으로 설치된다. 워치 앱은 Metro를 쓰지 않는다.
+
+1. **워치를 EAS 기기로 등록한다.** iPhone을 케이블로 Mac에 꽂고 Xcode → Window → Devices and Simulators에서 iPhone 아래 Apple Watch의 Identifier(UDID)를 복사한다. 사용자 터미널에서 `npx eas-cli@latest device:create` → 직접 입력을 고르고 UDID와 이름을 넣는다.
+2. **개발 빌드를 다시 만든다.** 사용자 터미널에서 `npx eas-cli@latest build --profile development --platform ios`. 새 번들 id 둘(`com.novum.chagok.watch`, `com.novum.chagok.watch.widgets`)과 App Group(`group.com.novum.chagok.watch`)을 Apple에 등록할지 물으면 예. 프로필에 넣을 기기를 물으면 iPhone과 Watch를 둘 다 고른다.
+3. **설치한다.** 빌드 링크로 iPhone에 설치하고(기록은 그대로), iPhone Watch 앱 → 나의 시계 → 「사용 가능한 앱」에서 차곡차곡을 설치한다(자동 설치가 켜져 있으면 저절로 깔린다).
+4. **컴플리케이션:** 워치 시계 화면을 길게 누름 → 편집 → 컴플리케이션 칸 → 차곡이. 긴 칸이 있는 시계 화면(모듈러, 인포그래프 모듈러 등)에서만 고를 수 있다.
+
 ---
 
 ## 방법 1 — 실제 폰 (권장, 설치 거의 없음)
@@ -231,6 +240,22 @@ xcrun simctl list devices available   # 기기 목록이 나오면 성공
 그다음 Expo에서 `i`를 누르거나 `npx expo start --go --ios`로 다시 시작한다.
 
 **햅틱은 시뮬레이터에서 확인할 수 없다.** 그 항목만은 실기기가 필요하다.
+
+### 워치 앱 (2026-10-16~)
+
+워치 앱은 `targets/watch`(SwiftUI, `@bacons/apple-targets`)에 있고 prebuild 때 `ios/`에 `ChagokWatch` 타깃으로 들어간다. 폰 앱 빌드에 `Watch/ChagokWatch.app`으로 함께 실린다.
+
+```sh
+npx expo prebuild --platform ios --clean
+cd ios && xcodebuild -workspace app.xcworkspace -scheme app -configuration Release \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath build/dd build
+sh scripts/test-watch-logic.sh   # 워치 Logic 테스트(맥에서 swiftc)
+```
+
+- 시뮬레이터는 iPhone과 Watch를 짝지어 쓴다(`xcrun simctl pair <워치 UDID> <폰 UDID>`). 워치 앱은 `xcrun simctl install <워치 UDID> ios/build/dd/Build/Products/Release-iphonesimulator/app.app/Watch/ChagokWatch.app`로 따로 넣는다.
+- 워치 시뮬레이터 런타임(watchOS 27, 약 3.8GB)은 2026-10-16에 설치했다.
+- 폰 → 워치 스냅샷은 온다. 워치 → 폰 붙임 요청은 폰 앱이 켜져 있을 때 왔다(2026-10-16, 시험 구현 때는 안 왔다).
+- 워치 화면을 누를 수 없으니 캡처는 실행 인자로 연다(시뮬레이터 빌드만): `xcrun simctl launch <워치> com.novum.chagok.watch -chagokRoute goal:<목표 id>`(그 밖에 `confirm:<id>`, `character`, `stick:<id>`).
 
 ---
 

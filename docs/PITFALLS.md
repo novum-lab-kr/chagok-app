@@ -24,6 +24,11 @@
 - **expo-widgets를 올릴 때:** `npx expo prebuild --platform ios --clean` → iOS 빌드 → 위젯 편집 「목표」 확인. prebuild가 `widget-goal: … 자리를 못 찾았어요`로 멈추면 expo-widgets가 만드는 Swift 모양이 바뀐 것이니 `plugins/widget-goal/patch.js`와 fixture를 맞춘다.
 - **expo-widgets 패치:** `patches/expo-widgets+57.0.22.patch`가 `WidgetUserInteraction.perform`의 `reloadTimelines(ofKind:)`를 뺀다(위젯 탭 속도). 버전을 올리면 `postinstall`의 patch-package가 실패하니, 새 버전 `ios/Widgets/AppIntent.swift`에서 같은 줄을 빼고 `npx patch-package expo-widgets`로 다시 만든다.
 - **폰트 연결은 콜드 스타트로 확인한다.** Fast Refresh로 반영하면 이전 글자 폭이 재사용되어 끝 글자가 잘려 보인다. 시트 화면도 Fast Refresh 뒤 화면 전체로 펼쳐져 보인 적이 있다 — 레이아웃은 앱을 새로 켜서 본다.
+- **워치 타깃이 있는 앱은 `-sdk iphonesimulator`로 빌드하지 않는다.** 워치 타깃까지 iOS용으로 빌드해 실패한다. `-destination 'generic/platform=iOS Simulator'`(또는 기기)만 준다(2026-10-16 워치 시험 구현).
+- **시뮬레이터에서 폰 앱을 다시 설치하면 워치 앱도 다시 넣는다.** 안 그러면 폰의 WCSession이 `appInstalled: NO`로 남아 스냅샷을 보내지 않는다(2026-10-16).
+- **Release 빌드는 RevenueCat 테스트 키를 보면 「Wrong API Key」 창을 띄우고 앱을 닫는다.** 시뮬레이터에서 Release로 확인할 때는 `EXPO_PUBLIC_REVENUECAT_KEY= xcodebuild …`처럼 키를 비워 빌드한다(결제는 꺼진다).
+- **워치 컴플리케이션 번들 id는 워치 앱 id 아래여야 한다.** `@bacons/apple-targets`의 `watch-widget` 기본값(`com.novum.chagok.watch-widget`)은 설치 때 「does not have expected identifier prefix」로 거부된다. `targets/watch-widget/expo-target.config.js`에 `bundleIdentifier: 'com.novum.chagok.watch.widgets'`(2026-10-16).
+- **EAS 빌드 Node는 이 Mac과 같게 둔다(`eas.json` `"node": "24.18.0"`).** EAS 기본은 Node 22(npm 10)인데, `@bacons/apple-targets` 안의 typescript 5 선택 의존성을 npm 10은 「잠금 파일에 없다」(`Missing: typescript@5.9.3 from lock file`)로 실패시키고 npm 11은 넘어간다(2026-10-17). 의존성을 바꾼 뒤 올리기 전에 깨끗한 복사본에서 `npm ci`로 확인한다.
 - 개발 빌드는 Metro 주소를 기억한다. 다른 포트로 띄웠으면 `xcrun simctl openurl <UDID> "com.novum.chagok://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A<포트>"`로 연다.
 
 ## Storybook

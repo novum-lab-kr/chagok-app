@@ -1,8 +1,7 @@
 // 「적립판」 위젯(중간 크기) — PRD 4.10. 10칸(5×2). 빈칸을 누르면 다음 빈칸에 붙이고, 오늘 붙인 칸을 누르면 그 칸을 뗀다.
-import { Button, HStack, Image, Link, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
+import { Button, HStack, Image, Link, Rectangle, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
   background,
-  border,
   buttonStyle,
   containerBackground,
   contentShape,
@@ -30,6 +29,15 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
   const ink = pal === 'white' ? '#1C2321' : pal === 'ink' ? '#FEF1D1' : '#06261C';
   const acc = pal === 'white' ? '#D2502A' : pal === 'ink' ? '#FD9B7A' : '#C2451F';
   const F = 'NeoDunggeunmo';
+  // 지금 붙일 칸: 앱 판의 PixelFocusRing처럼 네 귀퉁이 괄호 (2026-10-16 결정 6 T1, 이전: 살구 테두리)
+  const brackets = (w: number, h: number, arm: number, t: number) => (
+    <ZStack modifiers={[frame({ width: w, height: h })]}>
+      {[[-1, -1], [1, -1], [-1, 1], [1, 1]].flatMap(([sx, sy], k) => [
+        <Rectangle key={`h${k}`} modifiers={[frame({ width: arm, height: t }), foregroundStyle(ink), offset({ x: sx * (w / 2 - arm / 2), y: sy * (h / 2 - t / 2) })]} />,
+        <Rectangle key={`v${k}`} modifiers={[frame({ width: t, height: arm }), foregroundStyle(ink), offset({ x: sx * (w / 2 - t / 2), y: sy * (h / 2 - arm / 2) })]} />,
+      ])}
+    </ZStack>
+  );
   const g = props.goals[env.configuration?.goal ?? ''] ?? (props.defaultId ? props.goals[props.defaultId] : undefined);
   if (!g) {
     // 목표가 없으면 졸린 차곡이와 안내 — 누르면 새 목표 화면(PRD 4.10 「목표가 없을 때」)
@@ -180,17 +188,12 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
                 state === 'filled' ? (
                   <Image uiImage={g.sticker} modifiers={[resizable(), frame({ width: 22, height: 22 }), frame({ width: 26, height: 26 }), contentShape(shapes.rectangle())]} />
                 ) : (
-                  <Text
-                    modifiers={[
-                      font({ family: F, size: 10 }),
-                      foregroundStyle(ink),
-                      opacity(0.7),
-                      frame({ width: 26, height: 26 }),
-                      contentShape(shapes.rectangle()),
-                      ...(i === nextEmpty ? [border({ color: '#FD855F', width: 2 })] : []),
-                    ]}>
-                    {String(shown + 1 + i)}
-                  </Text>
+                  <ZStack modifiers={[frame({ width: 26, height: 26 }), contentShape(shapes.rectangle())]}>
+                    <Text modifiers={[font({ family: F, size: 10 }), foregroundStyle(ink), opacity(0.7), frame({ width: 26, height: 26 })]}>
+                      {String(shown + 1 + i)}
+                    </Text>
+                    {i === nextEmpty ? brackets(26, 26, 8, 2) : null}
+                  </ZStack>
                 ),
               );
             })}

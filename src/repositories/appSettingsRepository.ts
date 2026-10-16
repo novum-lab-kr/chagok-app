@@ -46,7 +46,9 @@ export type SettingKey =
   /** 체험 열림 카드를 ×로 닫을 때 넘긴 문턱(7, 14…). 다음 문턱까지 카드를 숨긴다 (2026-10-12) */
   | 'trialCardDismissed'
   /** '1'이면 동의 화면에서 「만 14세 미만이에요」를 눌렀다. 이 기기의 광고를 아동 처리한다 (2026-10-13 결정) */
-  | 'adChildDirected';
+  | 'adChildDirected'
+  /** 워치 성장 수(블록 수). 지금 붙어 있는 스티커 수보다 작아지지 않는다. 복원하면 지운다 (PRD 4.14) */
+  | 'watchGrowth';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();
