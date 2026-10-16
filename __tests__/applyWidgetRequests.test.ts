@@ -1,4 +1,5 @@
-import { createGoal, deleteGoal } from '../src/repositories/goalRepository';
+import { getSetting } from '../src/repositories/appSettingsRepository';
+import { createGoal, deleteGoal, getGoal } from '../src/repositories/goalRepository';
 import * as stickers from '../src/repositories/stickerRepository';
 import { listStickers, placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
@@ -105,5 +106,26 @@ describe('체험이 끝난 묶음 (2026-10-08)', () => {
     const g = await createGoal({ name: '동물', boardType: 'tally', totalSlots: 10, defaultStickerId: 'animals_normal.cat' });
     expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(0);
+  });
+  it('워치 완성 요청은 마지막 칸을 붙이고 판을 완성한다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 2 });
+    await placeSticker(g.id, 0);
+    const r: WidgetRequest = { ...add(g.id, 'w-last'), complete: true };
+    expect(await applyWidgetRequests([r])).toEqual({ handled: ['w-last'], changed: true });
+    expect((await getGoal(g.id))!.completedAt).not.toBeNull();
+  });
+
+  it('완성 요청이 와도 이미 다 찬 판에는 붙이지 않는다 (Review Focus 1)', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 1 });
+    await placeSticker(g.id, 0);
+    const r: WidgetRequest = { ...add(g.id, 'w-full'), complete: true };
+    expect(await applyWidgetRequests([r])).toEqual({ handled: ['w-full'], changed: false });
+    expect(await listStickers(g.id)).toHaveLength(1);
+  });
+  it('동시에 불려도 처리한 요청 id를 서로 지우지 않는다 (최종 검토 3)', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
+    await Promise.all([applyWidgetRequests([add(g.id, 'c1')]), applyWidgetRequests([add(g.id, 'c2', now + 1)])]);
+    const done = JSON.parse((await getSetting('widgetHandledRequests')) ?? '[]') as string[];
+    expect(done.sort()).toEqual(['c1', 'c2']);
   });
 });

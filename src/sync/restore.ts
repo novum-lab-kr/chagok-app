@@ -71,6 +71,8 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
     }
     // 누른 날은 서버에 없다 — 받은 스티커의 붙인 날짜로 채운다. 이 기기 기록은 남긴다.
     await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key) SELECT DISTINCT date_key FROM stickers;`);
+    // 워치 성장 수는 복원된 스티커 수부터 다시 센다 (PRD 4.14). 같은 트랜잭션이라 사이에 예전 최고치가 끼지 않는다.
+    await tx.run("DELETE FROM app_settings WHERE key = 'watchGrowth'");
   });
   await setSetting('syncCursor', String(snap.cursor));
   await setSetting('lastSyncedAt', String(Date.now()));

@@ -48,7 +48,7 @@ export type WidgetSnapshot = { today: DateKey; goals: WidgetGoal[]; defaultGoalI
 export const TALLY_CHUNK = 10;
 
 /** 완성까지 남은 칸 수 (PRD 4.3·4.7). 종료일 없는 달력판은 붙여서 완성되지 않는다. */
-function remainingOf(goal: Goal, placedAll: number): number | null {
+export function remainingOf(goal: Goal, placedAll: number): number | null {
   if (goal.boardType === 'tally') return Math.max(0, (goal.totalSlots ?? 0) - placedAll);
   if (goal.endDate === null) return null;
   return Math.max(0, daysInclusive(startDate(goal), goal.endDate) - placedAll);

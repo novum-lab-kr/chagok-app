@@ -54,6 +54,9 @@ const PACK_IDS = { free: 'basic', sports: 'sports_normal', snack: 'snack_normal'
 const STICKER_IDS = { 'weather.sun2': 'sun' };
 const src = JSON.parse(fs.readFileSync('src/stickers/color/source/sticker-packs-24.json', 'utf8'));
 const stickerArt = [];
+const blockColors = [];
+// 밝기. 스티커에서 가장 어두운 색이 윤곽선이다(첫 층이 윤곽선이 아닌 스티커가 있다).
+const lum = (h) => { const [r, g, b] = hex(h); return 0.299 * r + 0.587 * g + 0.114 * b; };
 for (const s of src.stickers) {
   const pack = PACK_IDS[s.theme] ?? s.theme;
   const name = STICKER_IDS[`${s.theme}.${s.id}`] ?? s.id;
@@ -62,11 +65,24 @@ for (const s of src.stickers) {
     for (let i = 0; i < Number(w); i++) grid.set(`${Number(x) + i},${y}`, l.color);
   png(`color-${pack}-${name}`, 24, 24, (x, y) => grid.get(`${x},${y}`) ?? null);
   stickerArt.push(`  '${pack}.${name}': require('../../assets/widget-art/color-${pack}-${name}.png'),`);
+  // 워치 블록 색: 윤곽선(가장 어두운 색)을 빼고 칸을 가장 많이 차지한 색 (워치 설계 「블록 색」)
+  const outline = s.layers.map((l) => l.color).sort((a, b) => lum(a) - lum(b))[0];
+  const counts = new Map();
+  for (const c of grid.values()) if (c !== outline) counts.set(c, (counts.get(c) ?? 0) + 1);
+  const [top] = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  blockColors.push(`  '${pack}.${name}': '${(top?.[0] ?? outline).toUpperCase()}',`);
 }
 fs.writeFileSync('src/widgets/widgetStickerArt.generated.ts', `// 생성 파일 — 직접 고치지 않는다. node scripts/build-widget-art.mjs로 다시 만든다.
 // 위젯 스티커 그림: 컬러 스티커 ID → 앱 번들 PNG.
 export const widgetStickerArt: Record<string, number> = {
 ${stickerArt.join('\n')}
+};
+`);
+fs.mkdirSync('src/watch', { recursive: true });
+fs.writeFileSync('src/watch/stickerColors.generated.ts', `// 생성 파일 — 직접 고치지 않는다. node scripts/build-widget-art.mjs로 다시 만든다.
+// 워치 블록 색: 컬러 스티커 ID → 대표색 하나.
+export const stickerBlockColors: Record<string, string> = {
+${blockColors.join('\n')}
 };
 `);
 
