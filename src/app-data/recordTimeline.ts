@@ -24,9 +24,16 @@ export function groupTimeline(entries: readonly TimelineEntry[], goalId: string 
   return days;
 }
 
-/** 목표 칩: 기록이 하나라도 있는 목표만, 최근 기록 순으로 한 번씩 (완성한 판 포함, 2026-10-12). */
-export function timelineGoals(entries: readonly TimelineEntry[]): { id: string; name: string }[] {
-  const seen = new Map<string, string>();
-  for (const entry of entries) if (!seen.has(entry.goalId)) seen.set(entry.goalId, entry.goalName);
-  return [...seen].map(([id, name]) => ({ id, name }));
+/** 목표 칩: 기록이 하나라도 있는 목표만, 최근 기록 순으로 한 번씩 (완성한 판 포함, 2026-10-12). 칩은 목표의 기본 스티커로 그린다 (2026-10-17). */
+export function timelineGoals(entries: readonly TimelineEntry[]): { id: string; name: string; sticker: string }[] {
+  const seen = new Map<string, { id: string; name: string; sticker: string }>();
+  for (const entry of entries) if (!seen.has(entry.goalId)) seen.set(entry.goalId, { id: entry.goalId, name: entry.goalName, sticker: entry.goalSticker });
+  return [...seen.values()];
+}
+
+/** 펼친 화면 (2026-10-17): 피드에서 누른 기록부터 끝까지, 최근 순. 누른 기록이 사라졌으면 처음부터. goalId를 주면 그 목표만. */
+export function feedFrom(entries: readonly TimelineEntry[], goalId: string | null, fromId: string): TimelineEntry[] {
+  const list = goalId ? entries.filter((e) => e.goalId === goalId) : [...entries];
+  const at = list.findIndex((e) => e.stickerId === fromId);
+  return at > 0 ? list.slice(at) : list;
 }

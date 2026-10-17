@@ -165,6 +165,7 @@ export default function RootLayout() {
           <Stack.Screen name="goal/[id]/settings" />
           <Stack.Screen name="goal/[id]/extend" />
           <Stack.Screen name="sticker/[id]" />
+          <Stack.Screen name="records/feed" />
           <Stack.Screen name="stickers/choose" options={{ presentation: 'modal' }} />
           <Stack.Screen name="stickers/pack/[packId]" options={{ presentation: 'modal' }} />
           <Stack.Screen name="tutorial" />

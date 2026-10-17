@@ -48,7 +48,9 @@ export type SettingKey =
   /** '1'이면 동의 화면에서 「만 14세 미만이에요」를 눌렀다. 이 기기의 광고를 아동 처리한다 (2026-10-13 결정) */
   | 'adChildDirected'
   /** 워치 성장 수(블록 수). 지금 붙어 있는 스티커 수보다 작아지지 않는다. 복원하면 지운다 (PRD 4.14) */
-  | 'watchGrowth';
+  | 'watchGrowth'
+  /** 'feed'면 기록 탭을 사진 격자로 연다. 없으면 타임라인 (2026-10-17) */
+  | 'recordsView';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();

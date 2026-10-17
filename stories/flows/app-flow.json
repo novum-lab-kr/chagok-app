@@ -769,8 +769,32 @@
             "label": "목표 고름"
           },
           {
+            "id": "screens-bottom-tabs--records-tab-feed",
+            "label": "사진으로 보기"
+          },
+          {
+            "id": "screens-bottom-tabs--records-tab-feed-filtered",
+            "label": "사진으로 보기, 목표 고름"
+          },
+          {
             "id": "screens-bottom-tabs--records-tab-empty",
             "label": "비었을 때"
+          }
+        ]
+      }
+    },
+    {
+      "id": "records-feed",
+      "data": {
+        "label": "기록 펼친 화면",
+        "tags": [
+          "PRD 4.13",
+          "app/records/feed"
+        ],
+        "stories": [
+          {
+            "id": "screens-bottom-tabs--record-feed",
+            "label": "펼친 화면"
           }
         ]
       }
@@ -1413,6 +1437,28 @@
     {
       "id": "records-tab-record",
       "source": "records-tab",
+      "target": "record",
+      "label": "기록 누르기",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "records-tab-records-feed",
+      "source": "records-tab",
+      "target": "records-feed",
+      "label": "피드 칸 누르기",
+      "data": {
+        "scenarios": [
+          "daily"
+        ]
+      }
+    },
+    {
+      "id": "records-feed-record",
+      "source": "records-feed",
       "target": "record",
       "label": "기록 누르기",
       "data": {
