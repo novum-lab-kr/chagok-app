@@ -51,4 +51,14 @@ describeIfServer('서버 보안·경계', () => {
     const { data } = await a.client.from('accounts').select('user_id, terms_version, privacy_version');
     expect(data).toEqual([{ user_id: a.userId, terms_version: 1, privacy_version: 1 }]);
   });
+
+  it('로그인 사용자는 Apple 토큰 관리자 함수를 부를 수 없다', async () => {
+    const a = await newUser();
+    const calls = [
+      a.client.rpc('admin_save_apple_token', { p_user: a.userId, p_token: 'x' }),
+      a.client.rpc('admin_get_apple_token', { p_user: a.userId }),
+      a.client.rpc('admin_delete_apple_token', { p_user: a.userId }),
+    ];
+    for (const { error } of await Promise.all(calls)) expect(error).not.toBeNull();
+  });
 });

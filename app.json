@@ -11,6 +11,8 @@
     "ios": {
       "bundleIdentifier": "com.novum.chagok",
       "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "appleTeamId": "AQUDD2QFNC",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -47,6 +49,7 @@
       ],
       "expo-font",
       "expo-web-browser",
+      "expo-apple-authentication",
       "expo-system-ui",
       [
         "expo-splash-screen",
