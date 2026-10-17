@@ -63,7 +63,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 - Apple Developer Program: 남편 명의 개인 계정(노붐(NOVUM) · 대표 성민창, 개인사업자). 2026-10-05 승인, App Store Connect 열림. 상품·계약 등록 기록은 아직 없다.
 - Google Cloud OAuth: 없다. Google Play는 개인 계정을 추천(개인 계정은 출시 전 테스터 12명·14일 비공개 테스트 필요).
 - AdMob 계정: 아직 없다(스토어 계정과 같은 명의 추천).
-- Expo 조직 `novum-lab`(EAS `@novum-lab/chagok`). 저장소 `nol-meok/chagok-app`.
+- Expo 조직 `novum-lab`(EAS `@novum-lab/chagok`). 저장소 `novum-lab-kr/chagok-app`(2026-10-17 `nol-meok`에서 옮김).
 
 ## 아직 확인하지 못한 것
 

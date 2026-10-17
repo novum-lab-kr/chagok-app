@@ -12,7 +12,7 @@
 | 2026-10-04 | 스토어 빌드 | EAS Build. 빌드 번호는 EAS 원격 자동 증가(`appVersionSource: remote`, `autoIncrement`) |
 | 2026-10-04 | 버전 규칙 | 사용자 버전 `MAJOR.MINOR.PATCH`는 사람이 올리고, 첫 출시 `1.0.0`. 출시마다 버전·스토어 문구·git 태그. Wear OS `versionCode`는 `1000001`부터 직접 — [버전 규칙](RELEASE-VERSIONING.md) |
 | 2026-10-04 | 앱 버전 표시 | 앱 설정에는 버전만(`1.0.0`). 빌드 번호는 문의하기 메일 본문에 자동(앱 버전·빌드·OS). 문구는 사용자 확인 (PRD 4.9) |
-| 2026-10-04 | 코드 저장소 | GitHub `nol-meok/chagok-app`. 워치 코드도 같은 레포(`targets/watch/`, `wear/`) |
+| 2026-10-04 | 코드 저장소 | GitHub `novum-lab-kr/chagok-app`(2026-10-17 `nol-meok`에서 옮김). 워치 코드도 같은 레포(`targets/watch/`, `wear/`) |
 | 2026-10-05 | Apple 개발자 계정 | 남편 명의 **개인** 계정(개인사업자라 조직 불가, 판매자 = 실명). 등록·결제 완료, 승인 대기 |
 | 2026-10-05 | Expo 계정·EAS 프로젝트 | Expo 조직 `novum-lab`(두 사람이 멤버, slug `novum`은 이미 쓰임), 프로젝트 `@novum-lab/chagok`. `app.json` `owner` 반영 |
 | 2026-10-05 | 수익 모델 | 첫 출시는 **A 스티커 팩 판매 + B 비맞춤 배너 광고(광고 제거 구매 포함)**. **구독은 나중에** 고도화한다. 팩 구성·가격·광고 제거 가격은 열림 |

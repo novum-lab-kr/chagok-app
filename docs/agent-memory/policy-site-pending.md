@@ -8,7 +8,7 @@ metadata:
   modified: 2026-09-30T10:54:25.109Z
 ---
 
-약관·처리방침 사이트는 `~/Desktop/workspace/chagok-app-policy`(origin: github.com/nol-meok/chagok-app-policy, 2026-10-04 개인 계정에서 Org `nol-meok`으로 이전)에 있다.
+약관·처리방침 사이트는 `~/Desktop/workspace/chagok-app-policy`(origin: github.com/novum-lab-kr/chagok-app-policy, 2026-10-04 개인 계정에서 Org `nol-meok`으로, 2026-10-17 `novum-lab-kr`로 이전)에 있다.
 
 - 호스팅은 GitHub Pages가 아니라 **Netlify**로 바꿨다(2026-09-30 사용자 결정). GitHub Pages는 주소에 GitHub 아이디가 보인다. Cloudflare Pages(조회 무제한)를 추천했지만 사용자가 `.pages.dev` 대신 `.netlify.app`을 골랐다. 무료 요금제는 월 300크레딧 고정 한도라 사용량을 지켜봐야 한다.
 - 저장소는 **공개**다(2026-10-04 Org `nol-meok`으로 옮기자 Netlify 무료 플랜이 Org 비공개 레포 배포를 막아(Pro $20/월 요구) 사용자가 공개로 전환). 비밀값을 이 레포에 넣지 않는다.

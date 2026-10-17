@@ -35,7 +35,7 @@
 패치 적용: `git checkout -b feat/terms-change-notice main && git apply docs/migration/feat-terms-change-notice.patch`,
 커밋 패치는 `git am docs/migration/<이름>.patch`.
 
-태그 `backup/main-before-split`는 원격에 있다. 정책 저장소 `../chagok-app-policy`는 `main`·`publish` 모두 원격과 같고, 원격은 이미 GitHub Org `nol-meok`(`github.com/nol-meok/chagok-app-policy`)으로 옮겼다(2026-10-04 확인). 앱 저장소도 2026-10-04 `nol-meok`으로 옮겼고, 로컬 `origin`을 `https://eunjukkkkim@github.com/nol-meok/chagok-app.git`으로 바꿨다(앞의 `eunjukkkkim@`은 로그인 계정을 고르는 용도 — 정책 저장소와 같은 방식). 새 원격에서 모든 브랜치·태그가 로컬과 같고 push 권한도 확인했다. 폴더는 그대로라 clone·메모리 복원은 필요 없었다.
+태그 `backup/main-before-split`는 원격에 있다. 정책 저장소 `../chagok-app-policy`는 `main`·`publish` 모두 원격과 같고, 원격은 이미 GitHub Org `nol-meok`(`github.com/nol-meok/chagok-app-policy`)으로 옮겼다(2026-10-04 확인). 앱 저장소도 2026-10-04 `nol-meok`으로 옮겼고, 로컬 `origin`을 `https://eunjukkkkim@github.com/nol-meok/chagok-app.git`으로 바꿨다(앞의 `eunjukkkkim@`은 로그인 계정을 고르는 용도 — 정책 저장소와 같은 방식). 새 원격에서 모든 브랜치·태그가 로컬과 같고 push 권한도 확인했다. 폴더는 그대로라 clone·메모리 복원은 필요 없었다. 2026-10-17 두 저장소가 다시 GitHub Org `novum-lab-kr`로 옮겨져 `origin`을 `https://eunjukkkkim@github.com/novum-lab-kr/chagok-app.git`, `https://eunjukkkkim@github.com/novum-lab-kr/chagok-app-policy.git`로 바꿨다(둘 다 fetch 확인, 앱은 main이 원격과 같음). 계정 이름 `eunjukkkkim@`을 빼면 「Repository not found」가 난다.
 
 **저장소 밖에 있던 근거 문서:** PRD 12절이 가리키던 원 인터뷰(`~/.omc/specs/deep-interview-chamjal-sticker-app.md`)는 2026-10-04 [archive/](../archive/deep-interview-chamjal-sticker-app.md)로 옮겼다.
 
@@ -53,7 +53,7 @@
 3. 2절 브랜치·패치를 되살린다(커밋·병합은 사용자 확인 뒤).
 4. 확인: `npm test`, `npm run test:components`, `npm run typecheck`, `npm run lint`, `npm run test:server`(관리자 키 필요).
 5. 원격 주소가 바뀌면 `git remote set-url origin <새 주소>`. 정책 사이트(Netlify)가 정책 저장소의 `publish` 브랜치를 보고 있으니, 정책 저장소를 옮기면 Netlify 연결도 바꾼다.
-   - 정책 저장소는 이미 `nol-meok`으로 옮겼다. Netlify의 GitHub 앱이 `nol-meok` Org 저장소에 접근할 수 있는지, 사이트 설정(Build & deploy → Repository)이 새 주소를 가리키는지 확인한다. 사이트는 2026-10-04에도 열렸지만(200), 다음 `publish` push가 배포되는지는 확인 전이다.
+   - 정책 저장소는 이미 `nol-meok`을 거쳐 2026-10-17 `novum-lab-kr`로 옮겼다. Netlify의 GitHub 앱이 `novum-lab-kr` Org 저장소에 접근할 수 있는지, 사이트 설정(Build & deploy → Repository)이 새 주소를 가리키는지 확인한다. 사이트는 2026-10-04에도 열렸지만(200), 다음 `publish` push가 배포되는지는 확인 전이다.
 6. 같은 방식으로 작업되는지 확인: 새 세션에서 메모리가 읽히는지(첫 응답이 한국어인지, 시안을 아티팩트로 내는지), `docs/agent-memory/`와 `~/.claude/projects/<새 키>/memory/`가 같은지(`diff -rq`).
 
 ## 4. 외부에 걸린 것 (레포와 별개로 계속 쓰임)
