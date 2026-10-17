@@ -1,6 +1,6 @@
 # 워치 설계: 붙이기와 차곡이 성장
 
-2026-10-16. 관련: [PRD 2절, 4.10, 11절](../../PRD.md), [홈 화면 위젯 설계](2026-09-30-home-widget-design.md), 시안 [워치 성장 14판](https://claude.ai/artifact/HoajBcJvCpsXtzCEhuHsYa)(템플릿 `docs/design/proposals-2026-10/watch-growth.template.html`)
+2026-10-16. 관련: [PRD 2절, 4.10, 11절](../../PRD.md), [홈 화면 위젯 설계](2026-09-30-home-widget-design.md), 시안 워치 성장 14판(템플릿 `docs/design/proposals-2026-10/watch-growth.template.html`)
 
 ## 목표
 

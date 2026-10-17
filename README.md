@@ -202,7 +202,7 @@ flowchart LR
     s1["이번 세션"] -- "헤맨 일" --> pitfalls["PITFALLS.md<br/>한 번 크게 헤맨 함정"]
     s1 -- "사용자 지시" --> wa["WORKING-AGREEMENT.md<br/>일하는 방식과 이유"]
     s1 -- "기능 결정" --> prd["PRD.md<br/>기능 정의, 결정의 흐름"]
-    s1 -- "시안과 고른 안" --> prop["proposals-2026-10<br/>시안 28개, 메모"]
+    s1 -- "시안과 고른 안" --> prop["proposals-2026-10<br/>열린 시안, 메모"]
     s1 -- "남은 일" --> handoff["HANDOFF.md<br/>지금 상태, 확인 못 한 것"]
     pitfalls & wa & prd & prop & handoff --> agents["AGENTS.md<br/>규칙 요약과 문서 지도"]
     agents -- "시작할 때 읽음" --> s2["다음 세션"]
@@ -230,7 +230,7 @@ flowchart LR
 | [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) | 화면을 만들 때. 색, 글꼴, 컴포넌트, 화면 수치 |
 | [docs/WORKING-AGREEMENT.md](docs/WORKING-AGREEMENT.md) | AI와 일하는 방식 전체와 그 이유 |
 | [docs/PITFALLS.md](docs/PITFALLS.md) | 빌드, 테스트, 기기 확인 전에 |
-| [docs/design/proposals-2026-10/](docs/design/proposals-2026-10/README.md) | 시안 원본과 고른 과정 |
+| [docs/design/proposals-2026-10/](docs/design/proposals-2026-10/README.md) | 아직 열려 있는 시안 원본과 메모 |
 | [stories/flows/README.md](stories/flows/README.md) | 화면 흐름도 고치는 법 |
 
 ---
