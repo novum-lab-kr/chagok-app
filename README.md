@@ -9,6 +9,12 @@
 </p>
 
 <p align="center">
+  <a href="https://novum-lab-kr.github.io/chagok-app/intro/"><b>앱 소개 페이지</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://novum-lab-kr.github.io/chagok-app/">Storybook</a>
+</p>
+
+<p align="center">
   <img src="docs/readme/goals.png" width="13%" alt="목표 탭">
   <img src="docs/readme/board-tally.png" width="13%" alt="적립판">
   <img src="docs/readme/board-calendar.png" width="13%" alt="달력판">

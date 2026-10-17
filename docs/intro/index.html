@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>차곡차곡</title>
+<meta name="description" content="스스로 정한 목표에 스티커를 붙여 기록하는 iOS 앱. 기획, 디자인, 개발을 혼자 AI와 함께 진행한 프로젝트.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont@1.600/neodgm/style.css">
+<style>
+:root {
+  --ink: #06261C;
+  --mint: #AFE1CB;
+  --mint-soft: #DDF1E7;
+  --ivory: #FEF1D1;
+  --paper: #FFFBF1;
+  --apricot: #FD855F;
+  --lcd: #C7DE94;
+  --muted: #4A6159;
+  --pixel: "NeoDunggeunmo", "Neo둥근모", monospace;
+  --body: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+img, video { max-width: 100%; display: block; }
+a { color: inherit; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.pixel { font-family: var(--pixel); }
+
+.frame {
+  background: #fff;
+  border: 3px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  border-radius: 4px;
+}
+
+nav.top {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(255,251,241,0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--ink);
+}
+nav.top .wrap { display: flex; align-items: center; gap: 20px; height: 56px; overflow-x: auto; scrollbar-width: none; }
+nav.top .wrap::-webkit-scrollbar { display: none; }
+nav.top .brand { flex: none; font-family: var(--pixel); font-size: 18px; white-space: nowrap; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+nav.top .brand img { width: 28px; height: 28px; border-radius: 7px; }
+nav.top a.link { font-size: 14px; text-decoration: none; color: var(--muted); white-space: nowrap; font-weight: 500; }
+nav.top a.link:hover { color: var(--ink); }
+
+header.hero { background: var(--mint); border-bottom: 3px solid var(--ink); padding: 64px 0 88px; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
+.status {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  background: var(--ivory); border: 2px solid var(--ink); border-radius: 999px;
+  padding: 4px 12px;
+}
+.status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--apricot); flex: none; }
+.hero h1 { font-family: var(--pixel); font-size: clamp(44px, 7vw, 76px); line-height: 1.1; margin: 20px 0 12px; font-weight: 400; }
+.hero .lead { font-size: clamp(18px, 2.2vw, 22px); font-weight: 700; margin: 0 0 16px; line-height: 1.5; }
+.hero p.sub { color: #23413a; margin: 0 0 28px; max-width: 34em; }
+.role-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font-size: 13px; font-weight: 600;
+  background: #fff; border: 2px solid var(--ink); border-radius: 6px;
+  padding: 3px 10px;
+}
+.chip.accent { background: var(--apricot); color: #fff; }
+.hero-shots { position: relative; height: 520px; }
+.phone {
+  border: 3px solid var(--ink); border-radius: 28px; overflow: hidden;
+  background: var(--mint); box-shadow: 6px 6px 0 var(--ink);
+}
+.hero-shots .phone { position: absolute; width: 230px; }
+.hero-shots .p1 { left: 0; top: 30px; transform: rotate(-4deg); }
+.hero-shots .p2 { right: 0; top: 0; transform: rotate(3deg); z-index: 2; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: -48px; position: relative; z-index: 3; }
+.stat { padding: 18px 20px; background: var(--ivory); }
+.stat b { font-family: var(--pixel); font-size: 32px; font-weight: 400; display: block; line-height: 1.2; }
+.stat span { font-size: 14px; color: var(--muted); line-height: 1.5; display: block; margin-top: 4px; }
+
+section { padding: 88px 0 0; }
+.eyebrow { font-family: var(--pixel); font-size: 15px; color: #d4572f; margin: 0 0 6px; }
+h2 { font-size: clamp(26px, 3.4vw, 34px); line-height: 1.35; margin: 0 0 14px; font-weight: 800; letter-spacing: -0.02em; }
+h3 { font-size: 19px; margin: 0 0 8px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.4; }
+.intro { color: var(--muted); max-width: 46em; margin: 0 0 36px; font-size: 17px; }
+.sub-head { margin: 56px 0 6px; }
+.sub-intro { color: var(--muted); margin: 0 0 22px; font-size: 15px; max-width: 46em; }
+
+.overview { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.overview .frame { padding: 24px 26px; }
+dl.facts { margin: 0; display: grid; grid-template-columns: 76px 1fr; gap: 10px 16px; font-size: 15px; }
+dl.facts dt { font-weight: 700; color: var(--muted); }
+dl.facts dd { margin: 0; }
+ul.clean { margin: 0; padding-left: 1.1em; font-size: 15px; }
+ul.clean li { margin: 5px 0; }
+ul.clean li::marker { color: var(--apricot); }
+
+figure { margin: 0; }
+.gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+.shot figcaption { font-size: 14px; margin-top: 14px; color: var(--muted); line-height: 1.5; }
+.shot figcaption b { color: var(--ink); display: block; font-size: 15px; margin-bottom: 2px; }
+
+.widget-row { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 22px; align-items: start; }
+.widget-shot { border: 3px solid var(--ink); border-radius: 24px; overflow: hidden; box-shadow: 5px 5px 0 var(--ink); }
+.note { padding: 22px 22px 20px; background: var(--ivory); }
+.note p { margin: 0 0 10px; font-size: 15px; }
+.note p:last-child { margin-bottom: 0; }
+
+.watch-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; padding: 26px; background: var(--ink); border-radius: 6px; box-shadow: 5px 5px 0 var(--apricot); }
+.watch-face { border-radius: 26px; overflow: hidden; border: 5px solid #2a3a35; outline: 3px solid #000; }
+.watch-row figcaption { font-size: 14px; margin-top: 12px; color: #d5e6dd; line-height: 1.5; }
+.watch-row figcaption b { color: #fff; display: block; font-size: 15px; margin-bottom: 2px; }
+
+.motion { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; align-items: start; }
+.motion .phone video { width: 100%; }
+.motion .watch-box { background: var(--ink); border-radius: 6px; padding: 22px; box-shadow: 5px 5px 0 var(--apricot); }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.cards.two { grid-template-columns: repeat(2, 1fr); }
+.card { padding: 22px 22px 20px; }
+.card p { margin: 0; font-size: 15px; color: #23413a; }
+.card .num { font-family: var(--pixel); color: #d4572f; font-size: 14px; display: block; margin-bottom: 6px; }
+.card .metric { font-family: var(--pixel); font-size: 20px; display: block; margin: 0 0 6px; }
+
+.ai-flow { display: grid; grid-template-columns: repeat(6, 1fr); margin-bottom: 36px; }
+.ai-step { padding: 18px 16px; border: 3px solid var(--ink); margin-left: -3px; background: #fff; }
+.ai-step:first-child { margin-left: 0; border-radius: 6px 0 0 6px; }
+.ai-step:last-child { border-radius: 0 6px 6px 0; }
+.ai-step .who { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+.who.me { background: var(--apricot); color: #fff; }
+.who.ai { background: var(--mint); }
+.who.both { background: var(--lcd); }
+.ai-step b { display: block; font-size: 15px; margin-bottom: 4px; }
+.ai-step p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.quotes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+.quote { border-left: 5px solid var(--apricot); background: var(--ivory); padding: 14px 18px; margin: 0; font-size: 15px; border-radius: 0 6px 6px 0; }
+.quote cite { display: block; font-style: normal; font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+.character { margin-top: 24px; padding: 20px; background: var(--mint); display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; align-items: center; }
+.character img { image-rendering: pixelated; border-radius: 4px; }
+
+.arch { padding: 28px; background: var(--ivory); }
+.arch-grid { display: grid; grid-template-columns: 1fr 56px 1.25fr 56px 1fr; align-items: center; }
+.node { background: #fff; border: 2px solid var(--ink); border-radius: 6px; padding: 12px 14px; }
+.node b { display: block; font-size: 15px; margin-bottom: 2px; }
+.node small { color: var(--muted); font-size: 13px; line-height: 1.5; display: block; }
+.node.core { background: var(--mint); }
+.stack-col { display: grid; gap: 12px; }
+.arrow { text-align: center; font-size: 26px; font-weight: 800; color: #d4572f; }
+
+footer { margin-top: 96px; padding: 28px 0 40px; border-top: 3px solid var(--ink); background: var(--mint); font-size: 14px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-shots { height: 440px; max-width: 440px; margin: 0 auto; width: 100%; }
+  .hero-shots .phone { width: 200px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .overview, .character, .quotes { grid-template-columns: 1fr; }
+  .gallery { grid-template-columns: repeat(2, 1fr); }
+  .widget-row { grid-template-columns: 1fr 1fr; }
+  .widget-row .note { grid-column: 1 / -1; }
+  .watch-row { grid-template-columns: repeat(2, 1fr); }
+  .motion { grid-template-columns: 1fr 1fr; }
+  .cards { grid-template-columns: 1fr 1fr; }
+  .arch-grid { grid-template-columns: 1fr; }
+  .arrow { transform: rotate(90deg); padding: 6px 0; }
+  .ai-flow { grid-template-columns: 1fr; }
+  .ai-step { margin-left: 0; margin-top: -3px; border-radius: 0 !important; }
+  .ai-step:first-child { border-radius: 6px 6px 0 0 !important; margin-top: 0; }
+  .ai-step:last-child { border-radius: 0 0 6px 6px !important; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  header.hero { padding: 40px 0 76px; }
+  .hero-shots { height: 340px; }
+  .hero-shots .phone { width: 150px; border-radius: 20px; }
+  .stat { padding: 14px 14px; }
+  .stat b { font-size: 24px; }
+  .cards, .cards.two { grid-template-columns: 1fr; }
+  .gallery { gap: 14px; }
+  .widget-row { grid-template-columns: 1fr; }
+  .watch-row { padding: 18px; gap: 14px; }
+  .motion { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
+  .arch { padding: 18px; }
+}
+@media print {
+  nav.top { display: none; }
+  body { background: #fff; }
+  section { padding-top: 40px; }
+  .card, figure { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="목차">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="">차곡차곡</a>
+    <a class="link" href="#screens">화면</a>
+    <a class="link" href="#ai">AI 협업</a>
+    <a class="link" href="#product">기획</a>
+    <a class="link" href="#design">디자인</a>
+    <a class="link" href="#tech">기술</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="status">iOS TestFlight 베타 테스트 중, App Store 출시 준비</span>
+      <h1>차곡차곡</h1>
+      <p class="lead">스스로 정한 목표에 스티커를 붙여 기록하고,<br>쌓인 판을 다시 보며 성취감을 얻는 앱</p>
+      <p class="sub">어릴 적 「참 잘했어요」 도장판에서 출발한 제 아이디어를 4주 만에 TestFlight 베타까지 만들었습니다. 기획, UI와 캐릭터 디자인, iOS 앱과 홈 화면 위젯, Apple Watch 앱, 백업 서버까지 혼자 맡았고, AI 에이전트를 팀처럼 운영해 속도를 냈습니다.</p>
+      <div class="role-row">
+        <span class="chip accent">1인 프로젝트</span>
+        <span class="chip">기획</span>
+        <span class="chip">UX/UI 디자인</span>
+        <span class="chip">캐릭터와 스티커</span>
+        <span class="chip">React Native</span>
+        <span class="chip">Swift</span>
+        <span class="chip">Supabase</span>
+        <span class="chip">AI 에이전트 협업</span>
+      </div>
+    </div>
+    <div class="hero-shots" aria-hidden="true">
+      <div class="phone p1"><img src="img/app-calendar.jpg" alt=""></div>
+      <div class="phone p2"><img src="img/app-home.jpg" alt=""></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat frame"><b>4주</b><span>아이디어에서 TestFlight 베타까지, 혼자</span></div>
+    <div class="stat frame"><b>3곳</b><span>iPhone 앱, 홈 화면 위젯, Apple Watch가 같은 기록을 씀</span></div>
+    <div class="stat frame"><b>0.7초</b><span>위젯을 누르면 앱을 열지 않고 스티커가 붙기까지</span></div>
+    <div class="stat frame"><b>로그인 없이</b><span>모든 기능을 쓰고, 원할 때만 연결해 자동 백업</span></div>
+  </div>
+</div>
+
+<section id="overview">
+  <div class="wrap">
+    <p class="eyebrow">OVERVIEW</p>
+    <h2>평가하지 않는 기록 앱</h2>
+    <p class="intro">습관 앱은 대부분 연속일수, 통계, 배지로 사용자를 재촉합니다. 차곡차곡은 반대로 갑니다. 활동을 마친 순간 빈칸을 한 번 누르면 스티커가 붙고, 더 남기고 싶을 때만 사진과 메모를 씁니다. 판 자체가 회고가 됩니다.</p>
+    <div class="overview">
+      <div class="frame">
+        <h3>프로젝트 정보</h3>
+        <dl class="facts">
+          <dt>기간</dt><dd>2026년 9월 21일 시작, 진행 중</dd>
+          <dt>상태</dt><dd>iOS TestFlight 베타. App Store Connect 등록 완료, 심사 전</dd>
+          <dt>역할</dt><dd>혼자 기획, 디자인, 개발, 출시 준비 (약관과 개인정보 처리방침 초안 포함)</dd>
+          <dt>플랫폼</dt><dd>iOS 앱, 홈 화면 위젯 3종, Apple Watch 앱</dd>
+          <dt>함께 쓴 AI</dt><dd>Claude Code(설계, 구현, 테스트, 문서), Codex(스티커 초안), Claude 아티팩트(시안 비교)</dd>
+        </dl>
+      </div>
+      <div class="frame">
+        <h3>무엇을 만들었나</h3>
+        <ul class="clean">
+          <li><b>적립판과 달력판</b> 탭 한 번에 붙이기, 꾹 눌러 떼기</li>
+          <li><b>기록</b> 칸마다 사진과 메모, 기록 탭에서 목록과 사진 모아 보기</li>
+          <li><b>홈 화면 위젯</b> 앱을 열지 않고 바로 붙이기</li>
+          <li><b>Apple Watch</b> 손목에서 붙이면 차곡이 머리 위에 블록이 쌓임</li>
+          <li><b>백업과 복원</b> Apple 로그인, 기록이 바뀔 때마다 자동 백업</li>
+          <li><b>수익 모델</b> 스티커 묶음 판매, 광고 보고 체험, 광고 제거</li>
+          <li><b>브랜드</b> 캐릭터 「차곡이」, 표정 10종, 앱 아이콘, 스플래시 애니메이션</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <p class="eyebrow">SCREENS</p>
+    <h2>실제 앱 화면</h2>
+    <p class="intro">2026년 10월 18일 main 브랜치를 Release로 빌드해 iOS 시뮬레이터에서 찍은 화면입니다(기록은 예시). 레트로 LCD 게임기 느낌의 도트 디자인을 직접 만들었습니다.</p>
+    <div class="gallery">
+      <figure class="shot"><div class="phone"><img src="img/app-home.jpg" alt="목표 탭. 목표 카드 네 개와 스티커 묶음 체험 안내, 하단 탭 바"></div><figcaption><b>목표</b>진행률은 평가가 아니라 "채웠어요"로</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-tally.jpg" alt="적립판 화면. 15칸 중 9칸에 책 스티커가 붙어 있다"></div><figcaption><b>적립판</b>칸 수를 정해 두고 채우는 판</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-calendar.jpg" alt="달력판 화면. 10월 달력에 운동화 스티커가 날짜마다 붙어 있다"></div><figcaption><b>달력판</b>날짜에 붙이는 판. 지난 날짜도 채울 수 있음</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-period.jpg" alt="기간이 있는 달력판. 시작일 전 날짜는 흐리게 보인다"></div><figcaption><b>기간 있는 달력판</b>시작일 전 날짜는 흐리게, 운동 묶음 스티커</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-records.jpg" alt="기록 탭 목록. 날짜별로 목표와 메모, 사진이 모여 있다"></div><figcaption><b>기록</b>칸마다 흩어진 메모와 사진을 날짜별로</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-grid.jpg" alt="기록 탭 모아 보기. 사진과 메모가 격자로 놓여 있다"></div><figcaption><b>기록 모아 보기</b>목표별로 골라 사진과 메모를 한눈에</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-record.jpg" alt="기록 화면. 사진과 메모"></div><figcaption><b>기록 남기기</b>사진과 메모는 원할 때만</figcaption></figure>
+      <figure class="shot"><div class="phone"><img src="img/app-stickers.jpg" alt="스티커 탭. 묶음별 스티커와 잠긴 묶음 미리 보기"></div><figcaption><b>스티커</b>묶음 사기, 광고 보고 체험, 미리 보기</figcaption></figure>
+    </div>
+
+    <h3 class="sub-head">홈 화면 위젯</h3>
+    <p class="sub-intro">목표 하나, 적립판, 이번 달 세 종류. 위젯을 누르면 앱을 열지 않고 그 자리에서 붙습니다.</p>
+    <div class="widget-row">
+      <figure class="shot"><div class="widget-shot"><img src="img/widget-light.jpg" alt="밝은 홈 화면에 놓인 적립판, 이번 달, 목표 하나 위젯"></div><figcaption><b>밝은 홈 화면</b>적립판, 이번 달, 목표 하나</figcaption></figure>
+      <figure class="shot"><div class="widget-shot"><img src="img/widget-dark.jpg" alt="어두운 홈 화면에 놓인 같은 위젯 세 개"></div><figcaption><b>어두운 홈 화면</b>고른 바탕색을 그대로 유지</figcaption></figure>
+      <div class="note frame">
+        <h3>위젯 설계</h3>
+        <p>위젯 바탕은 아이보리, 흰색, 먹색 중에서 고르고, 홈 화면이 밝든 어둡든 고른 색을 그대로 씁니다. 판의 도트 그림이 배경에 따라 바뀌지 않게 하려는 결정입니다.</p>
+        <p>위젯마다 보여 줄 목표를 따로 고를 수 있고, 고르지 않으면 가장 최근에 붙인 목표가 나옵니다.</p>
+      </div>
+    </div>
+
+    <h3 class="sub-head">Apple Watch</h3>
+    <p class="sub-intro">폰의 목표가 그대로 넘어와 손목에서 붙입니다. 스티커 하나마다 차곡이 머리 위에 블록이 하나씩 쌓이고, 세 개가 모이면 보관함에 들어갑니다.</p>
+    <div class="watch-row">
+      <figure><div class="watch-face"><img src="img/watch-list.png" alt="워치 목표 목록. 폰과 같은 목표 네 개"></div><figcaption><b>목표 목록</b>폰과 같은 목표</figcaption></figure>
+      <figure><div class="watch-face"><img src="img/watch-tally.png" alt="워치 적립판. 책 스티커 아홉 개와 다음 칸, 붙이기 버튼"></div><figcaption><b>적립판</b>누르면 다음 빈칸에</figcaption></figure>
+      <figure><div class="watch-face"><img src="img/watch-calendar.png" alt="워치 달력판. 오늘 칸에 운동화 스티커"></div><figcaption><b>달력판</b>오늘 칸에 하루 하나</figcaption></figure>
+      <figure><div class="watch-face"><img src="img/watch-stack.png" alt="스티커를 붙인 뒤 차곡이와 보관함 화면"></div><figcaption><b>붙인 뒤</b>차곡이가 블록을 받아 쌓음</figcaption></figure>
+    </div>
+
+    <h3 class="sub-head">움직이는 화면</h3>
+    <p class="sub-intro">모션도 도트 스타일에 맞춰 직접 설계했습니다. 기기의 동작 줄이기 설정을 켜면 움직임을 줄입니다.</p>
+    <div class="motion">
+      <figure class="shot"><div class="phone"><video src="vid/splash.mp4" autoplay muted loop playsinline aria-label="스플래시 애니메이션. 판 세 장이 떨어지고 차곡이가 받아 낸다"></video></div><figcaption><b>스플래시</b>판 세 장이 떨어지면 차곡이가 좌우로 움직여 받아 냄</figcaption></figure>
+      <figure class="shot"><div class="phone"><video src="vid/tabbar.mp4" autoplay muted loop playsinline aria-label="하단 탭 바를 끌어서 탭을 고르는 동작"></video></div><figcaption><b>끌어서 탭 고르기</b>탭 바를 손가락으로 쓸면 선택 칸이 따라옴</figcaption></figure>
+      <figure class="shot"><div class="watch-box"><div class="watch-face"><video src="vid/watch.mp4" autoplay muted loop playsinline aria-label="워치에서 붙이기를 누르면 블록이 떨어져 차곡이 머리 위에 쌓인다"></video></div></div><figcaption><b>워치에서 붙이기</b>붙이면 블록이 떨어져 머리 위에 쌓임</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="ai">
+  <div class="wrap">
+    <p class="eyebrow">AI COLLABORATION</p>
+    <h2>AI를 팀처럼 운영한 방법</h2>
+    <p class="intro">혼자서 기획부터 출시 준비까지 하려면 AI가 동료처럼 일해야 했습니다. 다만 "만들어 줘"라고 맡기면 빨리 만들어지는 대신 쉽게 틀립니다. 그래서 결정은 제가 하고, AI는 근거가 되는 문서와 디자인 시스템 위에서 일하고, 제가 직접 확인한 것만 합치는 흐름을 만들었습니다.</p>
+
+    <div class="ai-flow">
+      <div class="ai-step"><span class="who both">함께</span><b>1. 설계</b><p>제 아이디어를 PRD로 정리. 미정인 것은 "남은 결정"에 둠</p></div>
+      <div class="ai-step"><span class="who ai">AI</span><b>2. 시안</b><p>디자인 시스템 컴포넌트로 시안을 렌더해 비교 페이지로</p></div>
+      <div class="ai-step"><span class="who me">나</span><b>3. 결정</b><p>보고 고르고 메모. 결정과 이유가 그대로 기록됨</p></div>
+      <div class="ai-step"><span class="who ai">AI</span><b>4. PRD 반영</b><p>결정을 PRD와 디자인 문서에 맞춰 넣음</p></div>
+      <div class="ai-step"><span class="who ai">AI</span><b>5. 기능 개발</b><p>작업마다 별도 작업 공간. 테스트와 함께 구현</p></div>
+      <div class="ai-step"><span class="who me">나</span><b>6. 확인 후 합침</b><p>시뮬레이터나 기기에서 직접 써 본 뒤에만 반영</p></div>
+    </div>
+
+    <div class="cards">
+      <div class="card frame"><span class="num">맥락 유지</span><h3>문서 지도와 인계 문서</h3><p>어떤 문서를 언제 읽을지 안내하는 지도와, 지금 상태와 다음 할 일을 담은 인계 문서를 두어 새 세션도 바로 이어서 일합니다.</p></div>
+      <div class="card frame"><span class="num">실수 줄이기</span><h3>함정 기록과 규칙 메모리</h3><p>한 번 크게 헤맨 문제는 함정 기록에 남기고, 제 작업 방식은 에이전트 메모리로 저장해 매 세션 지키게 했습니다.</p></div>
+      <div class="card frame"><span class="num">병렬 작업</span><h3>여러 AI 세션을 동시에</h3><p>워치, 기록 화면, 출시 문서를 각각 다른 작업 공간과 세션에서 동시에 진행하고, 확인한 것부터 합쳤습니다.</p></div>
+      <div class="card frame"><span class="num">검증</span><h3>렌더해서 눈으로 본다</h3><p>시각 작업은 계산만 믿지 않고 실제 크기로 렌더해 보고 고치게 했습니다. 시안도 실제 컴포넌트로 그립니다.</p></div>
+      <div class="card frame"><span class="num">도구 조합</span><h3>목적에 맞는 AI와 도구</h3><p>Claude Code로 설계와 구현, Codex로 스티커 초안, Claude 아티팩트로 시안 비교, Maestro로 화면 자동 조작과 캡처를 했습니다.</p></div>
+      <div class="card frame"><span class="num">정직한 보고</span><h3>확인 못 한 것은 그대로</h3><p>"실기기 미확인" 같은 항목을 숨기지 않고 남깁니다. 그래서 베타 테스트에서 무엇을 봐야 할지가 분명합니다.</p></div>
+    </div>
+
+    <div class="quotes">
+      <blockquote class="quote">결정이 필요한 것을 먼저 모아 묻고, 그다음에 쓴다. 순서를 뒤집으면 두 번 쓰게 된다.<cite>프로젝트 작업 방식 문서</cite></blockquote>
+      <blockquote class="quote">테스트 통과나 타입 체크 통과를 사용자 확인으로 치지 않는다.<cite>프로젝트 작업 방식 문서</cite></blockquote>
+    </div>
+  </div>
+</section>
+
+<section id="product">
+  <div class="wrap">
+    <p class="eyebrow">PRODUCT</p>
+    <h2>기획: 넣지 않을 것부터 정했다</h2>
+    <p class="intro">혼자 짧은 기간에 내놓으려면 "무엇을 안 만들지"가 먼저였습니다. 제품 원칙을 PRD 맨 앞에 두고, 새 기능 아이디어가 나올 때마다 이 원칙에 비춰 판단했습니다.</p>
+    <div class="cards">
+      <div class="card frame"><span class="num">원칙 1</span><h3>붙이는 주체는 사용자</h3><p>증명 사진도, 시스템 판정도 없습니다. 스티커만 붙여도 정상적인 기록이고, 붙인 스티커는 언제든 뗄 수 있습니다.</p></div>
+      <div class="card frame"><span class="num">원칙 2</span><h3>재촉하지 않는다</h3><p>연속일수, 잔디, 통계 대시보드, 등급, 포인트를 일부러 뺐습니다. 진행 문구도 "진행중" 대신 "채웠어요"로 씁니다.</p></div>
+      <div class="card frame"><span class="num">원칙 3</span><h3>탭 한 번을 지킨다</h3><p>붙일 때 스티커 종류를 고르게 하지 않고 목표마다 기본 스티커 하나로 채웁니다. 위젯과 워치도 같은 이유로 만들었습니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="design">
+  <div class="wrap">
+    <p class="eyebrow">DESIGN</p>
+    <h2>디자인: 하나의 도트 언어로</h2>
+    <p class="intro">앱, 위젯, 워치, 아이콘, 스플래시까지 같은 도트 규칙을 씁니다. 디자인 시스템을 먼저 세우고, 모든 시안을 그 위에서 만들어 결정했습니다.</p>
+    <div class="cards two">
+      <div class="card frame"><span class="num">디자인 시스템</span><h3>도트 컴포넌트와 Storybook</h3><p>픽셀 프레임, 버튼, 입력칸을 공통 컴포넌트로 만들고 Storybook에 화면과 상태를 모두 올렸습니다. 화면 흐름도도 Storybook 안에서 PRD와 연결해 관리합니다.</p></div>
+      <div class="card frame"><span class="num">스티커</span><h3>66종 도트 스티커</h3><p>24칸 컬러 도트 스티커를 묶음 단위로 디자인했습니다. AI 초안은 도트 품질 기준(떠 있는 점, 얇은 선, 여백)으로 자동 점검한 뒤 직접 다듬었습니다.</p></div>
+      <div class="card frame"><span class="num">문구</span><h3>사용자 쪽에서 쓰는 말</h3><p>"세션이 만료됐어요" 대신 "로그인이 필요해요". 시스템 상태가 아니라 사용자가 할 일과 결과를 씁니다.</p></div>
+      <div class="card frame"><span class="num">모션</span><h3>도트답게 움직이기</h3><p>스플래시, 끌어서 탭 고르기, 워치의 블록 쌓기까지 도트 스타일로 설계했습니다. 위 「움직이는 화면」에서 볼 수 있습니다.</p></div>
+    </div>
+    <div class="character frame">
+      <img src="img/character.png" alt="캐릭터 차곡이의 표정과 변형 17가지 도트 그림">
+      <div>
+        <h3>캐릭터 「차곡이」</h3>
+        <p style="margin:0 0 10px;font-size:15px">책 모양 판 세 장을 머리에 이고 다니는 캐릭터. 24×24 칸 데이터 하나에서 앱 아이콘, 스플래시 애니메이션, 위젯과 워치 그림을 모두 스크립트로 뽑아냅니다.</p>
+        <p style="margin:0;font-size:15px;color:var(--muted)">표정은 반응일 뿐 칭찬이 아닙니다. 평가하지 않는다는 제품 원칙을 캐릭터에도 지켰습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="wrap">
+    <p class="eyebrow">TECHNOLOGY</p>
+    <h2>기기 먼저, 서버는 백업</h2>
+    <p class="intro">로그인하지 않아도 모든 기능이 됩니다. 기록은 기기에 먼저 쓰고, 로그인하면 바뀐 것만 서버로 보냅니다. 위젯과 워치는 앱이 준 데이터를 보여 주고 붙이기 요청만 보냅니다.</p>
+    <div class="arch frame">
+      <div class="arch-grid">
+        <div class="stack-col">
+          <div class="node"><b>홈 화면 위젯 3종</b><small>공유 저장소에 붙이기 요청을 쌓음</small></div>
+          <div class="node"><b>Apple Watch 앱</b><small>SwiftUI. 폰과 직접 주고받음</small></div>
+        </div>
+        <div class="arrow" aria-hidden="true">⇄</div>
+        <div class="stack-col">
+          <div class="node core"><b>iPhone 앱</b><small>판 칸, 완성, 달력 날짜 같은 규칙을 한곳에서 판단</small></div>
+          <div class="node"><b>기기 데이터베이스</b><small>모든 기록이 먼저 저장되고, 바뀐 내용은 백업 대기열에</small></div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="stack-col">
+          <div class="node"><b>백업 서버</b><small>바뀐 기록과 사진을 받아 보관, 새 기기에서 복원</small></div>
+          <div class="node"><b>결제와 광고</b><small>스티커 묶음 구매, 광고 제거</small></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sub-head">사용 경험을 지키려고 해결한 것</h3>
+    <p class="sub-intro">추측으로 고치지 않고, 재현하고 재고 원인을 찾은 뒤 고쳤습니다.</p>
+    <div class="cards">
+      <div class="card frame"><span class="metric">3.3초 → 0.7초</span><h3>위젯 반응 속도</h3><p>시스템 로그로 단계별 시간을 재서, 누를 때마다 불필요하게 다시 그리던 화면을 줄였습니다.</p></div>
+      <div class="card frame"><span class="metric">앱을 열지 않고</span><h3>위젯에서 바로 붙이기</h3><p>위젯은 앱 데이터에 직접 쓸 수 없어, 요청을 쌓아 두고 앱이 반영하는 구조로 풀었습니다.</p></div>
+      <div class="card frame"><span class="metric">어디서 열어도 같은 날</span><h3>시간대와 날짜</h3><p>붙인 순간의 날짜와 시간대를 함께 저장해, 해외에서 열어도 스티커가 하루 밀리지 않습니다.</p></div>
+      <div class="card frame"><span class="metric">멈춤 없이</span><h3>저장과 위젯 갱신이 겹칠 때</h3><p>위젯 갱신과 저장이 겹쳐 판이 멈추던 문제를 데이터베이스 설정으로 해결했습니다.</p></div>
+      <div class="card frame"><span class="metric">한 번만 붙게</span><h3>워치와 폰 사이 전송</h3><p>앱이 꺼져 있어도 전달되는 길과 즉시 전달 길을 함께 쓰고, 같은 요청은 한 번만 반영합니다.</p></div>
+      <div class="card frame"><span class="metric">심사 요건</span><h3>계정 삭제와 Apple 연결 해제</h3><p>계정을 지우면 기록, 사진, Apple 로그인 연결까지 서버에서 함께 정리합니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="pixel">차곡차곡</span>
+    <span>앱, 위젯, 워치 화면과 영상은 2026년 10월 18일 main 빌드 캡처입니다. 기록은 예시입니다.</span>
+  </div>
+</footer>
+
+</body>
+</html>
