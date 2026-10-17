@@ -27,6 +27,19 @@ describeIfServer('delete-account', () => {
     await expect(deleteAccountOnServer(a.client)).resolves.toBeUndefined();
   });
 
+  // 가짜 토큰이라 Apple은 200 또는 invalid_grant를 돌려준다 — 둘 다 폐기된 것으로 본다.
+  // 함수 secret(APPLE_*)이 빠졌거나 틀리면 여기서 실패한다(설정 확인을 겸한다).
+  it('Apple 토큰이 있으면 폐기하고 계정을 지운다', async () => {
+    const a = await newUser();
+    const admin = adminClient();
+    expect((await admin.rpc('admin_save_apple_token', { p_user: a.userId, p_token: 'fake-refresh-token' })).error).toBeNull();
+
+    await deleteAccountOnServer(a.client);
+
+    expect((await admin.rpc('admin_get_apple_token', { p_user: a.userId })).data).toBeNull();
+    expect((await admin.auth.admin.getUserById(a.userId)).data.user).toBeNull();
+  });
+
   it('로그인 없이는 부를 수 없다', async () => {
     await expect(deleteAccountOnServer(anonClient())).rejects.toThrow();
   });

@@ -8,6 +8,20 @@ export async function deleteAccountOnServer(client: FunctionsClient): Promise<vo
   if (error) throw new Error(error.message);
 }
 
+/** 함수가 2xx가 아니면 supabase-js는 응답을 `context`에 담는다. 본문에 실패 단계와 이유가 있다. */
+type FunctionsError = { message: string; context?: { text?(): Promise<string> } };
+
+export type FunctionsBodyClient = { functions: { invoke(name: string, options: { body: Record<string, string> }): PromiseLike<{ error: FunctionsError | null }> } };
+
+/** Apple 로그인 직후 refresh token을 서버에 맡긴다 — 계정 삭제 때 Apple 연결을 폐기하는 데 쓴다. 실패하면 던진다. */
+export async function linkAppleToken(client: FunctionsBodyClient, authorizationCode: string): Promise<void> {
+  const { error } = await client.functions.invoke('apple-link', { body: { code: authorizationCode } });
+  if (error) {
+    const body = await error.context?.text?.().catch(() => '');
+    throw new Error(body ? `${error.message}: ${body}` : error.message);
+  }
+}
+
 /** 동의 이력 (약관 설계). 만 14세 이상 확인도 같은 시각으로 남긴다. */
 export async function recordConsent(client: RpcClient, termsVersion: number, privacyVersion: number): Promise<void> {
   const { error } = await client.rpc('record_consent', { p_terms_version: termsVersion, p_privacy_version: privacyVersion });
