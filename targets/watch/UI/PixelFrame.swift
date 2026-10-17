@@ -76,9 +76,24 @@ struct BackButton: View {
     Button(action: action) {
       PixelView(map: Self.chevron, cell: 2)
     }
-    .buttonStyle(PixelButtonStyle(fill: Palette.ivory, unit: 2, padding: 0))
-    .frame(width: 30, height: 30)
+    .buttonStyle(HitArea(style: PixelButtonStyle(fill: Palette.ivory, unit: 2, padding: 0), size: 30, pad: Self.pad))
+    .offset(x: -Self.pad.leading, y: -Self.pad.top)
     .accessibilityLabel("뒤로")
   }
+  /** 보이는 틀은 30이지만 손가락이 닿는 곳은 화면 안쪽으로 넓힌다. 작은 워치(40~42mm)에서는 틀이 23pt까지 줄고 둥근 모서리 옆이라 빗나갔다 (2026-10-17 실기기) */
+  static let pad = EdgeInsets(top: 12, leading: 14, bottom: 18, trailing: 6)
   static let chevron: PixelMap = { var p = PixelMap(); p.grid(["...##", "..##.", ".##..", "##...", ".##..", "..##.", "...##"], 0, 0); return p }()
+}
+
+/** 보이는 모양은 style 그대로 size 크기로 그리고, 누르는 곳만 pad만큼 넓힌다 */
+struct HitArea<S: ButtonStyle>: ButtonStyle {
+  let style: S
+  let size: CGFloat
+  let pad: EdgeInsets
+  func makeBody(configuration: Configuration) -> some View {
+    style.makeBody(configuration: configuration)
+      .frame(width: size, height: size)
+      .padding(pad)
+      .contentShape(Rectangle())
+  }
 }
