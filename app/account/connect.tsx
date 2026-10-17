@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import {
-  ConsentScreen, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
-  type RecordSnapshot, type RestoreSide,
+  ConsentScreen, LoginCircles, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
+  type LoginProvider, type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
 import { removeManagedRecordPhoto } from '../../src/app-data/recordPhotos';
@@ -23,7 +23,9 @@ import {
   applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, summarizeDevice, summarizeSnapshot,
   type RecordSummary, type ServerSnapshot,
 } from '../../src/sync/restore';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import { signInWithApple } from '../../src/sync/signIn/apple';
+import { appleSignInAvailable, expoAppleDeps } from '../../src/sync/signIn/expoApple';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { beginConnect, endConnect, markRestored } from '../../src/sync/connectMarker';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
@@ -40,6 +42,14 @@ type Step =
 /** 화면을 떠나 취소된 로그인 시도 */
 const ABORTED = new Error('aborted');
 
+/** 사용자가 로그인 창을 닫았다. 알림 없이 동의 화면으로 돌아간다. */
+const CANCELED = new Error('canceled');
+
+/** 동의 화면 소개에 적는 로그인 수단 (2026-10-15). iOS만 Apple이 있다. */
+const LOGIN_PROVIDERS: LoginProvider[] = Platform.OS === 'ios' ? ['kakao', 'apple', 'google'] : ['kakao', 'google'];
+
+type Method = 'apple' | 'dev';
+
 const connectFailed = { title: '연결하지 못했어요', description: '인터넷 연결을 확인하고 다시 시도해 주세요.', primaryLabel: '확인' };
 
 function toCard(s: RecordSummary): RecordSnapshot {
@@ -49,7 +59,7 @@ function toCard(s: RecordSummary): RecordSnapshot {
 
 /**
  * 계정 연결 (계정·백업 설계 ①). 동의 → 로그인 → 분기(연결만·첫 백업·복원·충돌 선택).
- * 계정 준비 전에는 로그인 자리에 개발 계정 버튼만 둔다 (2026-10-01). 그 자리에 Apple·Google 버튼이 들어간다.
+ * 로그인 자리에는 iOS면 Apple 동그라미 버튼(`LoginCircles`, 2026-10-15), 개발 빌드면 개발 계정 버튼을 둔다. 카카오·Google 버튼은 그 로그인을 붙일 때 더한다.
  * 연결이 끝날 때까지 자동 전송을 잠근다 — 복원 충돌을 고르기 전에 기기 기록이 올라가지 않게.
  */
 export default function ConnectAccount() {
@@ -78,6 +88,13 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
   const signingIn = useRef(false);
   /** 뒤로가기·화면 떠남에서 부를 최신 cancel */
   const cancelRef = useRef<() => Promise<void>>(async () => {});
+  const [appleReady, setAppleReady] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void appleSignInAvailable().then((ok) => { if (alive) setAppleReady(ok); });
+    return () => { alive = false; };
+  }, []);
 
   // 다시 로그인이면(이 기기에서 연결한 적 있음) 두 체크를 켠 채로 연다 (2026-10-01)
   useEffect(() => {
@@ -144,6 +161,14 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
 
   const link = async (userId: string) => { await setSetting('accountUserId', userId); };
 
+  /** 고른 방법으로 로그인한다. 사용자가 로그인 창을 닫으면 'canceled'. */
+  const signInWith = async (method: Method): Promise<{ user: User } | 'canceled'> => {
+    if (method === 'apple') return signInWithApple(expoAppleDeps(supabase));
+    const { data, error } = await supabase.auth.signInWithPassword({ email: DEV_EMAIL!, password: DEV_PASSWORD! });
+    if (error || !data.user) throw error ?? new Error('no user');
+    return { user: data.user };
+  };
+
   const runRestore = async (snap: ServerSnapshot | null) => {
     const s = session.current!;
     setStep({ kind: 'restoring' });
@@ -174,8 +199,10 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
     }
   };
 
-  const connect = async () => {
-    if (!DEV_EMAIL || !DEV_PASSWORD) return;
+  const connect = async (method: Method) => {
+    if (method === 'dev' && (!DEV_EMAIL || !DEV_PASSWORD)) return;
+    // Apple 버튼에는 진행 표시가 없어 두 번 누르기를 여기서 막는다
+    if (busy) return;
     setBusy(true);
     try {
       let versions: { terms: number; privacy: number };
@@ -195,16 +222,19 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
         await beginConnect(previous.current);
         check();
         signingIn.current = true;
-        let signIn;
+        // 로그인 실패도 check() 뒤에 던진다 — 화면을 떠난 시도가 다이얼로그를 띄우지 않게
+        let signIn: { user: User } | 'canceled' | { failed: unknown };
         try {
-          signIn = await supabase.auth.signInWithPassword({ email: DEV_EMAIL, password: DEV_PASSWORD });
+          signIn = await signInWith(method);
+        } catch (e) {
+          signIn = { failed: e };
         } finally {
           signingIn.current = false;
         }
         check();
-        const { data, error } = signIn;
-        if (error || !data.user) throw error ?? new Error('no user');
-        const user = data.user;
+        if (signIn === 'canceled') throw CANCELED;
+        if ('failed' in signIn) throw signIn.failed;
+        const { user } = signIn;
         await recordConsent(supabase, versions.terms, versions.privacy);
         // 만 14세 이상이라고 확인했으니 전에 미만이라고 눌렀어도 아동 처리를 푼다
         await setChildDirectedAds(false);
@@ -241,6 +271,9 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
           return;
         }
         await cancel();
+        if (e === CANCELED) return;
+        // 사용자에게는 일반 안내만 보이니, 개발 중에는 실제 이유를 Metro 로그로 본다
+        if (__DEV__) console.warn('[connect] failed', e);
         await ask(connectFailed);
       }
     } finally {
@@ -264,7 +297,7 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
   return (
     <>
       <ConsentScreen
-        providers={Platform.OS === 'ios' ? ['kakao', 'apple', 'google'] : ['kakao', 'google']}
+        providers={LOGIN_PROVIDERS}
         ageChecked={age}
         termsChecked={terms}
         onToggleAge={() => setAge(!age)}
@@ -273,9 +306,13 @@ function Connect({ supabase }: { supabase: SupabaseClient }) {
         onViewPrivacy={() => void openPolicy('privacy', ask)}
         onUnder14={() => { if (!busy) { void setChildDirectedAds(true); void ask(accountDialogs.under14).then(goBackOrHome); } }}
         onBack={() => { if (!busy) goBackOrHome(); }}
-        loginButtons={__DEV__ && DEV_EMAIL && DEV_PASSWORD
-          ? <PixelButton label="개발 계정으로 계속" loading={busy} onPress={() => void connect()} />
-          : null}
+        loginButtons={<>
+          {/* 만든 수단만 동그라미로 보인다. 카카오와 Google은 만들면 여기에 더해진다 (로그인 계획 2026-10-15). */}
+          {appleReady && <LoginCircles providers={['apple']} onPress={() => void connect('apple')} />}
+          {__DEV__ && DEV_EMAIL && DEV_PASSWORD
+            ? <PixelButton label="개발 계정으로 계속" loading={busy} onPress={() => void connect('dev')} />
+            : null}
+        </>}
       />
       <PixelBusyModal visible={step.kind === 'restoring' && !failed} {...accountDialogs.restoring} />
       <PixelDialogModal
