@@ -451,5 +451,5 @@ Apple Watch에서 목표를 골라 바로 붙이고, 붙일 때마다 차곡이 
 
 - 원 인터뷰: [archive/deep-interview-chamjal-sticker-app.md](archive/deep-interview-chamjal-sticker-app.md)(2026-09-21).
 - 하위 설계: [약관](superpowers/specs/2026-09-30-policy-terms-design.md), [계정·백업](superpowers/specs/2026-09-30-account-backup-design.md), [위젯](superpowers/specs/2026-09-30-home-widget-design.md). 이 PRD와 다르면 PRD가 우선한다.
-- 시안 원본과 고른 과정: [design/proposals-2026-10/](design/proposals-2026-10/README.md).
+- 아직 열려 있는 시안: [design/proposals-2026-10/](design/proposals-2026-10/README.md). 확정된 시안의 원본과 고른 과정은 git 기록(`402913e`)에 있다.
 - 화면 흐름도: Storybook `Flows/앱 전체`. 화면마다 이 문서의 절 번호를 태그로 단다. 3·4절이 바뀌면 흐름도도 맞춘다 — [stories/flows/README.md](../stories/flows/README.md).
