@@ -65,7 +65,7 @@
 - 모션 줄이기를 켠 기기는 마지막 장면만 보여 준다.
 - 앱 컴포넌트: `src/design-system/splash.tsx`(`SplashAnimation`, 시간표 `splashTimeline`) — Storybook `Brand / Splash`.
 - 연결 (2026-10-04): `app/_layout.tsx`가 OS 스플래시를 `preventAutoHideAsync`로 잡아 두고, 글꼴이 준비돼 애니메이션 첫 장면이 그려지면(`onLayout`) 페이드 없이 `hideAsync`, 끝나면 애니메이션을 걷는다. 앱을 처음 켤 때만 재생한다. OS 스플래시 설정은 `app.json`의 `expo-splash-screen` 플러그인(민트 바탕, `assets/splash-icon.png`, 168dp). **Expo Go는 설정한 OS 스플래시 대신 앱 아이콘을 보여 주므로**, 그림 교체와 이어짐은 개발 빌드에서 확인한다(애니메이션은 Expo Go에서도 보인다).
-- 시안 원본: `../proposals-2026-10/icon-splash-final.template.html`의 `SPLASH.s2b`·`timeline()`·`drawSplash()`.
+- 시안 원본: `../proposals-2026-10/icon-splash-final.template.html`의 `SPLASH.s2b`·`timeline()`·`drawSplash()`. 2026-10-18 정리하며 지웠다(`402913e`에 있다).
 
 2026-10-04 메모로 바뀐 방향(기록): 빠른 S2를 바탕으로 ① OS 정지 화면은 **윤곽선만 있는 몸** ② 아래에서 위로 한 줄씩 색이 차고 ③ 판이 떨어질 때 캐릭터가 좌우로 움직여 받고 ④ "차곡차곡"을 한 자씩 쓰며 네모 커서가 따라온다. S2-A(한 칸씩, 0.06초/자)·B(두 칸씩, 0.1초/자)·C(한 칸씩, 0.028초/자) 중 **B로 확정**. 아래는 1차 「2+」 기록이다.
 
@@ -98,4 +98,4 @@ playwright screenshot --full-page --viewport-size "924,500" "file://$PWD/docs/de
 | `variants.cjs` | 팔·머리 위 물건 변형과 스플래시 층 분리(`carry3`, `carryBody`, `carryItem`)와 SVG 출력(`gridSvg`) |
 | `export.cjs` | 위 셋으로 `character-data.json`과 시트 HTML을 만든다 |
 
-시안 페이지 원본(`../proposals-2026-10/*.template.html`)에는 같은 코드가 한 `<script>` 안에 이어 붙어 들어 있다. 앱에 넣을 때는 이 JSON을 원본으로 삼아 `src/design-system/`에 컴포넌트로 옮긴다. 시안이 모두 확정된 뒤에 Storybook에 반영한다.
+앱에 넣을 때는 이 JSON을 원본으로 삼아 `src/design-system/`에 컴포넌트로 옮긴다.

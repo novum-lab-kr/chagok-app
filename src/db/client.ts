@@ -10,10 +10,6 @@ export function setDriverFactory(f: () => Promise<DbDriver>): void {
   driverPromise = null;
 }
 
-export function resetDbForTest(): void {
-  driverPromise = null;
-}
-
 async function readVersion(driver: DbDriver): Promise<number> {
   const row = await driver.first<{ user_version: number }>('PRAGMA user_version');
   return row?.user_version ?? 0;

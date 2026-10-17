@@ -46,10 +46,10 @@
 ## 기기 테스트
 
 - **실행 중인 Storybook·Metro를 임의로 끄지 않는다.** 다른 세션이 쓰고 있을 수 있다. 포트와 프로세스는 세션마다 다시 확인한다.
-- **iPhone 시뮬레이터:** Maestro(`--device`로 UDID 지정). 카드·버튼 안 글자는 못 찾을 때가 많아 `point` 좌표로 누른다. iOS 가장자리 스와이프는 제스처로 인식되지 않는다. 시뮬레이터는 Mac 네트워크를 써서 iOS 오프라인은 볼 수 없다. Debug 빌드는 Expo 톱니 버튼이 화면 오른쪽 가운데에 떠 있다.
+- **iPhone 시뮬레이터:** Maestro(`--device`로 UDID 지정). 카드·버튼 안 글자는 못 찾을 때가 많아 `point` 좌표로 누른다. iOS 가장자리 스와이프는 제스처로 인식되지 않는다. 시뮬레이터는 Mac 네트워크를 써서 iOS 오프라인은 볼 수 없다. Debug 빌드는 Expo 톱니 버튼이 화면 오른쪽 가운데에 떠 있다. 홈의 [+] 위쪽을 가려 누르면 아무 일도 없을 때가 있다 — `xcrun simctl openurl <UDID> chagok://goal/new`로 연다(「열겠습니까?」에서 「열기」).
 - **Maestro로 iOS 위젯 추가:** 홈 화면 메뉴 글자가 잡히지 않는다. 길게 누르기(50%,85%) → 편집 → 18%,10% → "위젯 검색"을 기다린다. home 키 뒤에는 두 번째 페이지에 서므로 오른쪽으로 넘긴 뒤 위젯을 누른다.
 - **위젯 탭 속도:** chronod 로그로 단계별로 잰다. Release 빌드로 잰다.
-- **Android:** 이 저장소 전용 에뮬레이터 `Chagok_Pixel_7`(포트 5556). `Pixel_7`은 다른 프로젝트와 같이 쓴다. 조작은 `adb shell input tap`·`screencap`, 비행기 모드는 `cmd connectivity airplane-mode enable`.
+- **Android:** 이 저장소 전용 에뮬레이터 `Chagok_Pixel_7`(포트 5556). `Pixel_7`은 다른 프로젝트와 같이 쓴다. 조작은 `adb shell input tap`·`screencap`, 비행기 모드는 `cmd connectivity airplane-mode enable`. `adb devices`가 `unauthorized`면 콜드 부팅(`-no-snapshot-load`). `expo run:android --device`는 AVD 이름을 받고 `--port`와 `--no-bundler`를 같이 못 쓴다 — Metro를 따로 띄우고 `adb reverse tcp:<포트> tcp:<포트>`. Debug 빌드의 Expo 「Tools」 버튼이 홈 [앱 설정]을 가리면 `adb shell am start -a android.intent.action.VIEW -d chagok://settings com.novum.chagok`. 키보드 대신 세로 도구 막대가 뜨면 Gboard 손글씨 모드라 `adb shell settings put secure stylus_handwriting_enabled 0`. 탭 크기는 `uiautomator dump`의 px ÷ 2.625 = dp. 에뮬레이터는 개발 계정으로 로그인돼 있어 붙인 것이 `chagok-dev`에 백업된다 — 시험한 것은 되돌린다.
 - **개발 서버 계정:** 계정을 지우면 `npm run server:dev-user`로 개발 계정을 다시 만든다. "이 기기 기록 사용하기"는 서버 테스트 기록을 덮어쓰므로 하기 전에 묻는다.
 - **시간대 바꿔 보기 (2026-10-12):** iOS 시뮬레이터는 `SIMCTL_CHILD_TZ=Pacific/Kiritimati xcrun simctl launch --terminate-running-process <UDID> com.novum.chagok` 뒤 개발 서버 주소를 `openurl`로 연다(시뮬레이터 전체 시간대는 Mac을 따른다). Android 에뮬레이터는 `adb shell service call alarm 3 s16 Pacific/Kiritimati`, 끝나면 `Asia/Seoul`로 되돌리고 `settings put global auto_time_zone 1`. 한국 밤 시각에 날짜가 바뀌는 곳은 키리바시(UTC+14), 낮이면 LA.
 - **기기 DB 구조가 다른 코드끼리 섞지 않는다:** 출시 전에는 구조를 바꿀 때 v1을 고치고 앱 데이터를 지운다(DEV-SETUP 「개발 서버」). 구조를 바꾼 브랜치로 연 기기를 다른 브랜치·main 코드로 열면 테이블이 맞지 않아 깨진다 — 앱 데이터를 지우고 연다(iOS 시뮬레이터: `simctl get_app_container <UDID> com.novum.chagok data`의 Documents·Library를 비움, Android: `adb shell pm clear com.novum.chagok`, 실기기: 앱 삭제 후 다시 설치).

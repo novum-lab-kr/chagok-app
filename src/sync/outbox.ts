@@ -91,9 +91,3 @@ export async function enqueueAll(now = Date.now()): Promise<void> {
     }
   });
 }
-
-/** 로그아웃·계정 삭제 뒤. */
-export async function clearOutbox(): Promise<void> {
-  const db = await getDb();
-  await db.run('DELETE FROM outbox');
-}

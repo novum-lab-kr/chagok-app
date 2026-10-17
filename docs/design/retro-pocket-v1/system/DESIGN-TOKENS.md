@@ -134,7 +134,7 @@
 4. 화면별 하드코딩 색, 자동 테마 보정, 폰트 교체, 필터 프레임 추가를 금지한다.
 5. 기존 문서와 이미지는 비교 기록으로 보존하지만 기준으로 덮어쓰지 않는다.
 
-`src/design-system/tokens.ts`가 이 JSON을 직접 읽는다. Storybook과 공통 React Native 컴포넌트가 실제 연결되어 있다. 기존 제품 화면용 `src/theme/tokens.ts`는 화면 통합 전의 종이 테마로 남아 있으며 새 공통 컴포넌트에서는 사용하지 않는다.
+`src/design-system/tokens.ts`가 이 JSON을 직접 읽는다. Storybook과 공통 React Native 컴포넌트가 실제 연결되어 있다.
 
 ## 9. 검증 체크
 

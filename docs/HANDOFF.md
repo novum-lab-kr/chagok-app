@@ -21,16 +21,11 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 | 위젯 | iOS 세 종류만 | Android도 (4.10) |
 | 앱 설정 | 하단 「설정」 탭(2026-10-12). 계정·구매·도움말(사용법 다시 보기)·정보(약관과 라이선스). 문의하기·앱 버전 줄 없음. 구역은 판(`PixelPanel`) 배치 | 4.9 |
 | 위젯 미리보기 | Storybook에 없다(예전 링 위젯 미리보기는 2026-10-10 지움). 흐름도 위젯 노드는 스토리 없이 둔다 | 4.10 |
-| `/dev/sync` | 개발 전용 동기화 화면(`__DEV__`). 실제 계정 화면이 붙으면 없앤다 | — |
+| `/dev/sync` | 개발 전용 동기화 화면(`__DEV__`). 계정 화면이 붙은 뒤에도 동기화를 손으로 확인할 때 쓰려고 남겨 둔다(2026-10-18 사용자 결정) | — |
 
 ## 진행 중인 브랜치와 worktree
 
-| 위치 | 브랜치 | 상태 |
-| --- | --- | --- |
-| (worktree 없음) | `fix/light-mode-font-scale` | 2026-10-01 옛 브랜치. 같은 내용을 최신 main에 `fix/fixed-text-size`로 다시 넣어 필요 없다. 지울지 사용자 확인 |
-| (worktree 없음) | `spike/widgets` | 위젯 시험 구현. 코드는 합치지 않는다(결과 문서는 main `docs/superpowers/specs/2026-10-05-widget-spike-results.md`) |
-| (worktree 없음) | `docs/scope-decisions`, `integration/expo-go-phase` | 내용이 main에 있다. 합치지 않는다. 지울지는 사용자 확인 |
-| `chagok-wt-watch-spike` | `spike/watch` | 워치 시험 구현. 커밋하지 않았고 합치지 않는다. 지울지 사용자 확인 |
+2026-10-18 옛 시험 구현과 이미 합친 로컬 브랜치를 지웠다(원격 브랜치는 남김). 다른 세션이 쓰는 worktree는 `git worktree list`로 본다.
 
 ## 다음 할 일
 
