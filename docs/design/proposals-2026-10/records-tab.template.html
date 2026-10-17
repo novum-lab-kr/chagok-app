@@ -1,0 +1,176 @@
+<title>기록 탭 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 안마다 캡처 · 좋은 점/걸리는 점 · 고르기 · 메모. 문구 묶음은 상황마다 「이대로」와 메모. 아래 고정 막대에 요약. */
+@font-face { font-family: 'NeoDunggeunmo'; src: url(data:font/ttf;base64,__FONT__) format('truetype'); font-display: block; }
+:root {
+  --mint: #AFE1CB; --lcd: #C7DE94; --coral: #FD855F; --ivory: #FEF1D1; --ink: #06261C;
+  --bg: #EAF5EE; --card: #FFFFFF; --fg: #06261C; --muted: #4C6A5E; --line: #B9D6C6; --pick: #FD855F; --pick-bg: #FFF1EA; --bad: #B4381A;
+  --pixel: 'NeoDunggeunmo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0F1D18; --card: #17291F; --fg: #E6F2EA; --muted: #9DBBAD; --line: #2C4A3C; --pick: #FD9B7A; --pick-bg: #2B1F1A; --bad: #FF9A7E; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+main { max-width: 1120px; margin: 0 auto; padding-block: 28px 120px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+h1, h2, .code, .btn, .tag { font-family: var(--pixel); font-weight: normal; }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.decided { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decided ul { margin: 0; padding-left: 20px; }
+section.group { display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.opt { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.ok { border-color: var(--pick); background: var(--pick-bg); }
+.opt.ref { border-style: dashed; }
+.head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code { font-size: 18px; }
+.tag { font-size: 12px; padding: 1px 6px; border: 2px solid var(--ink); background: var(--lcd); color: var(--ink); border-radius: 3px; }
+.tag.new { background: var(--ivory); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.shots figure { margin: 0; min-width: 0; display: grid; gap: 4px; align-content: start; }
+.shots img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.shots figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+dl { margin: 0; display: grid; gap: 4px; font-size: 14px; }
+dt { font-weight: 600; }
+dd { margin: 0 0 4px; color: var(--muted); }
+.btn { font-size: 15px; padding: 8px 12px; border: 3px solid var(--ink); background: var(--ivory); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--coral); }
+.btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: 14px/1.5 var(--body); padding: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); resize: vertical; }
+.state { font-size: 12px; color: var(--muted); min-height: 1em; }
+.state.bad { color: var(--bad); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line);
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar #summary { flex: 1 1 260px; min-width: 0; font-size: 14px; }
+.bar #store-state { font-size: 12px; color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>기록 탭 3판: 칩 이름, 사진 비율</h1>
+    <p class="muted">2판에서 피드 격자는 <b>A 꽉 찬 격자</b>로 정해졌습니다. 이번 판은 2판 메모 두 개에 대한 답입니다. 캡처는 지금 앱 컴포넌트로 그렸습니다(390pt). 예시 사진은 도트 그림이고, 세로 사진(책장, 나무)을 섞었습니다.</p>
+    <div class="decided">
+      <b>2판 메모에 대한 답</b>
+      <ul>
+        <li><b>A 메모 「스티커 칩을 누르면 목표 이름도, 타임라인도 동일하게」</b>: 타임라인은 이미 코드에 들어가 있었는데, 2판 캡처가 「전체」를 고른 상태라 이름이 안 보였습니다. 피드도 같은 칩을 그대로 씁니다. 아래 첫 묶음이 칩을 고른 모습입니다.</li>
+        <li><b>펼친 화면 메모 「사진은 왜 정사각형? 어떤 크기로 저장하나?」</b>: 정사각형은 시안에서 제가 임의로 정한 것이고, 저장과는 상관없습니다. 사진은 찍은 그대로의 비율로, 자르지 않고 저장합니다(앨범에서 고를 때도 자르기 단계 없음, 화질 70%). 백업할 때만 긴 변 1600px로 줄이고 비율은 그대로입니다. 그래서 펼친 화면은 원래 비율로 보여 줄 수 있습니다. 아래 둘째 묶음에서 골라 주세요.</li>
+        <li>참고: 지금 기록 화면(스티커를 눌러 여는 화면)의 사진 칸은 가로가 조금 긴 틀(586:494)이라, 세로로 찍은 사진은 위아래가 잘려 보입니다. 이번 범위 밖이라 그대로 두지만, 바꾸고 싶으면 메모로 알려 주세요.</li>
+      </ul>
+    </div>
+  <div id="groups"></div>
+</main>
+<div class="bar"><div id="summary"></div><span id="store-state">불러오는 중</span><button class="btn" id="copy" type="button">메모까지 복사</button></div>
+
+<script>
+const IMG = __IMG__;
+const REF = [];
+const GROUPS = [
+  { key: 'chip', short: '칩 이름', pick: 'each', title: '칩을 고르면 목표 이름이 펼쳐짐', intro: '「매일 저녁 동네 한 바퀴 걷기」 칩을 고른 상태입니다. 타임라인과 피드가 같은 칩을 씁니다. 이름이 길면 끝을 줄이고, 화면 낭독은 늘 전체 이름을 읽습니다.',
+    opts: [
+      { id: 'rt3-chip', code: '칩 이름', name: '고른 칩만 이름이 펼쳐짐', shots: [['timeline-chip-on', '타임라인에서 고름'], ['feed-chip-on', '피드에서 고름']],
+        text: '1판 2안과 같은 모양입니다. 고른 칩은 진한 바탕에 스티커와 이름, 나머지는 스티커만 보입니다.', why: '바꿀 점이 없으면 [이대로], 있으면 메모로 남겨 주세요.' },
+    ] },
+  { key: 'ratio', short: '사진 비율', pick: 'one', title: '펼친 화면의 사진 비율', intro: '셋 다 같은 기록입니다. 맨 위가 세로 사진(책장), 그 아래가 가로 사진(노을)입니다. 피드 격자는 칸을 맞추려고 정사각형으로 잘라 보이고, 누르면 이 화면이 열립니다.',
+    opts: [
+      { id: 'rt-ra', code: 'A', name: '원래 비율 그대로', rec: true, shots: [['detail-original', '세로 사진은 세로로, 가로 사진은 가로로']],
+        good: '찍은 사진이 잘리지 않고 다 보인다. 인스타그램 펼친 화면과 가장 비슷하다.', bad: '기록마다 사진 높이가 달라 리듬이 고르지 않다. 아주 긴 세로 사진(화면 캡처 같은 것)은 3:4까지만 보이고 위아래를 자른다.' },
+      { id: 'rt-rb', code: 'B', name: '기록 화면과 같은 틀', shots: [['detail-record', '기록 화면 사진 칸과 같은 586:494']],
+        good: '기록 화면에서 본 모습과 똑같아서 낯설지 않다. 높이가 일정해 한 화면에 기록이 더 많이 보인다.', bad: '세로로 찍은 사진은 위아래가 많이 잘린다. 휴대폰 사진은 대개 세로라 자주 걸린다.' },
+      { id: 'rt-rc', code: 'C', name: '정사각형', shots: [['detail-square', '2판과 같음']],
+        good: '격자 칸과 같은 모양이라 누르기 전후가 이어진다. 높이가 일정하다.', bad: '세로 사진, 가로 사진 모두 조금씩 잘린다.' },
+    ] },
+];
+const $ = id => document.getElementById(id);
+const LS = 'chagok-records-tab-review-3';
+const ALL = GROUPS.flatMap(g => g.opts.map(o => o.id));
+const KEYS = GROUPS.flatMap(g => g.pick === 'one' ? [g.key] : g.opts.map(o => o.id));
+let state = { choice: Object.fromEntries(KEYS.map(k => [k, ''])), notes: Object.fromEntries(ALL.map(id => [id, ''])) };
+try { const s = JSON.parse(localStorage.getItem(LS) || 'null'); if (s && s.choice && s.notes) state = { choice: { ...state.choice, ...s.choice }, notes: { ...state.notes, ...s.notes } }; } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shots = list => `<div class="shots">${list.map(([k, cap]) => `<figure><img src="${IMG[k]}" alt="${esc(cap)}" ><figcaption>${esc(cap)}</figcaption></figure>`).join('')}</div>`;
+const keyOf = (g, o) => g.pick === 'one' ? g.key : o.id;
+const valOf = (g, o) => g.pick === 'one' ? o.id : 'ok';
+function render() {
+  $('groups').innerHTML = GROUPS.map(g => `<section class="group"><h2>${esc(g.title)}</h2><p class="muted">${esc(g.intro)}</p><div class="row">
+    ${g.opts.map(o => `<article class="opt" id="g-${o.id}"><div class="head"><span class="code">${esc(o.code)}</span><b>${esc(o.name)}</b>${o.rec ? '<span class="tag">추천</span>' : ''}${o.newEl ? `<span class="tag new">${esc(o.newEl)}</span>` : ''}</div>
+      ${shots(o.shots)}${o.text ? `<p>${esc(o.text)}</p>${o.why ? `<p class="muted" style="font-size:14px">${esc(o.why)}</p>` : ''}` : `<dl><dt>좋은 점</dt><dd>${esc(o.good)}</dd><dt>걸리는 점</dt><dd>${esc(o.bad)}</dd></dl>`}
+      <button class="btn ok-btn" type="button" id="ok-${o.id}" data-g="${g.key}" data-o="${o.id}" aria-pressed="false"></button>
+      <label class="muted" for="note-${o.id}" style="font-size:13px">${esc(o.code)} 메모</label><textarea id="note-${o.id}" data-o="${o.id}" placeholder="${g.pick === 'one' ? '바꿀 점 등' : '바꿀 문구 등'}"></textarea><div class="state" id="state-${o.id}"></div></article>`).join('')}
+  </div></section>`).join('');
+  paint();
+}
+const groupOf = id => GROUPS.find(g => g.opts.some(o => o.id === id));
+const optOf = id => { const g = groupOf(id); return g ? g.opts.find(o => o.id === id) : undefined; };
+function label() {
+  const short = {};
+  const parts = GROUPS.filter(g => g.pick === 'one').map(g => `${g.short || short[g.key]} ${(optOf(state.choice[g.key] || 'x-x') || {}).code || '아직'}`);
+  const each = GROUPS.filter(g => g.pick === 'each').flatMap(g => g.opts).filter(o => state.choice[o.id] === 'ok').map(o => `${o.code} 이대로`);
+  return parts.concat(each).join(', ');
+}
+function paint() {
+  for (const g of GROUPS) for (const o of g.opts) {
+    const picked = state.choice[keyOf(g, o)] === valOf(g, o);
+    $(`g-${o.id}`).classList.toggle('ok', picked);
+    const b = $(`ok-${o.id}`); b.setAttribute('aria-pressed', String(picked));
+    b.textContent = g.pick === 'one' ? (picked ? '고른 안' : '이 안 고르기') : (picked ? '이대로 ✓' : '이대로');
+    const t = $(`note-${o.id}`); if (document.activeElement !== t && t.value !== state.notes[o.id]) t.value = state.notes[o.id];
+  }
+  const n = ALL.filter(id => state.notes[id].trim()).length;
+  $('summary').textContent = label() + (n ? `, 메모 ${n}개` : '');
+}
+function setStatus(id, text, bad = false) { const el = $(`state-${id}`); if (el) { el.textContent = text; el.classList.toggle('bad', bad); } }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+// 문서: review/choice-rt-fallback {value}, review/note-rt-<안 id> {note}
+async function persist(doc, statusId, data) {
+  saveLocal();
+  if (!db) { setStatus(statusId, '이 브라우저에만 저장됨'); return; }
+  if (writing[doc]) { queued[doc] = [statusId, data]; return; }
+  writing[doc] = true; setStatus(statusId, '저장 중…');
+  try { await db.doc(`review/${doc}`).set({ ...data(), updatedAt: new Date().toISOString() }); setStatus(statusId, '저장됨'); }
+  catch (e) { setStatus(statusId, '저장하지 못했어요. 메모까지 복사로 보내 주세요.', true); }
+  finally { writing[doc] = false; if (queued[doc]) { const [s, d] = queued[doc]; queued[doc] = null; persist(doc, s, d); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ok-btn'); if (!b) return;
+  const g = GROUPS.find(x => x.key === b.dataset.g), o = optOf(b.dataset.o), k = keyOf(g, o), v = valOf(g, o);
+  state.choice[k] = state.choice[k] === v ? '' : v; paint(); persist(`choice-rt-${k}`, o.id, () => ({ value: state.choice[k] }));
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t) return;
+  const id = t.dataset.o; state.notes[id] = t.value; setStatus(id, '적는 중…'); paint();
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => { timers[id] = null; persist(`note-rt-${id}`, id, () => ({ note: state.notes[id] })); }, 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest('textarea[data-o]'); if (!t || !timers[t.dataset.o]) return;
+  const id = t.dataset.o; clearTimeout(timers[id]); timers[id] = null; persist(`note-rt-${id}`, id, () => ({ note: state.notes[id] }));
+});
+$('copy').addEventListener('click', () => {
+  const text = label() + '\n' + ALL.filter(id => state.notes[id].trim()).map(id => `${optOf(id).code} ${optOf(id).name} 메모: ${state.notes[id].trim()}`).join('\n');
+  const done = () => { $('copy').textContent = '복사됨'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+render();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장돼요. 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장 중';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith('choice-rt-')) { const k = d.id.slice(10); if (k in state.choice && typeof v.value === 'string') state.choice[k] = v.value; continue; }
+      if (!d.id.startsWith('note-rt-')) continue;
+      const id = d.id.slice(8); if (!(id in state.notes)) continue;
+      const t = document.activeElement; state.notes[id] = t && t.id === `note-${id}` ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요. 메모까지 복사로 보내 주세요'; });
+})();
+</script>
