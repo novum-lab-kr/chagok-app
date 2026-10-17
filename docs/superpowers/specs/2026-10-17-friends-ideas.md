@@ -2,7 +2,7 @@
 
 2026-10-17. **출시 뒤에 넣을지 고민 중인 기능이다.** 아직 정한 것은 없다. 이 문서는 다음에 기획을 이어 가기 위한 출발점이다.
 
-- 시안: [친구와 함께 쓰기](https://claude.ai/artifact/QYT5fQYk2xeDnBgV63Yckb)(비공개). 원본은 `docs/design/proposals-2026-10/friends-ideas.template.html`, 다시 만들기는 `node docs/design/proposals-2026-10/friends-ideas.gen.mjs <출력 폴더>`.
+- 시안: [친구와 함께 쓰기](https://claude.ai/artifact/QYT5fQYk2xeDnBgV63Yckb)(비공개). 저장소에서 바로 보기는 [`friends-ideas.html`](../../design/proposals-2026-10/friends-ideas.html)(브라우저로 열기) 또는 캡처 [`friends-ideas.png`](../../design/proposals-2026-10/friends-ideas.png). 원본은 `friends-ideas.template.html`, 다시 만들기는 `node docs/design/proposals-2026-10/friends-ideas.gen.mjs [출력 폴더]`.
 - 시안의 화면은 설명용으로 그린 그림이다. 실제 컴포넌트 캡처가 아니다. 방향이 정해지면 디자인 시스템 컴포넌트로 다시 그린다.
 - 고른 것과 메모는 아티팩트 db `review/choice-fr-<1~7|dir>`(`yes`·`later`·`no`, 방향은 `a`·`b`·`c`)와 `review/note-fr-<1~7|dir|all>`에 쌓인다. 2026-10-17 커밋 때는 비어 있었다.
 
