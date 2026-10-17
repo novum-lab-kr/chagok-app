@@ -1,6 +1,6 @@
 import { createGoal, deleteGoal } from '../src/repositories/goalRepository';
 import { placeSticker, removeSticker } from '../src/repositories/stickerRepository';
-import { getSetting, setSetting } from '../src/repositories/appSettingsRepository';
+import { setSetting } from '../src/repositories/appSettingsRepository';
 import { getDb } from '../src/db/client';
 import { pushOnce } from '../src/sync/push';
 import { restoreAll } from '../src/sync/restore';
@@ -11,22 +11,11 @@ import { withFreshDb } from './support/setup';
 
 withFreshDb();
 
-describe('updateGrowth: 저장된 값', () => {
-  it('저장된 값과 지금 수 중 큰 값', async () => {
+describe('updateGrowth: 예전에 저장된 최고치', () => {
+  it('남아 있어도 쓰지 않는다 — 지금 붙어 있는 수 (2026-10-17)', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
     for (let i = 0; i < 4; i++) await placeSticker(g.id, i);
     await setSetting('watchGrowth', '7');
-    expect(await updateGrowth()).toBe(7);
-    await setSetting('watchGrowth', '3');
-    expect(await updateGrowth()).toBe(4);
-  });
-
-  it('깨진 값은 무시한다', async () => {
-    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
-    for (let i = 0; i < 4; i++) await placeSticker(g.id, i);
-    await setSetting('watchGrowth', 'abc');
-    expect(await updateGrowth()).toBe(4);
-    await setSetting('watchGrowth', '-2');
     expect(await updateGrowth()).toBe(4);
   });
 });
@@ -38,20 +27,19 @@ describe('updateGrowth (워치 설계 「성장 수」)', () => {
     await placeSticker(a.id, 0, undefined, { complete: true });
     await placeSticker(b.id, 0);
     expect(await updateGrowth()).toBe(2);
-    expect(await getSetting('watchGrowth')).toBe('2');
   });
 
-  it('떼고 다시 붙여도, 목표를 지워도 줄거나 늘지 않는다 (Review Focus 2)', async () => {
+  it('떼면 줄고 다시 붙이면 늘고, 목표를 지우면 그 스티커만큼 준다 (2026-10-17)', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
     for (let i = 0; i < 4; i++) await placeSticker(g.id, i);
     const fifth = await placeSticker(g.id, 4);
     expect(await updateGrowth()).toBe(5);
     await removeSticker(fifth.id);
-    expect(await updateGrowth()).toBe(5);
+    expect(await updateGrowth()).toBe(4);
     await placeSticker(g.id, 4);
     expect(await updateGrowth()).toBe(5);
     await deleteGoal(g.id);
-    expect(await updateGrowth()).toBe(5);
+    expect(await updateGrowth()).toBe(0);
   });
 
   it('기기를 비우면 0부터 (Review Focus 3)', async () => {

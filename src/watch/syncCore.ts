@@ -35,8 +35,7 @@ function split(list: unknown[]): { requests: WidgetRequest[]; invalidIds: string
 /**
  * 워치 요청 처리 + 성장 갱신 + 스냅샷 보내기 한 번 (워치 설계 「구조」).
  * 요청은 위젯과 같은 applyWidgetRequests로 처리한다 — 처리한 id 목록을 함께 써서 두 번 붙지 않는다.
- * 성장 수는 요청을 처리한 뒤에 센다(방금 붙인 것이 들어가게). 워치가 없어도 센다 — 기록이 바뀔 때마다 세야
- * 판을 지우기 전의 수가 남아 줄지 않는다.
+ * 성장 수는 요청을 처리한 뒤에 센다(방금 붙인 것이 들어가게, 뗀 것이 빠지게).
  */
 export async function syncWatchOnce(deps: WatchSyncDeps): Promise<{ changed: boolean }> {
   let changed = false;

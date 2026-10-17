@@ -142,10 +142,11 @@ test("누름: 달력판") {
   expectEqual(Tap.day(rec, day: 16), .toast(Copy.pastDay))
 }
 
-test("성장: 워치에 보인 수 아래로 내리지 않는다 (Review Focus 3)") {
-  expectEqual(Growth.shown(snapshot: 10, pendingAdds: 1, lastShown: 0), 11)
-  expectEqual(Growth.shown(snapshot: 10, pendingAdds: 0, lastShown: 11), 11)
-  expectEqual(Growth.shown(snapshot: 12, pendingAdds: 0, lastShown: 11), 12)
+test("성장: 지금 붙어 있는 수 — 떼면 줄고 다시 붙이면 는다 (2026-10-17)") {
+  expectEqual(Growth.shown(snapshot: 10, pending: [req("1", "a")]), 11)
+  expectEqual(Growth.shown(snapshot: 10, pending: [req("1", "a", .remove, slot: 0)]), 9)
+  expectEqual(Growth.shown(snapshot: 10, pending: [req("1", "a", .remove, slot: 0), req("2", "a", at: 2)]), 10)
+  expectEqual(Growth.shown(snapshot: 0, pending: [req("1", "a", .remove, slot: 0)]), 0)
 }
 
 test("성장: 머리 위 블록과 보관함") {
@@ -172,16 +173,11 @@ test("목록: 체험이 끝난 목표는 워치 목록에서 뺀다 (결정 1 L3
   expectEqual(Overlay.listed(goals).map(\.id), ["a"])
 }
 
-test("성장: 처리 안 된 요청이 더하는 블록 — 떼고 다시 붙이면 늘지 않는다 (검토 I1)") {
-  expectEqual(Growth.pendingGain([req("1", "a"), req("2", "a", at: 2)]), 2)
-  expectEqual(Growth.pendingGain([req("1", "a", .remove, slot: 0), req("2", "a", at: 2)]), 0)
-  expectEqual(Growth.pendingGain([req("1", "a"), req("2", "a", .remove, at: 2, slot: 0)]), 1)
-}
-
-test("성장: 폰이 세지 않은 블록은 새 스냅샷에서 내려 맞춘다 (검토 I1)") {
+test("성장: 폰이 세지 않은 블록이나 뗀 블록은 보인 수도 내려 맞춘다 — 다시 붙이면 모션이 나온다") {
   expectEqual(Growth.confirmShown(lastShown: 11, snapshot: 10, pending: []), 10)
   expectEqual(Growth.confirmShown(lastShown: 11, snapshot: 10, pending: [req("1", "a")]), 11)
   expectEqual(Growth.confirmShown(lastShown: 9, snapshot: 10, pending: []), 9)
+  expectEqual(Growth.confirmShown(lastShown: 11, snapshot: 11, pending: [req("1", "a", .remove, slot: 0)]), 10)
 }
 
 test("날짜 키: 기기 달력이 불기나 일본력이어도 양력 키 (검토 I5)") {

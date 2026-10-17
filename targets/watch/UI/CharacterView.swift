@@ -119,7 +119,11 @@ struct CharacterView: View {
     heads = colors(from)
     deck = Growth.boxes(from)
     label = flow?.label ?? (to > from ? Copy.grew(to - from) : nil)
-    guard to > from else { return }
+    // 새 블록이 없어도 붙인 뒤 흐름이면 판으로 돌아간다 — 안 그러면 뒤로 버튼 없이 멈춘다
+    guard to > from else {
+      if flow?.auto == true { try? await sleep(1.2); done() }
+      return
+    }
     if reduceMotion {
       finish(to)
       if flow?.auto == true { try? await sleep(0.8); done() }

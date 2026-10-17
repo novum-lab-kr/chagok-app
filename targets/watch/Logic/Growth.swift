@@ -8,24 +8,19 @@ enum Growth {
   /** 머리 위 블록 색: 민트, 아이보리, 살구 (src/watch/blockColor.ts FALLBACK_BLOCK_COLORS와 같은 값) */
   static let fallback = ["#AFE1CB", "#FEF1D1", "#FD855F"]
 
-  /** 워치에 보일 블록 수. 폰이 아직 처리하지 않은 붙임을 더하고, 한 번 보인 수 아래로는 내리지 않는다 */
-  static func shown(snapshot: Int, pendingAdds: Int, lastShown: Int) -> Int {
-    max(lastShown, snapshot + pendingAdds)
+  /** 워치에 보일 블록 수 = 지금 붙어 있는 스티커 수. 폰이 아직 처리하지 않은 붙임은 더하고 뗌은 뺀다 (2026-10-17: 떼면 준다) */
+  static func shown(snapshot: Int, pending: [WatchRequest]) -> Int {
+    max(0, snapshot + pendingNet(pending))
   }
 
-  /** 처리 안 된 요청이 더할 블록 수. 폰은 최고치를 세므로 누른 순서대로 더하고 빼며 가장 높았던 만큼 — 오늘 칸을 떼고 다시 붙이면 0 */
-  static func pendingGain(_ pending: [WatchRequest]) -> Int {
-    var run = 0, peak = 0
-    for r in pending.sorted(by: { $0.at < $1.at }) {
-      run += r.kind == .add ? 1 : -1
-      peak = max(peak, run)
-    }
-    return peak
+  /** 처리 안 된 요청이 바꿀 블록 수: 붙임 +1, 뗌 -1 */
+  static func pendingNet(_ pending: [WatchRequest]) -> Int {
+    pending.reduce(0) { $0 + ($1.kind == .add ? 1 : -1) }
   }
 
-  /** 새 스냅샷을 받았을 때: 워치가 보여 줬지만 폰이 세지 않은 블록(폰이 건너뛴 붙임)은 내려 맞춘다 — 안 그러면 다음 진짜 블록이 떨어지지 않는다 */
+  /** 보여 준 수를 지금 수 아래로 내려 맞춘다: 뗐거나 폰이 건너뛴 붙임. 안 그러면 다시 붙인 블록이 떨어지지 않는다 */
   static func confirmShown(lastShown: Int, snapshot: Int, pending: [WatchRequest]) -> Int {
-    min(lastShown, snapshot + pendingGain(pending))
+    min(lastShown, shown(snapshot: snapshot, pending: pending))
   }
 
   static func heads(_ growth: Int) -> Int { growth % perBundle }
