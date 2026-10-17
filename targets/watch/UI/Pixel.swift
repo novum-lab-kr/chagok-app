@@ -9,7 +9,6 @@ enum Palette {
   static let mint = Color(hex: "#AFE1CB")
   /** 묶음 표시의 꺼진 점, 작은 판의 앞날 */
   static let dim = Color(hex: "#7F9A6A")
-  static let dimDay = Color(hex: "#5F7A52")
   static let font = "NeoDunggeunmo-Regular"
 }
 
@@ -107,26 +106,5 @@ enum Sprite {
     for j in 0..<min(filled, Growth.bundlesPerBox) { let s = slot(j); bundle(&p, s.x, s.y) }
     return p
   }
-
-  /** 마지막으로 붙인 판을 작게: 실제 칸 수만큼. 붙인 칸은 목표 색 */
-  static func miniBoard(_ g: WatchGoal) -> (map: PixelMap, cell: CGFloat) {
-    var q = PixelMap()
-    let color = Color(hex: g.color)
-    switch g.board {
-    case let .calendar(_, _, firstWeekday, days, _, _, _):
-      let rows = (firstWeekday + days.count + 6) / 7
-      q.rect(0, 0, 15, rows * 2 + 1, Palette.ink)
-      for (d, v) in days.enumerated() {
-        let k = firstWeekday + d
-        let c: Color = v == .placed || v == .placedToday ? color : (v == .future || v == .outside ? Palette.dimDay : Palette.lcd)
-        q.put(1 + (k % 7) * 2, 1 + (k / 7) * 2, c)
-      }
-      return (q, 3)
-    case let .tally(cells, _):
-      let n = cells.count, cols = n <= 10 ? 5 : 10, rows = (n + cols - 1) / cols
-      q.rect(0, 0, cols * 2 + 1, rows * 2 + 1, Palette.ink)
-      for (i, v) in cells.enumerated() { q.put(1 + (i % cols) * 2, 1 + (i / cols) * 2, v == .empty ? Palette.lcd : color) }
-      return (q, CGFloat(max(1, min(4, 30 / (rows * 2 + 1)))))
-    }
-  }
 }
+

@@ -49,6 +49,10 @@ struct RootView: View {
         CharacterView(flow: flow, back: { finishCharacter() }, done: { finishCharacter() })
       }
     }
+    // 화면 왼쪽 끝에서 오른쪽으로 밀면 뒤로 (워치 앱 기본 동작. 시스템 화면 이동을 안 써서 직접 단다)
+    .simultaneousGesture(DragGesture(minimumDistance: 20, coordinateSpace: .global).onEnded { v in
+      if v.startLocation.x < 24, v.translation.width > 40, v.translation.width > abs(v.translation.height) * 1.5 { goBack() }
+    })
     .onChange(of: phase) { _, p in if p == .active { store.refreshToday(); catchUp() } }
     // 앱을 연 뒤에 새 스냅샷이 오면(폰이 늦게 보냄) 첫 화면에 있을 때만 한 번 더 본다
     .onChange(of: store.snapshot?.growth) { _, _ in if phase == .active, route == .home { catchUp() } }
@@ -86,6 +90,8 @@ struct RootView: View {
     let label = complete ? Copy.completed(g.name) : Copy.stuck(g.name)
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
       pop = nil
+      // 그사이 뒤로 갔으면 따라가지 않는다. 블록은 첫 화면에서 catchUp이 떨어뜨린다
+      guard route == .goal(g.id) else { return }
       open(.character, flow: Flow(from: from, label: label, auto: true), back: back)
     }
   }
@@ -118,6 +124,16 @@ struct RootView: View {
     }
   }
   #endif
+
+  /** 밀어서 뒤로: 각 화면의 뒤로 버튼과 같은 곳으로 */
+  private func goBack() {
+    switch route {
+    case .home: break
+    case .goal: route = .home
+    case let .confirm(id, _): route = .goal(id)
+    case .character: finishCharacter()
+    }
+  }
 
   private func finishCharacter() {
     store.markShown(store.growth)

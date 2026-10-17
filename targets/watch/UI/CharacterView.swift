@@ -18,7 +18,7 @@ struct CharacterView: View {
   /** 모션이 끝났거나 건너뛰었다 */
   let done: () -> Void
 
-  // 46mm 좌표 (시안 .ch, .floor, .deck.side, .decklabel, .recent)
+  // 46mm 좌표 (시안 .ch, .floor, .deck.side, .decklabel). 아래 작은 판은 2026-10-17에 뺐다
   private let cell: CGFloat = 2.4
   private let charLeft: CGFloat = 20, floorY: CGFloat = 140
   private let deckLeft: CGFloat = 100, deckTop: CGFloat = 83, boxCell: CGFloat = 3
@@ -53,7 +53,6 @@ struct CharacterView: View {
       }
       Text(label ?? (idx == 0 ? Copy.boxNow : Copy.boxFull)).font(.pixel(11)).foregroundStyle(Palette.ink)
         .frame(width: Layout.width).offset(y: 152)
-      recent.frame(width: Layout.width, height: 40).offset(y: 168)
       if flow?.auto == true {
         Button("건너뛰기", action: done).buttonStyle(PixelButtonStyle(fill: Palette.ivory))
           .frame(width: 104, height: 32).offset(x: 52, y: 206)
@@ -92,16 +91,6 @@ struct CharacterView: View {
     .accessibilityLabel(idx == 0 ? Copy.boxNow : Copy.boxFull)
   }
 
-  @ViewBuilder private var recent: some View {
-    if let g = store.lastGoal {
-      let mini = Sprite.miniBoard(g)
-      HStack(spacing: 6) {
-        StickerImage(goal: g, size: 20)
-        PixelView(map: mini.map, cell: mini.cell)
-      }
-      .accessibilityHidden(true)
-    }
-  }
 
   // MARK: 모션
 
@@ -119,7 +108,11 @@ struct CharacterView: View {
     heads = colors(from)
     deck = Growth.boxes(from)
     label = flow?.label ?? (to > from ? Copy.grew(to - from) : nil)
-    guard to > from else { return }
+    // 새 블록이 없어도 붙인 뒤 흐름이면 판으로 돌아간다 — 안 그러면 뒤로 버튼 없이 멈춘다
+    guard to > from else {
+      if flow?.auto == true { try? await sleep(1.2); done() }
+      return
+    }
     if reduceMotion {
       finish(to)
       if flow?.auto == true { try? await sleep(0.8); done() }

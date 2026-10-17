@@ -46,7 +46,7 @@ final class Store: NSObject, ObservableObject {
   /** 지금 보여야 할 블록 수 */
   var growth: Int {
     guard let s = snapshot else { return 0 }
-    return Growth.shown(snapshot: s.growth, pendingAdds: Growth.pendingGain(pending), lastShown: lastShown ?? 0)
+    return Growth.shown(snapshot: s.growth, pending: pending)
   }
 
   /** 마지막으로 붙인 목표(차곡이 화면 아래 작은 판) */
@@ -80,6 +80,8 @@ final class Store: NSObject, ObservableObject {
                          dateKey: dateKey ?? DateKey.of(now), slotIndex: slotIndex, complete: complete ? true : nil)
     pending.append(r)
     savePending()
+    // 떼면 블록이 모션 없이 줄고, 다시 붙이면 처음처럼 떨어진다 (2026-10-17)
+    if let l = lastShown, growth < l { lastShown = growth; defaults.set(lastShown, forKey: Key.lastShown) }
     feedComplication()
     guard WCSession.isSupported() else { return }
     let s = WCSession.default

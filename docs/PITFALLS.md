@@ -30,6 +30,9 @@
 - **워치 컴플리케이션 번들 id는 워치 앱 id 아래여야 한다.** `@bacons/apple-targets`의 `watch-widget` 기본값(`com.novum.chagok.watch-widget`)은 설치 때 「does not have expected identifier prefix」로 거부된다. `targets/watch-widget/expo-target.config.js`에 `bundleIdentifier: 'com.novum.chagok.watch.widgets'`(2026-10-16).
 - **EAS 빌드 Node는 이 Mac과 같게 둔다(`eas.json` `"node": "24.18.0"`).** EAS 기본은 Node 22(npm 10)인데, `@bacons/apple-targets` 안의 typescript 5 선택 의존성을 npm 10은 「잠금 파일에 없다」(`Missing: typescript@5.9.3 from lock file`)로 실패시키고 npm 11은 넘어간다(2026-10-17). 의존성을 바꾼 뒤 올리기 전에 깨끗한 복사본에서 `npm ci`로 확인한다.
 - 개발 빌드는 Metro 주소를 기억한다. 다른 포트로 띄웠으면 `xcrun simctl openurl <UDID> "com.novum.chagok://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A<포트>"`로 연다.
+- **탭 화면 밀기에 기기 쪽 모듈이 들어갔다(2026-10-17):** 아래 탭이 `expo-router/js-top-tabs` + `react-native-tab-view` + `react-native-pager-view`다. pager-view는 기기 쪽 코드라 이 변경 전에 만든 개발 빌드(폰, 시뮬레이터)로는 앱이 뜨지 않는다. 개발 빌드를 다시 만든다.
+- **Animated: 기기 쪽 값과 JS 값을 한 뷰에 섞지 않는다(2026-10-17):** 탭 넘김 위치(`position`)는 기기 쪽에서 움직인다. 같은 뷰의 transform에 JS로 움직이는 값(`useNativeDriver: false`)을 같이 걸면, 그 값을 움직이는 순간 "Attempting to run JS driven animation on animated node that has been moved to native" 오류가 난다. 겹친 두 뷰로 나눈다(FloatingTabBar).
+- **탭 넘김에서 옆 탭이 비어 보였다(2026-10-17):** 탭 화면이 `useFocusEffect`에서만 데이터를 읽으면, 미리 그려 둬도 처음 밀 때는 불러오는 중 화면이다. 기록, 스티커 탭은 처음 그릴 때도 한 번 읽는다.
 
 ## Storybook
 
