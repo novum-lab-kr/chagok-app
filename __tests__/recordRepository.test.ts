@@ -89,8 +89,8 @@ describe('완성한 판 (PRD 4.7)', () => {
 
 describe('기록 모아보기 (하단 탭 「기록」, 2026-10-12)', () => {
   it('사진이나 내용 있는 메모가 있는 칸만, 붙인 시각 최근 순으로 준다', async () => {
-    const walk = await createGoal({ name: '걷기', boardType: 'tally', totalSlots: 10 });
-    const read = await createGoal({ name: '책 읽기', boardType: 'tally', totalSlots: 10 });
+    const walk = await createGoal({ name: '걷기', boardType: 'tally', totalSlots: 10, defaultStickerId: 'basic.shoe' });
+    const read = await createGoal({ name: '책 읽기', boardType: 'tally', totalSlots: 10, defaultStickerId: 'basic.star' });
     const old = await placeSticker(walk.id, 0, 'basic.shoe', { placedAt: 1_000 });
     const bare = await placeSticker(walk.id, 1, 'basic.shoe', { placedAt: 2_000 });
     const blank = await placeSticker(walk.id, 2, 'basic.shoe', { placedAt: 3_000 });
@@ -103,8 +103,8 @@ describe('기록 모아보기 (하단 탭 「기록」, 2026-10-12)', () => {
     const list = await listRecordTimeline();
 
     expect(list).toEqual([
-      { stickerId: recent.id, goalId: read.id, goalName: '책 읽기', sticker: 'basic.sprout', placedAt: 4_000, dateKey: localDateKey(4_000), memo: null, photoUri: 'file:///p.jpg' },
-      { stickerId: old.id, goalId: walk.id, goalName: '걷기', sticker: 'basic.shoe', placedAt: 1_000, dateKey: localDateKey(1_000), memo: '첫날', photoUri: null },
+      { stickerId: recent.id, goalId: read.id, goalName: '책 읽기', goalSticker: 'basic.star', sticker: 'basic.sprout', placedAt: 4_000, dateKey: localDateKey(4_000), memo: null, photoUri: 'file:///p.jpg' },
+      { stickerId: old.id, goalId: walk.id, goalName: '걷기', goalSticker: 'basic.shoe', sticker: 'basic.shoe', placedAt: 1_000, dateKey: localDateKey(1_000), memo: '첫날', photoUri: null },
     ]);
   });
 

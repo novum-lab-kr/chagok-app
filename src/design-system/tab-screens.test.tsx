@@ -1,7 +1,7 @@
 import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
-import {CompletionNudge,FloatingTabBar,RecordTimelineScreen,StickerCollectionScreen,TrialReadyCard,type TimelineDayView} from './tab-screens';
+import {CompletionNudge,FloatingTabBar,RecordFeedScreen,RecordTimelineScreen,StickerCollectionScreen,TrialReadyCard,type TimelineDayView} from './tab-screens';
 import {colorPack,packRowCount} from './sticker-shop';
 afterEach(cleanup);
 
@@ -28,18 +28,45 @@ describe('하단 탭 (2026-10-12)',()=>{
 describe('기록 탭',()=>{
   it('날짜별로 목표 이름과 메모를 보이고, 누르면 그 칸의 기록을 연다',()=>{
     const open=vi.fn();render(<RecordTimelineScreen days={days} goals={[]} goal={null} onGoal={vi.fn()} onOpen={open}/>);
-    expect(screen.getByText('10월 12일 월요일')).toBeTruthy();expect(screen.getByText('데미안 3장까지')).toBeTruthy();
+    expect(screen.getByRole('heading',{name:'10월 12일 월요일'})).toBeTruthy();expect(screen.getByText('데미안 3장까지')).toBeTruthy();
     expect(screen.getByText('사진만 남겼어요')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:/걷기/}));expect(open).toHaveBeenCalledWith('s3');
   });
   it('목표 칩은 [전체]와 목표들이고 누르면 그 목표를 알린다',()=>{
-    const pick=vi.fn();render(<RecordTimelineScreen days={days} goals={[{id:'read',name:'책 읽기'}]} goal={null} onGoal={pick} onOpen={vi.fn()}/>);
+    const pick=vi.fn();render(<RecordTimelineScreen days={days} goals={[{id:'read',name:'책 읽기',sticker:'basic.sprout'}]} goal={null} onGoal={pick} onOpen={vi.fn()}/>);
     expect(screen.getByRole('tab',{name:'전체'}).getAttribute('aria-selected')).toBe('true');
     fireEvent.click(screen.getByRole('tab',{name:'책 읽기'}));expect(pick).toHaveBeenCalledWith('read');
+  });
+  it('목표 칩은 스티커만 보이고 고른 칩만 이름을 펼친다 (2026-10-17)',()=>{
+    const goals=[{id:'read',name:'책 읽기',sticker:'basic.sprout'},{id:'walk',name:'걷기',sticker:'basic.shoe'}] as const;
+    const {rerender}=render(<RecordTimelineScreen days={[]} goals={goals} goal={null} onGoal={vi.fn()} onOpen={vi.fn()}/>);
+    expect(screen.queryByText('책 읽기')).toBeNull();
+    rerender(<RecordTimelineScreen days={[]} goals={goals} goal="read" onGoal={vi.fn()} onOpen={vi.fn()}/>);
+    expect(screen.getByText('책 읽기')).toBeTruthy();expect(screen.queryByText('걷기')).toBeNull();
   });
   it('기록이 없으면 남기는 법을 알려 준다',()=>{
     render(<RecordTimelineScreen days={[]} goals={[]} goal={null} onGoal={vi.fn()} onOpen={vi.fn()}/>);
     expect(screen.getByText('아직 남긴 기록이 없어요')).toBeTruthy();
+  });
+  it('제목 옆 아이콘으로 보기를 바꾸고, 피드 칸을 누르면 펼친 화면을 연다 (2026-10-17)',()=>{
+    const onView=vi.fn(),feed=vi.fn(),open=vi.fn();
+    render(<RecordTimelineScreen days={days} goals={[]} goal={null} onGoal={vi.fn()} onOpen={open} view="feed" onView={onView} onOpenFeed={feed}/>);
+    expect(screen.getByRole('tab',{name:'사진으로 보기'}).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab',{name:'타임라인으로 보기'}));expect(onView).toHaveBeenCalledWith('timeline');
+    // 피드에는 날짜 머리글이 없고, 사진 없는 기록은 메모 글자 칸
+    expect(screen.queryByRole('heading',{name:'10월 12일 월요일'})).toBeNull();
+    expect(screen.getByText('데미안 3장까지')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'물 마시기, 사진'}));expect(feed).toHaveBeenCalledWith('s2');expect(open).not.toHaveBeenCalled();
+  });
+});
+
+describe('기록 펼친 화면 (2026-10-17)',()=>{
+  it('기록마다 목표, 날짜, 사진, 메모 전체를 보이고 누르면 그 칸의 기록을 연다',()=>{
+    const open=vi.fn();
+    render(<RecordFeedScreen posts={[{id:'s2',goalName:'물 마시기',sticker:'basic.flower',date:'10월 12일',photo:{uri:'file:///p.jpg'},memo:'오후에 몰아서 마셨다. 내일은 아침부터 조금씩.'},{id:'s3',goalName:'걷기',sticker:'basic.shoe',date:'10월 9일',memo:'노을'}]} onBack={vi.fn()} onOpen={open}/>);
+    expect(screen.getByText('오후에 몰아서 마셨다. 내일은 아침부터 조금씩.')).toBeTruthy();
+    expect(screen.getByText('10월 9일')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'걷기, 10월 9일, 노을'}));expect(open).toHaveBeenCalledWith('s3');
   });
 });
 
