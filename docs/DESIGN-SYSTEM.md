@@ -15,9 +15,9 @@ npm run storybook
 
 왼쪽 목록의 Foundations에서 컬러·글씨·프레임·새싹을 비교하고, Components에서 개별 상태를 확인한다. Text의 Controls에서 한글 문구와 글씨 역할을 바꿀 수 있다. 버튼은 누르거나 Tab으로 포커스하고, 입력창은 직접 입력하며, 필터는 선택을 바꿀 수 있다. 붙이기 데모는 칸을 눌러 상태를 전환한다. 데모 상태는 저장하지 않는다.
 
-`Components / Dialog`에서 튜토리얼용 스토리 3개와 [일반 화면용 기본형 시안](design/retro-pocket-v1/basic-dialog-review/README.md) 1개를 확인할 수 있다. Docs는 별도로 자동 생성된다. 브라우저 외곽 Storybook 메뉴는 도구 UI이며 앱 폰트 규칙 적용 대상이 아니다.
+`Components / Dialog`에서 튜토리얼용 스토리 3개와 일반 화면용 기본형 1개를 확인할 수 있다. Docs는 별도로 자동 생성된다. 브라우저 외곽 Storybook 메뉴는 도구 UI이며 앱 폰트 규칙 적용 대상이 아니다.
 
-[PRD 시안에서 보강한 공통 컴포넌트](design/retro-pocket-v1/component-additions-review/README.md)는 사진 프레임의 세 상태, 기록 표식 칸, 설정 목록 행, 짧은 알림과 로딩 표시로 나눠 확인할 수 있다.
+PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, 기록 표식 칸, 설정 목록 행, 짧은 알림과 로딩 표시)도 Storybook에서 확인한다.
 
 정적 배포 파일은 `npm run build-storybook`으로 `storybook-static/`에 생성한다. `file://`로 열지 말고 HTTP 정적 서버에서 제공해야 한다. 개발 서버는 로컬 주소에만 바인딩한다.
 

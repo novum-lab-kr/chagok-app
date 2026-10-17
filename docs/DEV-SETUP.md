@@ -66,7 +66,8 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 - 빌드: `npx eas-cli@latest build --profile development --platform ios`. 전역 `eas`(16.17.4)는 오래돼서 Apple 로그인 단계가
   「iTunes service key is empty」로 실패한다. Apple 로그인·인증서 질문이 대화형이라 **사용자의 터미널 앱에서** 돌린다(Claude의 `!`로는 안 된다).
 - 기기는 EAS에 등록돼 있고 배포 인증서도 있다. 네이티브 쪽(`app.json`·플러그인·네이티브 라이브러리)을 바꿨을 때만 다시 빌드한다.
-- 실행: Mac에서 `npx expo start --dev-client --port 8082`. 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8082`로 연다.
+- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AQUDD2QFNC -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. TestFlight 앱을 덮어쓰고 데이터는 남는다.
+- 실행: Mac에서 `npx expo start --dev-client --port 8081`. 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8081`로 연다.
   JS·위젯 레이아웃 변경은 Metro 리로드로 폰에 반영된다.
 - worktree에서 Metro를 띄우면 `.env.local`을 링크하고, 다른 worktree에서 띄웠던 직후라면 `--clear`를 붙인다
   ([PITFALLS](PITFALLS.md)).

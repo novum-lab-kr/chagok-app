@@ -2,7 +2,7 @@
 
 > 이 문서는 세 로그인 수단을 **어떤 순서로, 무엇을 준비해서, 어디까지** 만들지 정한다.
 > 코드 단위의 세부 계획(TDD 단계와 코드)은 단계를 시작할 때 따로 쓴다.
-> Apple 세부 계획은 이미 있다. `chagok-wt-apple-login` worktree의 `docs/superpowers/plans/2026-10-08-apple-login.md`이고, 아직 커밋하지 않았다. 1단계를 시작할 때 고쳐서 이 위치로 옮긴다.
+> Apple(1단계)은 2026-10-17 main에 합쳤다. 세부 계획 `2026-10-08-apple-login.md`는 끝나서 2026-10-18 지웠다(`402913e`에 있다).
 > 세부 계획을 실행할 때는 superpowers:executing-plans 또는 superpowers:subagent-driven-development를 쓴다.
 
 **목표:** 연결 화면의 [개발 계정으로 계속] 자리를 실제 로그인으로 바꾼다. iOS는 Apple·카카오·Google, Android는 카카오·Google로 한다(0단계 결정 1).
