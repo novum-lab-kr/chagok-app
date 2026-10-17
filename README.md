@@ -9,6 +9,12 @@
 </p>
 
 <p align="center">
+  <a href="https://novum-lab-kr.github.io/chagok-app/intro/"><b>앱 소개 페이지</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://novum-lab-kr.github.io/chagok-app/">Storybook</a>
+</p>
+
+<p align="center">
   <b>앱</b><br>
   <sub>목표 탭, 적립판, 달력판, 기록 화면, 기록 탭(목록, 피드), 스티커 탭. Storybook에서 실제 컴포넌트를 렌더한 화면</sub><br><br>
   <img src="docs/readme/goals.png" width="13%" alt="목표 탭">
