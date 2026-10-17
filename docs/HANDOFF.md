@@ -16,7 +16,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 | 기능 | 지금 | PRD |
 | --- | --- | --- |
 | 결제·광고 | RevenueCat **Test Store**(가짜 결제, 키는 `.env.local` `EXPO_PUBLIC_REVENUECAT_KEY`)와 AdMob **Google 테스트 광고 ID**로 연결(2026-10-13). 키나 네이티브 모듈이 없는 빌드는 개발용 대역(누르면 바로 성공)으로 돈다. 가격은 스토어에서 받아 온다(원화는 「2,200원」, 다른 통화는 스토어 글자 그대로, 못 받아 오면 가격만 뺀다 — 2026-10-13). 지금은 Test Store에 넣은 가격 | 스토어 키·실제 광고 단위 ID (4.12) |
-| 로그인 | 연결 화면의 [개발 계정으로 계속]만(`__DEV__`). 시작·동의·복원·로그아웃·계정 삭제 화면은 연결됨 | Apple·Google (4.8) |
+| 로그인 | **Apple**(iOS, 2026-10-17). 연결 화면의 동그라미 Apple 버튼(`LoginCircles`)과 개발 빌드의 [개발 계정으로 계속]. 시작, 동의, 복원, 로그아웃, 계정 삭제 화면은 연결됨. 카카오와 Google은 아직 | 카카오, Google (4.8) |
 | 한 번에 한 기기 | 없음 | 4.8 |
 | 위젯 | iOS 세 종류만 | Android도 (4.10) |
 | 앱 설정 | 하단 「설정」 탭(2026-10-12). 계정·구매·도움말(사용법 다시 보기)·정보(약관과 라이선스). 문의하기·앱 버전 줄 없음. 구역은 판(`PixelPanel`) 배치 | 4.9 |
@@ -27,7 +27,6 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 | 위치 | 브랜치 | 상태 |
 | --- | --- | --- |
-| `chagok-wt-apple-login` | `feat/apple-login` | 다른 세션. 계획 문서(`docs/superpowers/plans/2026-10-08-apple-login.md`)가 커밋되지 않은 채 있어 남겨 둠 |
 | (worktree 없음) | `fix/light-mode-font-scale` | 2026-10-01 옛 브랜치. 같은 내용을 최신 main에 `fix/fixed-text-size`로 다시 넣어 필요 없다. 지울지 사용자 확인 |
 | (worktree 없음) | `spike/widgets` | 위젯 시험 구현. 코드는 합치지 않는다(결과 문서는 main `docs/superpowers/specs/2026-10-05-widget-spike-results.md`) |
 | (worktree 없음) | `docs/scope-decisions`, `integration/expo-go-phase` | 내용이 main에 있다. 합치지 않는다. 지울지는 사용자 확인 |
@@ -49,9 +48,9 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 **계정·외부 준비가 끝난 뒤**
 
 - **결제·광고 출시 연결** — 코드는 Test Store·테스트 광고로 붙어 있다(2026-10-13). 남은 것: App Store Connect·Google Play 상품 등록과 RevenueCat 스토어 키, AdMob 가입(남편 명의)과 실제 앱 ID·광고 단위 ID, `app-ads.txt`, 약관·처리방침 1판의 결제·광고 조항 게시(정책 저장소 main에 있다, `[클라우드 사업자]` 빈칸을 채운 뒤 `publish`에 합친다), 통신판매업 신고 확인.
-- **Apple 로그인**(다른 세션 진행 중), `apple-link`, Apple 토큰 폐기(그전에는 토큰이 있으면 계정 삭제가 멈춘다). 버튼은 연결 화면의 [개발 계정으로 계속] 자리에. 버튼 높이 44, Google 버튼 글자 19·로고 24·여백 19·14·19, 좁은 화면에서는 Google 버튼 안 전체를 같은 비율로 줄인다(2026-10-12 사용자 결정, Storybook `Screens/Account consent`·[시안](https://claude.ai/artifact/Masmo48AjPKNvZihxUobwR)).
+- **Apple 로그인** — 2026-10-17 main에 합침(`apple-link`로 Apple 토큰을 맡기고, 계정 삭제 때 폐기). 개발 서버 `chagok-dev`에 함수 두 개 배포와 DB 리셋 끝. iPhone에서 연결과 첫 백업, 창 닫기, 로그아웃 뒤 다시 로그인과 복원을 사용자가 확인했다. **계정 삭제(삭제 뒤 iPhone 「Apple로 로그인」 목록에서 빠지는지, 목록에서 먼저 끊은 뒤 삭제)는 아직 확인 안 함** — 문제가 나오면 그때 고친다(사용자 결정). 다음은 카카오(로그인 계획 2단계). 로그인 버튼 치수: 버튼 높이 44, Google 버튼 글자 19·로고 24·여백 19·14·19, 좁은 화면에서는 Google 버튼 안 전체를 같은 비율로 줄인다(2026-10-12 사용자 결정, Storybook `Screens/Account consent`·[시안](https://claude.ai/artifact/Masmo48AjPKNvZihxUobwR)).
 - **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
-- **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다. **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, Apple ID `6822964802` — `eas.json` `submit.production.ios.ascAppId`). 아직 업로드하지 않았다(사용자 결정). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드에는 Apple 로그인이 main에 들어오기 전까지 로그인이 없다.
+- **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다. **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, Apple ID `6822964802` — `eas.json` `submit.production.ios.ascAppId`). 아직 업로드하지 않았다(사용자 결정). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드의 로그인은 Apple뿐이다(2026-10-17).
 - **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`, 계획 `docs/superpowers/plans/2026-10-15-social-login.md`. 로그인 버튼은 동그라미 아이콘(`LoginCircles`, 2026-10-15 틀4) — Apple 기본 버튼(`AppleAuthenticationButton`) 대신 이것을 쓴다. Apple 로고는 Apple 서버가 내려 주는 공식 로고 버튼 그림이다(`src/design-system/apple-logo.ts`, 2026-10-15).
 
 **출시 직전에는** [출시 전 최종 점검](RELEASE-CHECKLIST.md)을 위에서부터 확인한다.

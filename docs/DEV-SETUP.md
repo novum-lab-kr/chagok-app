@@ -287,11 +287,19 @@ secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는�
 supabase db query --linked "select 1"              # 연결 확인
 supabase db reset --linked                         # 개발 서버를 비우고 supabase/migrations를 처음부터 다시 적용한다
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
+supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함수
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
 ```
 
 **출시 전(2026-10-12~):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **출시 뒤에는** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`).
+
+**Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
+
+- Supabase Authentication → Providers → Apple: Client IDs `com.novum.chagok`. Secret Key는 비운다(네이티브 전용).
+- 함수 secret 네 개: `APPLE_TEAM_ID`(AQUDD2QFNC), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`(com.novum.chagok), `APPLE_PRIVATE_KEY`(`.secrets/AuthKey_<KeyID>.p8` 내용). `supabase secrets list`로 확인.
+- `.p8`은 Apple에서 한 번만 내려받을 수 있다. 잃어버리면 새 키를 만들고 두 secret을 바꾼다.
+- 실기기 빌드에는 Xcode Accounts에 팀 AQUDD2QFNC 계정이 있어야 한다(`app.json` `ios.appleTeamId`).
 
 **앱에서 확인** — `.env.local`을 바꿨으면 `npx expo start`를 다시 시작한다. 앱 설정 → 개발 → 서버 동기화 (개발)에서
 개발 계정으로 로그인하고 올리기·복원을 한다. 로그인해 있으면 기록이 바뀐 뒤 2초쯤 지나 자동으로 올라간다.
