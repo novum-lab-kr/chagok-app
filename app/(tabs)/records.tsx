@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LoadingScreen, RecordTimelineScreen, TabSafeArea, useLoadRetry } from '../../src/design-system';
 import { groupTimeline, timelineGoals } from '../../src/app-data/recordTimeline';
@@ -12,6 +12,13 @@ export default function Records() {
   const [entries, setEntries] = useState<TimelineEntry[] | null>(null);
   const [goal, setGoal] = useState<string | null>(null);
   const { failed, attempt, fail, retry } = useLoadRetry();
+
+  // 옆 탭에서 밀어 올 때 빈 화면이 보이지 않게 처음 그릴 때도 한 번 읽는다. 들어오면 아래에서 다시 읽는다.
+  useEffect(() => {
+    let alive = true;
+    void listRecordTimeline().then((next) => { if (alive) setEntries((e) => e ?? next); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   // 기록 화면에서 고치고 돌아오거나 다른 탭에서 붙이고 오면 다시 읽는다.
   useFocusEffect(useCallback(() => {

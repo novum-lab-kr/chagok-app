@@ -123,7 +123,8 @@ export default function GoalList() {
   // 시작 화면·튜토리얼·불러오는 동안은 하단 탭을 숨긴다. 첫 실행은 탭보다 먼저 끝내야 한다.
   const hideTabBar = !summaries || showTutorial !== false || showStart !== false;
   useEffect(() => {
-    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined });
+    // 숨긴 동안은 화면을 밀어 다른 탭으로 가지도 못한다
+    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined, swipeEnabled: !hideTabBar });
   }, [navigation, hideTabBar]);
 
   if (!summaries || showTutorial === undefined || showStart === undefined) {

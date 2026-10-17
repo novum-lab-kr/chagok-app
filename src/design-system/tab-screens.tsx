@@ -50,7 +50,7 @@ function useReduceMotion(forced?:boolean) {
  * 그냥 누르기도 된다. onTick은 누를 때와 탭 경계를 넘을 때마다(햅틱). 「동작 줄이기」가 켜져 있으면 칸이 움직이지 않고 바로 옮겨 간다.
  * 글자는 없지만 화면 낭독 이름(label)은 그대로 둔다.
  */
-export function FloatingTabBar<K extends string>({items,value,onChange,onTick,reduceMotion}:{items:readonly TabItem<K>[];value:K;onChange:(key:K)=>void;onTick?:()=>void;reduceMotion?:boolean}) {
+export function FloatingTabBar<K extends string>({items,value,onChange,onTick,reduceMotion,position}:{items:readonly TabItem<K>[];value:K;onChange:(key:K)=>void;onTick?:()=>void;reduceMotion?:boolean;/** 화면을 밀 때 탭 위치(0~탭 수-1, 소수). 주면 칸이 화면을 따라 움직인다 (2026-10-17) */position?:Animated.AnimatedInterpolation<number>}) {
   const bottom=useContext(SafeAreaInsetsContext)?.bottom??0;
   const reduced=useReduceMotion(reduceMotion);
   const selected=Math.max(0,items.findIndex(i=>i.key===value));
@@ -62,11 +62,16 @@ export function FloatingTabBar<K extends string>({items,value,onChange,onTick,re
   const row=useRef<View>(null);
   const origin=useRef(0);
   const shown=hover??selected;
+  /** 화면 넘김 위치를 따라가나. 그 값은 기기 쪽에서 움직여서 JS로 움직이는 x, lift와 같은 층에 두지 않는다(같이 두면 눌렀을 때 오류) */
+  const follows=!!position&&!reduced;
+  /** 바를 누르거나 끈 뒤 놓은 칸이 자리 잡을 때까지. 이때만 칸이 스프링으로 미끄러진다.
+   *  화면을 밀어 탭이 바뀔 때는 바깥 층이 이미 따라가므로 바로 제자리로 둔다 */
+  const fromBar=useRef(false);
   const glide=useCallback((i:number)=>{
     const toValue=i*slot;
-    if(reduced) x.setValue(toValue);
-    else Animated.spring(x,{toValue,speed:22,bounciness:5,useNativeDriver:false}).start();
-  },[reduced,slot,x]);
+    if(reduced||(follows&&!fromBar.current)) {x.setValue(toValue);return;}
+    Animated.spring(x,{toValue,speed:22,bounciness:5,useNativeDriver:false}).start(({finished})=>{if(finished) fromBar.current=false;});
+  },[follows,reduced,slot,x]);
   useEffect(()=>{if(hover===null) glide(selected);},[glide,hover,selected]);
   const indexAt=(pageX:number)=>Math.min(items.length-1,Math.max(0,Math.floor((pageX-origin.current)/slot)));
   const follow=(pageX:number,i:number)=>{
@@ -77,6 +82,7 @@ export function FloatingTabBar<K extends string>({items,value,onChange,onTick,re
   const grant=(e:GestureResponderEvent)=>{
     if(!slot) return;
     const i=indexAt(e.nativeEvent.pageX);
+    fromBar.current=true;
     setHover(i);pressTo(1);follow(e.nativeEvent.pageX,i);onTick?.();
   };
   const move=(e:GestureResponderEvent)=>{
@@ -99,9 +105,12 @@ export function FloatingTabBar<K extends string>({items,value,onChange,onTick,re
         onStartShouldSetResponderCapture={()=>true} onMoveShouldSetResponderCapture={()=>true} onResponderTerminationRequest={()=>false}
         onResponderGrant={e=>{row.current?.measureInWindow(px=>{origin.current=px;});grant(e);}} onResponderMove={move}
         onResponderRelease={()=>release(true)} onResponderTerminate={()=>release(false)}>
-        {slot>0&&<Animated.View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,width:slot,padding:2,
-          transform:[{translateX:x},{scaleY:lift.interpolate({inputRange:[0,1],outputRange:[1,1.12]})},{scaleX:lift.interpolate({inputRange:[0,1],outputRange:[1,1.06]})}]}}>
-          <PixelFrame variant="selection" fill={c.screen} style={{flex:1}}/>
+        {slot>0&&<Animated.View pointerEvents="none" style={{position:'absolute',top:0,bottom:0,left:0,width:slot,
+          transform:[{translateX:follows&&position?Animated.multiply(position,slot):0}]}}>
+          <Animated.View style={{flex:1,padding:2,
+            transform:[{translateX:follows?Animated.subtract(x,selected*slot):x},{scaleY:lift.interpolate({inputRange:[0,1],outputRange:[1,1.12]})},{scaleX:lift.interpolate({inputRange:[0,1],outputRange:[1,1.06]})}]}}>
+            <PixelFrame variant="selection" fill={c.screen} style={{flex:1}}/>
+          </Animated.View>
         </Animated.View>}
         {items.map((item,i)=>{
           const on=i===shown,lifted=hover===i;

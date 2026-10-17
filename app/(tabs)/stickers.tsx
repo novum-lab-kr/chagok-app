@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LoadingScreen, StickerCollectionScreen, TabSafeArea, togglePack, useLoadRetry } from '../../src/design-system';
 import { packViews } from '../../src/app-data/packViews';
@@ -18,6 +18,13 @@ export default function Stickers() {
   const [open, setOpen] = useState<readonly ColorStickerPackId[]>([]);
   const { failed, attempt, fail, retry } = useLoadRetry();
   const prices = usePrices();
+
+  // 옆 탭에서 밀어 올 때 빈 화면이 보이지 않게 처음 그릴 때도 한 번 읽는다. 들어오면 아래에서 다시 읽는다.
+  useEffect(() => {
+    let alive = true;
+    void loadPackState().then((pack) => { if (alive) setState((s) => s ?? { pack, now: Date.now() }); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   // 묶음 화면에서 열고 돌아오면 다시 읽고 그 묶음을 펼친다.
   useFocusEffect(useCallback(() => {
