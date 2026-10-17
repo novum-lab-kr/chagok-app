@@ -13,6 +13,7 @@ import { goalCard } from '../../src/app-data/pocketAdapter';
 import { localDateKey } from '../../src/domain/dates';
 import { fetchPolicyManifest } from '../../src/policy/manifest';
 import { openPolicy } from '../../src/policy/openPolicy';
+import { GoalsAdBanner } from '../../src/purchases/GoalsAdBanner';
 import { monthDayLabel, upcomingChange } from '../../src/policy/versions';
 import { subscribeWidgetApplied } from '../../src/widgets/applied';
 import { loadPackState } from '../../src/repositories/packRepository';
@@ -172,6 +173,7 @@ export default function GoalList() {
         completed={cards(completed)}
         onOpen={(id) => router.push({ pathname: '/goal/[id]', params: { id } })}
         onAdd={() => router.push('/goal/new')}
+        footer={<GoalsAdBanner />}
         notice={tab === 'active' && trial !== null
           ? <TrialReadyCard days={trial} onChoose={() => router.navigate('/stickers')} onClose={closeTrial} />
           : undefined}
