@@ -41,7 +41,7 @@
   - 버튼 높이는 44로 한다(2026-10-12 결정). Google 버튼 치수는 HANDOFF에 적힌 결정값을 따른다.
 - **화면을 바꾸면**
   - `npx expo export --platform ios`와 `--platform android`를 둘 다 돌린다.
-  - Storybook `Screens/Account consent`와 흐름도 `Flows/앱 전체`도 맞춘다.
+  - Storybook `Screens/Account login`와 흐름도 `Flows/앱 전체`도 맞춘다.
 - **실기기 확인**은 각 단계의 맨 끝에 한다.
 
 ## 살필 점 (테스트가 놓치기 쉬운 것)
@@ -169,7 +169,7 @@ export async function makeNonce(): Promise<{ raw: string; hashed: string }>;
 | `supabase/functions/__tests__/deleteAccount.test.ts` | 카카오 사용자 삭제, 이미 끊긴 사용자, 연결 해제 뒤 사진 단계 실패 → 다시 시도 |
 | `src/design-system/` | 카카오 버튼(시안 확정 뒤). 카카오 가이드: 배경 `#FEE500`, 말풍선 기호, 글자 「카카오 로그인」 |
 | `app/account/connect.tsx` | 버튼 목록에 카카오를 더한다. 플랫폼별 목록은 결정 1을 따른다 |
-| Storybook·흐름도 | `Screens/Account consent`에 카카오 버튼을 더하고, `Flows/앱 전체`를 확인한다 |
+| Storybook·흐름도 | `Screens/Account login`에 카카오 버튼을 더하고, `Flows/앱 전체`를 확인한다 |
 
 ### 2.4 완료 기준
 

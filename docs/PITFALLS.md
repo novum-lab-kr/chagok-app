@@ -16,6 +16,7 @@
 - **위젯 props에 `null`을 넣지 않는다.** UserDefaults가 못 담아 `updateTimeline`이 던진다(`syncCore`의 `withoutNulls`가 막는다).
 - RN Web의 `AccessibilityInfo.addEventListener`는 구독 객체를 돌려주지 않는다. 정리할 때 `?.remove?.()`로 부른다.
 - 복원 뒤 아직 받지 못한 사진(기기 경로 없음, 서버 경로만 있음)에 photo 항목이 생기면 서버의 하나뿐인 사본이 지워진다. 지금은 그런 경로가 없다. 사진 지우기·바꾸기를 "사진 유실" 화면에 붙일 때 `src/sync/push.ts`의 `pushPhoto` 주석을 다시 본다.
+- **iOS는 떠 있는 Modal 옆에 둔 Modal을 띄우지 못한다(2026-10-21).** 조용히 아무것도 안 뜬다. 시트(`PixelBottomSheet`) 위에 다이얼로그를 띄우려면 `overlay`로 시트 Modal 안에 그린다. 닫히는 중인 창 위에 띄우는 것도 같은 이유로 실패한다(`useDialog`).
 
 ## 의존성과 빌드
 
@@ -46,6 +47,8 @@
 ## 기기 테스트
 
 - **실행 중인 Storybook·Metro를 임의로 끄지 않는다.** 다른 세션이 쓰고 있을 수 있다. 포트와 프로세스는 세션마다 다시 확인한다.
+- **worktree를 바꿔 Metro를 띄우면 `--clear`를 붙인다(2026-10-21).** worktree들이 `node_modules`를 같이 쓰면 Metro가 다른 worktree에서 만든 캐시를 그대로 써서 `./chagok-wt-<다른 이름>/src/db/expoDriver`를 찾다가 「목표를 불러오지 못했어요」가 뜬다. 첫 번들이 2초 안에 끝나면 캐시를 쓴 것이다.
+- **`npx expo run:ios`는 빌드 뒤에도 끝나지 않는다.** Metro를 계속 띄워 두기 때문이다. 끝나기를 기다리지 말고 로그의 `Build Succeeded`, `iOS Bundled`로 확인한다.
 - **iPhone 시뮬레이터:** Maestro(`--device`로 UDID 지정). 카드·버튼 안 글자는 못 찾을 때가 많아 `point` 좌표로 누른다. iOS 가장자리 스와이프는 제스처로 인식되지 않는다. 시뮬레이터는 Mac 네트워크를 써서 iOS 오프라인은 볼 수 없다. Debug 빌드는 Expo 톱니 버튼이 화면 오른쪽 가운데에 떠 있다. 홈의 [+] 위쪽을 가려 누르면 아무 일도 없을 때가 있다 — `xcrun simctl openurl <UDID> chagok://goal/new`로 연다(「열겠습니까?」에서 「열기」).
 - **Maestro로 iOS 위젯 추가:** 홈 화면 메뉴 글자가 잡히지 않는다. 길게 누르기(50%,85%) → 편집 → 18%,10% → "위젯 검색"을 기다린다. home 키 뒤에는 두 번째 페이지에 서므로 오른쪽으로 넘긴 뒤 위젯을 누른다.
 - **위젯 탭 속도:** chronod 로그로 단계별로 잰다. Release 빌드로 잰다.
