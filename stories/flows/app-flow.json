@@ -64,18 +64,19 @@
     {
       "id": "start",
       "data": {
-        "label": "시작 · 계정 연결",
+        "label": "계정으로 시작하기",
         "tags": [
-          "PRD 4.8"
+          "PRD 4.8",
+          "app/account/connect"
         ],
         "stories": [
           {
-            "id": "screens-account-backup--start-account",
-            "label": "계정 연결"
+            "id": "screens-account-login--start",
+            "label": "첫 실행"
           },
           {
-            "id": "screens-account-backup--start-local",
-            "label": "이 기기에서만"
+            "id": "screens-account-login--settings",
+            "label": "앱 설정에서 계정 연결"
           }
         ],
         "scenarios": [
@@ -87,7 +88,7 @@
     {
       "id": "consent",
       "data": {
-        "label": "계정 연결 · 동의",
+        "label": "새 계정 동의 시트",
         "tags": [
           "PRD 4.8",
           "PRD 8.1",
@@ -95,16 +96,20 @@
         ],
         "stories": [
           {
-            "id": "screens-account-consent--ready",
-            "label": "iOS · 모두 체크"
+            "id": "screens-account-login--consent-empty",
+            "label": "체크 전"
           },
           {
-            "id": "screens-account-consent--empty",
-            "label": "iOS · 체크 전"
+            "id": "screens-account-login--consent-ready",
+            "label": "모두 체크"
           },
           {
-            "id": "screens-account-consent--android",
-            "label": "Android 카카오와 Google"
+            "id": "components-dialog--copy",
+            "label": "그만하기 확인 창",
+            "render": "launcher",
+            "launch": {
+              "label": "문구 모음에서 보기"
+            }
           }
         ],
         "scenarios": [
@@ -843,7 +848,7 @@
       "id": "start-consent",
       "source": "start",
       "target": "consent",
-      "label": "계정 연결",
+      "label": "처음 만든 계정",
       "data": {
         "scenarios": [
           "first",
@@ -855,10 +860,34 @@
       "id": "start-tutorial",
       "source": "start",
       "target": "tutorial",
-      "label": "이 기기에서만",
+      "label": "로그인 없이 시작하기",
       "data": {
         "scenarios": [
           "first"
+        ]
+      }
+    },
+    {
+      "id": "start-restore",
+      "source": "start",
+      "target": "restore",
+      "label": "이미 가입한 계정, 백업 있음",
+      "data": {
+        "scenarios": [
+          "first",
+          "account"
+        ]
+      }
+    },
+    {
+      "id": "consent-start",
+      "source": "consent",
+      "target": "start",
+      "label": "그만하기(계정 삭제)",
+      "data": {
+        "scenarios": [
+          "first",
+          "account"
         ]
       }
     },
@@ -1112,9 +1141,9 @@
       }
     },
     {
-      "id": "app-settings-consent",
+      "id": "app-settings-start-connect",
       "source": "app-settings",
-      "target": "consent",
+      "target": "start",
       "label": "계정 연결",
       "data": {
         "scenarios": [
@@ -1178,9 +1207,9 @@
       }
     },
     {
-      "id": "list-consent",
+      "id": "list-start",
       "source": "list",
-      "target": "consent",
+      "target": "start",
       "label": "다시 로그인",
       "data": {
         "scenarios": [

@@ -71,7 +71,8 @@ const groups: [string, [string, Spec][]][] = [
   ['계정 (accountDialogs)', [
     ['앱 열 때 · 로그인 필요', accountDialogs.session],
     ['앱 열 때 · 약관 변경', accountDialogs.termsChanged('10월 15일')],
-    ['동의 · 만 14세 미만', accountDialogs.under14],
+    ['새 계정 동의, 그만하기', accountDialogs.quitSignup],
+    ['새 계정 동의, 계정을 못 지움', accountDialogs.quitFailed],
     ['복원 · 실패', accountDialogs.restoreFailed],
     ['로그아웃 · 확인', accountDialogs.logout],
     ['로그아웃 · 백업 중', {...accountDialogs.logout, loading: true}],

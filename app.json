@@ -14,7 +14,8 @@
       "usesAppleSignIn": true,
       "appleTeamId": "AJ7LJPM82M",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,

@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
-import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Dimensions, type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
+import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Dimensions, Modal, StyleSheet,type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
 import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
@@ -247,6 +247,26 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
 export function SheetSafeArea({children}:{children:ReactNode}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
   return <SafeAreaInsetsContext.Provider value={{...insets,top:0}}>{children}</SafeAreaInsetsContext.Provider>;
+}
+
+/**
+ * 화면 아래에 붙는 시트 (2026-10-21 로그인 뒤 동의 시안 a). 다이얼로그 틀과 여백을 그대로 쓰고 자리만 아래다.
+ * 끌어 닫기는 없다. 배경을 누르거나 Android 뒤로가기면 onRequestClose — 닫을지는 부르는 쪽이 정한다.
+ */
+export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay,children}:{visible:boolean;title:string;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;/** 시트 위에 띄울 다이얼로그. iOS는 떠 있는 Modal 옆에 둔 Modal을 띄우지 못해서 시트 Modal 안에 그린다 */overlay?:ReactNode;children:ReactNode}) {
+  const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
+  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
+    <View style={{flex:1,justifyContent:'flex-end',alignItems:'center',paddingHorizontal:12,paddingBottom:Math.max(insets.bottom,12)}}>
+      <Pressable testID="sheet-scrim" accessibilityLabel="닫기" onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
+      <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>
+        <PixelFrame variant="dialog" contentStyle={{padding:retro.layout.dialogPadding,paddingTop:24,gap:16}}>
+          <PixelText accessibilityRole="header" variant="title" style={{fontSize:22,lineHeight:30}}>{title}</PixelText>
+          {children}
+        </PixelFrame>
+      </View>
+    </View>
+    {overlay}
+  </Modal>;
 }
 
 export function SelectionBadge() {

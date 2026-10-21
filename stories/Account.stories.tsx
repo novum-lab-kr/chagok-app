@@ -1,24 +1,27 @@
 import React,{useState} from 'react';
 import {View,useWindowDimensions} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
-import {ConsentScreen,LoginCircles,type LoginProvider} from '../src/design-system';
+import {AccountLoginScreen,ConsentSheet} from '../src/design-system';
+import {AppleButtonPreview} from './support/appleButton';
 
-const meta={title:'Screens/Account consent',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'계정 연결 직전 동의 화면 (약관 설계). 제목은 「시작하기」(2026-10-15 시안 2안). 로그인 버튼은 지름 52 동그라미 안에 회사 로고만 둔다 (2026-10-15 시안 틀4). 회사 색은 디자인 시스템의 예외다. 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
+const meta={title:'Screens/Account login',parameters:{layout:'fullscreen',edgeToEdge:true,docs:{description:{component:'계정으로 시작하기 (2026-10-21 로그인 먼저 시안). 시작 화면에는 로그인 버튼만 두고, 처음 만든 계정에만 로그인 뒤 「처음 오셨네요」 시트로 동의를 받는다(시안 a). Apple 버튼은 앱에서 네이티브 기본 버튼이고 여기서는 모양만 흉내 낸다. 앱 동작에 연결되지 않습니다.'}}}} satisfies Meta;
 export default meta;
 type Story=StoryObj<typeof meta>;
 const noop=()=>{};
 
-/** 순서는 카카오 → Apple → Google (2026-10-15). Android에는 Apple이 없다. */
-const IOS:LoginProvider[]=['kakao','apple','google'];
-const ANDROID:LoginProvider[]=['kakao','google'];
-
-function Demo({providers=IOS,age=false,terms=false}:{providers?:LoginProvider[];age?:boolean;terms?:boolean}) {
-  const [a,setA]=useState(age);const [t,setT]=useState(terms);
+function Phone({children}:{children:React.ReactNode}) {
   const {width}=useWindowDimensions();
-  return <View style={{width:Math.min(width,390),height:844}}><ConsentScreen providers={providers} ageChecked={a} termsChecked={t} onToggleAge={()=>setA(!a)} onToggleTerms={()=>setT(!t)} onViewTerms={noop} onViewPrivacy={noop} onUnder14={noop} onBack={noop}
-    loginButtons={<LoginCircles providers={providers} onPress={noop}/>}/></View>;
+  return <View style={{width:Math.min(width,390),height:844}}>{children}</View>;
 }
-export const Empty:Story={name:'iOS · 체크 전',render:()=><Demo/>};
-export const Ready:Story={name:'iOS · 모두 체크',render:()=><Demo age terms/>};
-export const Android:Story={name:'Android 카카오와 Google',render:()=><Demo providers={ANDROID} age terms/>};
+function Consent({age=false,terms=false}:{age?:boolean;terms?:boolean}) {
+  const [a,setA]=useState(age);const [t,setT]=useState(terms);
+  return <Phone>
+    <AccountLoginScreen loginButtons={<AppleButtonPreview/>} onLocal={noop}/>
+    <ConsentSheet visible ageChecked={a} termsChecked={t} onToggleAge={()=>setA(!a)} onToggleTerms={()=>setT(!t)} onViewTerms={noop} onViewPrivacy={noop} onAgree={noop} onRequestClose={noop}/>
+  </Phone>;
+}
 
+export const Start:Story={name:'1 첫 실행',render:()=><Phone><AccountLoginScreen loginButtons={<AppleButtonPreview/>} onLocal={noop}/></Phone>};
+export const Settings:Story={name:'1 앱 설정에서 계정 연결',render:()=><Phone><AccountLoginScreen loginButtons={<AppleButtonPreview/>} onBack={noop}/></Phone>};
+export const ConsentEmpty:Story={name:'2 처음 만든 계정, 체크 전',render:()=><Consent/>};
+export const ConsentReady:Story={name:'2 처음 만든 계정, 모두 체크',render:()=><Consent age terms/>};
