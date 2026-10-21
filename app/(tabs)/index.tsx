@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { AccountStartScreen, FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
-import type { AccountStartChoice, GoalListTab } from '../../src/design-system';
+import { FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
+import type { GoalListTab } from '../../src/design-system';
 import { listGoalSummaries, settleExpiredPeriods } from '../../src/repositories/goalRepository';
 import type { GoalSummary } from '../../src/repositories/goalRepository';
 import { getFlag, getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
 import { useDialog } from '../../src/app-data/useDialog';
+import { ConnectAccount } from '../account/connect';
 import { readAccountState } from '../../src/sync/accountStatus';
 import { getSupabase } from '../../src/sync/supabaseClient';
 import { orderGoals } from '../../src/domain/board';
@@ -29,7 +30,6 @@ export default function GoalList() {
   const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
   /** 첫 실행 시작 화면 (시안 1B). 로그아웃·계정 삭제 뒤에도 기기가 비워져 다시 나온다. */
   const [showStart, setShowStart] = useState<boolean | undefined>(undefined);
-  const [startChoice, setStartChoice] = useState<AccountStartChoice>('account');
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
   /** 로그인 풀림 안내가 끝났는지. true면 연결 화면으로 떠났다. 약관 안내가 그 뒤에 이어 묻도록 기다린다. */
@@ -134,17 +134,10 @@ export default function GoalList() {
 
   if (showStart) {
     return (
-      <AccountStartScreen
-        value={startChoice}
-        onChange={setStartChoice}
-        onContinue={() => {
-          if (startChoice === 'account') {
-            router.push({ pathname: '/account/connect', params: { from: 'start' } });
-            return;
-          }
-          setShowStart(false);
-          void setFlag('startDone', true);
-        }}
+      <ConnectAccount
+        from="start"
+        onDone={(restored) => { setShowStart(false); if (restored) setShowTutorial(false); }}
+        onLocal={() => { setShowStart(false); void setFlag('startDone', true); }}
       />
     );
   }

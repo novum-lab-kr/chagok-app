@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { describe,it,expect,afterEach,beforeEach,vi } from 'vitest';
 import { render,screen,cleanup } from '@testing-library/react';
-import { AccountStartScreen,BoardTypePicker,PixelFocusRing,PixelFrame } from './index';
+import { BoardTypePicker,PixelFocusRing,PixelFrame,RestoreConflictScreen } from './index';
 
 // 새 아키텍처는 기기가 바쁠 때 첫 layout 이벤트를 버린다(2026-10-09). jsdom도 onLayout을 보내지 않으니
 // 크기 읽기만 돌려주면 "이벤트가 사라진 경우"와 같다 — 그래도 틀을 그려야 한다.
@@ -26,8 +26,9 @@ describe('첫 layout 이벤트 없이도 처음 크기로 그린다',()=>{
     // 카드 틀 + 미리보기
     expect(sized(screen.getByRole('radio',{name:'달력판'}))).toBe(2);
   });
-  it('시작 화면 선택 카드',()=>{
-    render(<AccountStartScreen value="account" onChange={()=>{}} onContinue={()=>{}}/>);
-    expect(sized(screen.getByRole('radio',{name:'이 기기에서만 쓰기'}))).toBeGreaterThan(0);
+  it('복원 충돌 선택 카드',()=>{
+    const snap={goals:1,stickers:2,goalNames:['책 읽기'],updatedAt:'9월 27일'};
+    render(<RestoreConflictScreen value="server" onChange={()=>{}} onConfirm={()=>{}} onBack={()=>{}} server={snap} device={snap}/>);
+    expect(sized(screen.getByRole('radio',{name:'이 기기 기록'}))).toBeGreaterThan(0);
   });
 });

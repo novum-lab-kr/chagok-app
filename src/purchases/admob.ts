@@ -1,5 +1,4 @@
 import { TurboModuleRegistry } from 'react-native';
-import { getSetting, setSetting } from '../repositories/appSettingsRepository';
 import { setAdStore } from './index';
 import { playRewardedAd, type RewardedAdLike } from './rewardedAd';
 
@@ -27,16 +26,9 @@ export function adUnits(ads: AdsLib) {
 }
 export const AD_REQUEST = { requestNonPersonalizedAdsOnly: true } as const;
 
-async function applyAudience(ads: AdsLib): Promise<void> {
-  const child = (await getSetting('adChildDirected')) === '1';
-  await ads.default().setRequestConfiguration({
-    ageRestrictedTreatment: child ? ads.AgeRestrictedTreatment.CHILD : ads.AgeRestrictedTreatment.UNSPECIFIED,
-  });
-}
-
 let configured = false;
 
-/** 앱을 켤 때 한 번. 아동 처리 여부를 먼저 정하고 SDK를 시작한다 — 첫 광고 요청부터 붙게. */
+/** 앱을 켤 때 한 번. */
 export async function configureAds(): Promise<boolean> {
   if (configured) return true;
   const ads = adsLib();
@@ -48,20 +40,9 @@ export async function configureAds(): Promise<boolean> {
     ),
   });
   try {
-    await applyAudience(ads);
     await ads.default().initialize();
   } catch {
     // 시작에 실패해도 광고 요청이 각자 실패로 끝난다 — 앱은 그대로 쓴다
   }
   return true;
-}
-
-/**
- * 동의 화면의 「만 14세 미만이에요」(on) · 만 14세 이상 확인 뒤 계정 연결(off).
- * 미만이라고 답한 사실은 이 기기에만 둔다 — 서버로 보내지 않는다.
- */
-export async function setChildDirectedAds(on: boolean): Promise<void> {
-  await setSetting('adChildDirected', on ? '1' : null);
-  const ads = configured ? adsLib() : null;
-  if (ads) await applyAudience(ads).catch(() => {});
 }

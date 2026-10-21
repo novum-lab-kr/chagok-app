@@ -2,8 +2,8 @@ import React,{useState} from 'react';
 import {View} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
 import {
-  AccountBackupPanel,AccountDeletedScreen,AccountStartScreen,DeleteAccountScreen,PixelText,RestoreConflictScreen,retro,
-  type AccountStartChoice,type RestoreSide,
+  AccountBackupPanel,AccountDeletedScreen,DeleteAccountScreen,PixelText,RestoreConflictScreen,retro,
+  type RestoreSide,
 } from '../src/design-system';
 import {SettingsTab,Stage,noop} from './support/frame';
 
@@ -15,10 +15,6 @@ const c=retro.color;
 function Label({children}:{children:string}) {
   return <View style={{marginTop:8}}><PixelText variant="caption" style={{color:c.buttonText}}>{`▸ ${children}`}</PixelText></View>;
 }
-function Start({initial='account'}:{initial?:AccountStartChoice}) {
-  const [value,setValue]=useState(initial);
-  return <AccountStartScreen value={value} onChange={setValue} onContinue={noop}/>;
-}
 function Conflict() {
   const [value,setValue]=useState<RestoreSide>('server');
   return <RestoreConflictScreen value={value} onChange={setValue} onConfirm={noop} onBack={noop}
@@ -26,9 +22,7 @@ function Conflict() {
     device={{goals:2,stickers:12,goalNames:['물 여덟 잔 마시기','일기 쓰기'],updatedAt:'9월 28일'}}/>;
 }
 
-// 1. 시작
-export const StartAccount:Story={name:'1 시작 · 계정 연결',render:()=><Stage><Start/></Stage>};
-export const StartLocal:Story={name:'1 시작 · 이 기기에서만',render:()=><Stage><Start initial="local"/></Stage>};
+// 1. 시작은 Screens/Account login (2026-10-21)
 
 // 2. 설정 탭
 export const SettingsSynced:Story={name:'2 설정 · 연결됨',render:()=><Stage tab="settings"><SettingsTab/></Stage>};

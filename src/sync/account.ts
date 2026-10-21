@@ -22,6 +22,19 @@ export async function linkAppleToken(client: FunctionsBodyClient, authorizationC
   }
 }
 
+/** `accounts`에서 내 행의 agreed_at을 읽은 결과 (`from('accounts').select('agreed_at').eq('user_id', id).maybeSingle()`) */
+export type ConsentRow = PromiseLike<{ data: { agreed_at: number | null } | null; error: { message: string } | null }>;
+
+/**
+ * 이 계정이 약관에 동의한 적이 있다(`accounts.agreed_at`). 처음 만든 계정은 행이 없다 — 로그인 뒤 동의를 받는다 (2026-10-21).
+ * 읽지 못하면 던진다. 모르는 채로 동의를 건너뛰거나 다시 묻지 않게.
+ */
+export async function hasConsented(row: ConsentRow): Promise<boolean> {
+  const { data, error } = await row;
+  if (error) throw new Error(error.message);
+  return data?.agreed_at != null;
+}
+
 /** 동의 이력 (약관 설계). 만 14세 이상 확인도 같은 시각으로 남긴다. */
 export async function recordConsent(client: RpcClient, termsVersion: number, privacyVersion: number): Promise<void> {
   const { error } = await client.rpc('record_consent', { p_terms_version: termsVersion, p_privacy_version: privacyVersion });

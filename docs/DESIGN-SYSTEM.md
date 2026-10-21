@@ -34,7 +34,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 
 - 패널 계단 단위 6px, 컨트롤 5px, 기본 셀 3px. 컨트롤·패널·칸 테두리와 패널 제목 구분선은 3px.
 - `PixelFocusRing`: cornerSize 15, cornerThickness 8, cornerCut 2, lineWidth 3, lineInset 2, gap 3. 달력판 오늘 칸은 같은 링을 칸 밖으로 격자선 두께(3)만큼 넓혀 격자선 위에 겹쳐 그리고 그 칸을 `zIndex: 1`로 올린다(2026-10-09, 달력 포커스 시안).
-- 탭 대상은 iOS 44pt · Android 48dp 이상(2026-10-12). 모양이 작은 버튼은 `touchSlop`(`hitSlop`)으로 누르는 영역만 넓힌다. 달력 날짜 칸(7열)은 옆 칸과 겹쳐 넓히지 않는다. 로그인 버튼은 지름 52 동그라미 안에 회사 로고(24)만, 사이 20, 글자 없이(`LoginCircles`, 2026-10-15 [시안](https://claude.ai/artifact/DN5XkTrJ8K5tN69Px7MSJN) 틀4). 순서 카카오 → Apple → Google, Android는 Apple 없이. 회사 색은 디자인 시스템의 예외 — 카카오 노란 원 #FEE500 + 검정 말풍선(가이드상 고정), Apple 흰 원, Google 연회색 원 #F2F2F2이고 셋 다 줄이 없다(2026-10-16 테두리 시안 3안. Google 가이드에서 줄 없는 모양은 연회색 바탕뿐이다). 세 원과 로고 크기를 같게 둔다(카카오가 아이콘만 쓰는 버튼을 허용하는 조건). Apple은 Apple 서버의 공식 로고 버튼 그림(흰 둥근 사각형, 여백 포함)을 원 크기(52)로 깔고 원으로 잘라서, 로고 높이가 약 22다. 버튼 뜻은 화면 제목 「시작하기」와 소개 「카카오, Apple, Google 계정으로 시작하면…」이 알린다(2026-10-15 [시안](https://claude.ai/artifact/RcJJKYo5mz87nvjN2hRXyv) 2안).
+- 탭 대상은 iOS 44pt · Android 48dp 이상(2026-10-12). 모양이 작은 버튼은 `touchSlop`(`hitSlop`)으로 누르는 영역만 넓힌다. 달력 날짜 칸(7열)은 옆 칸과 겹쳐 넓히지 않는다. 로그인 버튼은 각 회사의 표준 버튼을 판 너비로 쌓는다(2026-10-21 [시안](https://claude.ai/artifact/TTidJT8ZmhtpDa1XHzyRrX) 2안, 이전: 지름 52 동그라미). 높이 48, 모서리 12, 사이 12. 회사 색과 글꼴은 디자인 시스템의 예외다. Apple은 네이티브 `AppleAuthenticationButton`(밝은 바탕이라 WHITE_OUTLINE, `cornerRadius` 12, 글자는 기기 언어를 따르게 `CFBundleAllowMixedLocalizations`)이고 style로 배경과 모서리를 바꾸지 않는다. 카카오(#FEE500, 「카카오 로그인」)와 Google(흰 바탕, #747775 테두리)은 붙일 때 각 가이드대로 만든다. 순서 카카오 → Apple → Google, Android는 Apple 없이.
 - 화면 내용 최대 폭 `SCREEN_MAX_WIDTH` 440pt, 양옆 `SCREEN_PADDING` 20pt. 더 넓은 화면은 가운데로 모은다.
 - 제목 줄(`RetroScreen header`)과 본문 사이 24pt, 모든 화면(2026-10-10). 제목 아래에 탭이 붙는 「기본 스티커」는 제목–탭 24, 탭–본문 14(`headerGap`).
 - iOS 시트(`presentation: 'modal'` — 새 목표, 기본 스티커, 묶음)는 위쪽 안전 영역을 비우지 않는다(`SheetSafeArea`, 2026-10-10). Android 모달은 화면 전체라 그대로 둔다.
@@ -98,6 +98,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | SettingRow | 앱 설정·약관의 이동 행, 값 표시, 비활성 상태 |
 | ShortNotice / PixelLoadingIndicator | 백업·저장 알림 표면과 복원·로그아웃 로딩 표시. 로딩 점(`PixelLoadingDots`)은 진한 점이 250ms마다 오른쪽으로 옮겨 가고, 기기의 모션 감소 설정이면 가운데 점에 멈춘다 |
 | PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
+| PixelBottomSheet | 화면 아래에 붙는 시트. 다이얼로그 틀(`PixelFrame` dialog)과 `dialogPadding`을 그대로 쓰고 제목은 22/30, 위 여백 24, 줄 사이 16. 양옆 12, 아래는 기기 여백(최소 12). 끌어 닫기는 없고 배경 누르기와 Android 뒤로가기가 `onRequestClose`를 부른다. 첫 사용처는 로그인 뒤 새 계정 동의 (2026-10-21) |
 | PixelBadge | 짧은 글자 배지. `tone`: `ink`(판 종류), `primary`(완성). `badge` 글씨 |
 | PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |
 | CompletionSticker | 판의 기본 스티커 + `primary` 「완성」 배지. `tilted`는 붙인 듯 비스듬히 |
