@@ -19,6 +19,6 @@ module.exports = () => ({
   deploymentTarget: '10.0',
   icon: '../../assets/icon.png',
   // 컴플리케이션(targets/watch-widget)과 차곡이 그림, 문구를 나눠 쓴다 (targets/watch/Logic/Complication.swift)
-  entitlements: { 'com.apple.security.application-groups': ['group.com.novum.chagok.watch'] },
+  entitlements: { 'com.apple.security.application-groups': ['group.com.novumlab.chagok.watch'] },
   images,
 });

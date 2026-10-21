@@ -3,7 +3,7 @@
 import SwiftUI
 import WidgetKit
 
-private let appGroup = "group.com.novum.chagok.watch"
+private let appGroup = "group.com.novumlab.chagok.watch"
 private let textKey = "complicationText"
 private let imageFile = "complication-chagok.png"
 

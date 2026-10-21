@@ -7,8 +7,8 @@ import type { ProductKey, StorePrice } from './price';
  * 상품 ID는 지운 뒤에도 다시 못 쓴다 — 규칙은 src/stickers/color/README.md.
  * 앱은 상품이 아니라 권한(entitlement)으로 판단한다. 나중에 낼 구독도 같은 권한을 연다.
  */
-export const productIdOf = (packId: ColorStickerPackId) => `com.novum.chagok.pack.${packId}`;
-export const AD_FREE_PRODUCT = 'com.novum.chagok.adfree';
+export const productIdOf = (packId: ColorStickerPackId) => `com.novumlab.chagok.pack.${packId}`;
+export const AD_FREE_PRODUCT = 'com.novumlab.chagok.adfree';
 export const entitlementOf = (packId: ColorStickerPackId) => `pack_${packId}`;
 export const AD_FREE_ENTITLEMENT = 'ad_free';
 /** PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR — 보호자 승인을 기다린다 */

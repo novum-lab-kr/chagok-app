@@ -7,7 +7,7 @@ function fakeSdk(over: Partial<PurchasesSdk> = {}): PurchasesSdk & { asked: stri
     asked,
     getProducts: async (ids) => { asked.push(ids); return ids.map((identifier) => ({ identifier })); },
     purchaseStoreProduct: async (p) => ({
-      customerInfo: info(p.identifier === 'com.novum.chagok.adfree' ? 'ad_free' : `pack_${p.identifier.split('.').pop()}`),
+      customerInfo: info(p.identifier === 'com.novumlab.chagok.adfree' ? 'ad_free' : `pack_${p.identifier.split('.').pop()}`),
     }),
     restorePurchases: async () => info(),
     ...over,
@@ -20,7 +20,7 @@ describe('RevenueCat 결제', () => {
     const store = createRevenueCatStore(sdk);
     expect(await store.buyPack('animals_normal')).toEqual({ ok: true });
     expect(await store.buyAdFree()).toEqual({ ok: true });
-    expect(sdk.asked).toEqual([['com.novum.chagok.pack.animals_normal'], ['com.novum.chagok.adfree']]);
+    expect(sdk.asked).toEqual([['com.novumlab.chagok.pack.animals_normal'], ['com.novumlab.chagok.adfree']]);
   });
 
   it('결제 창을 닫으면 취소, 그 밖의 오류는 실패', async () => {

@@ -42,10 +42,10 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 **계정·외부 준비가 끝난 뒤**
 
-- **결제·광고 출시 연결** — 코드는 Test Store·테스트 광고로 붙어 있다(2026-10-13). 남은 것: App Store Connect·Google Play 상품 등록과 RevenueCat 스토어 키, AdMob 가입(남편 명의)과 실제 앱 ID·광고 단위 ID, `app-ads.txt`, 약관·처리방침 1판의 결제·광고 조항 게시(정책 저장소 main에 있다, `[클라우드 사업자]` 빈칸을 채운 뒤 `publish`에 합친다), 통신판매업 신고 확인.
+- **결제·광고 출시 연결** — 코드는 Test Store·테스트 광고로 붙어 있다(2026-10-13). 남은 것: App Store Connect·Google Play 상품 등록과 RevenueCat 스토어 키, AdMob 가입(김은주 명의)과 실제 앱 ID·광고 단위 ID, `app-ads.txt`, 약관·처리방침 1판의 결제·광고 조항 게시(정책 저장소 main에 있다, `[클라우드 사업자]` 빈칸을 채운 뒤 `publish`에 합친다), 통신판매업 신고 확인.
 - **Apple 로그인** — 2026-10-17 main에 합침(`apple-link`로 Apple 토큰을 맡기고, 계정 삭제 때 폐기). 개발 서버 `chagok-dev`에 함수 두 개 배포와 DB 리셋 끝. iPhone에서 연결과 첫 백업, 창 닫기, 로그아웃 뒤 다시 로그인과 복원을 사용자가 확인했다. **계정 삭제(삭제 뒤 iPhone 「Apple로 로그인」 목록에서 빠지는지, 목록에서 먼저 끊은 뒤 삭제)는 아직 확인 안 함** — 문제가 나오면 그때 고친다(사용자 결정). 다음은 카카오(로그인 계획 2단계). 로그인 버튼 치수: 버튼 높이 44, Google 버튼 글자 19·로고 24·여백 19·14·19, 좁은 화면에서는 Google 버튼 안 전체를 같은 비율로 줄인다(2026-10-12 사용자 결정, Storybook `Screens/Account consent`·시안).
 - **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
-- **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다. **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, Apple ID `6822964802` — `eas.json` `submit.production.ios.ascAppId`). 아직 업로드하지 않았다(사용자 결정). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드의 로그인은 Apple뿐이다(2026-10-17).
+- **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다. **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, 2026-10-20 새 계정 Apple ID `6824725721` — `eas.json` `submit.production.ios.ascAppId`). 옛 계정에는 2026-10-18 빌드 7(1.0.0)을 TestFlight에 올렸다(그래서 옛 번들 ID는 다시 못 쓴다). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드의 로그인은 Apple뿐이다(2026-10-17).
 - **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`, 계획 `docs/superpowers/plans/2026-10-15-social-login.md`. 로그인 버튼은 동그라미 아이콘(`LoginCircles`, 2026-10-15 틀4) — Apple 기본 버튼(`AppleAuthenticationButton`) 대신 이것을 쓴다. Apple 로고는 Apple 서버가 내려 주는 공식 로고 버튼 그림이다(`src/design-system/apple-logo.ts`, 2026-10-15).
 
 **출시 직전에는** [출시 전 최종 점검](RELEASE-CHECKLIST.md)을 위에서부터 확인한다.
@@ -54,10 +54,10 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 ## 계정과 외부 준비
 
-- Apple Developer Program: 남편 명의 개인 계정(노붐(NOVUM) · 대표 성민창, 개인사업자). 2026-10-05 승인, App Store Connect 열림. 상품·계약 등록 기록은 아직 없다.
+- Apple Developer Program: **2026-10-20 김은주 개인 계정으로 옮기는 중**(팀 `AJ7LJPM82M`, 갱신일 2027-10-20). 유료 앱 계약은 법인 정보 갱신 뒤 서명해야 하고, 한국 법에 따른 계정 정보 확인과 EU 거래자 신고 요청이 떠 있다. 새 계정 앱 `6824725721`(번들 ID `com.novumlab.chagok`)을 2026-10-20 등록했다. 같은 날 새 계정에 App ID `com.novumlab.chagok`(Sign In with Apple)과 Sign in with Apple 키(`KXJJ72LGFZ`, `.secrets/AuthKey_KXJJ72LGFZ.p8`)를 만들고, 개발 서버 함수 secret 네 개를 새 팀 값으로 바꾼 뒤 DB를 리셋하고 개발 계정을 다시 만들었다(사진 저장소 5개 삭제). Supabase Apple 공급자 Client ID도 `com.novumlab.chagok`으로 바꿨다. 같은 날 `chagok-dev`를 새 Supabase 조직 `novum-lab`(novum-lab@naver.com이 Owner, Free)으로 옮겼다(Transfer project). 주소, 키, secret, 함수는 그대로다. 이 맥의 CLI 토큰(`.secrets/supabase-token`)은 `novum-lab@naver.com` 계정의 `chagok-cli`(이 프로젝트만, 2027-01-18 만료)로 바꿨다. 옛 계정(남편 명의, 팀 `AQUDD2QFNC`)의 앱 `6822964802`는 이름을 바꿔 두었고, 새 계정 TestFlight 확인 뒤 지운다.
 - Google Cloud OAuth: 없다. Google Play는 개인 계정을 추천(개인 계정은 출시 전 테스터 12명·14일 비공개 테스트 필요).
-- AdMob 계정: 아직 없다(스토어 계정과 같은 명의 추천).
-- Expo 조직 `novum-lab`(EAS `@novum-lab/chagok`). 저장소 `novum-lab-kr/chagok-app`(2026-10-17 `nol-meok`에서 옮김).
+- AdMob 계정: 아직 없다. 김은주 명의로 가입한다(2026-10-20).
+- Expo 조직 `novum-lab`(EAS `@novum-lab/chagok`, 2026-10-20부터 Owner `novumlab` = novum-lab@naver.com, CLI도 이 계정). 저장소 `novum-lab-kr/chagok-app`(2026-10-17 `nol-meok`에서 옮김).
 
 ## 아직 확인하지 못한 것
 

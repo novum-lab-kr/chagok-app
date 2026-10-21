@@ -6,7 +6,7 @@ const { privateKey, publicKey } = generateKeyPairSync('ec', {
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
   publicKeyEncoding: { type: 'spki', format: 'pem' },
 });
-const config = { teamId: 'TEAM123456', keyId: 'KEY1234567', clientId: 'com.novum.chagok', privateKey };
+const config = { teamId: 'TEAM123456', keyId: 'KEY1234567', clientId: 'com.novumlab.chagok', privateKey };
 
 const part = (jwt: string, i: number) => JSON.parse(Buffer.from(jwt.split('.')[i], 'base64url').toString());
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -34,7 +34,7 @@ describe('clientSecret', () => {
   it('.p8 키로 ES256 서명한 5분짜리 토큰을 만든다', async () => {
     const jwt = await clientSecret(config, 1_700_000_000_000);
     expect(part(jwt, 0)).toEqual({ alg: 'ES256', kid: 'KEY1234567' });
-    expect(part(jwt, 1)).toEqual({ iss: 'TEAM123456', iat: 1_700_000_000, exp: 1_700_000_300, aud: 'https://appleid.apple.com', sub: 'com.novum.chagok' });
+    expect(part(jwt, 1)).toEqual({ iss: 'TEAM123456', iat: 1_700_000_000, exp: 1_700_000_300, aud: 'https://appleid.apple.com', sub: 'com.novumlab.chagok' });
     const [h, p, s] = jwt.split('.');
     expect(verify('sha256', Buffer.from(`${h}.${p}`), { key: publicKey, dsaEncoding: 'ieee-p1363' }, Buffer.from(s, 'base64url'))).toBe(true);
   });
@@ -47,7 +47,7 @@ describe('exchangeCode', () => {
     expect(calls[0].url).toBe('https://appleid.apple.com/auth/token');
     expect(calls[0].form.get('code')).toBe('code-1');
     expect(calls[0].form.get('grant_type')).toBe('authorization_code');
-    expect(calls[0].form.get('client_id')).toBe('com.novum.chagok');
+    expect(calls[0].form.get('client_id')).toBe('com.novumlab.chagok');
     expect(calls[0].form.get('client_secret')?.split('.')).toHaveLength(3);
   });
   it('Apple이 거절하면 상태와 본문을 담아 던진다', async () => {
