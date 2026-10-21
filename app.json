@@ -9,10 +9,10 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.novum.chagok",
+      "bundleIdentifier": "com.novumlab.chagok",
       "supportsTablet": false,
       "usesAppleSignIn": true,
-      "appleTeamId": "AQUDD2QFNC",
+      "appleTeamId": "AJ7LJPM82M",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -27,7 +27,7 @@
       }
     },
     "android": {
-      "package": "com.novum.chagok",
+      "package": "com.novumlab.chagok",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",

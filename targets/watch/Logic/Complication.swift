@@ -4,7 +4,7 @@ import Foundation
 
 enum Complication {
   /** 워치 앱과 컴플리케이션이 함께 쓰는 저장소 */
-  static let appGroup = "group.com.novum.chagok.watch"
+  static let appGroup = "group.com.novumlab.chagok.watch"
   static let textKey = "complicationText"
   static let imageFile = "complication-chagok.png"
 

@@ -66,7 +66,7 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 - 빌드: `npx eas-cli@latest build --profile development --platform ios`. 전역 `eas`(16.17.4)는 오래돼서 Apple 로그인 단계가
   「iTunes service key is empty」로 실패한다. Apple 로그인·인증서 질문이 대화형이라 **사용자의 터미널 앱에서** 돌린다(Claude의 `!`로는 안 된다).
 - 기기는 EAS에 등록돼 있고 배포 인증서도 있다. 네이티브 쪽(`app.json`·플러그인·네이티브 라이브러리)을 바꿨을 때만 다시 빌드한다.
-- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AQUDD2QFNC -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. TestFlight 앱을 덮어쓰고 데이터는 남는다.
+- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AJ7LJPM82M -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. TestFlight 앱을 덮어쓰고 데이터는 남는다.
 - 실행: Mac에서 `npx expo start --dev-client --port 8081`. 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8081`로 연다.
   JS·위젯 레이아웃 변경은 Metro 리로드로 폰에 반영된다.
 - worktree에서 Metro를 띄우면 `.env.local`을 링크하고, 다른 worktree에서 띄웠던 직후라면 `--clear`를 붙인다
@@ -78,7 +78,7 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 워치 앱은 폰 앱 개발 빌드 안에 같이 들어가고, 워치에는 iPhone의 Watch 앱으로 설치된다. 워치 앱은 Metro를 쓰지 않는다.
 
 1. **워치를 EAS 기기로 등록한다.** iPhone을 케이블로 Mac에 꽂고 Xcode → Window → Devices and Simulators에서 iPhone 아래 Apple Watch의 Identifier(UDID)를 복사한다. 사용자 터미널에서 `npx eas-cli@latest device:create` → 직접 입력을 고르고 UDID와 이름을 넣는다.
-2. **개발 빌드를 다시 만든다.** 사용자 터미널에서 `npx eas-cli@latest build --profile development --platform ios`. 새 번들 id 둘(`com.novum.chagok.watch`, `com.novum.chagok.watch.widgets`)과 App Group(`group.com.novum.chagok.watch`)을 Apple에 등록할지 물으면 예. 프로필에 넣을 기기를 물으면 iPhone과 Watch를 둘 다 고른다.
+2. **개발 빌드를 다시 만든다.** 사용자 터미널에서 `npx eas-cli@latest build --profile development --platform ios`. 새 번들 id 둘(`com.novumlab.chagok.watch`, `com.novumlab.chagok.watch.widgets`)과 App Group(`group.com.novumlab.chagok.watch`)을 Apple에 등록할지 물으면 예. 프로필에 넣을 기기를 물으면 iPhone과 Watch를 둘 다 고른다.
 3. **설치한다.** 빌드 링크로 iPhone에 설치하고(기록은 그대로), iPhone Watch 앱 → 나의 시계 → 「사용 가능한 앱」에서 차곡차곡을 설치한다(자동 설치가 켜져 있으면 저절로 깔린다).
 4. **컴플리케이션:** 워치 시계 화면을 길게 누름 → 편집 → 컴플리케이션 칸 → 차곡이. 긴 칸이 있는 시계 화면(모듈러, 인포그래프 모듈러 등)에서만 고를 수 있다.
 
@@ -256,7 +256,7 @@ sh scripts/test-watch-logic.sh   # 워치 Logic 테스트(맥에서 swiftc)
 - 시뮬레이터는 iPhone과 Watch를 짝지어 쓴다(`xcrun simctl pair <워치 UDID> <폰 UDID>`). 워치 앱은 `xcrun simctl install <워치 UDID> ios/build/dd/Build/Products/Release-iphonesimulator/app.app/Watch/ChagokWatch.app`로 따로 넣는다.
 - 워치 시뮬레이터 런타임(watchOS 27, 약 3.8GB)은 2026-10-16에 설치했다.
 - 폰 → 워치 스냅샷은 온다. 워치 → 폰 붙임 요청은 폰 앱이 켜져 있을 때 왔다(2026-10-16, 시험 구현 때는 안 왔다).
-- 워치 화면을 누를 수 없으니 캡처는 실행 인자로 연다(시뮬레이터 빌드만): `xcrun simctl launch <워치> com.novum.chagok.watch -chagokRoute goal:<목표 id>`(그 밖에 `confirm:<id>`, `character`, `stick:<id>`).
+- 워치 화면을 누를 수 없으니 캡처는 실행 인자로 연다(시뮬레이터 빌드만): `xcrun simctl launch <워치> com.novumlab.chagok.watch -chagokRoute goal:<목표 id>`(그 밖에 `confirm:<id>`, `character`, `stick:<id>`).
 
 ---
 
@@ -297,10 +297,10 @@ npm run server:dev-user                            # 개발용 계정 만들기
 
 **Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
 
-- Supabase Authentication → Providers → Apple: Client IDs `com.novum.chagok`. Secret Key는 비운다(네이티브 전용).
-- 함수 secret 네 개: `APPLE_TEAM_ID`(AQUDD2QFNC), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`(com.novum.chagok), `APPLE_PRIVATE_KEY`(`.secrets/AuthKey_<KeyID>.p8` 내용). `supabase secrets list`로 확인.
+- Supabase Authentication → Providers → Apple: Client IDs `com.novumlab.chagok`. Secret Key는 비운다(네이티브 전용).
+- 함수 secret 네 개: `APPLE_TEAM_ID`(AJ7LJPM82M), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`(com.novumlab.chagok), `APPLE_PRIVATE_KEY`(`.secrets/AuthKey_<KeyID>.p8` 내용). `supabase secrets list`로 확인.
 - `.p8`은 Apple에서 한 번만 내려받을 수 있다. 잃어버리면 새 키를 만들고 두 secret을 바꾼다.
-- 실기기 빌드에는 Xcode Accounts에 팀 AQUDD2QFNC 계정이 있어야 한다(`app.json` `ios.appleTeamId`).
+- 실기기 빌드에는 Xcode Accounts에 팀 AJ7LJPM82M 계정이 있어야 한다(`app.json` `ios.appleTeamId`).
 
 **앱에서 확인** — `.env.local`을 바꿨으면 `npx expo start`를 다시 시작한다. 앱 설정 → 개발 → 서버 동기화 (개발)에서
 개발 계정으로 로그인하고 올리기·복원을 한다. 로그인해 있으면 기록이 바뀐 뒤 2초쯤 지나 자동으로 올라간다.

@@ -35,7 +35,7 @@ ID 토큰을 가로채 다시 쓰는 것을 막는 값이다. Supabase auth 서�
 
 Supabase는 토큰의 `aud`가 그 공급자 설정의 **Client IDs** 목록에 들어 있는지 본다.
 
-- Apple: 번들 ID `com.novum.chagok`.
+- Apple: 번들 ID `com.novumlab.chagok`.
 - Google: 앱의 `webClientId`에 넣은 **웹** 클라이언트 ID다. iOS 클라이언트 ID도 함께 넣는다. 로컬 설정에서 여러 개를 쓸 때는 웹 ID를 맨 앞에 쓴다.
 - 카카오: 토큰을 받을 때 쓴 앱 키다. 네이티브 SDK면 **네이티브 앱 키**, 웹 흐름이면 REST API 키다. 두 흐름을 같이 쓰면 둘 다 넣는데, 같은 카카오 앱의 키여야 한다.
 
@@ -78,7 +78,7 @@ Supabase는 토큰의 `aud`가 그 공급자 설정의 **Client IDs** 목록에 
 
 ### 2.2 Supabase
 
-- Apple 공급자를 켜고 Client IDs에 `com.novum.chagok`을 넣는다.
+- Apple 공급자를 켜고 Client IDs에 `com.novumlab.chagok`을 넣는다.
 - 네이티브 방식만 쓰면 **OAuth Secret Key가 필요 없다.** 「6개월마다 키 다시 만들기」도 하지 않아도 된다(Supabase 문서).
 
 ### 2.3 계정 삭제 때 토큰 폐기
@@ -118,8 +118,8 @@ Google Cloud 계정과 OAuth 설정이 **없다**(HANDOFF). 아래 내용은 준
    - 「테스트」 상태에서는 등록한 테스트 사용자(최대 100명)만 로그인할 수 있다.
 3. **클라이언트 ID 세 종류**
    - **웹:** ID 토큰의 `aud`가 된다. 앱의 `webClientId`와 Supabase에 넣는다. 네이티브 방식만 쓰면 secret은 쓰지 않는다.
-   - **iOS:** 번들 ID `com.novum.chagok`으로 만든다. 앱 플러그인의 `iosUrlScheme`에는 이 ID를 거꾸로 쓴 값(`com.googleusercontent.apps.…`)을 넣는다.
-   - **Android:** 패키지 `com.novum.chagok`과 **SHA-1 지문**으로 만든다. 지문은 서명 키마다 달라서 보통 세 개를 등록한다.
+   - **iOS:** 번들 ID `com.novumlab.chagok`으로 만든다. 앱 플러그인의 `iosUrlScheme`에는 이 ID를 거꾸로 쓴 값(`com.googleusercontent.apps.…`)을 넣는다.
+   - **Android:** 패키지 `com.novumlab.chagok`과 **SHA-1 지문**으로 만든다. 지문은 서명 키마다 달라서 보통 세 개를 등록한다.
      - 로컬 디버그 키
      - EAS 빌드 키(`eas credentials`로 확인)
      - Play 앱 서명 키(Play Console에서 확인)
@@ -164,8 +164,8 @@ await supabase.auth.signInWithIdToken({ provider: 'google', token: res.data.idTo
 
 1. 카카오 계정으로 가입하고 **앱을 만든다.** 앱 이름은 「차곡차곡」, 사업자명은 노붐이다.
 2. **플랫폼 등록**
-   - iOS: 번들 ID `com.novum.chagok`.
-   - Android: 패키지 `com.novum.chagok`과 **키 해시**(SHA-1을 Base64로 바꾼 값)를 넣는다. Google과 똑같이 디버그·EAS·Play 앱 서명 키 세 개를 넣는다.
+   - iOS: 번들 ID `com.novumlab.chagok`.
+   - Android: 패키지 `com.novumlab.chagok`과 **키 해시**(SHA-1을 Base64로 바꾼 값)를 넣는다. Google과 똑같이 디버그·EAS·Play 앱 서명 키 세 개를 넣는다.
    - 릴리스 빌드에서 키 해시가 빠져 로그인이 실패한 사례가 많다(Kakao DevTalk).
 3. **카카오 로그인 켜기**(State ON)와 **OpenID Connect 켜기.** OpenID Connect가 꺼져 있으면 ID 토큰이 나오지 않는다.
 4. **동의 항목**
