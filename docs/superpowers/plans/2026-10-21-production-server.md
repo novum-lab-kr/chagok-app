@@ -137,6 +137,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
   - 어긋나면 계정 삭제와 Apple 연결이 401로 실패한다. 막히는 쪽으로 실패하므로 보안 문제는 아니다.
   - 확인: 운영 서버에서 로그인한 토큰으로 두 함수를 불러 본다. 실패하면 issuer 비교에 쓸 외부 주소를 함수 환경 변수로 따로 넘기도록 `auth.ts`를 고친다(코드 변경이므로 별도 작업).
 - [ ] **Apple 로그인:** `.env`의 `APPLE_ENABLED=true`, `APPLE_CLIENT_ID=com.novumlab.chagok`와 `docker-compose.yml` auth 서비스의 `GOTRUE_EXTERNAL_APPLE_*` 줄. 공식 문서는 웹 방식(Services ID와 secret)만 다룬다. 앱은 기기에서 받은 ID 토큰 방식이라 secret을 비워도 되는지 시험해서 정한다.
+- [ ] **카카오와 Google 로그인:** 개발 서버(`chagok-dev`)와 같은 값을 `.env`와 auth 서비스의 `GOTRUE_EXTERNAL_KAKAO_*`, `GOTRUE_EXTERNAL_GOOGLE_*`에 넣는다. 카카오는 Client ID에 REST 키와 네이티브 앱 키를 쉼표로, 이메일 없는 사용자 허용. Google은 Client ID에 웹, iOS, Android 순으로 쉼표, nonce 확인 끔(`SKIP_NONCE_CHECK`). 함수 환경에 `KAKAO_ADMIN_KEY`. 값은 이 맥 `.secrets/kakao.env`, `.secrets/google.env`.
 - [ ] **Apple 말고 다른 가입을 모두 끄기:** `.env`에 `ENABLE_PHONE_SIGNUP=false`, `ENABLE_EMAIL_SIGNUP=false`, `ENABLE_ANONYMOUS_USERS=false`를 명시한다.
   - 셀프호스팅 `.env.example`의 기본값은 `ENABLE_PHONE_SIGNUP=true`, `ENABLE_PHONE_AUTOCONFIRM=true`다(2026-10-21 보안 검토에서 확인).
   - 그대로 두면 누구나 `POST /auth/v1/signup`에 아무 전화번호와 비밀번호를 보내, SMS 확인 없이 로그인된 계정을 얻는다.
