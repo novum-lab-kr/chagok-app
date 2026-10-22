@@ -4,6 +4,8 @@
 
 ## 코드
 
+- **한 화면 안에서 다른 화면으로 바꿔 끼우면 `useFocusEffect`가 다시 돌지 않는다**(2026-10-22). 목표 탭은 시작 화면을 같은 자리에 띄우는데, 그동안 탭은 계속 포커스 상태라 복원이 끝나도 목록을 다시 읽지 않아 빈 목록이 남았다(다른 탭에 갔다 와야 보임). 바꿔 끼운 화면이 데이터를 바꾸면 끝날 때 다시 읽게 신호를 준다(`reload`).
+
 - **`RetroScreen`을 감싸는 래퍼에는 높이가 필요하다.** `flex:1` + `ScrollView`라 부모 높이가 없으면 0으로 접혀 화면이 통째로 빈다.
 - **`useSafeAreaInsets()`를 쓰지 않는다.** Provider 없이 렌더하는 테스트·Storybook에서 예외를 던진다. `SafeAreaInsetsContext`를 직접 읽고 없으면 0으로 둔다. iOS 시트 안은 `SheetSafeArea`가 위쪽을 0으로 준다(`app/_layout.tsx` `screenLayout`).
 - **훅은 조건부 return보다 위에 둔다.** `app/index.tsx`는 로딩 / 튜토리얼 / 목표 없음 분기가 있어, 아래에 둔 훅은 새로 설치한 기기에서만 터진다. `npm run lint`가 잡는다.
@@ -45,6 +47,9 @@
 - 모든 Docs 페이지에 `props.pointerEvents is deprecated` 경고가 나온다. 동작에는 영향이 없다.
 
 ## 기기 테스트
+
+- **Maestro로 웹 로그인 창(카카오, Google)을 다룬 뒤 맥에 「SafariViewService 응용 프로그램이 예기치 않게 종료」가 뜰 수 있다**(2026-10-22). 충돌 지점이 `XCTAutomationSupport`라 자동 조작 도구 때문이고 앱 문제가 아니다. [무시]로 닫는다. 충돌 기록은 `~/Library/Logs/DiagnosticReports/SafariViewService-*.ips`.
+- **시뮬레이터에 Apple 계정이 없으면 Apple 로그인이 「Apple 계정에 로그인」 안내를 띄우고, [닫기]는 취소가 아니라 `ERR_REQUEST_UNKNOWN`으로 온다**(2026-10-22). 연결 화면은 이때 「연결하지 못했어요 / 다시 시도해 주세요.」를 띄운다. 실제 Apple 로그인 확인은 실기기로 한다.
 
 - **실행 중인 Storybook·Metro를 임의로 끄지 않는다.** 다른 세션이 쓰고 있을 수 있다. 포트와 프로세스는 세션마다 다시 확인한다.
 - **worktree를 바꿔 Metro를 띄우면 `--clear`를 붙인다(2026-10-21).** worktree들이 `node_modules`를 같이 쓰면 Metro가 다른 worktree에서 만든 캐시를 그대로 써서 `./chagok-wt-<다른 이름>/src/db/expoDriver`를 찾다가 「목표를 불러오지 못했어요」가 뜬다. 첫 번들이 2초 안에 끝나면 캐시를 쓴 것이다.

@@ -21,6 +21,8 @@
 Expo Go 대신 이 앱만의 개발용 앱을 시뮬레이터·에뮬레이터에 깔아 쓴다. 네이티브 폴더(`ios/`·`android/`)는
 빌드할 때마다 `app.json`에서 만들고 **커밋하지 않는다**(`.gitignore`). 설정은 `app.json`·`eas.json`에만 둔다.
 
+**Apple 로그인 버튼 로고 (2026-10-22~)** — 직접 만든 Apple 버튼의 로고는 Apple 디자인 리소스 파일이라 사용권상 저장소에 두지 않는다. `.secrets/apple-siwa-logo.svg`(Apple Design Resources의 「Sign in with Apple Logo」 dmg 안 `Sign in with Apple - Left Aligned/SVG/Logo - SIWA - Left-aligned - Black - Medium.svg`)를 두면 `npm install`의 postinstall(`scripts/apple-logo.mjs`)이 git 제외 파일 `src/design-system/apple-siwa-logo.generated.ts`를 만든다. 파일이 없으면 Apple 기본 버튼으로 빌드된다. worktree에서는 `ln -s ../chagok-app/.secrets .secrets`로 링크하고 `node scripts/apple-logo.mjs`를 한 번 돌린다.
+
 **iOS 시뮬레이터** — Xcode와 CocoaPods가 필요하다. CocoaPods가 없으면 첫 빌드가 Homebrew로 설치한다(2026-10-05 이 맥에 설치됨).
 
 ```sh
