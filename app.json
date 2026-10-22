@@ -59,6 +59,10 @@
           "ios": { "handleKakaoOpenUrl": true }
         }
       ],
+      [
+        "@react-native-google-signin/google-signin",
+        { "iosUrlScheme": "com.googleusercontent.apps.569281636863-jmu9re3f6u38ajadbpl97nccabmi8fh2" }
+      ],
       "expo-system-ui",
       [
         "expo-splash-screen",

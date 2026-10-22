@@ -79,16 +79,33 @@ export function AccountLoginScreen({loginButtons,onBack,onLocal,busy=false}:{log
 }
 
 /**
- * 카카오 로그인 버튼 (카카오 로그인 디자인 가이드 완성형). 바탕 #FEE500, 말풍선 심볼 #000000, 글자 #000000 85%, 모서리 12.
+ * 카카오 로그인 버튼 (카카오 로그인 디자인 가이드 모양). 글자는 다른 버튼과 맞춘 「카카오로 계속하기」(2026-10-22 사용자 결정, 가이드 기본 글자는 「카카오 로그인」). 바탕 #FEE500, 말풍선 심볼 #000000, 글자 #000000 85%, 모서리 12.
  * 심볼 경로는 카카오 리소스 페이지의 미리보기 SVG 그대로다(모양과 비율 변경 금지). 높이는 Apple 버튼과 같은 48.
  */
 export function KakaoLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="카카오 로그인" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel="카카오로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
     style={({pressed})=>({height:48,borderRadius:12,backgroundColor:'#FEE500',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:pressed?0.8:1})}>
     <Svg width={18} height={18} viewBox="61.5 16.5 13 13" accessibilityElementsHidden importantForAccessibility="no">
       <Path fill="#000000" d="M68.001 16.5225C64.4222 16.5225 61.5225 19.0037 61.5225 22.0641C61.5225 24.0312 62.7219 25.7596 64.5292 26.7423L63.9181 29.2113C63.8954 29.285 63.9132 29.364 63.9619 29.4184C63.9975 29.457 64.0461 29.478 64.0931 29.478C64.1337 29.478 64.1742 29.464 64.2082 29.4341L66.834 27.5144C67.2117 27.5723 67.6007 27.6039 67.9994 27.6039C71.5767 27.6039 74.478 25.1226 74.478 22.0623C74.478 19.002 71.5783 16.5225 68.001 16.5225Z"/>
     </Svg>
-    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>카카오 로그인</Text>
+    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>카카오로 계속하기</Text>
+  </Pressable>;
+}
+
+/**
+ * Google 로그인 버튼 (Google 브랜드 가이드 밝은 테마): 흰 바탕, 테두리 #747775, 글자 #1F1F1F, 표준 4색 G 로고(모양과 색 변경 금지).
+ * 다른 로그인 버튼과 같은 크기로 둔다(가이드: 다른 회사 버튼과 비슷한 크기와 무게). 글자는 Apple 기본 버튼의 「계속하기」와 맞춘 「Google로 계속하기」(가이드의 Continue with Google, 2026-10-22 사용자 결정).
+ */
+export function GoogleLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel="Google로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+    style={({pressed})=>({height:48,borderRadius:12,borderWidth:1,borderColor:'#747775',backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10,opacity:pressed?0.8:1})}>
+    <Svg width={20} height={20} viewBox="0 0 48 48" accessibilityElementsHidden importantForAccessibility="no">
+      <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </Svg>
+    <Text style={{fontSize:17,fontWeight:'500',color:'#1F1F1F'}}>Google로 계속하기</Text>
   </Pressable>;
 }
 
@@ -198,6 +215,8 @@ function ViewChevron({label,onPress}:{label:string;onPress:()=>void}) {
  */
 export function ConsentSheet({visible,ageChecked,termsChecked,onToggleAge,onToggleTerms,onViewTerms,onViewPrivacy,onAgree,onRequestClose,loading=false,overlay}:{visible:boolean;ageChecked:boolean;termsChecked:boolean;onToggleAge:()=>void;onToggleTerms:()=>void;onViewTerms:()=>void;onViewPrivacy:()=>void;onAgree:()=>void;onRequestClose:()=>void;/** 동의를 기록하는 중 */loading?:boolean;/** 시트 위에 띄울 다이얼로그(PixelBottomSheet overlay) */overlay?:ReactNode}) {
   return <PixelBottomSheet visible={visible} title="처음 오셨네요" onRequestClose={onRequestClose} overlay={overlay}>
+    {/* 제목만 있고 바로 체크 칸이 나오면 무엇을 하라는지 알기 어렵다 (2026-10-22 사용자 메모) */}
+    <Caption>계정을 만들려면 아래 내용을 확인하고 동의해 주세요.</Caption>
     <View>
       <PixelCheckbox label="[필수] 만 14세 이상이에요" checked={ageChecked} onChange={onToggleAge}/>
       <View style={{flexDirection:'row',alignItems:'center'}}>

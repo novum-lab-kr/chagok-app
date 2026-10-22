@@ -5,6 +5,7 @@ import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDia
 import { goBackOrHome } from '../../src/app-data/goBack';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
 import { deleteAccountOnServer, signOutLocal } from '../../src/sync/account';
+import { revokeGoogle, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
 import { signOutKakao } from '../../src/sync/signIn/expoKakao';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
@@ -46,10 +47,13 @@ export default function DeleteAccount() {
       if (!serverDone.current) {
         await deleteAccountOnServer(supabase);
         serverDone.current = true;
+        // Google은 서버에 토큰이 없어 앱이 연결을 끊는다. 서버 삭제가 끝난 뒤에만, 실패해도 계속한다
+        await revokeGoogle();
       }
       // 지운 계정의 토큰은 갱신되지 않아 로그아웃이 오류를 돌려줄 수 있다 — 저장된 세션을 직접 지운다
       await signOutLocal(supabase, clearStoredSession);
       await signOutKakao();
+      await signOutGoogle();
       await wipeDevice(removeAllManagedPhotos);
     } catch {
       setStep('failed');
