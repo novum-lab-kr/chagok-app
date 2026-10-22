@@ -196,7 +196,8 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - R2에서 다시 받은 덤프를 `pg_restore -l`로 읽어 테이블 데이터 항목 57개(`auth`, `public` 포함)를 확인했다. 실제로 되살리는 것은 복구 연습에서 한다.
 - DB 계정과 권한(`pg_dumpall --globals-only`)은 넣지 않았다. 새 Supabase 이미지가 계정을 다시 만든다고 보았고, 복구 연습에서 확인한다.
 
-- [ ] **복구 연습:** R2에서 받은 백업을 이 맥(Docker)의 빈 Supabase에 되살린다. 확인: 사용자 수, 기록 행 수, 사진 한 장이 원래 서버와 같다. 절차를 DEV-SETUP에 「운영 서버 복구」로 적는다.
+- [x] **복구 연습 (절차):** 2026-10-22 이 맥에서 읽기 전용 토큰 `chagok-prod-backup-restore-mac`(`.secrets/prod/r2-restore.env`)으로 R2에서 받아 운영과 같은 Postgres 이미지에 되살렸다. 이 맥에 Docker가 없어 Colima를 설치했다. 테이블 목록, 행 수, 버킷, RLS 정책이 운영과 같았다. 절차와 결과, 함정(`--no-lock`)은 [DEV-SETUP](../../DEV-SETUP.md) 「운영 서버 복구」.
+- [ ] **복구 연습 (실제 데이터):** 운영에 아직 사용자, 기록, 사진이 없어 비교하지 못했다. 첫 실사용 데이터가 생기면 사용자 수, 기록 행 수, 사진 한 장을 다시 비교한다. 그때 Supabase 전체를 띄워 `supabase_realtime_admin`, `supabase_functions_admin` 관련 오류 38개가 사라지는지도 본다.
 
 ## 6단계: 지켜보기
 
