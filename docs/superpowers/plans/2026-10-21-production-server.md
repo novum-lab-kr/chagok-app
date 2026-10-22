@@ -48,10 +48,12 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 ## 0단계: 계정 준비 (사용자)
 
-도메인은 Hostinger에서 샀지만 네임서버가 Cloudflare다(2026-10-21 `dig`, `whois`로 확인). DNS는 Hostinger가 아니라 Cloudflare 대시보드에서 고친다. `*.novum-lab.com` 와일드카드가 Cloudflare 프록시를 거치고 있어, 레코드를 추가하기 전에도 `chagok-api`가 Cloudflare IP로 조회된다.
+도메인은 Hostinger에서 샀고 DNS는 Cloudflare다. 2026-10-22에 존을 다른 Cloudflare 계정(`Mcsung.novum`, 네임서버 `annalise`, `vick`)에서 `Novum-lab@naver.com` 계정(네임서버 `carrera`, `clayton`)으로 옮겼다. 옛 존의 레코드 10개 가운데 메일(이메일 라우팅의 MX 3개, SPF, DKIM)은 더 쓰지 않아 옮기지 않았다. 옛 존은 전환이 퍼질 때까지(최대 이틀) 지우지 않는다.
 
-- [ ] `novum-lab.com`을 관리하는 그 Cloudflare 계정에서 R2를 켠다. 공식 문서에 "You must purchase R2 before you can generate an API token"이라고 되어 있어 결제 수단 등록이 필요할 수 있다.
-- [ ] Cloudflare → `novum-lab.com` → DNS → Add record: Type `A`, Name `chagok-api`, IPv4 `187.127.114.161`, Proxy 끔(DNS only). 3단계 전에 끝나야 한다. 확인: `dig +short chagok-api.novum-lab.com`이 `187.127.114.161` 하나만 낸다.
+- [ ] `Novum-lab@naver.com` 계정에서 R2를 켠다. 공식 문서에 "You must purchase R2 before you can generate an API token"이라고 되어 있어 결제 수단 등록이 필요할 수 있다.
+- [x] 새 존 레코드: `novum-lab.com`, `*`(A), `www`(CNAME), `syung`(A, DNS only), Google 인증 TXT, `chagok-api`(A `187.127.114.161`, DNS only). SSL/TLS 모드 Full. 확인: 공개 DNS 4곳이 `chagok-api`를 `187.127.114.161`로 답한다.
+- [ ] 새 계정 활성화와 인증서 발급 뒤, 전환 동안 회색으로 둔 `novum-lab.com`, `*`, `www`를 다시 프록시로 켠다.
+- [ ] 이틀 뒤 옛 계정의 존을 지워도 되는지 확인한다(계정 주인이 지운다).
 - [ ] Hostinger의 정식 법인 이름과 연락처를 확인한다(처리방침의 이전받는 자).
 
 ## 1단계: 자리 만들기
@@ -60,18 +62,18 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 **root로 (서버 전체, 단계마다 먼저 묻는다)**
 
-- [ ] 사용자 `chagok` 만들기. sudo 그룹에 넣지 않는다. 홈 폴더는 다른 사용자가 못 읽게 `700`.
-- [ ] `/etc/subuid`, `/etc/subgid`에 `chagok` 줄이 65,536개 이상으로 생겼는지 확인(사용자를 만들 때 자동으로 생긴다).
-- [ ] `apt-get install uidmap`. 지금 서버에 없는 유일한 준비물이다.
-- [ ] 지금 쓰시는 SSH 공개키를 `/home/chagok/.ssh/authorized_keys`에 넣는다. 운영 작업은 `ssh chagok@187.127.114.161`로 한다. 공식 문서상 `sudo -iu`나 `sudo su`로 사용자를 바꾸면 rootless Docker가 제대로 안 돈다.
-- [ ] `loginctl enable-linger chagok`. 로그아웃해도 `chagok`의 Docker와 백업 타이머가 계속 돈다.
-- [ ] swap 4GB 파일을 만들고 `swapon`, `sysctl vm.swappiness=10`. 둘 다 바로 적용되어 재부팅하지 않는다. 재부팅 뒤에도 유지되게 `/etc/fstab`와 `/etc/sysctl.d/`에 적는다. 확인: `free -h`에 Swap 4.0Gi, `findmnt --verify`가 깨끗하고, `swapoff` 뒤 `swapon -a`로 fstab만 보고 다시 켜진다(fstab이 틀리면 다음 부팅이 막힐 수 있어서).
+- [x] 사용자 `chagok` 만들기. sudo 그룹에 넣지 않는다. 홈 폴더는 다른 사용자가 못 읽게 `700`.
+- [x] `/etc/subuid`, `/etc/subgid`에 `chagok` 줄이 65,536개 이상으로 생겼는지 확인(사용자를 만들 때 자동으로 생긴다).
+- [x] `apt-get install uidmap`. 지금 서버에 없는 유일한 준비물이다.
+- [x] 지금 쓰시는 SSH 공개키를 `/home/chagok/.ssh/authorized_keys`에 넣는다. 운영 작업은 `ssh chagok@187.127.114.161`로 한다. 공식 문서상 `sudo -iu`나 `sudo su`로 사용자를 바꾸면 rootless Docker가 제대로 안 돈다.
+- [x] `loginctl enable-linger chagok`. 로그아웃해도 `chagok`의 Docker와 백업 타이머가 계속 돈다.
+- [x] swap 4GB 파일을 만들고 `swapon`, `sysctl vm.swappiness=10`. 둘 다 바로 적용되어 재부팅하지 않는다. 재부팅 뒤에도 유지되게 `/etc/fstab`와 `/etc/sysctl.d/`에 적는다. 확인: `free -h`에 Swap 4.0Gi, `findmnt --verify`가 깨끗하고, `swapoff` 뒤 `swapon -a`로 fstab만 보고 다시 켜진다(fstab이 틀리면 다음 부팅이 막힐 수 있어서).
 
 **`chagok`으로**
 
-- [ ] `dockerd-rootless-setuptool.sh install --force`. 서버 Docker는 다른 서비스가 쓰므로 끄지 않는다. 공식 문서상 서버 Docker를 켜 둔 채 설치하려면 `--force`가 필요하다.
-- [ ] `systemctl --user enable --now docker`. `DOCKER_HOST=unix:///run/user/<chagok uid>/docker.sock`(또는 `docker context use rootless`).
-- [ ] 확인:
+- [x] `dockerd-rootless-setuptool.sh install --force`. 서버 Docker는 다른 서비스가 쓰므로 끄지 않는다. 공식 문서상 서버 Docker를 켜 둔 채 설치하려면 `--force`가 필요하다.
+- [x] `systemctl --user enable --now docker`. `DOCKER_HOST=unix:///run/user/<chagok uid>/docker.sock`(또는 `docker context use rootless`).
+- [x] 확인:
   - `chagok`의 `docker run --rm hello-world`가 된다.
   - root의 `docker ps`에 `chagok` 컨테이너가 보이지 않고, `chagok`의 `docker ps`에 서버 컨테이너가 보이지 않는다.
   - 서버 재부팅 없이 `systemctl --user restart docker` 뒤에도 다시 뜬다.
@@ -88,22 +90,42 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 공식 문서(Self-Hosting with Docker) 순서를 따른다. 문서 예시는 `self-hosted/v0.8.3`이고, 설치할 때 최신 `self-hosted/v*` 태그를 고른다. 모두 `chagok`으로, `chagok`의 Docker에서 한다.
 
-- [ ] `git clone --depth 1 --branch <태그> https://github.com/supabase/supabase`, `docker/` 내용을 `/home/chagok/supabase/`로 복사, `.env.example`을 `.env`로.
-- [ ] compose 설정에서 서버 Docker 소켓(`/var/run/docker.sock`)을 가리키는 곳이 있으면 `chagok`의 소켓으로 바꾼다. 서버 Docker에 붙으면 분리가 깨진다.
-- [ ] `sh utils/generate-keys.sh`, `sh utils/add-new-auth-keys.sh`로 비밀값을 만든다. 기본값으로 절대 시작하지 않는다(공식 문서 경고).
+- [x] `git clone --depth 1 --branch <태그> https://github.com/supabase/supabase`, `docker/` 내용을 `/home/chagok/supabase/`로 복사, `.env.example`을 `.env`로.
+- [x] compose 설정에서 서버 Docker 소켓(`/var/run/docker.sock`)을 가리키는 곳이 있으면 `chagok`의 소켓으로 바꾼다. 서버 Docker에 붙으면 분리가 깨진다.
+- [x] `sh utils/generate-keys.sh`, `sh utils/add-new-auth-keys.sh`로 비밀값을 만든다. 기본값으로 절대 시작하지 않는다(공식 문서 경고).
   - 직접 정하는 값: `POSTGRES_PASSWORD`(영문과 숫자만), `DASHBOARD_PASSWORD`(영문 포함, 특수문자 없이)
   - 주소 값: `SUPABASE_PUBLIC_URL`, `API_EXTERNAL_URL`을 `https://chagok-api.novum-lab.com`으로
-- [ ] **포트를 모두 `127.0.0.1`에 묶는다.** 게이트웨이 8000, 풀러 5432와 6543. 기본 compose는 이 셋을 호스트 IP 없이(모든 주소에) 연다. 밖에서는 Caddy를 거쳐서만 들어온다.
+- [x] **포트를 모두 `127.0.0.1`에 묶는다.** 게이트웨이 8000, 풀러 5432와 6543. 기본 compose는 이 셋을 호스트 IP 없이(모든 주소에) 연다. 밖에서는 Caddy를 거쳐서만 들어온다.
   - 기본 게이트웨이는 Envoy다(`self-hosted/v0.8.3` 기준). Kong으로 바꾸지 않는다. Kong 설정을 켜면 HTTPS 포트 8443이 더 생기므로, 켜게 되면 그것도 `127.0.0.1`에 묶는다.
   - 확인: 이 맥에서 서버로 포트를 훑어 22, 80, 443만 열려 있다.
-- [ ] Studio(관리 화면)는 인터넷에 열지 않는다. 쓸 때는 이 맥에서 SSH 터널(`ssh -L 8000:127.0.0.1:8000 chagok@...`)로 연다.
-- [ ] 사진 저장은 기본값(VPS 디스크, `volumes/storage`)을 쓴다. 원본은 말레이시아에 두고 R2에는 암호화한 백업만 둔다.
-- [ ] `sh run.sh start`. 확인: 컨테이너가 모두 healthy, `curl http://127.0.0.1:8000/rest/v1/` 응답.
+- [x] Studio(관리 화면)는 인터넷에 열지 않는다. 쓸 때는 이 맥에서 SSH 터널(`ssh -L 8000:127.0.0.1:8000 chagok@...`)로 연다.
+- [x] 사진 저장은 기본값(VPS 디스크, `volumes/storage`)을 쓴다. 원본은 말레이시아에 두고 R2에는 암호화한 백업만 둔다.
+- [x] `sh run.sh start`. 확인: 컨테이너가 모두 healthy, `curl http://127.0.0.1:8000/rest/v1/` 응답.
+
+**2단계 결과 (2026-10-21)**
+
+- `self-hosted/v0.8.3`(최신 태그, Postgres 17.6). 공식 `setup.sh`는 sudo로 준비물을 깔려고 해서 쓰지 않고 같은 순서를 손으로 했다. 받은 원본은 `/home/chagok/supabase-src`.
+- 서버 Docker 소켓은 로그 수집 추가 설정(`docker-compose.logs.yml`)에서만 쓴다. 켜지 않으므로 바꿀 것이 없었다.
+- `POSTGRES_PORT`는 컨테이너끼리 연결하는 데도 쓰여 값에 `127.0.0.1`을 넣을 수 없다. 공식 파일은 그대로 두고 `docker-compose.chagok.yml`(`ports: !override`)로 묶은 뒤 `sh run.sh config add chagok`으로 `COMPOSE_FILE`에 더했다.
+- 전화번호 가입과 이메일 가입은 처음 켜기 전에 껐다(4단계에서 하려던 것). `/auth/v1/settings`의 `external`이 모두 false.
+- 11개 컨테이너가 rootless에서 모두 healthy. 서버 `ss`에 8000, 5432, 6543이 `127.0.0.1`에만 있고, 이 맥에서 훑으면 22, 80, 443만 열려 있다. 메모리는 약 1.2GB 늘었다(여유 7.3GB).
+- 확인 못 한 것: anon 키로 `/rest/v1/` 루트가 403이다(키 없이는 401). 테이블이 없는 지금은 판단할 수 없어 4단계에서 실제 테이블로 확인한다.
+- 비밀값 사본: 이 맥 `.secrets/prod/supabase.env`(권한 600, git 제외, 서버와 해시 같음).
+- 서버에서 `chagok` Docker 보기: `ssh chagok@187.127.114.161` 뒤 `docker ps`, 또는 root에서 `docker -H unix:///run/user/1003/docker.sock ps`. 8단계에서 DEV-SETUP에 옮긴다.
 
 ## 3단계: 주소 연결 (Caddy)
 
-- [ ] Caddyfile을 백업하고 `chagok-api.novum-lab.com` 블록을 더한다. `127.0.0.1:8000`으로 넘기되, 앱이 쓰는 경로(`/auth/v1/`, `/rest/v1/`, `/storage/v1/`, `/functions/v1/`)만 열고 나머지는 막는다. 앱은 실시간(realtime) 기능을 쓰지 않는다.
-- [ ] `caddy validate` 뒤 reload. 확인: 바깥에서 `https://chagok-api.novum-lab.com/auth/v1/health` 응답, 루트 경로(Studio)는 막힘, 기존 사이트가 그대로 열림.
+- [x] Caddyfile을 백업하고 `chagok-api.novum-lab.com` 블록을 더한다. `127.0.0.1:8000`으로 넘기되, 앱이 쓰는 경로(`/auth/v1/`, `/rest/v1/`, `/storage/v1/`, `/functions/v1/`)만 열고 나머지는 막는다. 앱은 실시간(realtime) 기능을 쓰지 않는다.
+- [x] `caddy validate` 뒤 reload. 확인: 바깥에서 `https://chagok-api.novum-lab.com/auth/v1/health` 응답, 루트 경로(Studio)는 막힘, 기존 사이트가 그대로 열림.
+
+**3단계 결과 (2026-10-22)**
+
+- 백업 `/etc/caddy/Caddyfile.pre-chagok-20261022`. 블록은 파일 맨 끝에 더했고 다른 블록은 그대로다. `systemctl reload caddy`(재시작 아님).
+- 인증서: Let's Encrypt, 2027-01-19까지. reload 10초 안에 받았다.
+- 바깥에서: `/auth/v1/health`는 anon 키로 200, 키 없이 401. `/rest/v1/` 401, `/functions/v1/delete-account` 토큰 없이 401. `/`, `/project/default`, `/realtime/v1/`, `/pg/`, `/analytics/v1/`은 404. HTTP는 HTTPS로 308.
+- 바깥에서 이메일 가입과 전화번호 가입이 400(`email_provider_disabled`, `phone_provider_disabled`)으로 거절되고, 남은 사용자는 0이다. 로그인 수단은 `apple`만 켜져 있다.
+- 기존 사이트 `novum-lab.com`, `www`, `office`, `safemeal`, `dev.safemeal`, `syung`은 VPS에 직접 붙여 200(www는 301).
+- 되돌리기: 백업 파일을 `/etc/caddy/Caddyfile`로 복사하고 `systemctl reload caddy`.
 
 ## 4단계: 스키마, 함수, 로그인
 
@@ -125,6 +147,17 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
   - `/auth/v1/settings`의 `external`에서 `apple`만 true이고 `phone`과 `email`은 false다.
   - 바깥에서 전화번호로 `/auth/v1/signup`을 보내면 거절된다.
 
+**4단계 결과 (2026-10-21, DNS 없이 한 부분)**
+
+- 2단계에서 `API_EXTERNAL_URL`을 `/auth/v1` 없이 넣은 것을 고쳤다(공식 예시는 `/auth/v1`까지). 이 값이 토큰 발급자(`GOTRUE_JWT_ISSUER`)가 된다. 서버가 바깥에 열리기 전이라 영향 없음.
+- 토큰 서명은 ES256이고 JWKS에 공개 키가 나온다. 게이트웨이의 JWKS 경로는 API 키 없이 열린다.
+- Apple: `docker-compose.chagok.yml`의 auth에 `GOTRUE_EXTERNAL_APPLE_ENABLED`, `CLIENT_ID=com.novumlab.chagok`, `SECRET` 빈 값. `/auth/v1/settings`의 `external`은 apple만 true. **기기의 ID 토큰으로 실제 로그인은 주소와 빌드가 생긴 뒤 확인한다.**
+- 스키마: SSH 터널로 `supabase db push --db-url "postgresql://postgres.chagok:<비밀번호>@127.0.0.1:<터널>/postgres?sslmode=disable"`. 서버가 TLS를 받지 않아 `sslmode=disable`(터널 안이라 밖에 드러나지 않음). 사용자 이름은 풀러 테넌트를 붙인 `postgres.chagok`.
+- 함수: `_shared`, `apple-link`, `delete-account`를 `volumes/functions/`로 복사(예제 `hello`는 지움). Apple 값 네 개는 서버 `.env`의 `APPLE_*`에 두고 override의 functions 환경으로 넘긴다. 개발 서버 secret과 해시로 같은 값임을 확인.
+- 함수 발급자 비교: 셀프호스팅 함수의 `SUPABASE_URL`은 `http://api-gw:8000`이라 `auth.ts`가 `SUPABASE_PUBLIC_URL`을 쓰도록 고쳤다(브랜치 `fix/functions-public-issuer`). 클라우드 함수 환경에는 `SUPABASE_PUBLIC_URL`이 없다(`supabase secrets list`로 확인).
+- 서버 테스트: 이메일 로그인을 잠깐 켜고 터널로 `__tests__/server` 32개 통과, 바로 끔. 남은 사용자, 파일, 행 0.
+- **7단계 직전 점검:** 그때의 최종 마이그레이션으로 운영 DB를 지우고 다시 넣는다(출시 전이라 가능, 매번 허락받고). 함수도 최신으로 다시 복사하고 서버 테스트를 다시 돌린다. 카카오, Google, 9단계(최소 앱 버전)가 스키마를 바꿀 수 있다.
+
 ## 5단계: 매일 백업과 복구 연습
 
 - [ ] **R2 버킷:** 대시보드 R2 → Create bucket → Location에서 **Specify jurisdiction**, `us`. 만든 뒤에는 바꿀 수 없다. 이름 예: `chagok-prod-backup`.
@@ -140,6 +173,11 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - [ ] **복구 연습:** R2에서 받은 백업을 이 맥(Docker)의 빈 Supabase에 되살린다. 확인: 사용자 수, 기록 행 수, 사진 한 장이 원래 서버와 같다. 절차를 DEV-SETUP에 「운영 서버 복구」로 적는다.
 
 ## 6단계: 지켜보기
+
+**정할 것 (운영 서버를 다 셋팅한 뒤, 2026-10-21 사용자):** 한 화면에서 보는 대시보드. `chagok` Docker는 root `docker ps`, Hostinger 화면, supabase.com 어디에도 나오지 않아 따로 볼 곳이 필요하다. 후보 셋:
+1. (추천) Uptime Kuma를 `chagok` 안에 두고, 바깥 감시(UptimeRobot) 하나를 더한다. API, 컨테이너, 백업, 디스크와 메모리 경고를 한 화면에서 본다. 주소 후보 `chagok-status.novum-lab.com`(DNS 레코드와 Caddy 블록 하나씩 더, Kuma 로그인).
+2. Beszel: 자원 그래프는 좋지만 API와 백업 확인을 따로 붙여야 한다.
+3. 바깥 서비스만(UptimeRobot 상태 페이지, Healthchecks.io): 설치는 없지만 컨테이너와 자원이 안 보인다.
 
 - [ ] **백업이 빠지면 알림:** 백업 스크립트가 끝날 때 외부 상태 확인 서비스(예: Healthchecks.io 무료)에 신호를 보내고, 하루 넘게 신호가 없으면 메일을 받는다. 서비스는 이 단계에서 정한다.
 - [ ] **서버가 죽으면 알림:** `/auth/v1/health`를 외부에서 몇 분마다 확인한다(예: UptimeRobot 무료).
