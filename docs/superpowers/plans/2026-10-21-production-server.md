@@ -172,11 +172,13 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - [x] **restic 설치:** 0.19.1을 `/home/chagok/bin/restic`(700)에 두었다. sudo 없이. 받은 원본은 `/home/chagok/backup/dl/`. `SHA256SUMS`와 서명(`SHA256SUMS.asc`)을 확인했고, 서명 키 지문 `CF8F 18F2 8445 7597 3F79 D4E1 91A6 868B D3F7 A907`이 restic 공식 설치 문서와 같다. 키는 keys.openpgp.org에 없어 keyserver.ubuntu.com에서 받았다.
 - [x] **restic 저장소:** `s3:https://<ACCOUNT_ID>.us.r2.cloudflarestorage.com/chagok-prod-backup/restic`. 설정은 `/home/chagok/backup/restic.env`(600, `AWS_DEFAULT_REGION=auto`, 키는 `~/supabase/.env`의 `R2_*`를 읽는다).
 - [x] **restic 비밀번호:** 서버 `/home/chagok/backup/restic.pass`(600)와 이 맥 `.secrets/prod/restic-password`(600, 해시 같음). 사용자가 따로 보관하는 곳에도 둔다. **잃으면 백업을 영영 못 연다.**
-- [ ] **백업 스크립트**(`/home/chagok/backup/`, `chagok`의 systemd 사용자 타이머로 매일 새벽):
-  1. DB를 `docker exec`로 DB 컨테이너 안에서 `pg_dump -Fc`로 내보내 `restic backup --stdin --stdin-filename chagok.dump --tag db`로 올린다. 서버 디스크에 덤프 파일을 남기지 않는다.
-  2. 사진 폴더(`volumes/storage`)를 `restic backup --tag photos`로 올린다. rootless에서는 컨테이너가 만든 파일의 소유자가 `chagok`이 아닌 번호로 보여 그냥 읽으면 못 읽을 수 있다. `rootlesskit`의 네임스페이스 안에서 돌리는 방법을 이 단계에서 확인한다.
-  3. 주 1회 `restic forget --keep-daily 30 --prune`으로 30일 넘은 시점을 정리하고, 같은 날 `restic check`로 저장소가 온전한지 본다. 지운 데이터도 30일 동안은 되살릴 수 있다.
-  4. 끝나면 상태 알림 주소(아래 6단계)에 성공을 알린다. 어느 단계든 실패하면 알리지 않는다.
+- [x] **백업 스크립트** `/home/chagok/backup/backup.sh`(700). `chagok`의 systemd 사용자 타이머 `chagok-backup.timer`가 매일 한국 시각 03:30에 `chagok-backup.service`를 돌린다(`~/.config/systemd/user/`, `Persistent=true`라 놓친 날은 켜진 직후 돈다).
+  1. DB: `restic backup --tag db --stdin-filename chagok.dump --stdin-from-command -- docker exec supabase-db pg_dump -U supabase_admin -d postgres -Fc`. 서버 디스크에 덤프 파일을 남기지 않고, `pg_dump`가 실패하면 스냅샷을 만들지 않는다.
+  2. 사진: `restic backup --tag photos ~/supabase/volumes/storage`. 컨테이너 안의 root가 서버의 `chagok`(uid 1003)으로 이어져 컨테이너가 만든 파일도 `chagok` 소유가 되므로 그냥 읽힌다. 다만 확인할 때 사진이 아직 없어 실제 업로드 파일로는 보지 못했다.
+  3. 일요일마다 `restic forget --keep-daily 30 --prune`과 `restic check`.
+  4. 스크립트 첫 줄에서 `DOCKER_HOST`를 rootless 소켓(`/run/user/1003/docker.sock`)으로 고정한다. 지정하지 않으면 서버 전체 docker를 가리킬 수 있다.
+- [ ] **성공 알림:** 끝나면 상태 알림 주소(아래 6단계)에 성공을 알린다. 어느 단계든 실패하면 알리지 않는다. 그 전까지는 실패해도 아무도 모르니 `journalctl --user -u chagok-backup`으로 본다.
+- [ ] **사진 백업 확인:** 첫 사진이 올라온 뒤 `volumes/storage` 안의 파일 소유자와 `photos` 스냅샷에 그 파일이 들어갔는지 본다.
 - [ ] **확인하지 못한 것:** 무료 사용량(저장 10GB, Class A 100만, Class B 1,000만 건/월)은 기억에 근거한 값이라 요금 문서로 확인한다.
 
 **5단계 결과 (2026-10-22, 저장소 준비까지)**
@@ -187,6 +189,12 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - 서버에서 `curl --aws-sigv4`로 `test/`에 올리기, 목록, 읽기, 지우기가 모두 성공했고 시험 파일은 지웠다. 이 맥에서는 같은 키가 403(`AccessDenied`)으로 막힌다. restic 저장소를 만들고 다시 여는 것까지 확인했다.
 - 함정: R2 주소에는 IPv6도 있고 서버도 IPv6로 나간다. 토큰에 IPv4만 넣었을 때 IPv6로 나간 요청은 403이었다(curl `-4`는 200, `-6`은 403, restic은 계속 403). IP 제한을 걸 때는 서버의 IPv4와 IPv6를 모두 넣는다. 처음에 이를 "토큰이 퍼지는 시간"으로 잘못 읽었다.
 - 이 맥에서 복구 연습을 할 때는 읽기 전용 토큰을 따로 만든다.
+
+**5단계 결과 (2026-10-22, 첫 백업)**
+
+- 직접 한 번 돌려 성공했다. 스냅샷 `07624b3f`(db, 438KiB, 저장 81KiB)와 `66d05341`(photos, 빈 폴더). 다음 실행은 2026-10-23 03:30(한국 시각).
+- R2에서 다시 받은 덤프를 `pg_restore -l`로 읽어 테이블 데이터 항목 57개(`auth`, `public` 포함)를 확인했다. 실제로 되살리는 것은 복구 연습에서 한다.
+- DB 계정과 권한(`pg_dumpall --globals-only`)은 넣지 않았다. 새 Supabase 이미지가 계정을 다시 만든다고 보았고, 복구 연습에서 확인한다.
 
 - [ ] **복구 연습:** R2에서 받은 백업을 이 맥(Docker)의 빈 Supabase에 되살린다. 확인: 사용자 수, 기록 행 수, 사진 한 장이 원래 서버와 같다. 절차를 DEV-SETUP에 「운영 서버 복구」로 적는다.
 
