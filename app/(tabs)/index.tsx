@@ -36,6 +36,8 @@ export default function GoalList() {
   const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
   /** 체험 열림 카드에 보일 문턱(7, 14…). null이면 숨긴다 (2026-10-12). */
   const [trial, setTrial] = useState<number | null>(null);
+  /** 시작 화면에서 복원을 마치면 올린다. 목표 탭은 그동안 계속 보이는 중이라 포커스로는 다시 읽지 않는다 (2026-10-22). */
+  const [reload, setReload] = useState(0);
   const navigation = useNavigation();
 
   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
@@ -99,7 +101,7 @@ export default function GoalList() {
     return () => { alive = false; };
   }, [ask, firstRun]);
 
-  // 판 상세·새 목표에서 돌아올 때마다 다시 읽는다. 떠난 뒤 도착한 응답은 버린다.
+  // 판 상세·새 목표에서 돌아올 때, 시작 화면에서 복원을 마쳤을 때 다시 읽는다. 떠난 뒤 도착한 응답은 버린다.
   useFocusEffect(useCallback(() => {
     let alive = true;
     void (async () => {
@@ -112,9 +114,9 @@ export default function GoalList() {
       if (alive) setTrial(showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
     })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
-  // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
+  // attempt와 reload는 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attempt, fail]));
+  }, [attempt, reload, fail]));
 
   // 앱이 앞으로 올 때 위젯 탭이 기록에 반영되면 포커스가 바뀌지 않아도 다시 읽는다 — 진행률·오늘 붙임 표시가 이전 값으로 남지 않게.
   useEffect(() => subscribeWidgetApplied(() => {
@@ -136,7 +138,12 @@ export default function GoalList() {
     return (
       <ConnectAccount
         from="start"
-        onDone={(restored) => { setShowStart(false); if (restored) setShowTutorial(false); }}
+        onDone={(restored) => {
+          // 시작 화면 동안 읽어 둔 목록은 복원 전 것이다. 빈 목록이 비치지 않게 불러오기 화면을 거쳐 다시 읽는다.
+          if (restored) { setSummaries(null); setReload((n) => n + 1); }
+          setShowStart(false);
+          if (restored) setShowTutorial(false);
+        }}
         onLocal={() => { setShowStart(false); void setFlag('startDone', true); }}
       />
     );

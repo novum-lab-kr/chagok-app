@@ -2,7 +2,9 @@ import React,{type ReactNode} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
-import {AppHeader,InfoRow,PixelBottomSheet,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
+import {Mascot} from './mascot';
+import {APPLE_SIWA_LOGO} from './apple-siwa-logo.generated';
+import {InfoRow,PixelBottomSheet,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
 import {pixelOutline} from './geometry';
 import {retro} from './tokens';
 
@@ -63,32 +65,77 @@ function ChoiceCard({title,selected,onPress,children}:{title:string;selected:boo
  * 첫 실행이면 앱 머리와 [로그인 없이 시작하기], 앱 설정에서 오면(onBack) 뒤로 버튼이 있는 머리다.
  * 로그인 버튼은 슬롯으로 받는다 — 앱은 Apple 기본 버튼을, 개발 빌드는 개발 계정 버튼을 더 넣는다.
  */
+/**
+ * 계정으로 시작하기 (2026-10-22 시안 3판 W2). 머리글 없이 판을 세로 가운데에 두고 그 위에 차곡이를 얹는다. [로그인 없이 시작하기]는 아래.
+ * 앱 설정에서 오면 「계정 연결」 머리글이 있고 인사 제목은 뺀다. 안내는 고르기를 권하고 로그인의 덤(자동 백업)만 말한다. 기록이 사라질 수 있다는 걱정이나 새 기기로 옮기기를 앞세우지 않는다.
+ */
 export function AccountLoginScreen({loginButtons,onBack,onLocal,busy=false}:{loginButtons:ReactNode;/** 앱 설정에서 왔다 */onBack?:()=>void;/** 첫 실행: 로그인 없이 시작 */onLocal?:()=>void;/** 로그인 진행 중: 로그인 없이 시작을 막는다 */busy?:boolean}) {
   return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={onBack?<ScreenHeader title="계정 연결" onBack={onBack}/>:undefined}>
-    {!onBack&&<AppHeader/>}
-    <PixelPanel contentStyle={{gap:12}}>
-      <View style={{gap:4}}>
-        <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>계정으로 시작하기</PixelText>
-        <Caption>기록을 백업해서 새 기기로 옮길 수 있어요.</Caption>
-      </View>
-      <View style={{gap:12}}>{loginButtons}</View>
-    </PixelPanel>
-    <View style={{flex:1}}/>
+    <View style={{flex:1,justifyContent:'center'}}>
+      <View style={{alignItems:'center',marginBottom:-22,zIndex:1}}><Mascot pose="grin" size={96}/></View>
+      <PixelPanel contentStyle={{gap:20,paddingTop:36,paddingBottom:28}}>
+        <View style={{gap:8,alignItems:'center'}}>
+          {!onBack&&<PixelText variant="title" style={{fontSize:20,lineHeight:28,textAlign:'center'}}>반가워요</PixelText>}
+          <PixelText variant="caption" style={{color:retro.color.buttonText,textAlign:'center',lineHeight:20}}>{'어떤 걸로 시작해 볼까요?\n로그인하면 기록을 자동으로 백업해요.'}</PixelText>
+        </View>
+        <View style={{gap:10}}>{loginButtons}</View>
+      </PixelPanel>
+    </View>
     {onLocal&&<PixelButton label="로그인 없이 시작하기" variant="secondary" disabled={busy} onPress={onLocal}/>}
   </RetroScreen>;
 }
 
 /**
- * 카카오 로그인 버튼 (카카오 로그인 디자인 가이드 완성형). 바탕 #FEE500, 말풍선 심볼 #000000, 글자 #000000 85%, 모서리 12.
- * 심볼 경로는 카카오 리소스 페이지의 미리보기 SVG 그대로다(모양과 비율 변경 금지). 높이는 Apple 버튼과 같은 48.
+ * 직접 만든 Apple 로그인 버튼 (HIG 「Creating a custom Sign in with Apple button」, 2026-10-22). 기본 버튼의 로고가 다른 회사 아이콘보다 작아서 만들었다.
+ * - 로고: Apple 디자인 리소스 Left-aligned Black Medium. 파일 높이 = 버튼 높이, 자르지 않고 위아래 여백을 더하지 않는다. 사과 높이가 약 17로 카카오(18), Google(20)과 맞는다.
+ * - 글자: 시스템 글꼴, 높이의 43%(40이면 17.2), 검정. 바탕 흰색, 테두리 검정, 모서리는 다른 버튼과 같은 12.
+ * - 로고 파일은 사용권상 공개 저장소에 두지 않는다(scripts/apple-logo.mjs). 파일이 없으면 null이고 호스트가 Apple 기본 버튼을 쓴다.
+ */
+export const hasCustomAppleButton=APPLE_SIWA_LOGO!==null;
+export function AppleLoginButton({onPress,disabled=false,logo=APPLE_SIWA_LOGO}:{onPress:()=>void;disabled?:boolean;/** 테스트에서 바꿔 넣는다 */logo?:{width:number;height:number;d:string}|null}) {
+  if(!logo) return null;
+  const h=LOGIN_BUTTON_HEIGHT;
+  return <Pressable accessibilityRole="button" accessibilityLabel="Apple로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+    hitSlop={loginHitSlop} style={({pressed})=>({height:h,borderRadius:12,borderWidth:1,borderColor:'#000000',backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:pressed?0.8:1})}>
+    <Svg width={logo.width*h/logo.height} height={h} viewBox={`0 0 ${logo.width} ${logo.height}`} accessibilityElementsHidden importantForAccessibility="no">
+      <Path fill="#000000" d={logo.d}/>
+    </Svg>
+    <Text style={{fontSize:h*0.43,fontWeight:'500',color:'#000000'}}>Apple로 계속하기</Text>
+  </Pressable>;
+}
+
+/** 로그인 버튼 높이 40(2026-10-22 시안 T3). Apple 기본 버튼은 글자가 높이의 43%라 40이면 17로 세 버튼 글자가 맞는다. 누르는 영역은 44를 지킨다. */
+export const LOGIN_BUTTON_HEIGHT=40;
+const loginHitSlop={top:2,bottom:2};
+
+/**
+ * 카카오 로그인 버튼 (카카오 로그인 디자인 가이드 모양). 글자는 다른 버튼과 맞춘 「카카오로 계속하기」(2026-10-22 사용자 결정, 가이드 기본 글자는 「카카오 로그인」). 바탕 #FEE500, 말풍선 심볼 #000000, 글자 #000000 85%, 모서리 12.
+ * 심볼 경로는 카카오 리소스 페이지의 미리보기 SVG 그대로다(모양과 비율 변경 금지). 높이는 다른 로그인 버튼과 같은 LOGIN_BUTTON_HEIGHT.
  */
 export function KakaoLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="카카오 로그인" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
-    style={({pressed})=>({height:48,borderRadius:12,backgroundColor:'#FEE500',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:pressed?0.8:1})}>
+  return <Pressable accessibilityRole="button" accessibilityLabel="카카오로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+    hitSlop={loginHitSlop} style={({pressed})=>({height:LOGIN_BUTTON_HEIGHT,borderRadius:12,backgroundColor:'#FEE500',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:pressed?0.8:1})}>
     <Svg width={18} height={18} viewBox="61.5 16.5 13 13" accessibilityElementsHidden importantForAccessibility="no">
       <Path fill="#000000" d="M68.001 16.5225C64.4222 16.5225 61.5225 19.0037 61.5225 22.0641C61.5225 24.0312 62.7219 25.7596 64.5292 26.7423L63.9181 29.2113C63.8954 29.285 63.9132 29.364 63.9619 29.4184C63.9975 29.457 64.0461 29.478 64.0931 29.478C64.1337 29.478 64.1742 29.464 64.2082 29.4341L66.834 27.5144C67.2117 27.5723 67.6007 27.6039 67.9994 27.6039C71.5767 27.6039 74.478 25.1226 74.478 22.0623C74.478 19.002 71.5783 16.5225 68.001 16.5225Z"/>
     </Svg>
-    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>카카오 로그인</Text>
+    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>카카오로 계속하기</Text>
+  </Pressable>;
+}
+
+/**
+ * Google 로그인 버튼 (Google 브랜드 가이드 밝은 테마): 흰 바탕, 테두리 #747775, 글자 #1F1F1F, 표준 4색 G 로고(모양과 색 변경 금지).
+ * 다른 로그인 버튼과 같은 크기로 둔다(가이드: 다른 회사 버튼과 비슷한 크기와 무게). 글자는 Apple 기본 버튼의 「계속하기」와 맞춘 「Google로 계속하기」(가이드의 Continue with Google, 2026-10-22 사용자 결정).
+ */
+export function GoogleLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel="Google로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+    hitSlop={loginHitSlop} style={({pressed})=>({height:LOGIN_BUTTON_HEIGHT,borderRadius:12,borderWidth:1,borderColor:'#747775',backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10,opacity:pressed?0.8:1})}>
+    <Svg width={20} height={20} viewBox="0 0 48 48" accessibilityElementsHidden importantForAccessibility="no">
+      <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </Svg>
+    <Text style={{fontSize:17,fontWeight:'500',color:'#1F1F1F'}}>Google로 계속하기</Text>
   </Pressable>;
 }
 
@@ -198,6 +245,8 @@ function ViewChevron({label,onPress}:{label:string;onPress:()=>void}) {
  */
 export function ConsentSheet({visible,ageChecked,termsChecked,onToggleAge,onToggleTerms,onViewTerms,onViewPrivacy,onAgree,onRequestClose,loading=false,overlay}:{visible:boolean;ageChecked:boolean;termsChecked:boolean;onToggleAge:()=>void;onToggleTerms:()=>void;onViewTerms:()=>void;onViewPrivacy:()=>void;onAgree:()=>void;onRequestClose:()=>void;/** 동의를 기록하는 중 */loading?:boolean;/** 시트 위에 띄울 다이얼로그(PixelBottomSheet overlay) */overlay?:ReactNode}) {
   return <PixelBottomSheet visible={visible} title="처음 오셨네요" onRequestClose={onRequestClose} overlay={overlay}>
+    {/* 제목만 있고 바로 체크 칸이 나오면 무엇을 하라는지 알기 어렵다 (2026-10-22 사용자 메모) */}
+    <Caption>계정을 만들려면 아래 내용을 확인하고 동의해 주세요.</Caption>
     <View>
       <PixelCheckbox label="[필수] 만 14세 이상이에요" checked={ageChecked} onChange={onToggleAge}/>
       <View style={{flexDirection:'row',alignItems:'center'}}>

@@ -30,6 +30,7 @@
 
 - [ ] `app.json` `version`을 올렸다([버전 규칙](RELEASE-VERSIONING.md)).
 - [ ] 운영 서버 주소·키가 EAS 환경 변수에 있다. 클라우드 빌드는 `.env.local`을 읽지 않는다. 2026-10-15부터 preview·production에 **개발 서버 `chagok-dev` 값과 RevenueCat Test Store 키**가 들어 있다 — 운영 서버 값과 스토어 키로 바꾼다(`npx eas-cli env:list --environment production`).
+- [ ] Apple 로그인 로고 파일이 EAS에 secret 파일 변수 `APPLE_SIWA_LOGO_SVG`로 있다(`.secrets/apple-siwa-logo.svg`). 빌드 로그에 `apple-logo: 만듦`이 찍히는지 본다. 「없음」이면 Apple 기본 버튼으로 빌드된 것이다. EAS가 postinstall 때 이 변수를 주는지는 첫 EAS 빌드에서 확인한다(2026-10-22 문서로는 확인 못 함).
 - [x] `ios.infoPlist.ITSAppUsesNonExemptEncryption: false`가 있다(2026-10-10).
 - [x] 개인정보 매니페스트(Privacy Manifest)가 앱과 위젯 양쪽에 있다(2026-10-15 prebuild 결과로 확인). 새 네이티브 라이브러리를 더했으면 다시 본다.
 - [ ] 로컬에서 빌드한다면 `npx expo prebuild --clean`을 먼저 했다(옛 `ios/` 문제, [PITFALLS](PITFALLS.md)).

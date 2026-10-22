@@ -1,0 +1,106 @@
+<title>로그인 첫 화면 배치</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 위에 질문 두 개, 각 질문 아래 화면 캡처 카드를 가로로(좁으면 한 줄씩) */
+:root{
+  --bg:#EEF6F1; --surface:#FFFFFF; --ink:#173A2E; --muted:#557A6B; --line:#C9DED3; --accent:#2F7D5B; --pick:#FFE9A8;
+  --display:"DungGeunMo","Galmuri11",ui-monospace,monospace; --body:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10201A;--surface:#182C24;--ink:#E3F1EA;--muted:#9DBDAE;--line:#2C4A3D;--accent:#7CD0A6;--pick:#5A4A17;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10201A;--surface:#182C24;--ink:#E3F1EA;--muted:#9DBDAE;--line:#2C4A3D;--accent:#7CD0A6;--pick:#5A4A17;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.55;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+main{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1{font-size:26px;margin:0;text-wrap:balance}
+h2{font-size:19px;margin:0 0 4px;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.picked{outline:3px solid var(--accent);background:color-mix(in srgb,var(--surface) 80%,var(--pick))}
+.card img{width:100%;border-radius:8px;border:1px solid var(--line);display:block}
+.head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.head b{font-size:16px}
+.rec{font-size:12px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px}
+.why{font-size:13.5px;color:var(--muted)}
+button.pick{font:inherit;font-weight:600;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:10px;padding:8px}
+button.pick[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea{font:inherit;font-size:13.5px;width:100%;box-sizing:border-box;min-height:56px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);color:var(--ink);resize:vertical}
+.saved{font-size:12px;color:var(--muted);min-height:1em}
+.src{font-size:13px;color:var(--muted)}
+.src li{margin:2px 0}
+.status{font-size:13px;color:var(--muted)}
+</style>
+<main>
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>로그인 첫 화면 배치</h1>
+    <p class="lead">3판. 머리글 없이 가운데 둔 로그인 프레임 위에 차곡이를 얹고, 제목과 안내 문구를 고릅니다. 캡처는 실제 컴포넌트를 Storybook에서 렌더한 것이고, 화면 크기는 iPhone 17(390×844)입니다.</p>
+    <p class="status" id="status">고른 안과 메모는 자동으로 저장됩니다.</p>
+  </header>
+
+  <section aria-labelledby="q1">
+    <h2 id="q1">첫 화면 문구</h2>
+    <p class="lead">2판 메모대로 고쳤습니다. 맨 위 머리글(차곡이와 「차곡차곡」)을 빼고, 원래 로그인 프레임을 세로 가운데에 두고, 차곡이를 프레임 위 가운데에 얹었습니다. 프레임 안 위아래 여백을 넉넉히 했고(위 36, 아래 28, 사이 20), 「로그인 없이 시작하기」는 아래에 그대로 둡니다. 버튼은 T3(높이 40, 글자 17)입니다. 세 안은 문구만 다릅니다. 제목은 새 계정 동의 시트의 「처음 오셨네요」와 겹치지 않는 인사로, 안내는 새 기기로 옮기기 대신 기록을 지켜 준다는 쪽으로 썼습니다.</p>
+    <div class="cards" data-topic="copy">
+      <article class="card" data-opt="w1"><div class="head"><b>W1 어서 오세요</b></div><img alt="W1" src="__IMG_w-1__"><p class="why">「로그인하면 쌓은 기록이 사라지지 않게 보관해 둘게요.」 차곡이가 말을 거는 말투입니다.</p></article>
+      <article class="card" data-opt="w2"><div class="head"><b>W2 반가워요</b><span class="rec">추천</span></div><img alt="W2" src="__IMG_w-2__"><p class="why">「계정을 연결하면 기록이 자동으로 백업돼요. 나중에 연결해도 괜찮아요.」 로그인하면 무엇이 좋은지 사실대로 말하고, 지금 하지 않아도 된다고 덜어 줍니다. 아래 「로그인 없이 시작하기」와도 잘 이어집니다.</p></article>
+      <article class="card" data-opt="w3"><div class="head"><b>W3 차곡차곡에 오신 걸 환영해요</b></div><img alt="W3" src="__IMG_w-3__"><p class="why">「로그인하고 시작하면 기록을 잃어버릴 걱정이 없어요.」 앱 이름이 들어가 머리글을 뺀 자리를 채웁니다. 다만 「걱정이 없어요」는 조금 큰 약속입니다.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="src">
+    <h2 id="src">근거</h2>
+    <ul class="src">
+      <li>Apple HIG 「Sign in with Apple」, Creating a custom button: 로고는 Apple 디자인 리소스 파일만, 로고 파일 높이 = 버튼 높이, 로고는 작은, 중간, 큰 크기 가운데 골라 다른 버튼과 맞춤, 글자 = 높이의 43%, 직접 만든 버튼은 App Review가 봄. 「다른 로그인 버튼보다 작지 않게」.</li>
+      <li>카카오 로그인 디자인 가이드: 기본 글자는 「카카오 로그인」. 「카카오로 계속하기」는 가이드에 없는 글자라 2026-10-22에 사용자가 정했습니다.</li>
+      <li>Google 브랜드 가이드: 「Continue with Google」 허용, 다른 회사 버튼과 비슷한 크기와 무게, 버튼은 비율을 지켜 키울 수 있음.</li>
+    </ul>
+  </section>
+</main>
+<script>
+(async () => {
+  const topics=['copy'];
+  const status=document.getElementById('status');
+  let db=null;
+  try{ db=await window.claude?.use?.('db'); }catch{ db=null; }
+  if(!db) status.textContent='저장할 수 없는 화면이라 고른 안과 메모가 남지 않습니다. 대화로 알려 주세요.';
+  for(const topic of topics){
+    const box=document.querySelector(`[data-topic="${topic}"]`);
+    for(const card of box.querySelectorAll('.card')){
+      const opt=card.dataset.opt;
+      if(opt==='now') continue;
+      const btn=document.createElement('button'); btn.className='pick'; btn.type='button'; btn.textContent='이 안으로'; btn.setAttribute('aria-pressed','false');
+      const ta=document.createElement('textarea'); ta.id=`note-${topic}-${opt}`; ta.placeholder='메모 (선택)';
+      const saved=document.createElement('div'); saved.className='saved'; saved.setAttribute('aria-live','polite');
+      card.append(btn,ta,saved);
+      btn.addEventListener('click',async()=>{
+        box.querySelectorAll('.card').forEach(c=>{c.classList.remove('picked');c.querySelector('button.pick')?.setAttribute('aria-pressed','false');});
+        card.classList.add('picked'); btn.setAttribute('aria-pressed','true');
+        if(!db) return;
+        try{ await db.doc(`review/choice-login-${topic}`).set({choice:opt,at:new Date().toISOString()}); saved.textContent='골랐어요'; }
+        catch{ saved.textContent='저장하지 못했어요. 대화로 알려 주세요.'; }
+      });
+      let t=null;
+      ta.addEventListener('input',()=>{
+        clearTimeout(t);
+        t=setTimeout(async()=>{
+          if(!db) return;
+          try{ await db.doc(`review/note-login-${topic}-${opt}`).set({note:ta.value,at:new Date().toISOString()}); saved.textContent='메모 저장됨'; }
+          catch{ saved.textContent='메모를 저장하지 못했어요.'; }
+        },700);
+      });
+      if(db){
+        try{ const n=await db.doc(`review/note-login-${topic}-${opt}`).get(); if(n?.exists&&!ta.value) ta.value=n.data().note||''; }catch{}
+      }
+    }
+    if(db){
+      try{
+        const c=await db.doc(`review/choice-login-${topic}`).get();
+        const opt=c?.exists?c.data().choice:null;
+        const card=opt&&box.querySelector(`[data-opt="${opt}"]`);
+        if(card){card.classList.add('picked');card.querySelector('button.pick')?.setAttribute('aria-pressed','true');}
+      }catch{}
+    }
+  }
+})();
+</script>

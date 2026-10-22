@@ -1,18 +1,42 @@
 import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
-import {AccountBackupPanel,AccountLoginScreen,ConsentSheet,DeleteAccountScreen,KakaoLoginButton,RestoreConflictScreen} from './account-screens';
+import {AccountBackupPanel,AccountLoginScreen,ConsentSheet,AppleLoginButton,DeleteAccountScreen,GoogleLoginButton,KakaoLoginButton,RestoreConflictScreen} from './account-screens';
 afterEach(cleanup);
 describe('카카오 로그인 버튼 (카카오 디자인 가이드)',()=>{
-  it('글자는 카카오 로그인이고 누르면 전달한다',()=>{
+  it('글자는 카카오로 계속하기이고 누르면 전달한다',()=>{
     const press=vi.fn();
     render(<KakaoLoginButton onPress={press}/>);
-    fireEvent.click(screen.getByRole('button',{name:'카카오 로그인'}));expect(press).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'카카오로 계속하기'}));expect(press).toHaveBeenCalled();
   });
   it('막혀 있으면 누를 수 없다',()=>{
     const press=vi.fn();
     render(<KakaoLoginButton onPress={press} disabled/>);
-    fireEvent.click(screen.getByRole('button',{name:'카카오 로그인'}));expect(press).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'카카오로 계속하기'}));expect(press).not.toHaveBeenCalled();
+  });
+});
+describe('직접 만든 Apple 버튼 (HIG custom button)',()=>{
+  const logo={width:31,height:44,d:'M0 0h1v1z'};
+  it('글자는 Apple로 계속하기이고 누르면 전달한다',()=>{
+    const press=vi.fn();
+    render(<AppleLoginButton onPress={press} logo={logo}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Apple로 계속하기'}));expect(press).toHaveBeenCalled();
+  });
+  it('로고 파일이 없으면 그리지 않는다(호스트가 기본 버튼을 쓴다)',()=>{
+    render(<AppleLoginButton onPress={vi.fn()} logo={null}/>);
+    expect(screen.queryByRole('button',{name:'Apple로 계속하기'})).toBeNull();
+  });
+});
+describe('Google 로그인 버튼 (Google 브랜드 가이드)',()=>{
+  it('글자는 Google로 계속하기이고 누르면 전달한다',()=>{
+    const press=vi.fn();
+    render(<GoogleLoginButton onPress={press}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Google로 계속하기'}));expect(press).toHaveBeenCalled();
+  });
+  it('막혀 있으면 누를 수 없다',()=>{
+    const press=vi.fn();
+    render(<GoogleLoginButton onPress={press} disabled/>);
+    fireEvent.click(screen.getByRole('button',{name:'Google로 계속하기'}));expect(press).not.toHaveBeenCalled();
   });
 });
 const base={visible:true,onToggleAge:vi.fn(),onToggleTerms:vi.fn(),onViewTerms:vi.fn(),onViewPrivacy:vi.fn(),onAgree:vi.fn(),onRequestClose:vi.fn()};
@@ -20,6 +44,7 @@ describe('새 계정 동의 시트 (2026-10-21 시안 a)',()=>{
   it('제목은 처음 오셨네요',()=>{
     render(<ConsentSheet {...base} ageChecked={false} termsChecked={false}/>);
     expect(screen.getByRole('heading',{name:'처음 오셨네요'})).toBeTruthy();
+    expect(screen.getByText('계정을 만들려면 아래 내용을 확인하고 동의해 주세요.')).toBeTruthy();
   });
   it('두 체크가 모두 켜지기 전에는 동의하고 시작하기를 누를 수 없다',()=>{
     const agree=vi.fn();
@@ -45,11 +70,12 @@ describe('새 계정 동의 시트 (2026-10-21 시안 a)',()=>{
     expect(screen.queryByText('만 14세 미만이에요')).toBeNull();
   });
 });
-describe('계정으로 시작하기 화면 (2026-10-21)',()=>{
-  it('첫 실행: 판 안에 로그인 버튼, 아래에 로그인 없이 시작하기. 체크는 없다',()=>{
+describe('계정으로 시작하기 화면 (2026-10-22 시안 3판)',()=>{
+  it('첫 실행: 반가워요 인사와 판 안의 로그인 버튼, 아래에 로그인 없이 시작하기. 체크는 없다',()=>{
     const local=vi.fn();
     render(<AccountLoginScreen loginButtons={<button>Apple로 로그인</button>} onLocal={local}/>);
-    expect(screen.getByText('계정으로 시작하기')).toBeTruthy();
+    expect(screen.getByText('반가워요')).toBeTruthy();
+    expect(screen.queryByText(/새 기기로/)).toBeNull();
     expect(screen.getByRole('button',{name:'Apple로 로그인'})).toBeTruthy();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByRole('button',{name:'뒤로'})).toBeNull();
@@ -64,6 +90,7 @@ describe('계정으로 시작하기 화면 (2026-10-21)',()=>{
     const back=vi.fn();
     render(<AccountLoginScreen loginButtons={null} onBack={back}/>);
     expect(screen.queryByRole('button',{name:'로그인 없이 시작하기'})).toBeNull();
+    expect(screen.queryByText('반가워요')).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'뒤로'}));expect(back).toHaveBeenCalled();
   });
 });

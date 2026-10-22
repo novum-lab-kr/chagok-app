@@ -3,7 +3,7 @@ import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import {
-  AccountLoginScreen, ConsentSheet, KakaoLoginButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
+  AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
@@ -26,7 +26,9 @@ import {
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { signInWithApple } from '../../src/sync/signIn/apple';
 import { appleSignInAvailable, expoAppleDeps } from '../../src/sync/signIn/expoApple';
+import { expoGoogleDeps, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
 import { expoKakaoDeps, signOutKakao } from '../../src/sync/signIn/expoKakao';
+import { signInWithGoogle } from '../../src/sync/signIn/google';
 import { signInWithKakao } from '../../src/sync/signIn/kakao';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { beginConnect, endConnect, markRestored } from '../../src/sync/connectMarker';
@@ -50,9 +52,11 @@ const CANCELED = new Error('canceled');
 /** 새 계정 동의 시트의 답. abort는 화면을 떠나 시도가 취소됐다. */
 type ConsentAnswer = 'agree' | 'quit' | 'abort';
 
-type Method = 'apple' | 'kakao' | 'dev';
+type Method = 'apple' | 'kakao' | 'google' | 'dev';
 
 const connectFailed = { title: '연결하지 못했어요', description: '인터넷 연결을 확인하고 다시 시도해 주세요.', primaryLabel: '확인' };
+/** Apple이 이유를 알려 주지 않은 실패(예: 기기에 Apple 계정이 없어 안내를 닫음). 원인을 짐작하지 않는다 (2026-10-22 사용자 결정). */
+const connectFailedUnknown = { title: '연결하지 못했어요', description: '다시 시도해 주세요.', primaryLabel: '확인' };
 
 function toCard(s: RecordSummary): RecordSnapshot {
   const d = s.updatedAt === null ? null : new Date(s.updatedAt);
@@ -61,7 +65,7 @@ function toCard(s: RecordSummary): RecordSnapshot {
 
 /**
  * 계정 연결 (계정·백업 설계 ①). 로그인 → 처음 만든 계정이면 동의 시트 → 분기(연결만·첫 백업·복원·충돌 선택) (2026-10-21, 이전: 동의 → 로그인).
- * 로그인 자리에는 iOS면 Apple 기본 버튼, 그 아래 카카오 버튼, 개발 빌드면 개발 계정 버튼을 둔다. Google 버튼은 그 로그인을 붙일 때 더한다.
+ * 로그인 자리에는 카카오 버튼, Google 버튼, iOS면 Apple 기본 버튼, 개발 빌드면 개발 계정 버튼을 차례로 둔다.
  * 연결이 끝날 때까지 자동 전송을 잠근다 — 복원 충돌을 고르기 전에 기기 기록이 올라가지 않게.
  */
 export default function ConnectAccountRoute() {
@@ -181,6 +185,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
       await signOutLocal(supabase, clearStoredSession);
       // 카카오 SDK 토큰도 지운다 — 다음 시도에서 다른 카카오 계정을 고를 수 있게(카카오로 들어온 적이 없으면 아무 일도 없다)
       await signOutKakao();
+      await signOutGoogle();
       await setSetting('accountUserId', previous.current);
       await endConnect();
     } finally {
@@ -197,6 +202,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
   const signInWith = async (method: Method): Promise<{ user: User } | 'canceled'> => {
     if (method === 'apple') return signInWithApple(expoAppleDeps(supabase));
     if (method === 'kakao') return signInWithKakao(expoKakaoDeps(supabase));
+    if (method === 'google') return signInWithGoogle(expoGoogleDeps(supabase));
     const { data, error } = await supabase.auth.signInWithPassword({ email: DEV_EMAIL!, password: DEV_PASSWORD! });
     if (error || !data.user) throw error ?? new Error('no user');
     return { user: data.user };
@@ -317,6 +323,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
           // 취소가 이미 정리했다. 그 뒤에 생긴 세션과, 로그인 이벤트가 늦게 쓴 계정 기록을 되돌리고 잠금을 푼다.
           await signOutLocal(supabase, clearStoredSession);
           await signOutKakao();
+          await signOutGoogle();
           await setSetting('accountUserId', previous.current);
           resumeSync();
           return;
@@ -325,7 +332,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         if (e === CANCELED) return;
         // 사용자에게는 일반 안내만 보이니, 개발 중에는 실제 이유를 Metro 로그로 본다
         if (__DEV__) console.warn('[connect] failed', e);
-        await ask(connectFailed);
+        await ask((e as { code?: unknown } | null)?.code === 'ERR_REQUEST_UNKNOWN' ? connectFailedUnknown : connectFailed);
       }
     } finally {
       setBusy(false);
@@ -352,18 +359,20 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         onLocal={from === 'start' ? onLocal : undefined}
         busy={busy}
         loginButtons={<>
-          {/* Apple 기본 버튼: 밝은 바탕이라 흰 바탕 테두리, 모서리는 앱 버튼과 같은 12 (HIG, 2026-10-21 시안 2안). Google은 만들면 여기에 더해진다. */}
-          {appleReady && (
+          {/* 순서 카카오 → Google → Apple(Apple은 덜 쓰여 맨 아래), 글자는 셋 다 「계속하기」 (2026-10-22 사용자 결정) */}
+          <KakaoLoginButton onPress={() => void connect('kakao')} />
+          <GoogleLoginButton onPress={() => void connect('google')} />
+          {/* Apple: 로고 파일이 있으면 HIG대로 직접 만든 버튼(로고를 다른 버튼과 맞춤), 없으면 기본 버튼. 기본 버튼은 밝은 바탕이라 흰 바탕 테두리, 모서리 12 (HIG, 2026-10-21 시안 2안). */}
+          {appleReady && hasCustomAppleButton && <AppleLoginButton onPress={() => void connect('apple')} />}
+          {appleReady && !hasCustomAppleButton && (
             <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
               buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
               cornerRadius={12}
-              style={{ width: '100%', height: 48 }}
+              style={{ width: '100%', height: LOGIN_BUTTON_HEIGHT }}
               onPress={() => void connect('apple')}
             />
           )}
-          {/* 카카오 표준 버튼(가이드 완성형). iOS는 Apple 아래, Android는 카카오만 (상위 계획 결정 1). */}
-          <KakaoLoginButton onPress={() => void connect('kakao')} />
           {__DEV__ && DEV_EMAIL && DEV_PASSWORD
             ? <PixelButton label="개발 계정으로 계속" loading={busy && !consent} onPress={() => void connect('dev')} />
             : null}
