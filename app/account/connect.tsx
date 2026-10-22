@@ -3,7 +3,7 @@ import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import {
-  AccountLoginScreen, ConsentSheet, GoogleLoginButton, KakaoLoginButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
+  AccountLoginScreen, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
@@ -366,7 +366,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
               buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
               buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
               cornerRadius={12}
-              style={{ width: '100%', height: 48 }}
+              style={{ width: '100%', height: LOGIN_BUTTON_HEIGHT }}
               onPress={() => void connect('apple')}
             />
           )}

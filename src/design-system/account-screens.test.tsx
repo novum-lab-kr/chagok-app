@@ -58,11 +58,12 @@ describe('새 계정 동의 시트 (2026-10-21 시안 a)',()=>{
     expect(screen.queryByText('만 14세 미만이에요')).toBeNull();
   });
 });
-describe('계정으로 시작하기 화면 (2026-10-21)',()=>{
-  it('첫 실행: 판 안에 로그인 버튼, 아래에 로그인 없이 시작하기. 체크는 없다',()=>{
+describe('계정으로 시작하기 화면 (2026-10-22 시안 3판)',()=>{
+  it('첫 실행: 반가워요 인사와 판 안의 로그인 버튼, 아래에 로그인 없이 시작하기. 체크는 없다',()=>{
     const local=vi.fn();
     render(<AccountLoginScreen loginButtons={<button>Apple로 로그인</button>} onLocal={local}/>);
-    expect(screen.getByText('계정으로 시작하기')).toBeTruthy();
+    expect(screen.getByText('반가워요')).toBeTruthy();
+    expect(screen.queryByText(/새 기기로/)).toBeNull();
     expect(screen.getByRole('button',{name:'Apple로 로그인'})).toBeTruthy();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByRole('button',{name:'뒤로'})).toBeNull();
@@ -77,6 +78,7 @@ describe('계정으로 시작하기 화면 (2026-10-21)',()=>{
     const back=vi.fn();
     render(<AccountLoginScreen loginButtons={null} onBack={back}/>);
     expect(screen.queryByRole('button',{name:'로그인 없이 시작하기'})).toBeNull();
+    expect(screen.queryByText('반가워요')).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'뒤로'}));expect(back).toHaveBeenCalled();
   });
 });
