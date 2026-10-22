@@ -50,7 +50,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 도메인은 Hostinger에서 샀고 DNS는 Cloudflare다. 2026-10-22에 존을 다른 Cloudflare 계정(`Mcsung.novum`, 네임서버 `annalise`, `vick`)에서 `Novum-lab@naver.com` 계정(네임서버 `carrera`, `clayton`)으로 옮겼다. 옛 존의 레코드 10개 가운데 메일(이메일 라우팅의 MX 3개, SPF, DKIM)은 더 쓰지 않아 옮기지 않았다. 옛 존은 전환이 퍼질 때까지(최대 이틀) 지우지 않는다.
 
-- [ ] `Novum-lab@naver.com` 계정에서 R2를 켠다. 공식 문서에 "You must purchase R2 before you can generate an API token"이라고 되어 있어 결제 수단 등록이 필요할 수 있다.
+- [x] `Novum-lab@naver.com` 계정에서 R2를 켠다. 공식 문서에 "You must purchase R2 before you can generate an API token"이라고 되어 있어 결제 수단 등록이 필요할 수 있다.
 - [x] 새 존 레코드: `novum-lab.com`, `*`(A), `www`(CNAME), `syung`(A, DNS only), Google 인증 TXT, `chagok-api`(A `187.127.114.161`, DNS only). SSL/TLS 모드 Full. 확인: 공개 DNS 4곳이 `chagok-api`를 `187.127.114.161`로 답한다.
 - [ ] 새 계정 활성화와 인증서 발급 뒤, 전환 동안 회색으로 둔 `novum-lab.com`, `*`, `www`를 다시 프록시로 켠다.
 - [ ] 이틀 뒤 옛 계정의 존을 지워도 되는지 확인한다(계정 주인이 지운다).
@@ -160,16 +160,36 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 ## 5단계: 매일 백업과 복구 연습
 
-- [ ] **R2 버킷:** 대시보드 R2 → Create bucket → Location에서 **Specify jurisdiction**, `us`. 만든 뒤에는 바꿀 수 없다. 이름 예: `chagok-prod-backup`.
-- [ ] **R2 토큰:** 이 버킷만, Object Read & Write. Access Key ID와 Secret은 한 번만 보이니 바로 서버 `.env`와 `.secrets/prod/`에 둔다. 접속 주소는 `https://<ACCOUNT_ID>.us.r2.cloudflarestorage.com`(관할 지역 버킷은 이 주소로만 열린다).
-- [ ] **보관 기간:** 버킷 Settings → Object Lifecycle Rules에서 30일 지난 객체 삭제. 공식 문서상 만료 뒤 24시간 안에 지워진다.
+- [x] **R2 버킷:** 대시보드 R2 → Create bucket → Location에서 **Specify jurisdiction**, `us`. 만든 뒤에는 바꿀 수 없다. 이름 예: `chagok-prod-backup`.
+- [x] **R2 토큰:** 이 버킷만, Object Read & Write. Access Key ID와 Secret은 한 번만 보이니 바로 서버 `.env`와 `.secrets/prod/`에 둔다. 접속 주소는 `https://<ACCOUNT_ID>.us.r2.cloudflarestorage.com`(관할 지역 버킷은 이 주소로만 열린다).
+**DB와 사진을 다르게 올린다 (2026-10-22 사용자 결정).** 사진까지 매일 통째로 올리고 30일 두면 R2에 사진 용량의 30배가 쌓인다. 앱은 사진을 긴 변 1600px, JPEG 0.8로 줄여 올리므로(`src/sync/expoPhotoIO.ts`) 한 장에 0.3~0.5MB로 추정하고(실측 아님), 그러면 사진 1,000장 근처에서 R2 무료 저장량 10GB를 넘는다. 그래서 DB만 매일 통째로 올리고, 사진은 바뀐 것만 올린다.
+
+| 버킷 안 폴더 | 무엇 | 올리는 방식 | 지우는 방식 |
+| --- | --- | --- | --- |
+| `db/` | `pg_dump -Fc` 파일 | 매일 하나, `age`로 암호화해 `rclone`으로 | R2 자동 삭제 규칙(30일) |
+| `photos/` | restic 저장소 | `restic backup`이 새로 생기거나 바뀐 파일만 올린다. 같은 내용은 한 번만 저장 | `restic forget --keep-daily 30 --prune` |
+
+- [x] **보관 기간:** 버킷 Settings → Object Lifecycle Rules에서 **접두어 `db/`에만** 30일 지난 객체 삭제. 공식 문서상 만료 뒤 24시간 안에 지워진다. `photos/`에 규칙을 걸면 R2가 restic 파일을 임의로 지워 저장소가 깨지므로 걸지 않는다.
+- [ ] **restic 설치:** 공식 배포의 단일 실행 파일을 `/home/chagok/bin/`에 둔다(sudo 없이). 받은 파일은 배포처의 체크섬과 맞춰 본다.
 - [ ] **백업 스크립트**(`/home/chagok/backup/`, `chagok`의 systemd 사용자 타이머로 매일 새벽):
   1. DB를 `docker exec`로 DB 컨테이너 안에서 `pg_dump -Fc`로 내보낸다.
-  2. 사진 폴더(`volumes/storage`)를 묶는다. rootless에서는 컨테이너가 만든 파일의 소유자가 `chagok`이 아닌 번호로 보여 그냥 `tar`하면 못 읽을 수 있다. 컨테이너 안에서 묶거나 `rootlesskit`의 네임스페이스 안에서 묶는다(이 단계에서 확인).
-  3. 둘을 `age`로 암호화한다. 백업이 미국에 있으니 업체도 내용을 못 읽게 한다. 복호화 키는 서버가 아니라 이 맥 `.secrets/prod/`와 사용자가 따로 보관하는 곳에 둔다.
-  4. `rclone`으로 R2에 올린다.
-  5. 끝나면 상태 알림 주소(아래 6단계)에 성공을 알린다.
-- [ ] 사진 백업 크기가 5GB를 넘으면 매일 전체 묶음 대신 바뀐 것만 올리는 방식으로 바꾼다(그때 다시 정한다).
+  2. DB 파일을 `age`로 암호화한다. 백업이 미국에 있으니 업체도 내용을 못 읽게 한다. 서버에는 공개 키만 두고, 복호화 키는 이 맥 `.secrets/prod/`와 사용자가 따로 보관하는 곳에 둔다.
+  3. `rclone`으로 `db/`에 올린다.
+  4. 사진 폴더(`volumes/storage`)를 `restic backup`으로 `photos/`에 올린다. rootless에서는 컨테이너가 만든 파일의 소유자가 `chagok`이 아닌 번호로 보여 그냥 읽으면 못 읽을 수 있다. `rootlesskit`의 네임스페이스 안에서 돌리는 방법을 이 단계에서 확인한다.
+  5. 주 1회 `restic forget --keep-daily 30 --prune`으로 30일 넘은 시점을 정리하고, 같은 날 `restic check`로 저장소가 온전한지 본다. 지운 사진도 30일 동안은 되살릴 수 있다.
+  6. 끝나면 상태 알림 주소(아래 6단계)에 성공을 알린다. 어느 단계든 실패하면 알리지 않는다.
+- [ ] **restic 비밀번호:** restic은 자체 암호화하지만 `age`와 달리 서버에 비밀번호가 있어야 올릴 수 있다. 서버가 뚫리면 백업도 읽힐 수 있다는 뜻인데, 그때는 원본 사진이 이미 그 서버에 있으므로 더 잃는 것은 없다. 비밀번호는 서버 `.env`(권한 600)와 이 맥 `.secrets/prod/`, 사용자가 따로 보관하는 곳에 둔다. 잃으면 사진 백업을 영영 못 연다.
+- [ ] **확인하지 못한 것:** restic이 R2에 붙는 설정(`s3:https://<ACCOUNT_ID>.us.r2.cloudflarestorage.com/chagok-prod-backup/photos`, 지역 값)은 공식 문서로 이 단계에서 확인한다. 무료 사용량(저장 10GB, Class A 100만, Class B 1,000만 건/월)은 기억에 근거한 값이라 요금 문서로 확인한다.
+**5단계 결과 (2026-10-22, R2 준비까지)**
+
+- 버킷 `chagok-prod-backup`, 관할 United States(US), Standard. 공개 주소와 사용자 도메인 없음. 관할 버킷은 Data Access Logs를 쓸 수 없다.
+- 자동 삭제 규칙 `db-30-days`(접두어 `db/`, 30일). 기본 규칙(끊긴 업로드 7일 뒤 정리)은 그대로.
+- Account API 토큰 `chagok-prod-backup-server`: 이 버킷만, Object Read & Write, 기한 없음, IP `187.127.114.161`만 허용.
+- 키는 이 맥 `.secrets/prod/r2.env`(600)와 서버 `~/supabase/.env` 끝의 `R2_*`(해시 같음). 서버 `.env` 백업 `~/supabase/.env.pre-r2-20261022`.
+- 서버에서 `curl --aws-sigv4`로 `test/`에 올리기, 목록, 읽기, 지우기가 모두 성공했고 시험 파일은 지웠다. 이 맥에서는 같은 키가 403(`AccessDenied`)으로 막힌다.
+- 함정: 토큰을 만든 직후 1~2분은 서버에서도 403이 났다. 퍼지는 데 걸리는 시간으로 보인다. R2 주소는 IPv4만 있어 서버의 IPv6는 상관없다.
+- 이 맥에서 복구 연습을 할 때는 읽기 전용 토큰을 따로 만든다.
+
 - [ ] **복구 연습:** R2에서 받은 백업을 이 맥(Docker)의 빈 Supabase에 되살린다. 확인: 사용자 수, 기록 행 수, 사진 한 장이 원래 서버와 같다. 절차를 DEV-SETUP에 「운영 서버 복구」로 적는다.
 
 ## 6단계: 지켜보기
@@ -182,6 +202,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - [ ] **백업이 빠지면 알림:** 백업 스크립트가 끝날 때 외부 상태 확인 서비스(예: Healthchecks.io 무료)에 신호를 보내고, 하루 넘게 신호가 없으면 메일을 받는다. 서비스는 이 단계에서 정한다.
 - [ ] **서버가 죽으면 알림:** `/auth/v1/health`를 외부에서 몇 분마다 확인한다(예: UptimeRobot 무료).
 - [ ] **디스크:** 사용량이 80%를 넘으면 알림. 지금 53%다.
+- [ ] **R2 사용량:** 버킷 저장량이 8GB(무료 10GB의 80%)를 넘으면 알림. 넘으면 보관 기간이나 사진 크기를 다시 정한다.
 - [ ] **메모리:** swap을 오래 많이 쓰면 알림. 메모리가 실제로 모자라다는 신호라 RAM을 늘리거나 서비스를 줄인다.
 - [ ] **업데이트:** Supabase는 대략 한 달에 한 번 이미지를 낸다. `update.sh`는 설정만 백업하고 DB와 사진은 백업하지 않으므로(공식 문서), 올리기 전에 5단계 백업을 손으로 한 번 돌린다. 이미지 태그를 섞지 않는다.
 
