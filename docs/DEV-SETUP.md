@@ -308,6 +308,44 @@ npm run server:dev-user                            # 개발용 계정 만들기
 
 무료 프로젝트는 일주일 동안 요청이 없으면 멈춘다. 대시보드에서 다시 켜면 된다.
 
+## 운영 서버 복구
+
+운영 서버는 매일 한국 시각 03:30에 DB와 사진을 R2 버킷 `chagok-prod-backup`의 restic 저장소(`restic/`)에 올린다. 설계와 서버 쪽 설정: [운영 서버 계획](superpowers/plans/2026-10-21-production-server.md) 5단계.
+
+**필요한 것**
+
+- restic 비밀번호: 이 맥 `.secrets/prod/restic-password`, 사용자의 비밀번호 관리자. 잃으면 백업을 열 수 없다.
+- 읽기 전용 R2 토큰: `.secrets/prod/r2-restore.env`(`r2.env`와 같은 형식). 없으면 Cloudflare R2 → Manage API tokens에서 이 버킷만 Object Read only로 만든다.
+- 이 맥에서 연습할 때: `brew install restic colima docker`, `colima start --cpu 2 --memory 4 --disk 20`.
+
+**순서**
+
+```sh
+S=<chagok-app>/.secrets/prod
+set -a; . $S/r2-restore.env; set +a
+export AWS_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY AWS_DEFAULT_REGION=auto
+export RESTIC_REPOSITORY=s3:$R2_ENDPOINT/$R2_BUCKET/restic RESTIC_PASSWORD_FILE=$S/restic-password
+
+restic --no-lock snapshots
+
+# DB: 운영과 같은 이미지의 빈 DB에 넣는다
+restic --no-lock dump latest --tag db /chagok.dump \
+  | docker exec -i <DB 컨테이너> pg_restore -U supabase_admin -d postgres --clean --if-exists
+
+# 사진: 스냅샷 안의 경로가 서버 전체 경로(/home/chagok/supabase/volumes/storage)로 들어 있다
+restic --no-lock restore latest --tag photos --target <폴더>
+```
+
+- **`--no-lock`을 꼭 붙인다.** restic은 읽기만 할 때도 저장소에 잠금 파일을 쓰려 해서, 읽기 전용 토큰으로는 `PutObject: Access Denied`로 멈춘다. 쓰기 권한이 있는 서버 토큰으로 복구할 때는 붙이지 않아도 된다.
+- 실제로 서버를 새로 세울 때는 운영 서버 계획 1~4단계대로 Supabase 전체를 먼저 띄운 뒤 DB 컨테이너에 넣고, 사진은 `volumes/storage`로 옮긴다. 이 부분은 해 보지 않았다.
+
+**연습 결과 (2026-10-22, 이 맥)**
+
+- 운영과 같은 `supabase/postgres:17.6.1.136` 컨테이너 하나만 띄워 되살렸다. 테이블 41개의 목록, 내용이 있는 테이블 4개의 행 수, `record-photos` 버킷, RLS 정책 8개가 운영과 같았다.
+- `pg_restore` 오류 38개는 모두 `supabase_realtime_admin`, `supabase_functions_admin` 계정이 없어 `realtime`, `supabase_functions` 스키마의 주인 바꾸기와 권한 주기가 실패한 것이다. 이 계정은 Postgres 이미지가 아니라 Supabase의 다른 서비스가 만든다. 전체를 띄우면 생기지 않을 것으로 보지만 확인하지 않았다. `public`, `auth`, `storage`에서는 오류가 없었다.
+- 운영에 아직 사용자, 기록, 사진이 없어 실제 데이터로는 비교하지 못했다. 첫 실사용 데이터가 생기면 같은 순서로 다시 한다.
+- 끝난 뒤 컨테이너와 이미지를 지우고 `colima stop`.
+
 ## 실행 후 확인할 것
 
 지금 코드에서 **실기기 검증이 안 된 항목**이다.
