@@ -75,7 +75,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:components": "vitest run --config vitest.components.config.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && node scripts/apple-logo.mjs"
   },
   "private": true,
   "overrides": {

@@ -3,7 +3,7 @@ import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import {
-  AccountLoginScreen, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
+  AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
@@ -55,6 +55,8 @@ type ConsentAnswer = 'agree' | 'quit' | 'abort';
 type Method = 'apple' | 'kakao' | 'google' | 'dev';
 
 const connectFailed = { title: '연결하지 못했어요', description: '인터넷 연결을 확인하고 다시 시도해 주세요.', primaryLabel: '확인' };
+/** Apple이 이유를 알려 주지 않은 실패(예: 기기에 Apple 계정이 없어 안내를 닫음). 원인을 짐작하지 않는다 (2026-10-22 사용자 결정). */
+const connectFailedUnknown = { title: '연결하지 못했어요', description: '다시 시도해 주세요.', primaryLabel: '확인' };
 
 function toCard(s: RecordSummary): RecordSnapshot {
   const d = s.updatedAt === null ? null : new Date(s.updatedAt);
@@ -330,7 +332,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         if (e === CANCELED) return;
         // 사용자에게는 일반 안내만 보이니, 개발 중에는 실제 이유를 Metro 로그로 본다
         if (__DEV__) console.warn('[connect] failed', e);
-        await ask(connectFailed);
+        await ask((e as { code?: unknown } | null)?.code === 'ERR_REQUEST_UNKNOWN' ? connectFailedUnknown : connectFailed);
       }
     } finally {
       setBusy(false);
@@ -360,8 +362,9 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
           {/* 순서 카카오 → Google → Apple(Apple은 덜 쓰여 맨 아래), 글자는 셋 다 「계속하기」 (2026-10-22 사용자 결정) */}
           <KakaoLoginButton onPress={() => void connect('kakao')} />
           <GoogleLoginButton onPress={() => void connect('google')} />
-          {/* Apple 기본 버튼: 밝은 바탕이라 흰 바탕 테두리, 모서리는 앱 버튼과 같은 12 (HIG, 2026-10-21 시안 2안). */}
-          {appleReady && (
+          {/* Apple: 로고 파일이 있으면 HIG대로 직접 만든 버튼(로고를 다른 버튼과 맞춤), 없으면 기본 버튼. 기본 버튼은 밝은 바탕이라 흰 바탕 테두리, 모서리 12 (HIG, 2026-10-21 시안 2안). */}
+          {appleReady && hasCustomAppleButton && <AppleLoginButton onPress={() => void connect('apple')} />}
+          {appleReady && !hasCustomAppleButton && (
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
               buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}

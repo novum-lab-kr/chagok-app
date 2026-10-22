@@ -3,6 +3,7 @@ import {Pressable,Text,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
 import {Mascot} from './mascot';
+import {APPLE_SIWA_LOGO} from './apple-siwa-logo.generated';
 import {InfoRow,PixelBottomSheet,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
 import {pixelOutline} from './geometry';
 import {retro} from './tokens';
@@ -82,6 +83,25 @@ export function AccountLoginScreen({loginButtons,onBack,onLocal,busy=false}:{log
     </View>
     {onLocal&&<PixelButton label="로그인 없이 시작하기" variant="secondary" disabled={busy} onPress={onLocal}/>}
   </RetroScreen>;
+}
+
+/**
+ * 직접 만든 Apple 로그인 버튼 (HIG 「Creating a custom Sign in with Apple button」, 2026-10-22). 기본 버튼의 로고가 다른 회사 아이콘보다 작아서 만들었다.
+ * - 로고: Apple 디자인 리소스 Left-aligned Black Medium. 파일 높이 = 버튼 높이, 자르지 않고 위아래 여백을 더하지 않는다. 사과 높이가 약 17로 카카오(18), Google(20)과 맞는다.
+ * - 글자: 시스템 글꼴, 높이의 43%(40이면 17.2), 검정. 바탕 흰색, 테두리 검정, 모서리는 다른 버튼과 같은 12.
+ * - 로고 파일은 사용권상 공개 저장소에 두지 않는다(scripts/apple-logo.mjs). 파일이 없으면 null이고 호스트가 Apple 기본 버튼을 쓴다.
+ */
+export const hasCustomAppleButton=APPLE_SIWA_LOGO!==null;
+export function AppleLoginButton({onPress,disabled=false,logo=APPLE_SIWA_LOGO}:{onPress:()=>void;disabled?:boolean;/** 테스트에서 바꿔 넣는다 */logo?:{width:number;height:number;d:string}|null}) {
+  if(!logo) return null;
+  const h=LOGIN_BUTTON_HEIGHT;
+  return <Pressable accessibilityRole="button" accessibilityLabel="Apple로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+    hitSlop={loginHitSlop} style={({pressed})=>({height:h,borderRadius:12,borderWidth:1,borderColor:'#000000',backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:pressed?0.8:1})}>
+    <Svg width={logo.width*h/logo.height} height={h} viewBox={`0 0 ${logo.width} ${logo.height}`} accessibilityElementsHidden importantForAccessibility="no">
+      <Path fill="#000000" d={logo.d}/>
+    </Svg>
+    <Text style={{fontSize:h*0.43,fontWeight:'500',color:'#000000'}}>Apple로 계속하기</Text>
+  </Pressable>;
 }
 
 /** 로그인 버튼 높이 40(2026-10-22 시안 T3). Apple 기본 버튼은 글자가 높이의 43%라 40이면 17로 세 버튼 글자가 맞는다. 누르는 영역은 44를 지킨다. */
