@@ -1,5 +1,5 @@
 import React,{type ReactNode} from 'react';
-import {Pressable,View} from 'react-native';
+import {Pressable,Text,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
 import {AppHeader,InfoRow,PixelBottomSheet,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
@@ -78,8 +78,22 @@ export function AccountLoginScreen({loginButtons,onBack,onLocal,busy=false}:{log
   </RetroScreen>;
 }
 
+/**
+ * 카카오 로그인 버튼 (카카오 로그인 디자인 가이드 완성형). 바탕 #FEE500, 말풍선 심볼 #000000, 글자 #000000 85%, 모서리 12.
+ * 심볼 경로는 카카오 리소스 페이지의 미리보기 SVG 그대로다(모양과 비율 변경 금지). 높이는 Apple 버튼과 같은 48.
+ */
+export function KakaoLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel="카카오 로그인" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+    style={({pressed})=>({height:48,borderRadius:12,backgroundColor:'#FEE500',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:pressed?0.8:1})}>
+    <Svg width={18} height={18} viewBox="61.5 16.5 13 13" accessibilityElementsHidden importantForAccessibility="no">
+      <Path fill="#000000" d="M68.001 16.5225C64.4222 16.5225 61.5225 19.0037 61.5225 22.0641C61.5225 24.0312 62.7219 25.7596 64.5292 26.7423L63.9181 29.2113C63.8954 29.285 63.9132 29.364 63.9619 29.4184C63.9975 29.457 64.0461 29.478 64.0931 29.478C64.1337 29.478 64.1742 29.464 64.2082 29.4341L66.834 27.5144C67.2117 27.5723 67.6007 27.6039 67.9994 27.6039C71.5767 27.6039 74.478 25.1226 74.478 22.0623C74.478 19.002 71.5783 16.5225 68.001 16.5225Z"/>
+    </Svg>
+    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>카카오 로그인</Text>
+  </Pressable>;
+}
+
 /** '개발'은 계정 준비 전 개발용 이메일 로그인 (2026-10-01). */
-export type AccountProvider='Apple'|'Google'|'개발';
+export type AccountProvider='Apple'|'Google'|'카카오'|'개발';
 /**
  * 앱 설정의 「계정과 백업」 칸 (시안 2C). 계정 → 백업 상태 순, 배지 없이 문장으로.
  * - local: 계정 없음 · pending: 오프라인 등으로 못 올린 변경 · firstBackup: 첫 백업 중

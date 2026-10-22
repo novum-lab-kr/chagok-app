@@ -51,6 +51,14 @@
       "expo-font",
       "expo-web-browser",
       "expo-apple-authentication",
+      [
+        "@react-native-kakao/core",
+        {
+          "nativeAppKey": "eee7d607ec43b07774b8eff6056dacfe",
+          "android": { "authCodeHandlerActivity": true },
+          "ios": { "handleKakaoOpenUrl": true }
+        }
+      ],
       "expo-system-ui",
       [
         "expo-splash-screen",
