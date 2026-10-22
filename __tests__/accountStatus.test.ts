@@ -39,6 +39,7 @@ describe('계정 상태', () => {
   it('로그인 방식 표시', () => {
     expect(providerFromAuth('apple')).toBe('Apple');
     expect(providerFromAuth('google')).toBe('Google');
+    expect(providerFromAuth('kakao')).toBe('카카오');
     expect(providerFromAuth('email')).toBe('개발');
   });
   it('백업 시각 표기', () => {

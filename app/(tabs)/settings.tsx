@@ -7,6 +7,7 @@ import {
 } from '../../src/design-system';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
 import { signOutLocal } from '../../src/sync/account';
+import { signOutKakao } from '../../src/sync/signIn/expoKakao';
 import { formatBackedUpAt, localOnlyCount, readAccountState } from '../../src/sync/accountStatus';
 import { syncDepsFor } from '../../src/sync/appSync';
 import { pendingCount } from '../../src/sync/outbox';
@@ -83,6 +84,7 @@ export default function AppSettings() {
     try {
       // 이 기기의 세션만 지우고, 로그아웃이 실패해도 저장된 세션을 지운다 (signOutLocal)
       if (supabase) await signOutLocal(supabase, clearStoredSession);
+      await signOutKakao();
       await wipeDevice(removeAllManagedPhotos);
     } catch {
       setLogout({ step: 'failed' });

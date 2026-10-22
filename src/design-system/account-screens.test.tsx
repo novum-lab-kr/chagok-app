@@ -1,8 +1,20 @@
 import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
-import {AccountBackupPanel,AccountLoginScreen,ConsentSheet,DeleteAccountScreen,RestoreConflictScreen} from './account-screens';
+import {AccountBackupPanel,AccountLoginScreen,ConsentSheet,DeleteAccountScreen,KakaoLoginButton,RestoreConflictScreen} from './account-screens';
 afterEach(cleanup);
+describe('카카오 로그인 버튼 (카카오 디자인 가이드)',()=>{
+  it('글자는 카카오 로그인이고 누르면 전달한다',()=>{
+    const press=vi.fn();
+    render(<KakaoLoginButton onPress={press}/>);
+    fireEvent.click(screen.getByRole('button',{name:'카카오 로그인'}));expect(press).toHaveBeenCalled();
+  });
+  it('막혀 있으면 누를 수 없다',()=>{
+    const press=vi.fn();
+    render(<KakaoLoginButton onPress={press} disabled/>);
+    fireEvent.click(screen.getByRole('button',{name:'카카오 로그인'}));expect(press).not.toHaveBeenCalled();
+  });
+});
 const base={visible:true,onToggleAge:vi.fn(),onToggleTerms:vi.fn(),onViewTerms:vi.fn(),onViewPrivacy:vi.fn(),onAgree:vi.fn(),onRequestClose:vi.fn()};
 describe('새 계정 동의 시트 (2026-10-21 시안 a)',()=>{
   it('제목은 처음 오셨네요',()=>{

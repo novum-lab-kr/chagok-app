@@ -25,7 +25,7 @@ export async function setFlag(key: AppFlag, on: boolean): Promise<void> {
 /** 문자열 값. 계정·동기화 상태를 담는다 (계정·백업 설계 ②). 동기화하지 않는다. */
 export type SettingKey =
   | 'deviceId' | 'accountUserId' | 'lastSyncedAt' | 'syncCursor' | 'pendingPhotoDownloads'
-  /** 'Apple' | 'Google' | '개발' — 앱 설정 계정 칸 문구 */
+  /** 'Apple' | 'Google' | '카카오' | '개발' — 앱 설정 계정 칸 문구 */
   | 'accountProvider'
   /** '1'이면 마지막 전송이 실패했거나 보류가 남았다 */
   | 'syncProblem'

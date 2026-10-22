@@ -11,6 +11,7 @@ export type AccountState =
 export function providerFromAuth(provider: string | undefined): AccountProvider {
   if (provider === 'apple') return 'Apple';
   if (provider === 'google') return 'Google';
+  if (provider === 'kakao') return '카카오';
   return '개발';
 }
 
