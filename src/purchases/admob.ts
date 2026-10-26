@@ -1,4 +1,4 @@
-import { TurboModuleRegistry } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 import { setAdStore } from './index';
 import { playRewardedAd, type RewardedAdLike } from './rewardedAd';
 
@@ -20,9 +20,19 @@ export function adsLib(): AdsLib | null {
   return lib;
 }
 
-/** 출시 전에 AdMob에서 받은 실제 광고 단위 ID로 바꾼다(출시 전 최종 점검). 지금은 Google 테스트 ID. */
+/** AdMob 앱 「차곡차곡」(iOS)의 광고 단위. 앱 ID는 app.json 플러그인에 있다. */
+const IOS_AD_UNITS = {
+  banner: 'ca-app-pub-3557389923784580/2081299973',
+  rewarded: 'ca-app-pub-3557389923784580/3747850844',
+};
+
+/**
+ * 개발 빌드는 Google 테스트 ID — 실제 광고를 개발 중에 띄우면 무효 트래픽으로 계정이 제한될 수 있다.
+ * Android는 AdMob에 앱을 등록하기 전까지 테스트 ID(출시 전 최종 점검).
+ */
 export function adUnits(ads: AdsLib) {
-  return { banner: ads.TestIds.ADAPTIVE_BANNER, rewarded: ads.TestIds.REWARDED };
+  if (__DEV__ || Platform.OS !== 'ios') return { banner: ads.TestIds.ADAPTIVE_BANNER, rewarded: ads.TestIds.REWARDED };
+  return IOS_AD_UNITS;
 }
 export const AD_REQUEST = { requestNonPersonalizedAdsOnly: true } as const;
 
