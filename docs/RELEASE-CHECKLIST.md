@@ -18,8 +18,8 @@
 - [ ] `npm test`, `npm run test:components`, `npm run typecheck`, `npm run lint`(오류 0), `npx expo export --platform ios`·`android`가 모두 통과한다.
 - [ ] 개발용 대역이 남아 있지 않다:
   - 결제·광고가 `src/purchases`의 개발용 대역이 아니라 RevenueCat·AdMob이다.
-  - RevenueCat 키가 Test Store 키(`test_`로 시작)가 아니라 iOS·Android 스토어 키다. Test Store 키로 만든 출시 빌드는 SDK가 일부러 멈춘다.
-  - AdMob 앱 ID(`app.json` 플러그인 `react-native-google-mobile-ads`)와 광고 단위 ID(`src/purchases/admob.ts` `adUnits`)가 Google 테스트 ID(`ca-app-pub-3940256099942544`)가 아니다.
+  - RevenueCat 키가 Test Store 키(`test_`로 시작)가 아니라 iOS·Android 스토어 키다. Test Store 키로 만든 출시 빌드는 SDK가 일부러 멈춘다. 2026-10-26 iOS는 EAS `production`에 App Store 키(`appl_`)를 넣었다. Android는 아직.
+  - AdMob 앱 ID(`app.json` 플러그인 `react-native-google-mobile-ads`)와 광고 단위 ID(`src/purchases/admob.ts` `adUnits`)가 Google 테스트 ID(`ca-app-pub-3940256099942544`)가 아니다. 2026-10-26 iOS는 실제 ID(출시 빌드만). Android 앱 ID와 광고 단위는 아직 테스트 ID.
   - 연결 화면의 [개발 계정으로 계속], `/dev/sync`가 출시 빌드에 보이지 않는다(`__DEV__`).
 - [x] 다크 모드 막기·글자 크기 고정이 들어가 있다(`app.json` `userInterfaceStyle: "light"`, `allowFontScaling={false}`, PRD 6.2). 2026-10-12 실기기 확인.
 - [ ] 한 번에 한 기기, 동기화 버전·최소 앱 버전이 서버와 앱에 들어가 있다(PRD 4.8, [버전 규칙](RELEASE-VERSIONING.md) 「가끔」).
@@ -29,8 +29,8 @@
 ## 3. 빌드 설정
 
 - [ ] `app.json` `version`을 올렸다([버전 규칙](RELEASE-VERSIONING.md)).
-- [ ] 운영 서버 주소·키가 EAS 환경 변수에 있다. 클라우드 빌드는 `.env.local`을 읽지 않는다. 2026-10-15부터 preview·production에 **개발 서버 `chagok-dev` 값과 RevenueCat Test Store 키**가 들어 있다 — 운영 서버 값과 스토어 키로 바꾼다(`npx eas-cli env:list --environment production`).
-- [ ] Apple 로그인 로고가 빌드에 들어갔다. 2026-10-22 EAS production, preview, development에 secret 파일 변수 `APPLE_SIWA_LOGO_SVG`(`.secrets/apple-siwa-logo.svg`)를 올렸다. **다음 TestFlight 빌드 로그에서 `apple-logo: 만듦`을 확인한다**(사용자 결정: 따로 빌드하지 않음). 「없음」이면 EAS가 postinstall 때 이 변수를 주지 않는 것이고, Apple 기본 버튼으로 빌드된 것이다. 로고 파일을 바꾸면 `npx eas-cli env:set --name APPLE_SIWA_LOGO_SVG --type file --value .secrets/apple-siwa-logo.svg --visibility secret --environment production --environment preview --environment development`.
+- [x] 운영 서버 주소·키가 EAS 환경 변수에 있다. 클라우드 빌드는 `.env.local`을 읽지 않는다. 2026-10-26 환경별로 나눴다: `production`은 운영 서버(`https://chagok-api.novum-lab.com`)와 그 anon 키(상태 확인 200), RevenueCat App Store 키. `preview`는 개발 서버 `chagok-dev` 값과 Test Store 키(`npx eas-cli env:list --environment production`).
+- [x] Apple 로그인 로고가 빌드에 들어갔다. 2026-10-26 production 빌드 4의 「Install dependencies」 로그에 `apple-logo: 만듦`(EAS secret 파일 경로)을 확인했다. 2026-10-22 EAS production, preview, development에 secret 파일 변수 `APPLE_SIWA_LOGO_SVG`(`.secrets/apple-siwa-logo.svg`)를 올렸다. **다음 TestFlight 빌드 로그에서 `apple-logo: 만듦`을 확인한다**(사용자 결정: 따로 빌드하지 않음). 「없음」이면 EAS가 postinstall 때 이 변수를 주지 않는 것이고, Apple 기본 버튼으로 빌드된 것이다. 로고 파일을 바꾸면 `npx eas-cli env:set --name APPLE_SIWA_LOGO_SVG --type file --value .secrets/apple-siwa-logo.svg --visibility secret --environment production --environment preview --environment development`.
 - [ ] 카카오 콘솔 연결 해제 웹훅 주소가 운영 서버(`https://chagok-api.novum-lab.com/functions/v1/kakao-unlink`)이고 [사용함]이다. 운영 함수 환경에 `KAKAO_ADMIN_KEY`가 있고 콘솔 [웹훅 테스트]가 200이다([운영 서버 계획](superpowers/plans/2026-10-21-production-server.md) 4단계). 운영 서버 감시(`monitor.sh`)에 `private.kakao_unlink_failures` 줄 수가 0이 아니면 실패로 알리는 점검을 더했다.
 - [x] `ios.infoPlist.ITSAppUsesNonExemptEncryption: false`가 있다(2026-10-10).
 - [x] 개인정보 매니페스트(Privacy Manifest)가 앱과 위젯 양쪽에 있다(2026-10-15 prebuild 결과로 확인). 새 네이티브 라이브러리를 더했으면 다시 본다.
@@ -61,8 +61,9 @@
 - [ ] 판매 지역: 첫 출시는 **한국만**(2026-10-15). EU를 빼면 「EU 거래자 자격(DSA)」 입력이 필요 없다. 중국 본토는 제외한다. 넓힐 때는 [출시 준비 결정](RELEASE-DECISIONS.md) 「해외 확장 순서」(2026-10-26)와 「해외 확장」을 본다. 2026-10-26 App Store Connect에 대한민국만 설정했다.
 - [ ] App Store Connect(새 계정 앱 등록 2026-10-20, Apple ID `6824725721`): 앱 정보, 설명·키워드·스크린샷, 개인정보 라벨, 연령 등급, 인앱 상품(묶음·광고 제거)과 유료 앱 계약. 유료 앱 계약·세금·은행 정보가 빠지면 스토어가 가격을 돌려주지 않아 화면에 가격이 안 나온다(PRD 4.12).
 - [ ] Google Play Console: 스토어 등록정보, 데이터 보안, 콘텐츠 등급, 인앱 상품. 개인 계정이면 **테스터 12명·14일 비공개 테스트**를 마쳤다.
-- [ ] `app-ads.txt`를 개발자 웹사이트에 올렸다(AdMob).
-- [ ] AdMob 콘솔에서 광고 등급 상한과 민감한 광고 분류를 정했다. 앱은 나이를 묻지 않아 모든 기기가 같은 광고를 받는다(2026-10-21, RELEASE-DECISIONS).
+- [ ] `app-ads.txt`를 개발자 웹사이트에 올렸다(AdMob). 개발자 웹사이트 도메인을 만든 뒤 그 루트에 둔다(2026-10-26 결정).
+- [x] AdMob 콘솔에서 광고 등급 상한과 민감한 광고 분류를 정했다. 앱은 나이를 묻지 않아 모든 기기가 같은 광고를 받는다(2026-10-21, RELEASE-DECISIONS). 2026-10-26 계정 수준 등급 상한 G, 민감한 카테고리는 RELEASE-DECISIONS 「광고 등급 상한」 줄대로 막았다.
+- [ ] AdMob에서 앱을 App Store에 연결했다(출시 뒤에야 할 수 있다). 연결해야 앱 검토가 시작되고 광고 게재 제한이 풀린다.
 - [ ] 심사용 메모: 로그인 없이 쓸 수 있다는 설명, 필요하면 테스트 계정.
 
 ## 6. 출시할 때마다

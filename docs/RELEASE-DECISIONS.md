@@ -8,6 +8,10 @@
 
 | 날짜 | 항목 | 결정 |
 |---|---|---|
+| 2026-10-26 | 결제 연결(iOS) | RevenueCat에 App Store 앱(번들 `com.novumlab.chagok`, 앱 내 구입 키 연결)과 상품 5개를 붙이고 권한 `ad_free`, `pack_<묶음 ID>`에 연결했다. EAS `production`의 `EXPO_PUBLIC_REVENUECAT_KEY`는 App Store 키, `preview`와 개발은 Test Store 키. Test Store 상품도 `com.novumlab.chagok.*`로 다시 만들고, 옛 `com.novum.chagok.*` 상품과 무료가 된 동물, 감정 권한은 Inactive로 돌렸다. 앱은 오퍼링을 쓰지 않는다(`default`는 맞춰만 둠) |
+| 2026-10-26 | 광고 연결(iOS) | AdMob 앱 「차곡차곡」(iOS) 등록, 광고 단위 `home_banner`(배너)와 `pack_trial_rewarded`(보상형). **출시 빌드의 iOS만 실제 ID**, 개발 빌드(`__DEV__`)와 Android는 Google 테스트 ID(개발 중 실제 광고는 무효 트래픽으로 계정이 제한될 수 있다). Android는 AdMob에 앱을 등록할 때 바꾼다 |
+| 2026-10-26 | 광고 등급 상한 | **AdMob 계정 수준 G(일반 잠재고객)**. App Store 4+ 예정과 맞춘다(심사 지침 2.5.18: 광고는 앱 연령 등급에 맞아야 한다). PG와의 예상 수익 차이는 5%p 안팎(콘솔 추정). 콘솔 설정이라 앱 업데이트 없이 바꿀 수 있고, 맞춤 광고로 바꿀 때(출시 뒤 계획) 다시 본다. 민감한 표준 카테고리는 **데이트, 선정성, 「성, 임신 및 출산 관련 건강」, 성에 대한 언급, 소셜 카지노 게임** 5개를 막고 나머지 6개는 허용. 제한된 카테고리(도박 및 베팅, 주류)는 기본값대로 막힘 |
+| 2026-10-26 | `app-ads.txt` 위치 | **개발자 웹사이트 도메인을 만든 뒤 그 루트에 둔다.** AdMob 안내상 App Store에 적는 개발자 웹사이트와 같은 도메인이어야 한다. 아래 10-13 「정책 저장소 루트」를 바꿈. 내용은 AdMob 콘솔 「앱 → app-ads.txt 설정하기」의 한 줄 |
 | 2026-10-20 | 앱 식별자 | **`com.novumlab.chagok`** — iOS 번들 ID와 Android 패키지 이름 공통(Android와 인앱 상품 ID는 하이픈을 못 써서 `novum-lab` 대신 `novumlab`). 출시 뒤 바꿀 수 없다. iOS 위젯 `com.novumlab.chagok.ExpoWidgetsTarget`과 App Group `group.com.novumlab.chagok`(expo-widgets가 앱 ID로 만든다), Apple Watch `com.novumlab.chagok.watch`, 워치 위젯 `com.novumlab.chagok.watch.widgets`, 워치 App Group `group.com.novumlab.chagok.watch`. Wear OS는 같은 패키지 이름. 커스텀 스킴 `chagok://`는 별개. 이전: `com.novum.chagok`(옛 Apple 계정, 2026-10-04) |
 | 2026-10-04 | 스토어 빌드 | EAS Build. 빌드 번호는 EAS 원격 자동 증가(`appVersionSource: remote`, `autoIncrement`) |
 | 2026-10-04 | 버전 규칙 | 사용자 버전 `MAJOR.MINOR.PATCH`는 사람이 올리고, 첫 출시 `1.0.0`. 출시마다 버전·스토어 문구·git 태그. Wear OS `versionCode`는 `1000001`부터 직접 — [버전 규칙](RELEASE-VERSIONING.md) |

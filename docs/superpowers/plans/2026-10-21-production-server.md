@@ -245,8 +245,8 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 ## 7단계: 앱 빌드 연결
 
-- [ ] EAS 환경 변수 `production`의 `EXPO_PUBLIC_SUPABASE_URL`과 `EXPO_PUBLIC_SUPABASE_ANON_KEY`를 운영 값으로 바꾼다. `preview`는 개발 서버 그대로.
-- [ ] 결제와 광고(별도 작업)의 실제 키가 준비됐으면 같은 때 `production`에 넣는다: RevenueCat 스토어 키, AdMob 앱 ID와 광고 단위 ID. 빌드 한 번으로 서버와 결제, 광고를 함께 확인해 EAS 비용을 줄인다. 준비가 안 됐으면 기다리지 않고 서버만 먼저 확인한다.
+- [x] EAS 환경 변수 `production`의 `EXPO_PUBLIC_SUPABASE_URL`과 `EXPO_PUBLIC_SUPABASE_ANON_KEY`를 운영 값으로 바꾼다. `preview`는 개발 서버 그대로. 2026-10-26: 두 환경이 같이 쓰던 변수를 `preview` 전용으로 좁히고 `production` 전용 변수를 새로 만들었다.
+- [x] 결제와 광고(별도 작업)의 실제 키가 준비됐으면 같은 때 `production`에 넣는다: RevenueCat 스토어 키, AdMob 앱 ID와 광고 단위 ID. 빌드 한 번으로 서버와 결제, 광고를 함께 확인해 EAS 비용을 줄인다. 준비가 안 됐으면 기다리지 않고 서버만 먼저 확인한다.
 - [ ] 운영 값으로 `production` 빌드를 만들어 TestFlight에서 확인한다(EAS 비용이 드니 빌드 전에 묻는다). 확인: Apple 로그인, 기록과 사진 백업, 다른 기기에서 복원, 로그아웃, 계정 삭제(서버의 행과 사진까지 지워지는지).
 
 ## 8단계: 문서와 처리방침
