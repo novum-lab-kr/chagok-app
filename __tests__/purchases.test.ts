@@ -23,22 +23,22 @@ afterEach(() => { setStoreForTest(null); resetPricesForTest(); });
 describe('purchases', () => {
   it('사면 그 묶음이 영구로 열린다', async () => {
     setStoreForTest(fakeStore({}));
-    expect(await buyPack('animals_normal', now)).toEqual({ ok: true });
-    expect(await listPackAccess()).toEqual([{ packId: 'animals_normal', source: 'purchase', grantedAt: now, expiresAt: null }]);
+    expect(await buyPack('sports_normal', now)).toEqual({ ok: true });
+    expect(await listPackAccess()).toEqual([{ packId: 'sports_normal', source: 'purchase', grantedAt: now, expiresAt: null }]);
   });
 
   it('결제를 취소하면 아무것도 열리지 않는다', async () => {
     setStoreForTest(fakeStore({ buyPack: async () => ({ ok: false, reason: 'cancelled' }) }));
-    expect(await buyPack('animals_normal', now)).toEqual({ ok: false, reason: 'cancelled' });
+    expect(await buyPack('sports_normal', now)).toEqual({ ok: false, reason: 'cancelled' });
     expect(await listPackAccess()).toEqual([]);
   });
 
   it('광고를 끝까지 보면 24시간, 닫으면 시작하지 않는다', async () => {
     setStoreForTest(fakeStore({ showRewardedAd: async () => ({ ok: false, reason: 'closed' }) }));
-    expect(await watchAdForPack('animals_normal', now)).toEqual({ ok: false, reason: 'closed' });
+    expect(await watchAdForPack('sports_normal', now)).toEqual({ ok: false, reason: 'closed' });
     expect(await listPackAccess()).toEqual([]);
     setStoreForTest(fakeStore({}));
-    expect(await watchAdForPack('animals_normal', now)).toEqual({ ok: true, endsAt: now + AD_TRIAL_MS });
+    expect(await watchAdForPack('sports_normal', now)).toEqual({ ok: true, endsAt: now + AD_TRIAL_MS });
   });
 
   it('광고 제거를 사면 표시가 남는다', async () => {
@@ -48,9 +48,9 @@ describe('purchases', () => {
   });
 
   it('복원: 스토어가 돌려준 묶음과 광고 제거를 되살리고 이름을 묶음 순서 + 광고 제거로 돌려준다', async () => {
-    setStoreForTest(fakeStore({ restore: async () => ({ packs: ['snack_normal', 'animals_normal'], adFree: true }) }));
-    expect(await restorePurchases(now)).toEqual(['간식 묶음', '동물 묶음', '광고 제거']);
-    expect((await listPackAccess()).map((a) => [a.packId, a.expiresAt])).toEqual([['animals_normal', null], ['snack_normal', null]]);
+    setStoreForTest(fakeStore({ restore: async () => ({ packs: ['snack_normal', 'sports_normal'], adFree: true }) }));
+    expect(await restorePurchases(now)).toEqual(['운동 묶음', '간식 묶음', '광고 제거']);
+    expect((await listPackAccess()).map((a) => [a.packId, a.expiresAt])).toEqual([['snack_normal', null], ['sports_normal', null]]);
     expect((await loadPackState()).adFree).toBe(true);
   });
 
@@ -60,10 +60,10 @@ describe('purchases', () => {
   });
 
   it('개발용 대역의 복원은 이 기기에서 산 것을 그대로 돌려준다', async () => {
-    await grantPurchase('animals_normal', now);
+    await grantPurchase('sports_normal', now);
     const db = await getDb();
     await db.run("INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES ('snack_normal', 'ad', 1, 2)");
-    expect(await restorePurchases(now)).toEqual(['동물 묶음']);
+    expect(await restorePurchases(now)).toEqual(['운동 묶음']);
   });
 });
 
@@ -76,10 +76,10 @@ describe('가격', () => {
   });
 
   it('받아 온 가격을 글자로 바꾸고, 못 받아 오면 전에 받은 값을 쓴다', async () => {
-    setStoreForTest(fakeStore({ prices: async () => ({ animals_normal: { amount: 2200, currency: 'KRW', text: '₩2,200' }, adFree: { amount: 5500, currency: 'KRW', text: '₩5,500' } }) }));
-    expect(await loadPrices()).toEqual({ animals_normal: '2,200원', adFree: '5,500원' });
+    setStoreForTest(fakeStore({ prices: async () => ({ sports_normal: { amount: 2200, currency: 'KRW', text: '₩2,200' }, adFree: { amount: 5500, currency: 'KRW', text: '₩5,500' } }) }));
+    expect(await loadPrices()).toEqual({ sports_normal: '2,200원', adFree: '5,500원' });
     setStoreForTest(fakeStore({ prices: async () => { throw new Error('offline'); } }));
-    expect(await loadPrices()).toEqual({ animals_normal: '2,200원', adFree: '5,500원' });
+    expect(await loadPrices()).toEqual({ sports_normal: '2,200원', adFree: '5,500원' });
   });
 
   it('한 번도 못 받아 왔으면 빈 값', async () => {
@@ -93,19 +93,19 @@ describe('결제는 한 번에 하나', () => {
     let finish: (r: { ok: true }) => void = () => {};
     let calls = 0;
     setStoreForTest(fakeStore({ buyPack: () => { calls++; return new Promise((r) => { finish = r; }); } }));
-    const first = buyPack('animals_normal', now);
-    const second = buyPack('animals_normal', now);
+    const first = buyPack('sports_normal', now);
+    const second = buyPack('sports_normal', now);
     finish({ ok: true });
     expect(await first).toEqual({ ok: true });
     expect(await second).toEqual({ ok: true });
     expect(calls).toBe(1);
-    expect((await listPackAccess()).map((a) => a.packId)).toEqual(['animals_normal']);
+    expect((await listPackAccess()).map((a) => a.packId)).toEqual(['sports_normal']);
   });
 
   it('다른 상품이면 실패로 알리지 않고 끝낸다. 앞 결제가 끝나면 다시 살 수 있다', async () => {
     let finish: (r: { ok: true }) => void = () => {};
     setStoreForTest(fakeStore({ buyPack: () => new Promise((r) => { finish = r; }) }));
-    const first = buyPack('animals_normal', now);
+    const first = buyPack('sports_normal', now);
     expect(await buyAdFree()).toEqual({ ok: false, reason: 'cancelled' });
     finish({ ok: true });
     await first;

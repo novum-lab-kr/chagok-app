@@ -11,10 +11,10 @@ afterEach(cleanup);
 const ROW=/M(\d+) (\d+)h(\d+)v1h-(\d+)Z/g;
 
 describe('컬러 스티커 카탈로그',()=>{
-  it('묶음은 기본 6개, 나머지 10개씩 66종이고 기본만 무료다',()=>{
+  it('묶음은 기본 6개, 나머지 10개씩 66종이고 기본, 동물, 감정이 무료다',()=>{
     expect(colorStickerPacks.map(p=>[p.id,colorStickersInPack(p.id).length,p.free])).toEqual([
       ['basic',6,true],['sports_normal',10,false],['snack_normal',10,false],['objects_normal',10,false],
-      ['animals_normal',10,false],['emotions_normal',10,false],['weather_normal',10,false],
+      ['animals_normal',10,true],['emotions_normal',10,true],['weather_normal',10,false],
     ]);
     expect(colorStickers).toHaveLength(66);
   });

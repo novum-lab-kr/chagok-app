@@ -47,11 +47,11 @@ describe('「기본 스티커」 화면',()=>{
   const titles=()=>screen.getAllByRole('heading').map(h=>h.textContent).filter(t=>t!=='기본 스티커');
   it('가진 묶음과 체험 중 묶음이 위, 잠긴 묶음이 아래다',()=>{
     render(<StickerChooserScreen {...base}/>);
-    expect(titles()).toEqual(['기본','간식','날씨·계절','동물']);
+    expect(titles()).toEqual(['기본','간식','날씨와 계절','동물']);
   });
   it('「내 스티커」에는 잠긴 묶음이 없고 체험 중 묶음은 있다',()=>{
     render(<StickerChooserScreen {...base} mine/>);
-    expect(titles()).toContain('날씨·계절');expect(titles()).not.toContain('동물');
+    expect(titles()).toContain('날씨와 계절');expect(titles()).not.toContain('동물');
   });
   it('펼친 묶음은 10개를, 접힌 묶음은 5개와 +n을 보이고 접힌 줄에서도 고른다',()=>{
     const pack=colorPack('snack_normal','owned');const select=vi.fn();
@@ -81,7 +81,7 @@ describe('「기본 스티커」 화면',()=>{
   });
   it('여러 묶음을 함께 펼칠 수 있다',()=>{
     render(<StickerChooserScreen {...base} openPacks={['basic','snack_normal']}/>);
-    // 기본 6종 + 간식 10종 펼침, 날씨·계절은 접혀 5개
+    // 기본 6종 + 간식 10종 펼침, 날씨와 계절은 접혀 5개
     expect(screen.getAllByRole('radio')).toHaveLength(colorPack('basic','free').stickers.length+colorPack('snack_normal','owned').stickers.length+5);
   });
   it('펼친 묶음을 다시 누르면 접히고, 접힌 묶음을 누르면 펼쳐진다. 다른 묶음은 그대로다',()=>{

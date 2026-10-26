@@ -41,7 +41,7 @@ describe('loadWidgetSnapshot', () => {
 
 describe('loadWidgetSnapshot · 묶음', () => {
   it('잠긴 묶음 스티커가 기본인 목표는 locked', async () => {
-    await createGoal({ name: '동물', boardType: 'tally', totalSlots: 5, defaultStickerId: 'animals_normal.cat' });
+    await createGoal({ name: '동물', boardType: 'tally', totalSlots: 5, defaultStickerId: 'sports_normal.run' });
     await createGoal({ name: '새싹', boardType: 'tally', totalSlots: 5 });
     const snap = await loadWidgetSnapshot(new Date());
     expect(Object.fromEntries(snap.goals.map((g) => [g.name, g.locked]))).toEqual({ 동물: true, 새싹: false });
