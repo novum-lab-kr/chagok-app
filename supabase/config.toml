@@ -420,3 +420,7 @@ verify_jwt = false
 
 [functions.apple-link]
 verify_jwt = false
+
+# 카카오 연결 해제 웹훅. 카카오 요청에는 Supabase 토큰이 없다. 어드민 키로 함수가 직접 확인한다.
+[functions.kakao-unlink]
+verify_jwt = false
