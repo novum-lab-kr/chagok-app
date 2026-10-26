@@ -159,7 +159,7 @@ it('sameSecret은 길이가 달라도 false, 빈 값은 false', () => {
 근거: 카카오 문서는 자동 연결 앱에서 「첫 로그인 뒤 24시간 안에 사용자 정보 조회를 부르지 않은 사용자」를 가입 미완료로 보고 연결을 끊는다(`INCOMPLETE_SIGN_UP`). ID 토큰만 받는 지금 흐름은 실제로 끊기지 않았지만(2026-10-26, 3일 넘게) 문서 보장이 없다. 2026-10-26 사용자 결정: 동의 직후 한 번 부른다.
 
 - [ ] **Step 1:** `completeKakaoSignUp` 추가. `ensureInitialized()` 뒤 `await me()`.
-- [ ] **Step 2:** `connect.tsx`에서 `recordConsent(...)` 다음 줄에 `if (method === 'kakao') void completeKakaoSignUp();`. 기다리지 않는다(가입 진행을 막지 않는다). 이미 동의한 계정의 재로그인에서는 부르지 않는다.
+- [ ] **Step 2:** `connect.tsx`에서 카카오 로그인이 성공한 직후(`const { user } = signIn;` 다음) `if (method === 'kakao') void completeKakaoSignUp();`. 기다리지 않는다. 로그인할 때마다 불러, 한 번 실패해도(중단, 네트워크) 다음 로그인에서 메운다(2026-10-26 최종 검토 뒤 동의 직후에서 옮김).
 - [ ] **Step 3: 확인** — `npm run typecheck`, `npm run lint`, `npm test`, 번들(`npx expo export --platform ios`). 동작은 Task 7 끝에서 끝까지 시험의 「다시 카카오로 로그인」에서 Metro 로그에 `[kakao] me failed`가 없는지로 본다.
 
 ### Task 6: 문서와 정책

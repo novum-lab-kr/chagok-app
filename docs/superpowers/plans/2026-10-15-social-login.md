@@ -226,9 +226,8 @@ export async function makeNonce(): Promise<{ raw: string; hashed: string }>;
 - [ ] **Google:** 브랜드 확인을 받고 「프로덕션」으로 바꾼다. 처리방침의 정식 도메인과 승인된 도메인 확인이 먼저 필요하다.
 - [ ] **카카오:** 앱 아이콘·이름·사업자 정보를 확인하고, 동의 항목이 실제로 쓰는 것과 같은지 본다.
 - [ ] **알림 받기(선택이지만 권장)**
-  - Apple 서버 알림(`consent-revoked`·`account-delete`)과 카카오 연결 끊기 웹훅을 받는 Edge Function을 만든다.
-  - 알림이 왔을 때 그 사용자의 데이터를 지울지, 로그인만 풀지는 사용자가 정한다(결정 필요).
-  - 지우는 쪽으로 정하면 `delete-account`와 같은 순서로 지운다.
+  - 카카오: 2026-10-26 정함, 지운다. `kakao-unlink` 함수와 계획 `docs/superpowers/plans/2026-10-26-kakao-unlink-webhook.md`.
+  - Apple 서버 알림(`consent-revoked`, `account-delete`)은 아직. 지울지, 로그인만 풀지는 그때 사용자가 정한다.
 - [ ] **처리방침 1판과 스토어 개인정보 답안:** Google·카카오를 수집 경로에 더하고, 이메일 칸을 수단별로 적는다.
 - [ ] **심사 메모:** App Review 노트에 「Apple 로그인을 Google·카카오와 같은 크기로 제공한다」고 적는다(심사 기준 4.8).
 
@@ -236,5 +235,5 @@ export async function makeNonce(): Promise<{ raw: string; hashed: string }>;
 
 ## 남은 열린 결정
 
-- 4단계: 알림이 왔을 때 데이터를 지울지, 로그인만 풀지
+- 4단계: Apple 서버 알림이 왔을 때 데이터를 지울지, 로그인만 풀지(카카오는 지우기로 정함, 2026-10-26)
 - 같은 사람이 여러 수단으로 들어와 계정이 둘로 나뉠 때의 안내 문구. 지금은 만들지 않는다(조사 문서 1.4절).
