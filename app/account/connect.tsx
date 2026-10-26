@@ -27,7 +27,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { signInWithApple } from '../../src/sync/signIn/apple';
 import { appleSignInAvailable, expoAppleDeps } from '../../src/sync/signIn/expoApple';
 import { expoGoogleDeps, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
-import { expoKakaoDeps, signOutKakao } from '../../src/sync/signIn/expoKakao';
+import { completeKakaoSignUp, expoKakaoDeps, signOutKakao } from '../../src/sync/signIn/expoKakao';
 import { signInWithGoogle } from '../../src/sync/signIn/google';
 import { signInWithKakao } from '../../src/sync/signIn/kakao';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
@@ -274,6 +274,8 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         if (signIn === 'canceled') throw CANCELED;
         if ('failed' in signIn) throw signIn.failed;
         const { user } = signIn;
+        // 카카오에 가입 완료를 알린다. 로그인할 때마다 불러 한 번 실패해도 다음 로그인에서 메운다. 기다리지 않는다
+        if (method === 'kakao') void completeKakaoSignUp();
         // 처음 만든 계정만 동의를 받는다. 이미 동의한 계정은 다시 묻지 않는다 (2026-10-21 시안 a).
         if (!(await hasConsented(supabase.from('accounts').select('agreed_at').eq('user_id', user.id).maybeSingle()))) {
           check();

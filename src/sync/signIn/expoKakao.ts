@@ -1,5 +1,5 @@
 import { initializeKakaoSDK } from '@react-native-kakao/core';
-import { login, logout } from '@react-native-kakao/user';
+import { login, logout, me } from '@react-native-kakao/user';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { KakaoSignInDeps } from './kakao';
 import { KAKAO_NATIVE_APP_KEY } from './kakaoKey';
@@ -35,6 +35,19 @@ export function expoKakaoDeps(client: SupabaseClient): KakaoSignInDeps {
       return { user: data.user, error };
     },
   };
+}
+
+/**
+ * 가입이 끝났음을 카카오에 알린다(로그인할 때마다 부른다). 카카오는 첫 로그인 뒤 24시간 안에 사용자 정보 조회를 부르지 않은 사용자를
+ * 가입 미완료로 보고 연결을 끊는다(카카오 로그인 문서, 2026-10-26 사용자 결정). 결과는 쓰지 않고 실패해도 가입은 그대로다.
+ */
+export async function completeKakaoSignUp(): Promise<void> {
+  try {
+    ensureInitialized();
+    await me();
+  } catch (e) {
+    if (__DEV__) console.warn('[kakao] me failed', e);
+  }
 }
 
 /** 이 기기의 카카오 토큰을 지운다 — 다음 로그인에서 다른 카카오 계정을 고를 수 있게. 실패해도 로그아웃은 계속한다. */

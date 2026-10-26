@@ -291,6 +291,7 @@ supabase db query --linked "select 1"              # 연결 확인
 supabase db reset --linked                         # 개발 서버를 비우고 supabase/migrations를 처음부터 다시 적용한다
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
 supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함수
+supabase functions deploy kakao-unlink --use-api   # 카카오 연결 해제 웹훅 (토큰 없이 받는다, config.toml verify_jwt = false)
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
 ```
@@ -303,6 +304,20 @@ npm run server:dev-user                            # 개발용 계정 만들기
 - 함수 secret 네 개: `APPLE_TEAM_ID`(AJ7LJPM82M), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`(com.novumlab.chagok), `APPLE_PRIVATE_KEY`(`.secrets/AuthKey_<KeyID>.p8` 내용). `supabase secrets list`로 확인.
 - `.p8`은 Apple에서 한 번만 내려받을 수 있다. 잃어버리면 새 키를 만들고 두 secret을 바꾼다.
 - 실기기 빌드에는 Xcode Accounts에 팀 AJ7LJPM82M 계정이 있어야 한다(`app.json` `ios.appleTeamId`).
+
+**카카오 연결 해제 웹훅 (2026-10-26~)** — 사용자가 카카오톡에서 연결을 끊거나 카카오계정을 탈퇴하면 카카오가 `kakao-unlink`를 부르고, 함수가 그 사용자의 계정과 백업을 지운다. 카카오 콘솔 [앱] > [웹훅] > [연결 해제 웹훅]에 개발 주소(`/functions/v1/kakao-unlink`, POST)가 [사용함]으로 들어 있다. 카카오 앱 하나에 주소 하나라 운영 주소로 바꾸면 개발 서버로는 오지 않는다. 1개월 넘게 응답이 없거나 오류가 잦으면 카카오가 끄므로, 개발 서버가 멈췄다 다시 켜졌으면 콘솔에서 상태를 본다.
+
+- 확인: 콘솔 [도구] > [웹훅 테스트] > [연결 해제]. 대시보드 Edge Functions > `kakao-unlink` > Logs에 `kakao-unlink: no_user <referrer>`(모르는 회원번호), `deleted <referrer>`, `ignored <referrer>`(가입 미완료, 지우지 않음), `failed <referrer> <단계> recorded`가 남는다. 로그에는 회원번호를 남기지 않는다(처리방침과 법률 검토, 2026-10-26).
+- 카카오는 다시 보내 주지 않는다. 함수가 실패하면 2초, 8초 뒤에 스스로 다시 하고, 세 번 다 실패하면 회원번호와 단계를 `private.kakao_unlink_failures`에 남긴다. 원인을 고친 뒤 그 회원번호로 같은 요청을 직접 보내면 남은 단계부터 지우고 표의 줄도 지운다. 표 보기: `supabase db query --linked "select kakao_id, step, failed_at from private.kakao_unlink_failures"`(main 체크아웃에서, 토큰은 위와 같다).
+- 앱 쪽: 지워진 뒤에도 앱의 로그인 표가 끝날 때까지(최대 1시간, `jwt_expiry`) 세션이 남는다. 그동안 보낼 기록이 없으면 「마지막 백업」 시각이 바뀌지만 서버에는 아무것도 다시 생기지 않는다(표마다 `auth.users` 외래 키). 표가 끝나면 갱신이 실패해 세션이 풀리고 설정에 「백업하려면 로그인이 필요해요」가 뜬다. 기록은 기기에 남는다. 웹 연결 끊기는 카카오계정 웹 [계정 이용] > [외부 서비스] > [연결된 서비스]에서 한다(2026-10-26 확인).
+
+```sh
+set -a; . .secrets/kakao.env; set +a
+curl -X POST "https://cmkmhrzvxbtuxbgixqoo.supabase.co/functions/v1/kakao-unlink" -H "Authorization: KakaoAK $KAKAO_ADMIN_KEY" \
+  -d app_id=1618098 -d user_id=<회원번호> -d referrer_type=UNLINK_FROM_APPS
+```
+
+- 서버 테스트(`npm run test:server`)는 `.secrets/kakao.env`가 있으면 어드민 키로 웹훅을 부른다. 실제 카카오 사용자 삭제는 테스트로 만들 수 없어 손으로 확인한다.
 
 **앱에서 확인** — `.env.local`을 바꿨으면 `npx expo start`를 다시 시작한다. 앱 설정 → 개발 → 서버 동기화 (개발)에서
 개발 계정으로 로그인하고 올리기·복원을 한다. 로그인해 있으면 기록이 바뀐 뒤 2초쯤 지나 자동으로 올라간다.

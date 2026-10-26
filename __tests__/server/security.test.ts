@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { SyncRejected } from '../../src/sync/contract';
 import { SupabaseSyncServer } from '../../src/sync/supabaseServer';
 import { goal, liveIds, record, snapshot, sticker } from '../support/syncServerContract';
-import { anonClient, describeIfServer, newUser } from './support';
+import { adminClient, anonClient, describeIfServer, newUser } from './support';
 
 const serverOf = (client: SupabaseClient) => new SupabaseSyncServer({ rpc: (fn, args) => client.rpc(fn, args) });
 
@@ -60,5 +60,30 @@ describeIfServer('서버 보안·경계', () => {
       a.client.rpc('admin_delete_apple_token', { p_user: a.userId }),
     ];
     for (const { error } of await Promise.all(calls)) expect(error).not.toBeNull();
+  });
+
+  it('로그인 없이도, 로그인 사용자도 회원번호로 사용자를 찾을 수 없다', async () => {
+    const a = await newUser();
+    const args = { p_provider: 'email', p_provider_id: a.userId };
+    const calls = [anonClient().rpc('admin_find_user_by_identity', args), a.client.rpc('admin_find_user_by_identity', args)];
+    for (const { error } of await Promise.all(calls)) expect(error).not.toBeNull();
+    // 서버 함수(service_role)는 찾는다. 이메일 identity의 provider_id는 사용자 id다.
+    expect(await adminClient().rpc('admin_find_user_by_identity', args)).toMatchObject({ data: a.userId, error: null });
+  });
+
+  it('카카오 삭제 실패 기록은 서버 함수만 남기고 지운다', async () => {
+    const a = await newUser();
+    const record = { p_kakao_id: '999000111', p_referrer: 'UNLINK_FROM_APPS', p_step: 'photos' };
+    const clear = { p_kakao_id: '999000111' };
+    const calls = [
+      anonClient().rpc('admin_record_kakao_unlink_failure', record), a.client.rpc('admin_record_kakao_unlink_failure', record),
+      anonClient().rpc('admin_clear_kakao_unlink_failure', clear), a.client.rpc('admin_clear_kakao_unlink_failure', clear),
+    ];
+    for (const { error } of await Promise.all(calls)) expect(error).not.toBeNull();
+    // 같은 회원번호로 두 번 실패해도 한 줄, 지우기는 여러 번 불러도 된다
+    expect((await adminClient().rpc('admin_record_kakao_unlink_failure', record)).error).toBeNull();
+    expect((await adminClient().rpc('admin_record_kakao_unlink_failure', { ...record, p_step: 'rows' })).error).toBeNull();
+    expect((await adminClient().rpc('admin_clear_kakao_unlink_failure', clear)).error).toBeNull();
+    expect((await adminClient().rpc('admin_clear_kakao_unlink_failure', clear)).error).toBeNull();
   });
 });

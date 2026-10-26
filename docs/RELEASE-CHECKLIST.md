@@ -31,6 +31,7 @@
 - [ ] `app.json` `version`을 올렸다([버전 규칙](RELEASE-VERSIONING.md)).
 - [ ] 운영 서버 주소·키가 EAS 환경 변수에 있다. 클라우드 빌드는 `.env.local`을 읽지 않는다. 2026-10-15부터 preview·production에 **개발 서버 `chagok-dev` 값과 RevenueCat Test Store 키**가 들어 있다 — 운영 서버 값과 스토어 키로 바꾼다(`npx eas-cli env:list --environment production`).
 - [ ] Apple 로그인 로고가 빌드에 들어갔다. 2026-10-22 EAS production, preview, development에 secret 파일 변수 `APPLE_SIWA_LOGO_SVG`(`.secrets/apple-siwa-logo.svg`)를 올렸다. **다음 TestFlight 빌드 로그에서 `apple-logo: 만듦`을 확인한다**(사용자 결정: 따로 빌드하지 않음). 「없음」이면 EAS가 postinstall 때 이 변수를 주지 않는 것이고, Apple 기본 버튼으로 빌드된 것이다. 로고 파일을 바꾸면 `npx eas-cli env:set --name APPLE_SIWA_LOGO_SVG --type file --value .secrets/apple-siwa-logo.svg --visibility secret --environment production --environment preview --environment development`.
+- [ ] 카카오 콘솔 연결 해제 웹훅 주소가 운영 서버(`https://chagok-api.novum-lab.com/functions/v1/kakao-unlink`)이고 [사용함]이다. 운영 함수 환경에 `KAKAO_ADMIN_KEY`가 있고 콘솔 [웹훅 테스트]가 200이다([운영 서버 계획](superpowers/plans/2026-10-21-production-server.md) 4단계). 운영 서버 감시(`monitor.sh`)에 `private.kakao_unlink_failures` 줄 수가 0이 아니면 실패로 알리는 점검을 더했다.
 - [x] `ios.infoPlist.ITSAppUsesNonExemptEncryption: false`가 있다(2026-10-10).
 - [x] 개인정보 매니페스트(Privacy Manifest)가 앱과 위젯 양쪽에 있다(2026-10-15 prebuild 결과로 확인). 새 네이티브 라이브러리를 더했으면 다시 본다.
 - [ ] 로컬에서 빌드한다면 `npx expo prebuild --clean`을 먼저 했다(옛 `ios/` 문제, [PITFALLS](PITFALLS.md)).
@@ -54,6 +55,9 @@
 
 - [ ] 이용약관·개인정보 처리방침이 정식 주소에 게시돼 있고 앱 안 링크와 같다. 결제·광고 조항이 들어간 1판이다(정식 출시 전 변경은 모두 1판에, 2026-10-14).
 - [ ] 통신판매업 신고가 필요한지 확인했다(필요하면 신고 번호를 약관·스토어에). 면제 기준은 [법령 검토](LEGAL-REVIEW.md) 1절.
+- [ ] 정책 사이트 약관 끝과 첫 화면의 사업자 정보 줄에 사업장 주소, 전화번호, 통신판매업 신고번호를 넣었다(전자상거래법 제10조, 제13조). 2026-10-26 게시본은 상호, 대표, 사업자등록번호만 있다.
+- [ ] 처리방침 11절대로 운영 서버의 운영자 접속 기록(SSH)을 1년 이상 남긴다. 기본 로그 회전은 이보다 짧다.
+- [ ] 처리방침 5절 3항의 「최대 37일」이 운영 서버 백업 정리 주기(일요일마다 `restic forget --keep-daily 30 --prune`)와 맞다.
 - [ ] 판매 지역: 첫 출시는 **한국만**(2026-10-15). EU를 빼면 「EU 거래자 자격(DSA)」 입력이 필요 없다. 중국 본토는 제외한다. 넓힐 때는 [출시 준비 결정](RELEASE-DECISIONS.md) 「해외 확장 순서」(2026-10-26)와 「해외 확장」을 본다. 2026-10-26 App Store Connect에 대한민국만 설정했다.
 - [ ] App Store Connect(새 계정 앱 등록 2026-10-20, Apple ID `6824725721`): 앱 정보, 설명·키워드·스크린샷, 개인정보 라벨, 연령 등급, 인앱 상품(묶음·광고 제거)과 유료 앱 계약. 유료 앱 계약·세금·은행 정보가 빠지면 스토어가 가격을 돌려주지 않아 화면에 가격이 안 나온다(PRD 4.12).
 - [ ] Google Play Console: 스토어 등록정보, 데이터 보안, 콘텐츠 등급, 인앱 상품. 개인 계정이면 **테스터 12명·14일 비공개 테스트**를 마쳤다.

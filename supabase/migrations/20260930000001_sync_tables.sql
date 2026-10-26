@@ -89,6 +89,13 @@ create table private.apple_tokens (
   user_id uuid primary key references auth.users(id) on delete cascade,
   refresh_token text not null
 );
+-- 카카오 연결 해제 웹훅이 다시 시도해도 지우지 못한 회원. 운영자가 웹훅을 다시 보내 지우면 줄도 사라진다.
+create table private.kakao_unlink_failures (
+  kakao_id text primary key,
+  referrer text not null,
+  step text not null,
+  failed_at timestamptz not null default now()
+);
 revoke all on schema private from anon, authenticated;
 
 -- 읽기는 자기 행만. 쓰기 정책을 만들지 않고 권한도 거둬 테이블 직접 쓰기를 막는다(RPC만 쓴다).

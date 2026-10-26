@@ -130,7 +130,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 ## 4단계: 스키마, 함수, 로그인
 
 - [ ] **스키마:** `supabase/migrations`의 파일 4개를 순서대로 적용한다. 방법은 SSH 터널로 Postgres에 붙어 `supabase db push --db-url`을 쓰는 것을 먼저 시험하고, 안 되면 `psql`로 파일을 차례로 넣는다(셀프호스팅 문서가 `db push`를 다루지 않는다). 확인: 테이블, RPC, `record-photos` 버킷, 접근 정책(RLS)이 개발 서버와 같다.
-- [ ] **함수:** `supabase/functions/delete-account`, `apple-link`, `_shared`를 `volumes/functions/`로 복사하고 `sh run.sh restart functions`. 셀프호스팅은 파일 복사가 공식 배포 방법이다.
+- [ ] **함수:** `supabase/functions/delete-account`, `apple-link`, `kakao-unlink`, `_shared`를 `volumes/functions/`로 복사하고 `sh run.sh restart functions`. 셀프호스팅은 파일 복사가 공식 배포 방법이다.
 - [ ] **함수 비밀값:** `.env.functions`에 `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY`를 넣는다. 두 함수가 읽는 `SUPABASE_SERVICE_ROLE_KEY`가 셀프호스팅 함수 환경에 들어오는지 확인한다(문서에는 새 키 이름만 나온다).
 - [ ] **함수의 로그인 검증 주소:** `supabase/functions/_shared/auth.ts`는 토큰 서명 키(JWKS) 주소와 issuer를 함수 환경의 `SUPABASE_URL`로 만든다.
   - 셀프호스팅에서 이 값은 내부 주소(`http://api-gw:8000`)이고, 토큰의 issuer는 외부 주소(`https://chagok-api.novum-lab.com/auth/v1`)일 수 있다.
@@ -138,6 +138,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
   - 확인: 운영 서버에서 로그인한 토큰으로 두 함수를 불러 본다. 실패하면 issuer 비교에 쓸 외부 주소를 함수 환경 변수로 따로 넘기도록 `auth.ts`를 고친다(코드 변경이므로 별도 작업).
 - [ ] **Apple 로그인:** `.env`의 `APPLE_ENABLED=true`, `APPLE_CLIENT_ID=com.novumlab.chagok`와 `docker-compose.yml` auth 서비스의 `GOTRUE_EXTERNAL_APPLE_*` 줄. 공식 문서는 웹 방식(Services ID와 secret)만 다룬다. 앱은 기기에서 받은 ID 토큰 방식이라 secret을 비워도 되는지 시험해서 정한다.
 - [x] **카카오와 Google 로그인:** 개발 서버(`chagok-dev`)와 같은 값을 `.env`와 auth 서비스의 `GOTRUE_EXTERNAL_KAKAO_*`, `GOTRUE_EXTERNAL_GOOGLE_*`에 넣는다. 카카오는 Client ID에 REST 키와 네이티브 앱 키를 쉼표로, 이메일 없는 사용자 허용. Google은 Client ID에 웹, iOS, Android 순으로 쉼표, nonce 확인 끔(`SKIP_NONCE_CHECK`). 함수 환경에 `KAKAO_ADMIN_KEY`. 값은 이 맥 `.secrets/kakao.env`, `.secrets/google.env`.
+- [ ] **카카오 연결 해제 웹훅:** 카카오 요청에는 Supabase 토큰도 API 키도 없다. 바깥에서 토큰과 키 없이 틀린 어드민 키로 `POST /functions/v1/kakao-unlink`를 보내 본문이 함수 응답(`{"error":"unauthorized"}`, 401)인지 본다. 게이트웨이가 막으면 본문이 다르다(`FUNCTIONS_VERIFY_JWT`, Kong 함수 라우트, Caddy 경로를 본다). 그다음 카카오 콘솔 [앱] > [웹훅] > [연결 해제 웹훅] 주소를 `https://chagok-api.novum-lab.com/functions/v1/kakao-unlink`로 바꾸고 [도구] > [웹훅 테스트]로 200과 함수 로그 `no_user`를 확인한다. 바꾸면 개발 서버로는 더 오지 않는다.
 - [ ] **Apple 말고 다른 가입을 모두 끄기:** `.env`에 `ENABLE_PHONE_SIGNUP=false`, `ENABLE_EMAIL_SIGNUP=false`, `ENABLE_ANONYMOUS_USERS=false`를 명시한다.
   - 셀프호스팅 `.env.example`의 기본값은 `ENABLE_PHONE_SIGNUP=true`, `ENABLE_PHONE_AUTOCONFIRM=true`다(2026-10-21 보안 검토에서 확인).
   - 그대로 두면 누구나 `POST /auth/v1/signup`에 아무 전화번호와 비밀번호를 보내, SMS 확인 없이 로그인된 계정을 얻는다.
