@@ -348,6 +348,35 @@ restic --no-lock restore latest --tag photos --target <폴더>
 - 운영에 아직 사용자, 기록, 사진이 없어 실제 데이터로는 비교하지 못했다. 첫 실사용 데이터가 생기면 같은 순서로 다시 한다.
 - 끝난 뒤 컨테이너와 이미지를 지우고 `colima stop`.
 
+## 운영 서버 감시
+
+Healthchecks.io 프로젝트 `chagok-prod`(계정 `novum-lab@naver.com`, 무료)가 신호를 받는다. 신호가 끊기거나 실패 신호가 오면 그 메일로 알린다. 점검 6개와 기준은 [운영 서버 계획](superpowers/plans/2026-10-21-production-server.md) 6단계.
+
+- 서버: `~/monitor/monitor.sh`(5분마다 API, 컨테이너, 디스크, 메모리), `~/backup/backup.sh`(매일 백업과 R2 용량). 신호 주소는 `~/monitor/hc.env`(비밀값).
+- 이 맥: API 키 `.secrets/prod/healthchecks.env`. `curl -H "X-Api-Key: $HC_API_KEY" https://healthchecks.io/api/v3/checks/`로 상태를 본다.
+- 로그: `journalctl --user -u chagok-monitor -u chagok-backup`.
+- 서버를 일부러 멈출 때(업데이트 등)는 알림이 온다. 미리 알고 있으면 무시하거나, Healthchecks.io 화면에서 점검을 잠깐 Pause한다. Pause한 점검은 다음 신호가 오면 다시 켜진다.
+
+## 운영 서버 업데이트
+
+Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 `update.sh`가 설정 파일을 새 판과 3방향으로 합친다. `.env` 값, `volumes/db/data`, `volumes/storage`는 건드리지 않지만 **DB와 사진을 백업하지는 않는다.** 지금 판은 `~/supabase/.supabase-version`에 있다(2026-10-26 `self-hosted/v0.8.3`). 모두 `ssh chagok@187.127.114.161`에서 한다.
+
+1. **바뀌는 것 읽기:** 새 태그의 `CHANGELOG.md`와 `upgrades.json`(깨지는 변경)을 읽는다. Postgres 큰 판이 바뀌면(17 → 18 등) 이 순서로 하지 않고 따로 계획한다.
+2. **백업:** `systemctl --user start chagok-backup.service`. Healthchecks.io의 백업이 방금 시각으로 초록인지 본다.
+3. **미리 보기:** `cd ~/supabase && sh update.sh --dry-run --to <태그>`. 바뀌는 파일과 충돌을 본다.
+4. **설정 합치기:** `sh update.sh --to <태그>`. 충돌이 나면 멈추고 손으로 고친다.
+5. **이미지 받기와 다시 띄우기:** `sh run.sh pull`, `sh run.sh recreate`. 한 태그의 이미지만 쓴다. 서비스 하나만 다른 판으로 올리지 않는다.
+6. **확인:**
+   - 컨테이너 11개가 healthy인지(`docker ps`).
+   - 포트가 여전히 `127.0.0.1`에만 열려 있는지(`ss -tlnp | grep -E ':(8000|5432|6543) '`). 우리 설정 `docker-compose.chagok.yml`은 공식 파일이 아니라 합치기에서 빠지지만, 공식 파일의 포트 줄이 바뀌면 다시 본다.
+   - 5분 안에 Healthchecks.io 6개가 모두 초록인지.
+   - 앱(개발 빌드를 운영 서버에 붙인 것)에서 로그인과 백업을 한 번.
+7. **기록:** 계획 문서나 HANDOFF에 날짜, 이전 태그, 새 태그를 적는다.
+
+되돌리기: `update.sh`가 바꾸기 전 설정을 `~/supabase/backups/`에 남긴다. 설정을 되돌리고 `sh run.sh recreate`. DB 구조가 이미 새 판으로 바뀌었으면 설정만 되돌려서는 안 되고 2번 백업에서 [복구](#운영-서버-복구)한다.
+
+이 순서는 아직 실제로 해 보지 않았다. 처음 할 때 `--dry-run` 결과를 보고 고친다.
+
 ## 실행 후 확인할 것
 
 지금 코드에서 **실기기 검증이 안 된 항목**이다.
