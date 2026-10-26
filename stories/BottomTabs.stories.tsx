@@ -40,7 +40,7 @@ function Records({initialGoal=null,initialView='timeline'}:{initialGoal?:string|
 function Stickers() {
   const [mine,setMine]=useState(false);
   const [open,setOpen]=useState<readonly ColorStickerPackId[]>([]);
-  return <StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('animals_normal','trial','2일 남음'),{...colorPack('snack_normal','locked'),price:'2,200원'},{...colorPack('sports_normal','locked'),price:'2,200원'}]}
+  return <StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('objects_normal','trial','2일 남음'),{...colorPack('snack_normal','locked'),price:'2,200원'},{...colorPack('sports_normal','locked'),price:'2,200원'}]}
     mine={mine} onChangeMine={setMine} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days:5,goal:7}} onOpenPack={noop}/>;
 }
 export const GoalsTab:Story={name:'1 목표 탭',render:()=><Stage tab="index" ad><Goals/></Stage>};

@@ -6,14 +6,14 @@ const now = new Date(2026, 9, 8, 14, 0).getTime();
 
 describe('packViews', () => {
   it('묶음 순서대로, 상태와 스티커 10종을 담는다', () => {
-    const views = packViews([{ packId: 'animals_normal', source: 'ad', grantedAt: now, expiresAt: now + AD_TRIAL_MS }], now);
+    const views = packViews([{ packId: 'objects_normal', source: 'ad', grantedAt: now, expiresAt: now + AD_TRIAL_MS }], now);
     expect(views.map((v) => [v.id, v.state])).toEqual([
-      ['basic', 'free'], ['sports_normal', 'locked'], ['snack_normal', 'locked'], ['objects_normal', 'locked'], ['animals_normal', 'trial'], ['emotions_normal', 'locked'], ['weather_normal', 'locked'],
+      ['basic', 'free'], ['sports_normal', 'locked'], ['snack_normal', 'locked'], ['objects_normal', 'trial'], ['animals_normal', 'free'], ['emotions_normal', 'free'], ['weather_normal', 'locked'],
     ]);
-    const animals = views.find((v) => v.id === 'animals_normal')!;
-    expect(animals).toMatchObject({ label: '동물', trialLabel: '24시간 남음' });
-    expect(animals.stickers).toHaveLength(10);
-    expect(animals.stickers.every((id) => id.startsWith('animals_normal.'))).toBe(true);
+    const objects = views.find((v) => v.id === 'objects_normal')!;
+    expect(objects).toMatchObject({ label: '사물', trialLabel: '24시간 남음' });
+    expect(objects.stickers).toHaveLength(10);
+    expect(objects.stickers.every((id) => id.startsWith('objects_normal.'))).toBe(true);
   });
   it('판 예시는 그 묶음의 서로 다른 5개', () => {
     const v = packViews([], now).find((p) => p.id === 'snack_normal')!;
@@ -52,6 +52,6 @@ describe('initialChoice — 「기본 스티커」를 열 때 고른 상태', ()
     expect(initialChoice('basic.star', [], now)).toEqual({ selected: 'basic.star', open: 'basic' });
   });
   it('잠긴 묶음 스티커로 열면(체험이 끝난 뒤 [다른 스티커]) 새싹을 고른 채로 연다', () => {
-    expect(initialChoice('animals_normal.cat', [], now)).toEqual({ selected: 'basic.sprout', open: 'basic' });
+    expect(initialChoice('weather_normal.sun', [], now)).toEqual({ selected: 'basic.sprout', open: 'basic' });
   });
 });

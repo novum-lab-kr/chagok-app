@@ -18,9 +18,9 @@ describe('RevenueCat 결제', () => {
   it('묶음과 광고 제거는 정해 둔 상품 ID로 산다', async () => {
     const sdk = fakeSdk();
     const store = createRevenueCatStore(sdk);
-    expect(await store.buyPack('animals_normal')).toEqual({ ok: true });
+    expect(await store.buyPack('sports_normal')).toEqual({ ok: true });
     expect(await store.buyAdFree()).toEqual({ ok: true });
-    expect(sdk.asked).toEqual([['com.novumlab.chagok.pack.animals_normal'], ['com.novumlab.chagok.adfree']]);
+    expect(sdk.asked).toEqual([['com.novumlab.chagok.pack.sports_normal'], ['com.novumlab.chagok.adfree']]);
   });
 
   it('결제 창을 닫으면 취소, 그 밖의 오류는 실패', async () => {
@@ -55,12 +55,12 @@ describe('RevenueCat 결제', () => {
   it('가격은 묶음·광고 제거 상품을 한 번에 묻고, 가격이 없는 상품은 뺀다', async () => {
     const sdk = fakeSdk({
       getProducts: async (ids) => ids.flatMap((identifier) =>
-        identifier.endsWith('animals_normal') ? [{ identifier, price: 2200, currencyCode: 'KRW', priceString: '₩2,200' }]
+        identifier.endsWith('sports_normal') ? [{ identifier, price: 2200, currencyCode: 'KRW', priceString: '₩2,200' }]
           : identifier.endsWith('adfree') ? [{ identifier, price: 4.99, currencyCode: 'USD', priceString: '$4.99' }]
             : identifier.endsWith('snack_normal') ? [{ identifier }] : []),
     });
     expect(await createRevenueCatStore(sdk).prices()).toEqual({
-      animals_normal: { amount: 2200, currency: 'KRW', text: '₩2,200' },
+      sports_normal: { amount: 2200, currency: 'KRW', text: '₩2,200' },
       adFree: { amount: 4.99, currency: 'USD', text: '$4.99' },
     });
   });

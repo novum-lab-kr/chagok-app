@@ -14,27 +14,27 @@ describe('placeGate', () => {
     expect(placeGate(goal('star'), [], now)).toEqual({ ok: true });
   });
   it('산 묶음과 체험 중인 묶음은 붙인다', () => {
-    const bought: PackAccess = { packId: 'animals_normal', source: 'purchase', grantedAt: 0, expiresAt: null };
-    const live: PackAccess = { packId: 'animals_normal', source: 'ad', grantedAt: now, expiresAt: now + 1 };
-    expect(placeGate(goal('animals_normal.cat'), [bought], now)).toEqual({ ok: true });
-    expect(placeGate(goal('animals_normal.cat'), [live], now)).toEqual({ ok: true });
+    const bought: PackAccess = { packId: 'sports_normal', source: 'purchase', grantedAt: 0, expiresAt: null };
+    const live: PackAccess = { packId: 'sports_normal', source: 'ad', grantedAt: now, expiresAt: now + 1 };
+    expect(placeGate(goal('sports_normal.run'), [bought], now)).toEqual({ ok: true });
+    expect(placeGate(goal('sports_normal.run'), [live], now)).toEqual({ ok: true });
   });
   it('끝난 광고 체험은 「하루」, 끝난 붙인 날 체험은 「3일」', () => {
-    expect(placeGate(goal('animals_normal.cat'), [{ packId: 'animals_normal', source: 'ad', grantedAt: 0, expiresAt: now - 1 }], now))
-      .toEqual({ ok: false, kind: '하루', packId: 'animals_normal' });
-    expect(placeGate(goal('animals_normal.cat'), [{ packId: 'animals_normal', source: 'days', grantedAt: 0, expiresAt: now - 1 }], now))
-      .toEqual({ ok: false, kind: '3일', packId: 'animals_normal' });
+    expect(placeGate(goal('sports_normal.run'), [{ packId: 'sports_normal', source: 'ad', grantedAt: 0, expiresAt: now - 1 }], now))
+      .toEqual({ ok: false, kind: '하루', packId: 'sports_normal' });
+    expect(placeGate(goal('sports_normal.run'), [{ packId: 'sports_normal', source: 'days', grantedAt: 0, expiresAt: now - 1 }], now))
+      .toEqual({ ok: false, kind: '3일', packId: 'sports_normal' });
   });
   it('체험 기록 없이 잠긴 묶음은 「3일」로 안내한다', () => {
-    expect(placeGate(goal('animals_normal.cat'), [], now)).toEqual({ ok: false, kind: '3일', packId: 'animals_normal' });
+    expect(placeGate(goal('sports_normal.run'), [], now)).toEqual({ ok: false, kind: '3일', packId: 'sports_normal' });
   });
 });
 
 describe('stickerUsableUntil', () => {
   it('기본·산 묶음은 기한 없음(null), 체험 중은 끝나는 시각, 잠긴 묶음은 0', () => {
     expect(stickerUsableUntil(goal('basic.star'), [], now)).toBeNull();
-    expect(stickerUsableUntil(goal('animals_normal.cat'), [{ packId: 'animals_normal', source: 'purchase', grantedAt: 0, expiresAt: null }], now)).toBeNull();
-    expect(stickerUsableUntil(goal('animals_normal.cat'), [{ packId: 'animals_normal', source: 'ad', grantedAt: now, expiresAt: now + 5 }], now)).toBe(now + 5);
-    expect(stickerUsableUntil(goal('animals_normal.cat'), [], now)).toBe(0);
+    expect(stickerUsableUntil(goal('sports_normal.run'), [{ packId: 'sports_normal', source: 'purchase', grantedAt: 0, expiresAt: null }], now)).toBeNull();
+    expect(stickerUsableUntil(goal('sports_normal.run'), [{ packId: 'sports_normal', source: 'ad', grantedAt: now, expiresAt: now + 5 }], now)).toBe(now + 5);
+    expect(stickerUsableUntil(goal('sports_normal.run'), [], now)).toBe(0);
   });
 });
