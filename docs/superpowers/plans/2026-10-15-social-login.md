@@ -226,7 +226,7 @@ export async function makeNonce(): Promise<{ raw: string; hashed: string }>;
 - [ ] **Google:** 브랜드 확인을 받고 「프로덕션」으로 바꾼다. 처리방침의 정식 도메인과 승인된 도메인 확인이 먼저 필요하다.
 - [ ] **카카오:** 앱 아이콘·이름·사업자 정보를 확인하고, 동의 항목이 실제로 쓰는 것과 같은지 본다.
 - [ ] **알림 받기(선택이지만 권장)**
-  - 카카오: 2026-10-26 정함, 지운다. `kakao-unlink` 함수와 계획 `docs/superpowers/plans/2026-10-26-kakao-unlink-webhook.md`.
+  - 카카오: 2026-10-26 정함, 지운다. `kakao-unlink` 함수(구현 계획은 끝나서 지웠다, git 기록에 있다).
   - Apple 서버 알림(`consent-revoked`, `account-delete`)은 아직. 지울지, 로그인만 풀지는 그때 사용자가 정한다.
 - [ ] **처리방침 1판과 스토어 개인정보 답안:** Google·카카오를 수집 경로에 더하고, 이메일 칸을 수단별로 적는다.
 - [ ] **심사 메모:** App Review 노트에 「Apple 로그인을 Google·카카오와 같은 크기로 제공한다」고 적는다(심사 기준 4.8).
