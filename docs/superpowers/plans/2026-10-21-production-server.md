@@ -137,7 +137,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
   - 어긋나면 계정 삭제와 Apple 연결이 401로 실패한다. 막히는 쪽으로 실패하므로 보안 문제는 아니다.
   - 확인: 운영 서버에서 로그인한 토큰으로 두 함수를 불러 본다. 실패하면 issuer 비교에 쓸 외부 주소를 함수 환경 변수로 따로 넘기도록 `auth.ts`를 고친다(코드 변경이므로 별도 작업).
 - [ ] **Apple 로그인:** `.env`의 `APPLE_ENABLED=true`, `APPLE_CLIENT_ID=com.novumlab.chagok`와 `docker-compose.yml` auth 서비스의 `GOTRUE_EXTERNAL_APPLE_*` 줄. 공식 문서는 웹 방식(Services ID와 secret)만 다룬다. 앱은 기기에서 받은 ID 토큰 방식이라 secret을 비워도 되는지 시험해서 정한다.
-- [ ] **카카오와 Google 로그인:** 개발 서버(`chagok-dev`)와 같은 값을 `.env`와 auth 서비스의 `GOTRUE_EXTERNAL_KAKAO_*`, `GOTRUE_EXTERNAL_GOOGLE_*`에 넣는다. 카카오는 Client ID에 REST 키와 네이티브 앱 키를 쉼표로, 이메일 없는 사용자 허용. Google은 Client ID에 웹, iOS, Android 순으로 쉼표, nonce 확인 끔(`SKIP_NONCE_CHECK`). 함수 환경에 `KAKAO_ADMIN_KEY`. 값은 이 맥 `.secrets/kakao.env`, `.secrets/google.env`.
+- [x] **카카오와 Google 로그인:** 개발 서버(`chagok-dev`)와 같은 값을 `.env`와 auth 서비스의 `GOTRUE_EXTERNAL_KAKAO_*`, `GOTRUE_EXTERNAL_GOOGLE_*`에 넣는다. 카카오는 Client ID에 REST 키와 네이티브 앱 키를 쉼표로, 이메일 없는 사용자 허용. Google은 Client ID에 웹, iOS, Android 순으로 쉼표, nonce 확인 끔(`SKIP_NONCE_CHECK`). 함수 환경에 `KAKAO_ADMIN_KEY`. 값은 이 맥 `.secrets/kakao.env`, `.secrets/google.env`.
 - [ ] **Apple 말고 다른 가입을 모두 끄기:** `.env`에 `ENABLE_PHONE_SIGNUP=false`, `ENABLE_EMAIL_SIGNUP=false`, `ENABLE_ANONYMOUS_USERS=false`를 명시한다.
   - 셀프호스팅 `.env.example`의 기본값은 `ENABLE_PHONE_SIGNUP=true`, `ENABLE_PHONE_AUTOCONFIRM=true`다(2026-10-21 보안 검토에서 확인).
   - 그대로 두면 누구나 `POST /auth/v1/signup`에 아무 전화번호와 비밀번호를 보내, SMS 확인 없이 로그인된 계정을 얻는다.
@@ -157,7 +157,17 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - 함수: `_shared`, `apple-link`, `delete-account`를 `volumes/functions/`로 복사(예제 `hello`는 지움). Apple 값 네 개는 서버 `.env`의 `APPLE_*`에 두고 override의 functions 환경으로 넘긴다. 개발 서버 secret과 해시로 같은 값임을 확인.
 - 함수 발급자 비교: 셀프호스팅 함수의 `SUPABASE_URL`은 `http://api-gw:8000`이라 `auth.ts`가 `SUPABASE_PUBLIC_URL`을 쓰도록 고쳤다(브랜치 `fix/functions-public-issuer`). 클라우드 함수 환경에는 `SUPABASE_PUBLIC_URL`이 없다(`supabase secrets list`로 확인).
 - 서버 테스트: 이메일 로그인을 잠깐 켜고 터널로 `__tests__/server` 32개 통과, 바로 끔. 남은 사용자, 파일, 행 0.
-- **7단계 직전 점검:** 그때의 최종 마이그레이션으로 운영 DB를 지우고 다시 넣는다(출시 전이라 가능, 매번 허락받고). 함수도 최신으로 다시 복사하고 서버 테스트를 다시 돌린다. 카카오, Google, 9단계(최소 앱 버전)가 스키마를 바꿀 수 있다.
+- **7단계 직전 점검:** 운영 DB에 적용된 마이그레이션과 main을 비교해, 바뀌었을 때만 운영 DB를 지우고 다시 넣는다(출시 전이라 가능, 매번 허락받고). 함수는 최신으로 다시 복사하고 서버 테스트를 다시 돌린다. 9단계(최소 앱 버전)가 스키마를 바꿀 수 있다.
+
+**4단계 결과 (2026-10-26, 카카오와 Google, 7단계 직전 점검)**
+
+- 카카오와 Google: 기기에서 받은 ID 토큰을 넘기는 방식이라 auth에는 켜기와 Client ID만 넣었다. secret과 redirect 주소는 넣지 않았다(redirect 방식에서만 쓴다). 값은 개발 서버와 같고 서버 `.env`의 `KAKAO_CLIENT_ID`, `GOOGLE_CLIENT_ID`, `KAKAO_ADMIN_KEY`에서 `docker-compose.chagok.yml`이 넘긴다. 바꾸기 전 파일은 `.env.pre-social-20261026`, `docker-compose.chagok.yml.bak-20261026`.
+- `/auth/v1/settings`의 `external`은 `apple`, `google`, `kakao`만 true. **실제 로그인은 운영 빌드의 TestFlight에서 확인한다.**
+- Google Client ID에는 웹, iOS, Android 디버그만 있다. Android 출시 서명의 Client ID는 첫 Android 운영 빌드 뒤에 더한다.
+- 운영 DB: 적용 기록의 마이그레이션 4개가 main과 같고, 마이그레이션 파일은 10-12 뒤로 바뀌지 않아 지우지 않았다.
+- 함수: `_shared/kakao.ts`가 없고 `delete-account`가 옛 판(카카오 연결 끊기 전)이라 main으로 다시 복사했다. 바꾸기 전 폴더는 `volumes/functions.bak-20261026`. 방법은 [개발 설정](../../DEV-SETUP.md) 「운영 서버 함수 올리기」.
+- 서버 테스트 32개 통과. 이메일 로그인은 바로 다시 껐고 남은 사용자, 사진, 행 0. **카카오 연결 끊기는 서버 테스트가 다루지 않아 TestFlight에서 계정 삭제로 확인한다.**
+- 출시 뒤에는 운영에서 서버 테스트를 돌리지 않는다(로그인이 몇 초씩 끊기고 가입 창구가 잠깐 열린다). 이유와 대신 할 확인은 DEV-SETUP 같은 절.
 
 ## 5단계: 매일 백업과 복구 연습
 

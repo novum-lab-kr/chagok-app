@@ -357,6 +357,55 @@ Healthchecks.io 프로젝트 `chagok-prod`(계정 `novum-lab@naver.com`, 무료)
 - 로그: `journalctl --user -u chagok-monitor -u chagok-backup`.
 - 서버를 일부러 멈출 때(업데이트 등)는 알림이 온다. 미리 알고 있으면 무시하거나, Healthchecks.io 화면에서 점검을 잠깐 Pause한다. Pause한 점검은 다음 신호가 오면 다시 켜진다.
 
+## 운영 서버 함수 올리기
+
+셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
+
+```sh
+# 이 맥 (main 체크아웃)
+COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account
+scp /tmp/fn.tgz chagok@187.127.114.161:~/fn.tgz && rm /tmp/fn.tgz
+
+# 서버
+cd ~/supabase/volumes
+cp -a functions functions.bak-<날짜>
+cd functions && rm -rf _shared apple-link delete-account && tar -xzf ~/fn.tgz && rm ~/fn.tgz
+cd ~/supabase && sh run.sh recreate functions
+```
+
+- **`COPYFILE_DISABLE=1`을 꼭 붙인다.** 없으면 맥 tar가 `._apple.ts` 같은 부속 파일을 함께 넣는다(2026-10-26).
+- **묶음은 파일로 보낸다.** `tar ... | ssh '...' <<EOF`처럼 원격 명령을 heredoc으로 넘기면서 묶음을 같은 입력에 섞으면, 원격 셸이 묶음을 명령으로 읽고 아무것도 하지 않는다.
+- **다시 띄울 때는 `sh run.sh`를 쓴다.** `docker compose up`은 우리 설정 `docker-compose.chagok.yml`을 빼고 띄워 카카오, Google, 함수 비밀값이 사라질 수 있다.
+- 되돌리기: `rm -rf functions && mv functions.bak-<날짜> functions && sh run.sh recreate functions`.
+
+**올린 뒤 확인** — 로그인을 끊지 않는 확인만 한다. 출시 뒤에도 이것만 한다.
+
+- 서버 파일이 main과 같은지: 양쪽에서 `sha256sum`(맥은 `shasum -a 256`)을 비교한다.
+- `supabase-edge-functions`가 healthy이고 `docker logs --since 10m supabase-edge-functions`에 오류가 없는지.
+- 토큰 없이 부르면 막히는지: `curl -X POST http://127.0.0.1:8000/functions/v1/delete-account`와 `apple-link`가 401.
+- `/auth/v1/settings`의 `external`이 `apple`, `google`, `kakao`만 true인지.
+- 5분 안에 Healthchecks.io 6개가 모두 초록인지.
+
+**운영 서버 테스트 (출시 전까지만, 2026-10-26 결정)**
+
+`__tests__/server`는 관리 키로 테스트 사용자를 만들고 이메일과 비밀번호로 로그인한다. 운영은 이메일 로그인이 꺼져 있어, 돌리는 동안만 켠다.
+
+```sh
+# 서버: 켜기
+cd ~/supabase && sed -i "s|^ENABLE_EMAIL_SIGNUP=.*|ENABLE_EMAIL_SIGNUP=true|" .env && sh run.sh recreate auth
+
+# 이 맥: 터널을 열고 돌린다. server-test.env는 http://127.0.0.1:18000과 운영 키를 가리킨다
+ssh -f -N -L 18000:127.0.0.1:8000 chagok@187.127.114.161
+set -a; . .secrets/prod/server-test.env; set +a
+npx jest __tests__/server --runInBand
+pkill -f "ssh .*-L 18000:127.0.0.1:8000"
+
+# 서버: 끄기, 그리고 남은 사용자, 사진, 행이 0인지 본다
+sed -i "s|^ENABLE_EMAIL_SIGNUP=.*|ENABLE_EMAIL_SIGNUP=false|" .env && sh run.sh recreate auth
+```
+
+출시 뒤에는 운영에서 돌리지 않는다. 켜고 끌 때 auth를 두 번 다시 띄워 그때마다 몇 초 로그인과 토큰 갱신이 실패한다. 켜져 있는 동안은 누구나 이메일 가입을 보낼 수 있다(자동 확인이 꺼져 있어 로그인은 못 하지만 계정 행은 남을 수 있다). 중간에 끊기면 `@chagok.test` 계정이 운영에 남는다. 출시 뒤에는 전체 테스트를 [개발 서버](#개발-서버-백업복원-개발)에서 돌리고, 운영은 위 「올린 뒤 확인」만 한다. 셀프호스팅에서만 생기는 문제(2026-10-21 함수의 토큰 발급자 주소처럼)는 운영 로그로 찾는다.
+
 ## 운영 서버 업데이트
 
 Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 `update.sh`가 설정 파일을 새 판과 3방향으로 합친다. `.env` 값, `volumes/db/data`, `volumes/storage`는 건드리지 않지만 **DB와 사진을 백업하지는 않는다.** 지금 판은 `~/supabase/.supabase-version`에 있다(2026-10-26 `self-hosted/v0.8.3`). 모두 `ssh chagok@187.127.114.161`에서 한다.
