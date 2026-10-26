@@ -79,6 +79,12 @@ export default function AppSettings() {
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
   useEffect(() => subscribeSyncStatus(() => { void load(); }), [load]);
+  // 서버에서 계정이 지워져 토큰 갱신이 실패하면 세션이 풀린다 — 보고 있는 중에도 바로 「로그인이 필요해요」로 바꾼다 (2026-10-26)
+  useEffect(() => {
+    if (!supabase) return;
+    const { data } = supabase.auth.onAuthStateChange(() => { void load(); });
+    return () => data.subscription.unsubscribe();
+  }, [supabase, load]);
 
   /** 서버 쪽 일이 끝난 뒤에만 기기를 비운다 (계정·백업 설계 ①). */
   const finishLogout = async () => {
