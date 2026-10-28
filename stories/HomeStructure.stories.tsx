@@ -85,7 +85,7 @@ function NewCalendarGoal({withEnd}: {withEnd: boolean}) {
 /** 튜토리얼은 열릴 때 첫 버튼에 포커스를 준다. Docs 한 페이지에 여러 개를 그리면 페이지 스크롤을 끌고 가므로 Docs에서는 끈다. */
 function FirstRunTutorial({index, children, autoFocus = true}: {index: number; children: ReactNode; autoFocus?: boolean}) {
   const {width} = useWindowDimensions();
-  return <FirstRunTutorialFrame index={index} autoFocus={autoFocus} onNext={noop} onSkip={noop} style={{width: Math.min(width, 390), height: 844}}>{children}</FirstRunTutorialFrame>;
+  return <FirstRunTutorialFrame index={index} autoFocus={autoFocus} onNext={noop} onPrev={noop} onSkip={noop} style={{width: Math.min(width, 390), height: 844}}>{children}</FirstRunTutorialFrame>;
 }
 
 const longTally: Goal = {...goals.reading, totalSlots: 100};

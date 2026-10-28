@@ -36,7 +36,7 @@ export function useTutorialSpot(name:TutorialSpotName) {
  * 예시 화면(children)을 누를 수 없게 깔고 그 위에 스포트라이트를 띄운다.
  * 같은 좌표면 상태를 바꾸지 않고, context 값은 단계가 바뀔 때만 새로 만든다. 그러지 않으면 측정 → 렌더 → 측정이 끝없이 돈다.
  */
-export function FirstRunTutorialFrame({index,children,onNext,onSkip,autoFocus=true,style}:{index:number;children:ReactNode;onNext:()=>void;onSkip:()=>void;/** 한 페이지에 여러 개를 그리는 문서 화면에서는 끈다 */autoFocus?:boolean;style?:StyleProp<ViewStyle>}) {
+export function FirstRunTutorialFrame({index,children,onNext,onPrev,onSkip,autoFocus=true,style}:{index:number;children:ReactNode;onNext:()=>void;onPrev:()=>void;onSkip:()=>void;/** 한 페이지에 여러 개를 그리는 문서 화면에서는 끈다 */autoFocus?:boolean;style?:StyleProp<ViewStyle>}) {
   const {ref:root,size,onLayout}=useLayoutSize();
   const [target,setTarget]=useState<LayoutRectangle>();
   const step=firstRunSteps[index],last=index===firstRunSteps.length-1;
@@ -45,8 +45,8 @@ export function FirstRunTutorialFrame({index,children,onNext,onSkip,autoFocus=tr
   return <SpotContext.Provider value={spot}>
     <View ref={root} style={style} onLayout={onLayout}>
       <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{flex:1}}>{children}</View>
-      {target&&size.width>0&&<TutorialSpotlight autoFocus={autoFocus} step={index===0?1:3} highlightFrame={index===0||last} target={target} width={size.width} height={size.height} onNext={onNext} onSkip={onSkip}
-        content={{step:`${index+1} / ${firstRunSteps.length}`,title:step.title,description:step.description,primaryLabel:last?'시작하기':'다음',secondaryLabel:'건너뛰기'}}/>}
+      {target&&size.width>0&&<TutorialSpotlight autoFocus={autoFocus} step={index===0?1:3} target={target} width={size.width} height={size.height} onNext={onNext} onPrev={index>0?onPrev:undefined} onSkip={last?undefined:onSkip}
+        content={{step:`${index+1} / ${firstRunSteps.length}`,title:step.title,description:step.description,primaryLabel:last?'시작하기':'다음',secondaryLabel:'이전'}}/>}
     </View>
   </SpotContext.Provider>;
 }
@@ -87,5 +87,5 @@ export function TutorialCompletedExample() {
 export function FirstRunTutorial({onFinish}:{onFinish:()=>void}) {
   const [index,setIndex]=useState(0);
   const screen=index===0?<TutorialListExample/>:index===1?<TutorialNewGoalExample/>:index<4?<TutorialBoardExample/>:<TutorialCompletedExample/>;
-  return <FirstRunTutorialFrame key={index} index={index} style={{flex:1}} onSkip={onFinish} onNext={()=>index===firstRunSteps.length-1?onFinish():setIndex(index+1)}>{screen}</FirstRunTutorialFrame>;
+  return <FirstRunTutorialFrame key={index} index={index} style={{flex:1}} onSkip={onFinish} onPrev={()=>setIndex(index-1)} onNext={()=>index===firstRunSteps.length-1?onFinish():setIndex(index+1)}>{screen}</FirstRunTutorialFrame>;
 }
