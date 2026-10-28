@@ -1,0 +1,128 @@
+<title>튜토리얼 건너뛰기 자리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 위에 정해진 것, 가운데 안 3개(캡처 + 고르기 + 메모), 아래 전체 메모. 앱 색을 그대로 쓴다. */
+@font-face{font-family:"NeoDGM";src:url(data:font/ttf;base64,__FONT__) format("truetype");font-display:swap}
+:root{--bg:#AFE1CB;--panel:#FEF1D1;--ink:#06261C;--muted:#3d5a4f;--accent:#FD855F;--line:#06261C;--pixel:"NeoDGM","Apple SD Gothic Neo",sans-serif;--body:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d2a21;--panel:#183b30;--ink:#eaf5ec;--muted:#a8c4b6;--accent:#FD855F;--line:#AFE1CB;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d2a21;--panel:#183b30;--ink:#eaf5ec;--muted:#a8c4b6;--accent:#FD855F;--line:#AFE1CB;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
+main{max-width:1100px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+h1,h2{font-family:var(--pixel);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:30px}h2{font-size:20px}
+p{margin:0}
+.box{background:var(--panel);border:3px solid var(--line);padding:18px;display:grid;gap:12px;min-width:0}
+.fixed ul{margin:0;padding-left:20px}
+.opt.picked{outline:4px solid var(--accent);outline-offset:3px}
+.shot{overflow-x:auto;border:2px solid var(--line)}
+.shot img{display:block;width:100%;min-width:620px;max-width:none;height:auto}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.tag{font-family:var(--pixel);font-size:13px;border:2px solid var(--line);padding:0 8px}
+.tag.rec{background:var(--accent);color:#06261C;border-color:#06261C}
+button{font:inherit;font-family:var(--pixel);cursor:pointer;background:var(--panel);color:var(--ink);border:3px solid var(--line);padding:6px 14px}
+button[aria-pressed="true"]{background:var(--accent);color:#06261C;border-color:#06261C}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea{width:100%;box-sizing:border-box;min-height:64px;font:inherit;background:var(--bg);color:var(--ink);border:2px solid var(--line);padding:8px}
+.state{font-size:13px;color:var(--muted)}
+.muted{color:var(--muted);font-size:14px}
+</style>
+<main>
+  <header style="display:grid;gap:8px">
+    <h1>튜토리얼 건너뛰기 자리</h1>
+    <p>단계 숫자 오른쪽에 건너뛰기, 아래에 이전과 다음. 건너뛰기를 어떤 모양으로 둘지 골라 주세요.</p>
+    <p class="state" id="store-state">저장소에 연결하는 중…</p>
+  </header>
+
+  <section class="box fixed">
+    <h2>세 안 모두 같은 것</h2>
+    <ul>
+      <li>아래 버튼은 「이전」과 「다음」. 마지막 5단계는 「시작하기」.</li>
+      <li>1단계의 「이전」은 흐리게 두고 누를 수 없어요. 버튼 자리가 단계마다 바뀌지 않게요.</li>
+      <li>5단계에는 건너뛰기가 없어요. 「시작하기」가 곧 끝내기라서요.</li>
+      <li>1단계(＋)와 5단계(완성 배지)의 튜토리얼 포커스 링은 뺍니다. 3단계 빈칸의 링은 판 자체의 「가장 작은 빈칸」 표시라 그대로예요.</li>
+      <li>캡처는 앱의 실제 컴포넌트(PixelFrame, PixelText, PixelButton)를 Storybook에서 렌더했어요. 360pt 상자, 1, 2, 5단계.</li>
+    </ul>
+  </section>
+
+  <div id="opts" style="display:grid;gap:24px"></div>
+
+  <section class="box">
+    <h2>전체 메모</h2>
+    <textarea id="note-all" data-k="note-tutnav-all" aria-label="전체 메모" placeholder="안과 상관없이 하고 싶은 말"></textarea>
+    <span class="state" id="state-note-tutnav-all"></span>
+  </section>
+  <p class="muted">확인한 규정: 앱 안 튜토리얼의 버튼 배치를 정한 스토어 심사 지침이나 법 조항은 없어요. Apple HIG 「Onboarding」 원문은 이번에 열어 보지 못했어요(페이지가 스크립트로만 그려져 읽기 도구가 본문을 못 가져옴). 외부 자원(로고, 폰트)은 새로 쓰지 않아요.</p>
+</main>
+<script>
+const SHOTS = {/*__SHOTS__*/};
+const OPTS = [
+  {id: 'a', code: 'A', title: '글자 건너뛰기', rec: true, img: 'text-link',
+   why: '단계 숫자와 같은 크기의 밑줄 글자예요. 눈에 덜 띄어서 「다음」으로 시선이 가고, 상자 높이도 지금과 같아요. 누르는 범위는 44pt로 넓혀 둬요.',
+   cost: '픽셀 글꼴의 밑줄이 조금 가늘어 보여요.'},
+  {id: 'b', code: 'B', title: '작은 버튼', img: 'small-button',
+   why: '앱의 보조 버튼 모양을 작게 썼어요. 누를 수 있다는 게 가장 분명해요.',
+   cost: '위쪽 줄이 22pt쯤 높아져 상자가 커지고, 버튼이 세 개로 보여 무게가 나뉘어요.'},
+  {id: 'c', code: 'C', title: '닫기 아이콘', img: 'close-icon',
+   why: '가장 가볍고 익숙한 모양이에요. 읽어 주는 이름은 「건너뛰기」예요.',
+   cost: 'X는 「닫기」로 읽혀서, 다시 볼 수 없다고 느낄 수 있어요(앱 설정에서 다시 보기가 있다는 건 안 보여요). 앱에 X 아이콘을 새로 더해야 해요.'},
+];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+$('opts').innerHTML = OPTS.map(o => `<article class="box opt" id="opt-${o.id}">
+  <div class="row"><h2>${o.code}. ${esc(o.title)}</h2>${o.rec ? '<span class="tag rec">추천</span>' : ''}</div>
+  <div class="shot"><img src="${SHOTS[o.img]}" alt="${o.code}안: 1, 2, 5단계 다이얼로그"></div>
+  <p>${esc(o.why)}</p><p class="muted">아쉬운 점: ${esc(o.cost)}</p>
+  <div class="row"><button type="button" data-pick="${o.id}" aria-pressed="false">${o.code}로 하기</button><span class="state" data-state="choice-tutnav"></span></div>
+  <textarea id="note-${o.id}" data-k="note-tutnav-${o.id}" aria-label="${o.code}안 메모" placeholder="${o.code}안에 대한 메모"></textarea>
+  <span class="state" data-state="note-tutnav-${o.id}"></span>
+</article>`).join('');
+$('state-note-tutnav-all').dataset.state = 'note-tutnav-all';
+
+// ---- 고르기와 메모 저장 (db review/choice-tutnav, review/note-tutnav-<a|b|c|all>) ----
+const state = {pick: '', notes: {}};
+const LS = 'chagok-tutorial-nav-1';
+try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); state.pick = l.pick || ''; Object.assign(state.notes, l.notes || {}); } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+function paint() {
+  for (const o of OPTS) { $(`opt-${o.id}`).classList.toggle('picked', state.pick === o.id); document.querySelector(`[data-pick="${o.id}"]`).setAttribute('aria-pressed', String(state.pick === o.id)); }
+  for (const t of document.querySelectorAll('textarea[data-k]')) { const x = state.notes[t.dataset.k] || ''; if (document.activeElement !== t && t.value !== x) t.value = x; }
+}
+function setStatus(k, t) { for (const el of document.querySelectorAll(`[data-state="${k}"]`)) el.textContent = t; }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+async function persist(k) {
+  saveLocal();
+  if (!db) { setStatus(k, '이 브라우저에만 저장됐어요'); return; }
+  if (writing[k]) { queued[k] = true; return; }
+  writing[k] = true; setStatus(k, '저장 중…');
+  const at = new Date().toISOString();
+  try {
+    await db.doc(`review/${k}`).set(k === 'choice-tutnav' ? {value: state.pick, updatedAt: at} : {note: state.notes[k] || '', updatedAt: at});
+    setStatus(k, k === 'choice-tutnav' ? '고른 것을 저장했어요' : '저장했어요');
+  } catch (e) { setStatus(k, '저장하지 못했어요. 대화로 알려 주세요'); }
+  finally { writing[k] = false; if (queued[k]) { queued[k] = false; persist(k); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  state.pick = state.pick === b.dataset.pick ? '' : b.dataset.pick; paint(); persist('choice-tutnav');
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-k]'); if (!t) return;
+  const k = t.dataset.k; state.notes[k] = t.value; setStatus(k, '적는 중…');
+  clearTimeout(timers[k]); timers[k] = setTimeout(() => persist(k), 800);
+});
+paint();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장돼요. 고른 안은 대화로 알려 주세요'; return; }
+  db = got; $('store-state').textContent = '고른 안과 메모는 Claude가 읽을 수 있게 저장돼요';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id === 'choice-tutnav') { if (typeof v.value === 'string') state.pick = v.value; continue; }
+      if (!/^note-tutnav-(a|b|c|all)$/.test(d.id)) continue;
+      const t = document.activeElement; state.notes[d.id] = t && t.dataset && t.dataset.k === d.id ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요. 고른 안은 대화로 알려 주세요'; });
+})();
+</script>
