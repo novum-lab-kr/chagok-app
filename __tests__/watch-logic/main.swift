@@ -118,11 +118,16 @@ test("누름: 적립판 빈칸이나 [붙이기]는 add, 마지막 칸이면 완
   expectEqual(Tap.stick(tallyGoal("a", cells: [.placed])), .none)
 }
 
-test("누름: 오늘 칸은 떼고, 지난 칸과 기록 있는 칸은 안내") {
-  let g = tallyGoal("a", cells: [.placed, .placedToday, .placedToday], recorded: [2])
-  expectEqual(Tap.tally(g, index: 1), .remove(slot: 1))
+test("누름: 오늘 칸은 짧게 누르면 다음 빈칸에 붙이고 꾹 눌러야 뗀다 (2026-10-28)") {
+  let g = tallyGoal("a", cells: [.placed, .placedToday, .placedToday, .empty, .empty], recorded: [2])
+  expectEqual(Tap.tally(g, index: 1), .add)
+  expectEqual(Tap.tally(g, index: 2), .add)
   expectEqual(Tap.tally(g, index: 0), .toast(Copy.pastCell))
-  expectEqual(Tap.tally(g, index: 2), .toast(Copy.pastCell))
+  expectEqual(Tap.tallyHold(g, index: 1), .remove(slot: 1))
+  expectEqual(Tap.tallyHold(g, index: 2), .toast(Copy.pastCell))
+  expectEqual(Tap.tallyHold(g, index: 0), .toast(Copy.pastCell))
+  expectEqual(Tap.tallyHold(g, index: 3), .none)
+  expectEqual(Tap.tally(tallyGoal("a", cells: [.placedToday, .placedToday]), index: 0), .none)
 }
 
 test("누름: 체험이 끝난 목표는 붙이지 않고 안내") {
@@ -131,15 +136,18 @@ test("누름: 체험이 끝난 목표는 붙이지 않고 안내") {
 
 test("누름: 달력판") {
   let g = calGoal("c", days: october([3: .placed, 16: .placedToday, 5: .outside]), recorded: [])
-  expectEqual(Tap.day(g, day: 16), .remove(slot: 15))
+  expectEqual(Tap.day(g, day: 16), .none)
+  expectEqual(Tap.dayHold(g, day: 16), .remove(slot: 15))
   expectEqual(Tap.day(g, day: 3), .toast(Copy.pastDay))
+  expectEqual(Tap.dayHold(g, day: 3), .toast(Copy.pastDay))
+  expectEqual(Tap.dayHold(g, day: 4), .none)
   expectEqual(Tap.day(g, day: 4), .addOn(dateKey: "2026-10-04"))
   expectEqual(Tap.day(g, day: 5), .none)
   expectEqual(Tap.day(g, day: 20), .none)
   let last = calGoal("c", days: october(), remaining: 1)
   expectEqual(Tap.day(last, day: 16), .confirmOn(dateKey: "2026-10-16"))
   let rec = calGoal("c", days: october([16: .placedToday]), recorded: [15])
-  expectEqual(Tap.day(rec, day: 16), .toast(Copy.pastDay))
+  expectEqual(Tap.dayHold(rec, day: 16), .toast(Copy.pastDay))
 }
 
 test("성장: 지금 붙어 있는 수 — 떼면 줄고 다시 붙이면 는다 (2026-10-17)") {

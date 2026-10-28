@@ -31,12 +31,10 @@ struct TallyView: View {
         VStack(spacing: 9) {
           LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: 5), count: 5), spacing: 5) {
             ForEach(start..<(start + n), id: \.self) { k in
-              Button { tap(k) } label: {
-                SlotCell(goal: goal, number: k + 1, state: cells[k] == .empty ? (k == next ? .next : .empty) : .filled)
-                  .scaleEffect(k == pop ? 1.18 : 1)
-              }
-              .buttonStyle(.plain)
-              .accessibilityLabel("\(k + 1)번 칸, \(cells[k] == .empty ? "비었어요" : "붙였어요")")
+              SlotCell(goal: goal, number: k + 1, state: cells[k] == .empty ? (k == next ? .next : .empty) : .filled)
+                .scaleEffect(k == pop ? 1.18 : 1)
+                .press("\(k + 1)번 칸, \(cells[k] == .empty ? "비었어요" : "붙였어요")",
+                       tap: { handle(Tap.tally(goal, index: k)) }, hold: { handle(Tap.tallyHold(goal, index: k)) })
             }
           }
           .frame(width: 170)
@@ -50,8 +48,6 @@ struct TallyView: View {
       if let t = toast.text { Toast(text: t).frame(width: Layout.width).offset(y: 200) }
     }
   }
-
-  private func tap(_ k: Int) { handle(Tap.tally(goal, index: k)) }
 
   private func handle(_ r: TapResult) {
     switch r {
@@ -78,11 +74,9 @@ struct CalendarView: View {
         ScrollView {
           VStack(spacing: 8) {
             if let today, today <= days.count {
-              Button { handle(Tap.day(goal, day: today)) } label: {
-                SlotCell(goal: goal, number: today, state: days[today - 1] == .placedToday || days[today - 1] == .placed ? .filled : .next, size: 64)
-              }
-              .buttonStyle(.plain)
-              .accessibilityLabel("오늘, \(days[today - 1] == .empty ? "비었어요" : "붙였어요")")
+              SlotCell(goal: goal, number: today, state: days[today - 1] == .placedToday || days[today - 1] == .placed ? .filled : .next, size: 64)
+                .press("오늘, \(days[today - 1] == .empty ? "비었어요" : "붙였어요")",
+                       tap: { handle(Tap.day(goal, day: today)) }, hold: { handle(Tap.dayHold(goal, day: today)) })
               Text("오늘, \(month)월 \(today)일").font(.pixel(11))
             }
             Text("\(month)월").font(.pixel(12)).padding(.top, 30)
@@ -110,9 +104,9 @@ struct CalendarView: View {
       LazyVGrid(columns: cols, spacing: 2) {
         ForEach(0..<firstWeekday, id: \.self) { _ in Color.clear.frame(width: 22, height: 22) }
         ForEach(1...days.count, id: \.self) { d in
-          Button { handle(Tap.day(goal, day: d)) } label: { dayCell(d, days[d - 1], today: today) }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(d)일, \(days[d - 1] == .placed || days[d - 1] == .placedToday ? "붙였어요" : "비었어요")")
+          dayCell(d, days[d - 1], today: today)
+            .press("\(d)일, \(days[d - 1] == .placed || days[d - 1] == .placedToday ? "붙였어요" : "비었어요")",
+                   tap: { handle(Tap.day(goal, day: d)) }, hold: { handle(Tap.dayHold(goal, day: d)) })
         }
       }
     }
@@ -159,5 +153,19 @@ struct ConfirmView: View {
       .padding(.horizontal, 18)
       .frame(width: Layout.width).offset(y: 34)
     }
+  }
+}
+
+private extension View {
+  /** 칸: 짧게 누르면 붙이고 꾹 누르면 뗀다(폰과 같다). 화면 낭독에서는 버튼으로 읽고 「떼기」 동작을 준다. */
+  func press(_ label: String, tap: @escaping () -> Void, hold: @escaping () -> Void) -> some View {
+    contentShape(Rectangle())
+      .onTapGesture(perform: tap)
+      .onLongPressGesture(minimumDuration: 0.5, perform: hold)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(label)
+      .accessibilityAddTraits(.isButton)
+      .accessibilityAction(.default, tap)
+      .accessibilityAction(named: "떼기", hold)
   }
 }
