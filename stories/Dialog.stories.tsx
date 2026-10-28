@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, useWindowDimensions} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {PixelBusyDialog, PixelDialog, PixelDialogModal, PixelText, accountDialogs, boardDialogs, colorPack, retro, stickerShopDialogs} from '../src/design-system';
+import {PixelBusyDialog, PixelDialog, PixelDialogModal, PixelText, accountDialogs, boardDialogs, colorPack, contactDialogs, retro, stickerShopDialogs} from '../src/design-system';
 import {deleteDescription} from '../src/app-data/pocketAdapter';
 
 const meta = {
@@ -96,6 +96,9 @@ const groups: [string, [string, Spec][]][] = [
     ['설정 · 구매 복원 찾음', stickerShopDialogs.restoreDone(['동물 묶음', '간식 묶음', '광고 제거'])],
     ['설정 · 구매 복원 없음', stickerShopDialogs.restoreNone],
     ['설정 · 구매 복원 실패', stickerShopDialogs.restoreFailed],
+  ]],
+  ['도움말과 정보 (contactDialogs)', [
+    ['문의하기 · 메일 앱을 열지 못함', contactDialogs.noMail('chagok.app.help@gmail.com')],
   ]],
 ];
 function Catalog() {

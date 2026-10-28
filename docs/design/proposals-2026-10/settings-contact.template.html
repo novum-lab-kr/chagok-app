@@ -1,0 +1,196 @@
+<title>문의하기와 광고 신고</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 위에 왜 필요한지(원문), 아래에 안 세 개를 폰 캡처와 함께 나란히. 고르기와 메모는 안마다 */
+:root{
+  --bg:#EEF6F0; --panel:#FFFFFF; --fg:#06261C; --muted:#4B6358; --line:#C9DCCF; --accent:#FD855F; --pick:#C7DE94; --soft:#FEF1D1;
+  --f-body:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1D17;--panel:#16281F;--fg:#E4F1E8;--muted:#9DB5A8;--line:#2B4537;--accent:#FD855F;--pick:#3D5228;--soft:#2A2618;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1D17;--panel:#16281F;--fg:#E4F1E8;--muted:#9DB5A8;--line:#2B4537;--accent:#FD855F;--pick:#3D5228;--soft:#2A2618;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+h1{font-size:26px;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:19px;margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.lede{color:var(--muted)}
+.why{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:10px}
+.why ul{margin:0;padding-left:18px;display:grid;gap:6px}
+q{font-family:var(--f-mono);font-size:13px;quotes:"“" "”"}
+.src{font-size:13px;color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start}
+.opt{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.opt.on{border-color:var(--fg);background:linear-gradient(var(--pick),var(--pick)) top/100% 6px no-repeat,var(--panel)}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:4px;background:var(--accent);color:#06261C;margin-left:6px;vertical-align:2px}
+.shots{display:flex;gap:10px;overflow-x:auto}
+.shots img{width:180px;max-width:100%;flex:none;border:1px solid var(--line);border-radius:6px}
+.opt ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.mail{background:var(--soft);border-radius:6px;padding:10px 12px;font-size:13px;white-space:pre-wrap;font-family:var(--f-mono);overflow-x:auto}
+button.pick{font:inherit;font-weight:700;padding:9px 14px;border-radius:6px;border:2px solid var(--fg);background:var(--panel);color:var(--fg);cursor:pointer;justify-self:start}
+button.pick[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea{width:100%;box-sizing:border-box;min-height:70px;font:inherit;font-size:14px;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.state{font-size:12px;color:var(--muted)}
+.common{display:grid;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.row>div{flex:1 1 280px;min-width:0;display:grid;gap:8px}
+.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>설정 탭의 문의하기와 광고 신고</h1>
+    <p class="lede">2판이에요. 1판에서 <b>A(두 줄)</b>를 고르셨고, 메모대로 「도움말」과 「정보」를 한 구역으로 합쳤어요. 이번에는 합친 구역의 제목을 골라 주세요. 캡처는 실제 앱 컴포넌트(Storybook)로 렌더했어요.</p>
+    <p class="state" id="store-state">저장소에 연결하는 중…</p>
+  </header>
+
+  <section class="why" aria-labelledby="ans-h">
+    <h2 id="ans-h">메모에 답</h2>
+    <ul>
+      <li><b>도움말과 정보를 하나로</b> 합쳤어요. 순서는 사용법 다시 보기, 문의하기, 광고 신고하기, 약관과 라이선스, 앱 버전이에요. 제목은 아래 세 안 중에 골라 주세요.</li>
+      <li><b>문의하기를 누르면</b> 메일 앱의 새 메일 쓰기 화면이 열리고, 받는 곳, 제목, 본문 틀(아래 두 메일)이 채워져 있어요. 사용자가 내용을 적고 직접 [보내기]를 눌러요. 앱이 대신 보내지는 않아요. 아이폰의 기본 메일 앱을 Gmail 같은 다른 앱으로 바꾼 사람에게도 제목과 본문이 채워지는지는 기기에서 확인할게요(시뮬레이터에는 메일 앱이 없어서 아래 「메일 앱이 없을 때」 다이얼로그가 떠요).</li>
+      <li><b>다이얼로그 위 선</b>은 제가 시안에서 튜토리얼 모양 다이얼로그를 잘못 골라서 생긴 거예요. 앱의 확인 창 모양(선 없음, 가운데 정렬)으로 고쳤어요.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="t-h" style="display:grid;gap:14px">
+    <h2 id="t-h">합친 구역의 제목</h2>
+    <div class="opts">
+      <article class="opt" id="opt-t1">
+        <h2>1 「도움말과 정보」 <span class="tag">추천</span></h2>
+        <div class="shots"><img src="__SHOT_T1__" alt="구역 제목이 도움말과 정보인 설정 화면"></div>
+        <p style="font-size:14px">안에 든 두 종류를 그대로 말해요. 위 「계정과 백업」과 같은 꼴이라 설정 화면에서 어색하지 않아요.</p>
+        <button type="button" class="pick" data-pick="t1" aria-pressed="false">1로 하기</button>
+      </article>
+      <article class="opt" id="opt-t2">
+        <h2>2 「앱 안내」</h2>
+        <div class="shots"><img src="__SHOT_T2__" alt="구역 제목이 앱 안내인 설정 화면"></div>
+        <p style="font-size:14px">짧아요. 다만 문의하기나 광고 신고처럼 사용자가 무언가를 보내는 줄과는 덜 맞아요.</p>
+        <button type="button" class="pick" data-pick="t2" aria-pressed="false">2로 하기</button>
+      </article>
+      <article class="opt" id="opt-t3">
+        <h2>3 「더 알아보기」</h2>
+        <div class="shots"><img src="__SHOT_T3__" alt="구역 제목이 더 알아보기인 설정 화면"></div>
+        <p style="font-size:14px">부드럽지만 무엇이 들어 있는지 제목만 보고 알기 어려워요.</p>
+        <button type="button" class="pick" data-pick="t3" aria-pressed="false">3으로 하기</button>
+      </article>
+    </div>
+    <textarea id="note-contact-title" data-k="note-contact-title" placeholder="제목에 대한 메모 (다른 제목이 좋으면 적어 주세요)"></textarea>
+    <span class="state" id="state-note-contact-title"></span>
+  </section>
+
+  <section class="common" aria-labelledby="mail-h">
+    <h2 id="mail-h">열리는 메일</h2>
+    <div class="row">
+      <div>
+        <p><b>문의하기</b></p>
+        <div class="mail">받는 곳 chagok.app.help@gmail.com
+제목 [문의] 차곡차곡
+본문
+궁금한 점이나 불편한 점을 적어 주세요.
+
+
+
+---
+아래 정보는 문제를 찾는 데 써요. 지워도 괜찮아요.
+앱 1.0.0 (5), iOS 26.6</div>
+      </div>
+      <div>
+        <p><b>광고 신고하기</b></p>
+        <div class="mail">받는 곳 chagok.app.help@gmail.com
+제목 [광고 신고] 차곡차곡
+본문
+어떤 광고였나요? (광고 이름이나 내용)
+언제 봤나요?
+어디서 봤나요? (목표 화면 아래 / 광고 보고 하루 써 보기)
+가능하면 화면을 캡처해 붙여 주세요.
+---
+앱 1.0.0 (5), iOS 26.6</div>
+      </div>
+    </div>
+    <p class="src">「광고 신고하기」 줄은 광고 제거를 산 사람에게는 숨기는 것을 추천해요(광고를 보지 않으니까요). 문의 메일의 처리는 처리방침 1판에 이미 있어요(Gmail 수탁, 3년 보관).</p>
+    <textarea id="note-contact-mail" data-k="note-contact-mail" placeholder="메일 문구나 동작에 대한 메모"></textarea>
+    <span class="state" id="state-note-contact-mail"></span>
+  </section>
+
+  <section class="common" aria-labelledby="nomail-h">
+    <h2 id="nomail-h">메일 앱이 없을 때</h2>
+    <div class="row">
+      <div>
+        <p>메일 앱을 지웠거나 계정이 없으면 열리지 않아요. 그때는 주소를 보여 주고 복사하게 해요. 다이얼로그는 앱의 확인 창 모양 그대로예요(캡처의 어두운 배경만 시안용으로 그렸어요).</p>
+      </div>
+      <div class="shots"><img src="__SHOT_NOMAIL__" alt="메일 앱을 열지 못했어요 다이얼로그와 주소 복사하기 버튼"></div>
+    </div>
+    <textarea id="note-contact-all" data-k="note-contact-all" placeholder="전체 메모"></textarea>
+    <span class="state" id="state-note-contact-all"></span>
+    <div class="bar"><button type="button" class="pick" id="copy">메모까지 복사</button><span class="state" id="summary">아직 고른 게 없어요</span></div>
+  </section>
+</div>
+
+<script>
+// 고르기와 메모 저장 (db review/choice-contact는 1판 A/B/C, review/choice-contact-title은 2판 제목 t1~t3, review/note-contact-<a|b|c|title|mail|all>)
+const $ = id => document.getElementById(id);
+const KEYS = ['note-contact-title','note-contact-mail','note-contact-all'];
+const state = {pick:'', title:'', notes:{}};
+const LS = 'chagok-settings-contact-2';
+try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); state.pick = l.pick || ''; state.title = l.title || ''; Object.assign(state.notes, l.notes || {}); } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+function paint() {
+  for (const k of ['t1','t2','t3']) {
+    $(`opt-${k}`).classList.toggle('on', state.title === k);
+    document.querySelector(`[data-pick="${k}"]`).setAttribute('aria-pressed', String(state.title === k));
+  }
+  for (const k of KEYS) { const t = $(k); const x = state.notes[k] || ''; if (document.activeElement !== t && t.value !== x) t.value = x; }
+  const n = Object.values(state.notes).filter(x => x && x.trim()).length;
+  const parts = [];
+  if (state.pick) parts.push(`1판: ${state.pick.toUpperCase()}`);
+  if (state.title) parts.push(`제목: ${state.title.slice(1)}번`);
+  if (n) parts.push(`메모 ${n}개`);
+  $('summary').textContent = parts.length ? parts.join(', ') : '아직 고른 게 없어요';
+}
+function setStatus(k, t) { const el = $(`state-${k}`); if (el) el.textContent = t; }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+async function persist(k) {
+  saveLocal();
+  if (!db) { setStatus(k, '이 브라우저에만 저장됐어요'); return; }
+  if (writing[k]) { queued[k] = true; return; }
+  writing[k] = true; setStatus(k, '저장 중…');
+  const at = new Date().toISOString();
+  try {
+    await db.doc(`review/${k}`).set(k === 'choice-contact-title' ? {value: state.title, updatedAt: at} : {note: state.notes[k] || '', updatedAt: at});
+    setStatus(k, k === 'choice-contact-title' ? '고른 것을 저장했어요' : '저장했어요');
+  } catch (e) { setStatus(k, '저장하지 못했어요. 메모까지 복사로 보내 주세요'); }
+  finally { writing[k] = false; if (queued[k]) { queued[k] = false; persist(k); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  state.title = state.title === b.dataset.pick ? '' : b.dataset.pick; paint(); persist('choice-contact-title');
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-k]'); if (!t) return;
+  const k = t.dataset.k; state.notes[k] = t.value; setStatus(k, '적는 중…'); paint();
+  clearTimeout(timers[k]); timers[k] = setTimeout(() => persist(k), 800);
+});
+$('copy').addEventListener('click', () => {
+  const text = '문의하기와 광고 신고 시안\n고른 안: ' + (state.pick ? state.pick.toUpperCase() : '아직') + '\n' + KEYS.filter(k => (state.notes[k] || '').trim()).map(k => `${k}: ${state.notes[k].trim()}`).join('\n');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(() => { $('copy').textContent = '복사했어요'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); }, fallback); } catch (err) { fallback(); }
+});
+paint();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장돼요. 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = 'Claude가 읽을 수 있게 저장돼요';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id === 'choice-contact') { if (typeof v.value === 'string') state.pick = v.value; continue; }
+      if (d.id === 'choice-contact-title') { if (typeof v.value === 'string') state.title = v.value; continue; }
+      if (!KEYS.includes(d.id)) continue;
+      const t = document.activeElement; state.notes[d.id] = t && t.dataset && t.dataset.k === d.id ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요. 메모까지 복사로 보내 주세요'; });
+})();
+</script>
