@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import {
-  AccountBackupPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
+  AccountBackupPanel, HelpInfoPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
   stickerShopDialogs,
   type AccountBackupStatus,
 } from '../../src/design-system';
@@ -22,6 +22,7 @@ import { buyAdFree, restorePurchases } from '../../src/purchases';
 import { useDialog } from '../../src/app-data/useDialog';
 import { usePrices } from '../../src/app-data/usePrices';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
+import { appVersion, openContactMail } from '../../src/support/openContactMail';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
 
@@ -164,12 +165,14 @@ export default function AppSettings() {
           </PixelPanel>
         )}
         <PurchasePanel adFree={adFree} price={prices.adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
-        <PixelPanel title="도움말">
-          <SettingRow label="사용법 다시 보기" onPress={() => nav.push('/tutorial')} />
-        </PixelPanel>
-        <PixelPanel title="정보">
-          <SettingRow label="약관과 라이선스" onPress={() => nav.push('/policies')} />
-        </PixelPanel>
+        <HelpInfoPanel
+          adFree={adFree}
+          version={appVersion()}
+          onTutorial={() => nav.push('/tutorial')}
+          onContact={() => { void openContactMail('question', ask); }}
+          onReportAd={() => { void openContactMail('adReport', ask); }}
+          onPolicies={() => nav.push('/policies')}
+        />
         {__DEV__ && supabase && (
           <PixelPanel title="개발">
             <SettingRow label="서버 동기화 (개발)" onPress={() => nav.push('/dev/sync')} />
