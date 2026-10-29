@@ -38,7 +38,9 @@ const SLIDES = [
   { kind: 'watch', main: 'widget.png', watch: 'drop.png', step: '위젯과 워치', title: '<em>홈 화면</em>과<br><em>손목</em>에서도', sub: '위젯으로 보고, Apple Watch로 붙여요',
     crop: [0, 240, 1320, 1700], deco: ['basic-sprout'] },
   { main: 'stickers.png', step: '꾸미기', title: '<em>스티커</em>로<br>꾸며요', sub: '기본 스티커로 꾸미고,<br>원하면 사서 더 많이 골라요',
-    crop: [0, 240, 1320, 1900], deco: ['animals_normal-rabbit', 'emotions_normal-shy'] },
+    crop: [0, 240, 1320, 1900], deco: ['animals_normal-rabbit', 'emotions_normal-shy'],
+    // 묶음 카드의 「무료」 배지 3곳을 카드 바탕색으로 덮는다(지침 2.3.7: 스크린샷에 가격 정보를 넣지 않는다)
+    masks: [[960, 985, 110, 65], [960, 1435, 110, 65], [960, 1885, 110, 65]] },
 ];
 
 const WATCH = [
@@ -64,11 +66,12 @@ function css(W, H, k) {
 }
 
 // 화면 한 장을 테두리 상자 안에 넣는다. cropH까지만 보이고 나머지는 아래로 흘린다
-function screen(src, { left, top, w, border, radius, shadow, rot = 0, cropH = 2868, cropY = 0, cropX = 0, cropW = 1320, z = 2 }, px) {
+function screen(src, { left, top, w, border, radius, shadow, rot = 0, cropH = 2868, cropY = 0, cropX = 0, cropW = 1320, z = 2, masks = [] }, px) {
   const sc = w / cropW;
+  const cover = masks.map(([mx, my, mw, mh]) => `<div style="position:absolute;background:${IVORY};left:${px((mx - cropX) * sc)};top:${px((my - cropY) * sc)};width:${px(mw * sc)};height:${px(mh * sc)}"></div>`).join('');
   return `<div style="position:absolute;left:${px(left)};top:${px(top)};z-index:${z};transform:rotate(${rot}deg);background:${INK};padding:${px(border)};border-radius:${px(radius)};box-shadow:${shadow}">
     <div style="width:${px(w)};height:${px(cropH * sc)};overflow:hidden;position:relative;border-radius:${px(Math.max(radius - border, 0))}">
-      <img src="${src}" style="position:absolute;max-width:none;width:${px(1320 * sc)};left:${px(-cropX * sc)};top:${px(-cropY * sc)}"></div></div>`;
+      <img src="${src}" style="position:absolute;max-width:none;width:${px(1320 * sc)};left:${px(-cropX * sc)};top:${px(-cropY * sc)}">${cover}</div></div>`;
 }
 
 function decoImg(name, x, y, size, rot, px, shadow = 'rgba(6,38,28,.35)') {
@@ -90,7 +93,7 @@ function slideA(s, i, W, H) {
     p{font-size:${px(54)};margin-top:${px(26)};color:#2c4a3f}`;
   const cap = `<div style="position:absolute;top:${px(170)};left:${px(96)};right:${px(80)};z-index:5">
     <span class="badge">${String(i + 1).padStart(2, '0')} ${s.step}</span><h1>${s.title}</h1><p>${s.sub}</p></div>`;
-  let body = screen(raw(s.main), { left: 60, top: 1000, w: 1180, border: 22, radius: 120, shadow: shadowHard }, px);
+  let body = screen(raw(s.main), { left: 60, top: 1000, w: 1180, border: 22, radius: 120, shadow: shadowHard, masks: s.masks }, px);
   if (s.zoom) {
     const [zx, zy, zw, zh] = s.zoom, sc = s.zw / zw;
     body += `<div style="position:absolute;z-index:4;left:${px(s.zx)};top:${px(s.zy)};background:${INK};padding:${px(12)};border-radius:${px(36)};box-shadow:${shadowHard};transform:rotate(${i % 2 ? -3 : 3}deg)">
@@ -110,7 +113,7 @@ function slideB(s, i, W, H) {
   const cap = `<div style="position:absolute;top:${px(170)};left:${px(60)};right:${px(60)};z-index:5"><h1>${s.title}</h1><p>${s.sub}</p></div>`;
   const [cx, cy, cw, ch] = s.crop;
   const rot = i % 2 ? 2 : -2;
-  let body = screen(raw(s.main), { left: 50, top: 860, w: 1220, border: 0, radius: 64, rot, cropX: cx, cropY: cy, cropW: cw, cropH: ch,
+  let body = screen(raw(s.main), { left: 50, top: 860, w: 1220, border: 0, radius: 64, rot, cropX: cx, cropY: cy, cropW: cw, cropH: ch, masks: s.masks,
     shadow: `0 0 0 ${px(10)} ${MINT}, ${px(26)} ${px(30)} 0 ${px(10)} rgba(0,0,0,.45)` }, px);
   if (s.kind === 'watch') body += watchCard(s.watch, 690, 1900, 5, px, `0 0 0 ${px(10)} ${MINT}, ${px(20)} ${px(24)} 0 ${px(10)} rgba(0,0,0,.45)`);
   const [d1, d2] = s.deco;
@@ -133,7 +136,7 @@ function slideC(i, W, H) {
   SLIDES.forEach((s, n) => {
     const x0 = n * 1320, rot = n % 2 ? 5 : -5;
     world += `<div style="position:absolute;top:${px(170)};left:${px(x0 + 70)};width:${px(1180)};z-index:5"><h1>${s.title}</h1><p>${s.sub}</p></div>`;
-    world += screen(raw(s.main), { left: x0 + 90, top: 920, w: 1140, border: 20, radius: 116, rot, z: 3,
+    world += screen(raw(s.main), { left: x0 + 90, top: 920, w: 1140, border: 20, radius: 116, rot, z: 3, masks: s.masks,
       shadow: `${px(24)} ${px(24)} 0 rgba(6,38,28,.9)` }, px);
     if (s.kind === 'watch') world += watchCard(s.watch, x0 + 700, 1900, -6, px, `${px(20)} ${px(20)} 0 rgba(6,38,28,.9)`);
     // 장과 장 사이에 걸치는 스티커: 앞 장 오른쪽 끝과 다음 장 왼쪽 끝에 반씩 보인다
