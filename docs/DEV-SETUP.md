@@ -372,21 +372,42 @@ Healthchecks.io 프로젝트 `chagok-prod`(계정 `novum-lab@naver.com`, 무료)
 - 로그: `journalctl --user -u chagok-monitor -u chagok-backup`.
 - 서버를 일부러 멈출 때(업데이트 등)는 알림이 온다. 미리 알고 있으면 무시하거나, Healthchecks.io 화면에서 점검을 잠깐 Pause한다. Pause한 점검은 다음 신호가 오면 다시 켜진다.
 
+## 운영 서버 로그
+
+컨테이너 로그는 다시 만들면 사라지므로 서버 파일로 모아 둔다(2026-10-29~, `chagok` 계정). 설계: [운영 로그 계획](superpowers/plans/2026-10-26-prod-logs.md) A. 보관 기간은 2026-10-29 결정(로그인 기록과 서버 로그, 인증 감사 기록을 달력상 3개월)을 따른다.
+
+- **모으기:** 타이머 `chagok-logs.timer`가 5분마다 `~/logs/collect.sh`를 돌린다. auth, functions, envoy, storage, rest, db의 로그를 `~/logs/<서비스>/<UTC 날짜>.log`에 덧붙이고, 지난 날짜 파일은 압축한다.
+- **보관:** 달력으로 3개월 지난 날짜 파일을 지운다. 로그인 로그에는 이메일, 이름, 접속 IP가 들어 있다.
+- **인증 감사 기록:** DB의 `auth.audit_log_entries`는 매일 한 번 3개월 지난 행을 지운다. 계정을 삭제하면 `delete-account`와 `kakao-unlink`가 그 사용자의 행에서 이메일, 전화, 이름을 지우고 UUID만 남긴다(`admin_scrub_user_audit_log`).
+- **파기 기록:** 계정 삭제를 처리할 때마다 `private.account_deletions`에 계정 UUID, 요청 시각, 처리 시각, 경로(`app`, `kakao_unlink`, `email`), 결과(`success`, `failed`)를 한 줄 남긴다. 이메일은 넣지 않는다. 1년 지난 행은 서버 타이머가 매일 아래 한 줄로 지운다.
+
+```sql
+delete from private.account_deletions where completed_at < now() - interval '1 year';
+```
+
+- **로그 크기:** `docker-compose.chagok-logging.yml`이 모든 컨테이너 로그를 10MB 파일 3개까지로 묶는다(`run.sh config add chagok-logging`).
+- **DB 오류:** 오류는 남기되 오류 난 SQL 문장은 남기지 않는다(`log_min_error_statement=panic`, `ALTER SYSTEM`이라 다시 만들어도 남는다).
+- **알림:** Healthchecks.io의 「서버 오류」 점검이 모은 로그의 오류를 받아 메일로 알린다. 신호 주소는 `~/monitor/hc.env`(비밀값).
+- **다시 만들기 전에:** `sh run.sh recreate`나 업데이트 전에 `~/logs/collect.sh`를 한 번 돌린다. 안 돌리면 마지막으로 모은 뒤의 로그가 사라진다.
+
 ## 운영 서버 함수 올리기
 
-셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
+셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
 
 ```sh
 # 이 맥 (main 체크아웃)
-COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account
+COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink
 scp /tmp/fn.tgz chagok@187.127.114.161:~/fn.tgz && rm /tmp/fn.tgz
 
 # 서버
 cd ~/supabase/volumes
 cp -a functions functions.bak-<날짜>
-cd functions && rm -rf _shared apple-link delete-account && tar -xzf ~/fn.tgz && rm ~/fn.tgz
+cd functions && rm -rf _shared apple-link delete-account kakao-unlink && tar -xzf ~/fn.tgz && rm ~/fn.tgz
+~/logs/collect.sh   # 다시 만들면 컨테이너 로그가 사라지므로 먼저 모은다(운영 서버 로그)
 cd ~/supabase && sh run.sh recreate functions
 ```
+
+- **네 폴더를 모두 넣는다.** 2026-10-29까지 이 목록에 `kakao-unlink`가 빠져 있어 운영에 카카오 연결 해제 웹훅이 없었다(404).
 
 - **`COPYFILE_DISABLE=1`을 꼭 붙인다.** 없으면 맥 tar가 `._apple.ts` 같은 부속 파일을 함께 넣는다(2026-10-26).
 - **묶음은 파일로 보낸다.** `tar ... | ssh '...' <<EOF`처럼 원격 명령을 heredoc으로 넘기면서 묶음을 같은 입력에 섞으면, 원격 셸이 묶음을 명령으로 읽고 아무것도 하지 않는다.
@@ -397,7 +418,7 @@ cd ~/supabase && sh run.sh recreate functions
 
 - 서버 파일이 main과 같은지: 양쪽에서 `sha256sum`(맥은 `shasum -a 256`)을 비교한다.
 - `supabase-edge-functions`가 healthy이고 `docker logs --since 10m supabase-edge-functions`에 오류가 없는지.
-- 토큰 없이 부르면 막히는지: `curl -X POST http://127.0.0.1:8000/functions/v1/delete-account`와 `apple-link`가 401.
+- 토큰 없이 부르면 막히는지: `curl -X POST http://127.0.0.1:8000/functions/v1/delete-account`와 `apple-link`가 401, `kakao-unlink`도 어드민 키 없이 부르면 401.
 - `/auth/v1/settings`의 `external`이 `apple`, `google`, `kakao`만 true인지.
 - 5분 안에 Healthchecks.io 6개가 모두 초록인지.
 
@@ -429,7 +450,7 @@ Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 
 2. **백업:** `systemctl --user start chagok-backup.service`. Healthchecks.io의 백업이 방금 시각으로 초록인지 본다.
 3. **미리 보기:** `cd ~/supabase && sh update.sh --dry-run --to <태그>`. 바뀌는 파일과 충돌을 본다.
 4. **설정 합치기:** `sh update.sh --to <태그>`. 충돌이 나면 멈추고 손으로 고친다.
-5. **이미지 받기와 다시 띄우기:** `sh run.sh pull`, `sh run.sh recreate`. 한 태그의 이미지만 쓴다. 서비스 하나만 다른 판으로 올리지 않는다.
+5. **이미지 받기와 다시 띄우기:** `sh run.sh pull`, `~/logs/collect.sh`(다시 만들기 전에 로그를 모은다), `sh run.sh recreate`. 한 태그의 이미지만 쓴다. 서비스 하나만 다른 판으로 올리지 않는다.
 6. **확인:**
    - 컨테이너 11개가 healthy인지(`docker ps`).
    - 포트가 여전히 `127.0.0.1`에만 열려 있는지(`ss -tlnp | grep -E ':(8000|5432|6543) '`). 우리 설정 `docker-compose.chagok.yml`은 공식 파일이 아니라 합치기에서 빠지지만, 공식 파일의 포트 줄이 바뀌면 다시 본다.
