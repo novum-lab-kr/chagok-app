@@ -1,5 +1,5 @@
 import React,{useContext} from 'react';
-import {Pressable,View} from 'react-native';
+import {Platform,Pressable,View} from 'react-native';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
@@ -171,14 +171,17 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
   </RetroScreen>;
 }
 
+/** 사기 전 확인 창 두 곳(묶음, 광고 제거)에 같이 붙는 줄: 환불 요청처, 미성년자 취소, 약관 적용 (2026-10-29 법률 검토 2차) */
+const purchaseNotice=`환불은 ${Platform.OS==='android'?'Google Play':'App Store'}에서 요청해 주세요.\n미성년자가 법정대리인 동의 없이\n샀다면 본인이나 법정대리인이\n취소할 수 있어요.\n이 구매에는 이용약관이 적용돼요.`;
 /** 화면 위에 PixelDialogModal로 띄운다. 결제 팝업은 Apple·Google이 그린다. */
 export const stickerShopDialogs={
   /**
-   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안). 쓰기 시작하면 환불이 어려울 수 있음을 사기 전에 알린다(약관 11조).
-   * 제목은 무엇을 사는지, 설명 첫 줄은 얻는 것, 둘째 줄이 환불. 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다.
+   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안 → 2026-10-29 법률 검토 2차). 결제 직전에 알릴 것을 한 창에 둔다:
+   * 얻는 것, 청약철회(환불)를 할 수 없게 되는 때(약관 11조 2항·3항과 같은 뜻), 환불을 요청하는 곳, 미성년자 취소(약관 12조), 약관 적용과 [약관 보기].
+   * 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다. [약관 보기]는 confirmWithTerms(src/policy/openPolicy.ts)로 띄운다.
    */
-  confirmBuy:(label:string,count:number,price?:string)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.`,primaryLabel:price?`${price}에 열기`:'열기',secondaryLabel:'취소'}),
-  confirmAdFree:{title:'광고를 없앨까요?',description:'목표 화면 아래 광고가 사라져요.\n산 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'광고 없애기',secondaryLabel:'취소'},
+  confirmBuy:(label:string,count:number,price?:string)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n스티커를 고르거나 판에 붙이면\n청약철회(환불)를 할 수 없어요.\n${purchaseNotice}`,primaryLabel:price?`${price}에 열기`:'열기',secondaryLabel:'취소',linkLabel:'약관 보기'}),
+  confirmAdFree:{title:'광고를 없앨까요?',description:`사는 즉시 목표 화면 아래\n광고가 사라져서\n청약철회(환불)를 할 수 없어요.\n${purchaseNotice}`,primaryLabel:'광고 없애기',secondaryLabel:'취소',linkLabel:'약관 보기'},
   bought:(label:string)=>({title:`${label} 묶음을 열었어요`,description:'기본 스티커로 쓸 그림을 골라 주세요.',primaryLabel:'확인',single:true}),
   /** endLabel 예: '내일 밤 11:00' — 광고를 다 본 때부터 24시간 */
   adTrialStarted:(endLabel:string)=>({title:'하루 동안 써 볼 수 있어요',description:`${endLabel}까지 쓸 수 있어요.`,primaryLabel:'확인',single:true}),

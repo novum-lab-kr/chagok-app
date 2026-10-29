@@ -16,6 +16,7 @@ import { pushOnce } from '../../src/sync/push';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync, subscribeSyncStatus } from '../../src/sync/syncGate';
 import { wipeDevice } from '../../src/sync/wipe';
+import { confirmWithTerms } from '../../src/policy/openPolicy';
 import { getSetting } from '../../src/repositories/appSettingsRepository';
 import { loadPackState } from '../../src/repositories/packRepository';
 import { buyAdFree, restorePurchases } from '../../src/purchases';
@@ -38,15 +39,15 @@ export default function AppSettings() {
   const [buyOnce] = useState(createSingleFlight);
   /** 기다리는 동안 누른 버튼에 로딩 점 (2026-10-13) */
   const [purchaseBusy, setPurchaseBusy] = useState<'adFree' | 'restore'>();
-  const { ask, confirm, dialog: purchaseDialog } = useDialog();
+  const { ask, dialog: purchaseDialog } = useDialog();
   useFocusEffect(useCallback(() => {
     let alive = true;
     void loadPackState().then((p) => { if (alive) setAdFree(p.adFree); });
     return () => { alive = false; };
   }, []));
-  /** 사기 전에 환불 안내 확인 창을 먼저 띄운다. 결제 창을 닫은 취소에는 알리지 않는다. */
+  /** 사기 전에 환불 안내 확인 창을 먼저 띄운다([약관 보기]를 누르면 약관을 본 뒤 다시 묻는다). 결제 창을 닫은 취소에는 알리지 않는다. */
   async function removeAds() {
-    if (!(await confirm(stickerShopDialogs.confirmAdFree))) return;
+    if (!(await confirmWithTerms(ask, stickerShopDialogs.confirmAdFree))) return;
     setPurchaseBusy('adFree');
     const r = await buyAdFree().finally(() => setPurchaseBusy(undefined));
     if (r.ok) setAdFree(true);

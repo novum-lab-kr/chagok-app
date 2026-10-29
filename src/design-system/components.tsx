@@ -269,9 +269,13 @@ export function PixelIcon({name,size=24}: {name:'plus'|'chevron'|'gear'|'flower'
   return <Svg width={size} height={size} viewBox={name==='flower'?'0 0 18 26':name==='gear'?gearViewBox:'0 0 16 16'} {...decorativeSvg}><Path d={paths[name]} fill={c.ink} fillRule="evenodd"/>{name==='flower' && <><Path d="M7 2H11V4H12V7H15V6H16V10H12V12H11V14H7V12H6V10H2V6H5V7H6V4H7Z" fill={c.secondary}/><Path d="M7 6H11V7H12V10H11V11H7V10H6V7H7Z" fill={c.ink}/><Path d="M8 7H10V10H8Z" fill={c.lcd}/></>}</Svg>;
 }
 
-type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;single:boolean;loading:boolean;onPrimary?:()=>void;onSecondary?:()=>void};
-function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,single,loading,onPrimary,onSecondary}:DialogContentProps) {
+type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;single:boolean;loading:boolean;onPrimary?:()=>void;onSecondary?:()=>void;linkLabel?:string;onLink?:()=>void};
+function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,single,loading,onPrimary,onSecondary,linkLabel,onLink}:DialogContentProps) {
   return <><PixelText variant="title" style={centerText?{textAlign:'center'}:undefined}>{title}</PixelText><PixelText style={centerText?{textAlign:'center'}:undefined}>{description}</PixelText>
+    {/* 설명 아래 보기 줄(글자 + >). 버튼과 따로 누른다 — 결제 확인 창의 [약관 보기] (2026-10-29 법률 검토 2차) */}
+    {linkLabel&&<Pressable accessibilityRole="button" accessibilityLabel={linkLabel} disabled={loading} onPress={onLink} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:centerText?'center':'flex-start',gap:6}}>
+      <PixelText>{linkLabel}</PixelText><PixelIcon name="chevron" size={14}/>
+    </Pressable>}
     <View style={{flexDirection:'row',gap:12}}>
       {!single&&<PixelButton label={secondaryLabel} variant="secondary" disabled={loading} onPress={onSecondary} style={{flex:1}}/>}
       <PixelButton label={primaryLabel} loading={loading} accessibilityLabel={loading?'진행 중':undefined} onPress={onPrimary} style={{flex:1}}/>
@@ -279,11 +283,11 @@ function DialogContent({title,description,primaryLabel,secondaryLabel,centerText
 }
 
 /** Shared dialog surface. The host positions tutorial near its target and basic at screen center. */
-export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false}:
-  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean;/** 주 버튼을 누른 뒤 진행 중: 주 버튼은 로딩 점, 보조 버튼은 비활성 (로그아웃·계정 삭제) */loading?:boolean}) {
+export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false,linkLabel,onLink}:
+  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean;/** 주 버튼을 누른 뒤 진행 중: 주 버튼은 로딩 점, 보조 버튼은 비활성 (로그아웃·계정 삭제) */loading?:boolean;/** 설명 아래 보기 줄 글자(예: '약관 보기'). 없으면 줄이 없다 */linkLabel?:string;onLink?:()=>void}) {
   return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:360}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
     {variant==='tutorial'&&<>{step&&<PixelText>{step}</PixelText>}<View style={{height:2,backgroundColor:c.ink}}/></>}
-    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'건너뛰기':'취소')} single={single} loading={loading} onPrimary={onPrimary} onSecondary={onSecondary}/>
+    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'건너뛰기':'취소')} single={single} loading={loading} onPrimary={onPrimary} onSecondary={onSecondary} linkLabel={linkLabel} onLink={onLink}/>
   </PixelFrame>;
 }
 
@@ -307,7 +311,7 @@ function ModalHost({visible,onRequestClose,onDismiss,children}:{visible:boolean;
 const ignoreClose=()=>{};
 
 /** 일반 화면용 확인 호스트. `basic` 다이얼로그를 화면 중앙에 두고 배경을 막는다. Android 뒤로가기는 onRequestClose로 닫는다 — loading 중에는 무시한다. */
-export function PixelDialogModal({visible,onRequestClose,onDismiss,...dialog}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤. 그 뒤에야 다른 창(결제 창 등)을 띄울 수 있다 */onDismiss?:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림) */single?:boolean;/** 진행 중: 뒤로가기로도 닫히지 않는다 */loading?:boolean}) {
+export function PixelDialogModal({visible,onRequestClose,onDismiss,...dialog}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤. 그 뒤에야 다른 창(결제 창 등)을 띄울 수 있다 */onDismiss?:()=>void;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림) */single?:boolean;/** 진행 중: 뒤로가기로도 닫히지 않는다 */loading?:boolean;/** 설명 아래 보기 줄 */linkLabel?:string;onLink?:()=>void}) {
   return <ModalHost visible={visible} onRequestClose={dialog.loading?ignoreClose:onRequestClose} onDismiss={onDismiss}><PixelDialog variant="basic" {...dialog}/></ModalHost>;
 }
 
