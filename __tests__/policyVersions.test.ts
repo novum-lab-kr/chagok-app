@@ -36,7 +36,7 @@ describe('개정 안내', () => {
 
 describe('정책 URL', () => {
   it('종류별 최신본 주소', () => {
-    expect(policyUrl('terms')).toBe('https://chagok-app-terms.netlify.app/terms/');
-    expect(policyUrl('privacy')).toBe('https://chagok-app-terms.netlify.app/privacy/');
+    expect(policyUrl('terms')).toBe('https://chagok.novum-lab.com/terms/');
+    expect(policyUrl('privacy')).toBe('https://chagok.novum-lab.com/privacy/');
   });
 });
