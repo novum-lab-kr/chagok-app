@@ -8,6 +8,7 @@
 
 | 날짜 | 항목 | 결정 |
 |---|---|---|
+| 2026-10-29 | 정책 사이트 주소 | **`https://chagok.novum-lab.com` 하나로 운영 VPS에 올렸다**(Netlify에서 옮김). `/`는 랜딩, `/support/` 지원, `/terms/` `/privacy/` `/delete-account/` `/versions.json`은 예전 경로 그대로. 정책 저장소 `main`에 push하면 GitHub Actions가 배포한다. 앱 안 약관과 처리방침 링크는 이 주소를 본다(`src/policy/urls.ts`). 스토어에 적을 주소: 지원 URL `https://chagok.novum-lab.com/support/`, 처리방침 URL `https://chagok.novum-lab.com/privacy/`, 계정 삭제 `https://chagok.novum-lab.com/delete-account/`, 개발자 웹사이트 `https://chagok.novum-lab.com`. `app-ads.txt`는 아직 이 사이트에 없다(AdMob 한 줄을 받아 정책 저장소에 더한다). Netlify 옛 주소는 이 주소가 든 앱 빌드가 깔린 뒤 내린다 |
 | 2026-10-26 | 결제 연결(iOS) | RevenueCat에 App Store 앱(번들 `com.novumlab.chagok`, 앱 내 구입 키 연결)과 상품 5개를 붙이고 권한 `ad_free`, `pack_<묶음 ID>`에 연결했다. EAS `production`의 `EXPO_PUBLIC_REVENUECAT_KEY`는 App Store 키, `preview`와 개발은 Test Store 키. Test Store 상품도 `com.novumlab.chagok.*`로 다시 만들고, 옛 `com.novum.chagok.*` 상품과 무료가 된 동물, 감정 권한은 Inactive로 돌렸다. 앱은 오퍼링을 쓰지 않는다(`default`는 맞춰만 둠) |
 | 2026-10-26 | 광고 연결(iOS) | AdMob 앱 「차곡차곡」(iOS) 등록, 광고 단위 `home_banner`(배너)와 `pack_trial_rewarded`(보상형). **출시 빌드의 iOS만 실제 ID**, 개발 빌드(`__DEV__`)와 Android는 Google 테스트 ID(개발 중 실제 광고는 무효 트래픽으로 계정이 제한될 수 있다). Android는 AdMob에 앱을 등록할 때 바꾼다 |
 | 2026-10-26 | 광고 등급 상한 | **AdMob 계정 수준 G(일반 잠재고객)**. App Store 4+ 예정과 맞춘다(심사 지침 2.5.18: 광고는 앱 연령 등급에 맞아야 한다). PG와의 예상 수익 차이는 5%p 안팎(콘솔 추정). 콘솔 설정이라 앱 업데이트 없이 바꿀 수 있고, 맞춤 광고로 바꿀 때(출시 뒤 계획) 다시 본다. 민감한 표준 카테고리는 **데이트, 선정성, 「성, 임신 및 출산 관련 건강」, 성에 대한 언급, 소셜 카지노 게임** 5개를 막고 나머지 6개는 허용. 제한된 카테고리(도박 및 베팅, 주류)는 기본값대로 막힘 |
@@ -69,7 +70,7 @@
 - **같은 묶음을 붙인 날 보상으로 다시 체험할 수 있는지.** 컬러 자산은 `src/stickers/color/`(Storybook `Stickers / Color Assets`). 구독 가격·출시 시점(나중).
 - **약관 운영자:** 김은주 명의 사업자로 한다. 사업자등록 승인 뒤 상호와 번호를 받아 약관, 처리방침, 정책 사이트 첫 화면에 넣는다(2026-10-20).
 - 통신판매업 신고 필요 여부(새 사업자가 간이과세자인지, 스토어 인앱 판매가 해당하는지 — 구청·세무사 확인). 신고 대상이면 정책 사이트에 사업자 정보 표시. Google Play 계정 유형(위).
-- **참고 — 정책 사이트 주소 옮기기.** 배포된 Netlify 화면에서 「Powered by Netlify」 표시가 약관 내용을 가린다(사용자 확인, 2026-10-13). 자체 도메인으로 옮길지 고민 중이다. 구현은 지금 주소로 끝내고, 옮기면 바꿀 곳: 두 스토어의 개발자 웹사이트·지원 URL·처리방침 URL, 앱 안의 약관·처리방침 링크, `app-ads.txt` 위치(AdMob이 다시 확인할 때까지 며칠 걸릴 수 있다).
+- **참고 — 정책 사이트 주소 옮기기.** → 2026-10-29 `https://chagok.novum-lab.com`로 옮겼다(위 확정 표). 앱 안 링크는 바꿨고, 남은 것은 두 스토어에 적는 주소와 `app-ads.txt`. 이전 기록: 배포된 Netlify 화면에서 「Powered by Netlify」 표시가 약관 내용을 가린다(사용자 확인, 2026-10-13). 자체 도메인으로 옮길지 고민 중이다. 구현은 지금 주소로 끝내고, 옮기면 바꿀 곳: 두 스토어의 개발자 웹사이트·지원 URL·처리방침 URL, 앱 안의 약관·처리방침 링크, `app-ads.txt` 위치(AdMob이 다시 확인할 때까지 며칠 걸릴 수 있다).
 
 ## 해외 확장 — 나중에 (2026-10-05 기록)
 

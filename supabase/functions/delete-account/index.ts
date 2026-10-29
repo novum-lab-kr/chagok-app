@@ -6,12 +6,13 @@ import { deleteUserData } from '../_shared/deleteUser.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 
 Deno.serve(async (req) => {
+  const requestedAt = new Date();
   const uid = await userIdFrom(req);
   if (!uid) return json({ error: 'unauthorized' }, 401);
   const admin = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const result = await deleteUserData(admin, uid, { unlinkKakao: true });
+  const result = await deleteUserData(admin, uid, { unlinkKakao: true, route: 'app', requestedAt });
   if ('error' in result) return json(result, 500);
   return json({ ok: true });
 });

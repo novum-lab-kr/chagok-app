@@ -26,3 +26,15 @@ export function openPolicy(kind: PolicyKind, ask: (spec: DialogSpec) => Promise<
     }
   });
 }
+
+/**
+ * 사기 전 확인 창. [약관 보기]를 누르면 창을 닫고 약관 시트를 연 뒤, 시트를 닫으면 같은 창을 다시 띄운다.
+ * iOS는 떠 있는 창 위에 시트를 띄우지 못해 닫은 뒤에 연다. 주 버튼을 골랐을 때만 true (2026-10-29 법률 검토 2차).
+ */
+export async function confirmWithTerms(ask: (spec: DialogSpec) => Promise<DialogChoice>, spec: DialogSpec): Promise<boolean> {
+  for (;;) {
+    const choice = await ask(spec);
+    if (choice !== 'link') return choice === 'primary';
+    await openPolicy('terms', ask);
+  }
+}

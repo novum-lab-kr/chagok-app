@@ -136,4 +136,8 @@ describe('계정 삭제 화면',()=>{
     fireEvent.click(screen.getByRole('button',{name:'계정 삭제하기'}));fireEvent.click(screen.getByRole('button',{name:'취소'}));
     expect(del).toHaveBeenCalled();expect(cancel).toHaveBeenCalled();
   });
+  it('산 묶음과 광고 제거도 지워지고 [구매 복원]으로 다시 받는다고 알린다 (2026-10-29 법률 검토 2차)',()=>{
+    render(<DeleteAccountScreen onDelete={vi.fn()} onCancel={vi.fn()} onBack={vi.fn()}/>);
+    expect(screen.getByText('산 스티커 묶음과 광고 제거도 이 기기에서 지워져요. 같은 스토어 계정으로 앱 설정의 [구매 복원]을 누르면 다시 받을 수 있어요.')).toBeTruthy();
+  });
 });

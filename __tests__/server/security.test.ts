@@ -86,4 +86,18 @@ describeIfServer('서버 보안·경계', () => {
     expect((await adminClient().rpc('admin_clear_kakao_unlink_failure', clear)).error).toBeNull();
     expect((await adminClient().rpc('admin_clear_kakao_unlink_failure', clear)).error).toBeNull();
   });
+
+  it('파기 기록과 감사 기록 정리는 서버 함수만 부른다', async () => {
+    const a = await newUser();
+    const record = { p_user: a.userId, p_requested_at: new Date().toISOString(), p_route: 'app', p_result: 'failed' };
+    const scrub = { p_user: a.userId };
+    const calls = [
+      anonClient().rpc('admin_record_account_deletion', record), a.client.rpc('admin_record_account_deletion', record),
+      anonClient().rpc('admin_scrub_user_audit_log', scrub), a.client.rpc('admin_scrub_user_audit_log', scrub),
+    ];
+    for (const { error } of await Promise.all(calls)) expect(error).not.toBeNull();
+    // 정해진 경로와 결과만 받는다
+    expect((await adminClient().rpc('admin_record_account_deletion', { ...record, p_route: 'web' })).error).not.toBeNull();
+    expect((await adminClient().rpc('admin_scrub_user_audit_log', scrub)).error).toBeNull();
+  });
 });

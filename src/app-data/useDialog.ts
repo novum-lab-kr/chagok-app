@@ -10,10 +10,12 @@ export type DialogSpec = {
   primaryLabel: string;
   /** 왼쪽 보조 버튼. 없으면 버튼 하나짜리 알림이다 */
   secondaryLabel?: string;
+  /** 설명 아래 보기 줄(예: '약관 보기'). 누르면 창을 닫고 'link'를 돌려준다 */
+  linkLabel?: string;
 };
 
-/** primary = 오른쪽 주황 버튼, secondary = 왼쪽 버튼, dismiss = 고르지 않고 닫음(Android 뒤로가기) */
-export type DialogChoice = 'primary' | 'secondary' | 'dismiss';
+/** primary = 오른쪽 주황 버튼, secondary = 왼쪽 버튼, link = 설명 아래 보기 줄, dismiss = 고르지 않고 닫음(Android 뒤로가기) */
+export type DialogChoice = 'primary' | 'secondary' | 'link' | 'dismiss';
 
 /**
  * 확인·알림을 기존 basic 다이얼로그로 띄운다. OS Alert를 쓰지 않는다 (DESIGN-SYSTEM, 2026-09-29).
@@ -82,6 +84,8 @@ export function useDialog() {
     single: open !== null && open.spec.secondaryLabel === undefined,
     onPrimary: () => close('primary'),
     onSecondary: () => close('secondary'),
+    linkLabel: open?.spec.linkLabel,
+    onLink: () => close('link'),
   });
 
   return { ask, confirm, dialog };
