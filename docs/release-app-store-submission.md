@@ -15,8 +15,8 @@
 | 스크린샷은 앱을 쓰는 화면 | 2.3.3 "Screenshots should show the app in use, and not merely the title art, login page, or splash screen." 2.3.2 유료 항목은 표시. 2.3.8 스크린샷은 4+에 맞게 | 4절 |
 | iPhone 스크린샷 | 「Dynamic Island 큰 화면」 또는 「중간 화면」 중 하나 이상, 크기당 최대 10장, 투명 없음 ([Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications)) | 큰 화면 1320×2868(iPhone 17 Pro Max 시뮬레이터)로 찍는 것을 추천 |
 | Apple Watch 스크린샷 | "Required for Apple Watch apps", 모든 언어에서 같은 크기 (같은 문서) | 빌드에 워치 앱이 있어 필요하다. 416×496(Series 10, 11, 12) 추천 |
-| 지원 URL에 연락처 | 1.5 "Make sure your app and its Support URL include an easy way to contact you" | 정책 사이트 첫 화면에 문의 메일이 있다. 앱 안은 설정 「도움말과 정보」 → 문의하기(2026-10-28) |
-| 처리방침 URL | 5.1.1(i), App Store Connect 앱 정보 "Required for iOS and macOS apps" | `https://chagok-app-terms.netlify.app/privacy/` |
+| 지원 URL에 연락처 | 1.5 "Make sure your app and its Support URL include an easy way to contact you" | 지원 URL(`https://chagok.novum-lab.com/support/`)에 문의 메일이 있다. 앱 안은 설정 「도움말과 정보」 → 문의하기(2026-10-28) |
+| 처리방침 URL | 5.1.1(i), App Store Connect 앱 정보 "Required for iOS and macOS apps" | `https://chagok.novum-lab.com/privacy/` |
 | 광고 신고 | 2.5.18 "Apps that contain ads must also include the ability for users to report any inappropriate or age-inappropriate ads." | 설정 「도움말과 정보」 → 광고 신고하기(2026-10-28, 광고 제거를 산 사람에게는 숨김). 심사 메모에 적는다 |
 | 수출 규정 | Info.plist로 답하면 제출마다 묻지 않는다 | `ITSAppUsesNonExemptEncryption: false` |
 
@@ -97,6 +97,6 @@ Apple Watch: the watch app shows the goals created on the iPhone and lets you ad
 
 - **카테고리:** 주 「생산성」, 보조 「라이프스타일」(추천, 사용자 결정)
 - **저작권:** `2026 노붐랩`
-- **지원 URL:** `https://chagok-app-terms.netlify.app/`
-- **처리방침 URL:** `https://chagok-app-terms.netlify.app/privacy/`
+- **지원 URL:** `https://chagok.novum-lab.com/support/`
+- **처리방침 URL:** `https://chagok.novum-lab.com/privacy/`
 - **마케팅 URL:** 비움(선택 항목)
