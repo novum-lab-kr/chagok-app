@@ -1365,6 +1365,17 @@
       }
     },
     {
+      "id": "pack-policy-web",
+      "source": "pack",
+      "target": "policy-web",
+      "label": "사기 전 확인 창의 약관 보기",
+      "data": {
+        "scenarios": [
+          "sticker"
+        ]
+      }
+    },
+    {
       "id": "pack-store-pay",
       "source": "pack",
       "target": "store-pay",
@@ -1438,6 +1449,17 @@
       "data": {
         "scenarios": [
           "sticker"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-policy-web",
+      "source": "app-settings",
+      "target": "policy-web",
+      "label": "광고 제거 확인 창의 약관 보기",
+      "data": {
+        "scenarios": [
+          "info"
         ]
       }
     },

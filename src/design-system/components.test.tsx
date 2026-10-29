@@ -74,6 +74,14 @@ describe('공통 컴포넌트 동작',()=>{
     expect(screen.getByText('1 / 3')).toBeTruthy();
     expect(getComputedStyle(screen.getByText('목표 만들기')).textAlign).not.toBe('center');
   });
+  it('보기 줄은 글자를 줄 때만 있고, 버튼과 따로 눌린다 (2026-10-29 법률 검토 2차)',()=>{
+    const confirm=vi.fn(),link=vi.fn();
+    const {rerender}=render(<PixelDialog variant="basic" title="광고를 없앨까요?" description="…" primaryLabel="광고 없애기" secondaryLabel="취소" onPrimary={confirm} linkLabel="약관 보기" onLink={link}/>);
+    fireEvent.click(screen.getByRole('button',{name:'약관 보기'}));
+    expect(link).toHaveBeenCalledTimes(1);expect(confirm).not.toHaveBeenCalled();
+    rerender(<PixelDialog variant="basic" title="광고를 없앨까요?" description="…" primaryLabel="광고 없애기" secondaryLabel="취소"/>);
+    expect(screen.queryByRole('button',{name:'약관 보기'})).toBeNull();
+  });
   it('진행 중 다이얼로그는 주 버튼을 로딩으로, 보조 버튼을 비활성으로 둔다',()=>{
     const confirm=vi.fn(),cancel=vi.fn();
     render(<PixelDialog variant="basic" title="로그아웃할까요?" description="먼저 백업해요." primaryLabel="로그아웃" secondaryLabel="취소" onPrimary={confirm} onSecondary={cancel} loading/>);
