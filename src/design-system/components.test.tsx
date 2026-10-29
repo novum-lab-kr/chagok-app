@@ -74,6 +74,18 @@ describe('공통 컴포넌트 동작',()=>{
     expect(screen.getByText('1 / 3')).toBeTruthy();
     expect(getComputedStyle(screen.getByText('목표 만들기')).textAlign).not.toBe('center');
   });
+  it('튜토리얼 다이얼로그는 단계 옆 건너뛰기와 이전, 다음을 두고, 첫 단계의 이전은 막는다',()=>{
+    const next=vi.fn(),prev=vi.fn(),skip=vi.fn();
+    const {rerender}=render(<PixelDialog step="1 / 5" title="목표 만들기" description="＋를 눌러 목표를 만들어요" onPrimary={next} onSecondary={prev} onSkip={skip} secondaryDisabled/>);
+    fireEvent.click(screen.getByRole('button',{name:'건너뛰기'}));
+    fireEvent.click(screen.getByRole('button',{name:'이전'}));
+    fireEvent.click(screen.getByRole('button',{name:'다음'}));
+    expect(skip).toHaveBeenCalledTimes(1);expect(prev).not.toHaveBeenCalled();expect(next).toHaveBeenCalledTimes(1);
+    rerender(<PixelDialog step="5 / 5" title="완성한 판" description="판을 다 채우면 완성!" primaryLabel="시작하기" onPrimary={next} onSecondary={prev}/>);
+    expect(screen.queryByRole('button',{name:'건너뛰기'})).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'이전'}));
+    expect(prev).toHaveBeenCalledTimes(1);
+  });
   it('보기 줄은 글자를 줄 때만 있고, 버튼과 따로 눌린다 (2026-10-29 법률 검토 2차)',()=>{
     const confirm=vi.fn(),link=vi.fn();
     const {rerender}=render(<PixelDialog variant="basic" title="광고를 없앨까요?" description="…" primaryLabel="광고 없애기" secondaryLabel="취소" onPrimary={confirm} linkLabel="약관 보기" onLink={link}/>);

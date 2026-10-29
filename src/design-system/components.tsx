@@ -217,6 +217,8 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
  */
 export const SCREEN_MAX_WIDTH=440; // 2026-10-09: 390 → 440. Pro Max(440pt)도 양옆 20pt만 남기고 채운다
 export const SCREEN_PADDING=20;
+/** 다이얼로그 상자의 최대 폭. 넓은 화면(400pt 넘는 Plus, Pro Max)에서는 상자가 칸보다 좁다. */
+export const DIALOG_MAX_WIDTH=360;
 /**
  * onLayout 이전 첫 프레임에 쓸 콘텐츠 폭. 실제 측정값과 같아 깜빡이지 않는다.
  * 판(PixelPanel) 안에서는 판 안쪽 여백을 뺀다. 빼지 않으면 첫 프레임에 칸이 넘쳐 2열로 그려진다 (2026-09-30).
@@ -269,25 +271,29 @@ export function PixelIcon({name,size=24}: {name:'plus'|'chevron'|'gear'|'flower'
   return <Svg width={size} height={size} viewBox={name==='flower'?'0 0 18 26':name==='gear'?gearViewBox:'0 0 16 16'} {...decorativeSvg}><Path d={paths[name]} fill={c.ink} fillRule="evenodd"/>{name==='flower' && <><Path d="M7 2H11V4H12V7H15V6H16V10H12V12H11V14H7V12H6V10H2V6H5V7H6V4H7Z" fill={c.secondary}/><Path d="M7 6H11V7H12V10H11V11H7V10H6V7H7Z" fill={c.ink}/><Path d="M8 7H10V10H8Z" fill={c.lcd}/></>}</Svg>;
 }
 
-type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;single:boolean;loading:boolean;onPrimary?:()=>void;onSecondary?:()=>void;linkLabel?:string;onLink?:()=>void};
-function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,single,loading,onPrimary,onSecondary,linkLabel,onLink}:DialogContentProps) {
+type DialogContentProps={title:string;description:string;primaryLabel:string;secondaryLabel:string;centerText:boolean;single:boolean;loading:boolean;secondaryDisabled:boolean;onPrimary?:()=>void;onSecondary?:()=>void;linkLabel?:string;onLink?:()=>void};
+function DialogContent({title,description,primaryLabel,secondaryLabel,centerText,single,loading,secondaryDisabled,onPrimary,onSecondary,linkLabel,onLink}:DialogContentProps) {
   return <><PixelText variant="title" style={centerText?{textAlign:'center'}:undefined}>{title}</PixelText><PixelText style={centerText?{textAlign:'center'}:undefined}>{description}</PixelText>
     {/* 설명 아래 보기 줄(글자 + >). 버튼과 따로 누른다 — 결제 확인 창의 [약관 보기] (2026-10-29 법률 검토 2차) */}
     {linkLabel&&<Pressable accessibilityRole="button" accessibilityLabel={linkLabel} disabled={loading} onPress={onLink} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:centerText?'center':'flex-start',gap:6}}>
       <PixelText>{linkLabel}</PixelText><PixelIcon name="chevron" size={14}/>
     </Pressable>}
     <View style={{flexDirection:'row',gap:12}}>
-      {!single&&<PixelButton label={secondaryLabel} variant="secondary" disabled={loading} onPress={onSecondary} style={{flex:1}}/>}
+      {!single&&<PixelButton label={secondaryLabel} variant="secondary" disabled={loading||secondaryDisabled} onPress={onSecondary} style={{flex:1}}/>}
       <PixelButton label={primaryLabel} loading={loading} accessibilityLabel={loading?'진행 중':undefined} onPress={onPrimary} style={{flex:1}}/>
     </View></>;
 }
 
 /** Shared dialog surface. The host positions tutorial near its target and basic at screen center. */
-export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false,linkLabel,onLink}:
-  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean;/** 주 버튼을 누른 뒤 진행 중: 주 버튼은 로딩 점, 보조 버튼은 비활성 (로그아웃·계정 삭제) */loading?:boolean;/** 설명 아래 보기 줄 글자(예: '약관 보기'). 없으면 줄이 없다 */linkLabel?:string;onLink?:()=>void}) {
-  return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:360}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
-    {variant==='tutorial'&&<>{step&&<PixelText>{step}</PixelText>}<View style={{height:2,backgroundColor:c.ink}}/></>}
-    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'건너뛰기':'취소')} single={single} loading={loading} onPrimary={onPrimary} onSecondary={onSecondary} linkLabel={linkLabel} onLink={onLink}/>
+export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false,secondaryDisabled=false,skipLabel='건너뛰기',onSkip,linkLabel,onLink}:
+  {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean;/** 주 버튼을 누른 뒤 진행 중: 주 버튼은 로딩 점, 보조 버튼은 비활성 (로그아웃·계정 삭제) */loading?:boolean;/** 보조 버튼만 비활성 (튜토리얼 첫 단계의 이전) */secondaryDisabled?:boolean;skipLabel?:string;/** tutorial: 단계 숫자 오른쪽의 밑줄 글자 버튼. 없으면 그리지 않는다 */onSkip?:()=>void;/** 설명 아래 보기 줄 글자(예: '약관 보기'). 없으면 줄이 없다 */linkLabel?:string;onLink?:()=>void}) {
+  return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:DIALOG_MAX_WIDTH}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
+    {variant==='tutorial'&&<>{(step||onSkip)&&<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+      <PixelText>{step}</PixelText>
+      {/* 글자 한 줄 높이라 위아래로 누르는 범위를 넓혀 44pt쯤으로 맞춘다 */}
+      {onSkip&&<Pressable accessibilityRole="button" accessibilityLabel={skipLabel} hitSlop={{top:12,bottom:12,left:12,right:12}} onPress={onSkip}><PixelText style={{textDecorationLine:'underline'}}>{skipLabel}</PixelText></Pressable>}
+    </View>}<View style={{height:2,backgroundColor:c.ink}}/></>}
+    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'이전':'취소')} single={single} loading={loading} secondaryDisabled={secondaryDisabled} onPrimary={onPrimary} onSecondary={onSecondary} linkLabel={linkLabel} onLink={onLink}/>
   </PixelFrame>;
 }
 

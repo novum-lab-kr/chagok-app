@@ -65,7 +65,7 @@ describe('confirmWithTerms', () => {
     open.mockResolvedValue({ type: 'dismiss' });
     const ask = jest.fn().mockResolvedValueOnce('link').mockResolvedValueOnce('primary');
     await expect(confirmWithTerms(ask, spec)).resolves.toBe(true);
-    expect(open).toHaveBeenCalledWith('https://chagok-app-terms.netlify.app/terms/');
+    expect(open).toHaveBeenCalledWith('https://chagok.novum-lab.com/terms/');
     expect(ask).toHaveBeenCalledTimes(2);
     expect(ask).toHaveBeenNthCalledWith(2, spec);
   });
