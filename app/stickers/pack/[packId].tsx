@@ -10,6 +10,7 @@ import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { AD_TRIAL_MS, dayTrialThreshold } from '../../../src/domain/packs';
 import { loadPackState, startDayTrial } from '../../../src/repositories/packRepository';
 import { buyPack, watchAdForPack } from '../../../src/purchases';
+import { confirmWithTerms } from '../../../src/policy/openPolicy';
 import type { ColorStickerPackId } from '../../../src/stickers/color/catalog';
 
 type PackState = Awaited<ReturnType<typeof loadPackState>>;
@@ -23,7 +24,7 @@ export default function Pack() {
   const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
   const [once] = useState(createSingleFlight);
   const [busy, setBusy] = useState<'buy' | 'ad'>();
-  const { ask, confirm, dialog } = useDialog();
+  const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
   const prices = usePrices();
 
@@ -46,11 +47,11 @@ export default function Pack() {
   const opened = () => { offerOpenPack(packId); goBackOrHome(); };
 
   /**
-   * 사기 전에 환불 안내 확인 창을 먼저 띄운다. 결제 팝업은 스토어가 그린다.
+   * 사기 전에 환불 안내 확인 창을 먼저 띄운다([약관 보기]를 누르면 약관을 본 뒤 다시 묻는다). 결제 팝업은 스토어가 그린다.
    * 기다리는 동안 누른 버튼에 로딩 점. 취소하면 아무것도 하지 않는다 (2026-10-13).
    */
   async function buy() {
-    if (!(await confirm(stickerShopDialogs.confirmBuy(view!.label, view!.stickers.length, view!.price)))) return;
+    if (!(await confirmWithTerms(ask, stickerShopDialogs.confirmBuy(view!.label, view!.stickers.length, view!.price)))) return;
     setBusy('buy');
     const r = await buyPack(packId).finally(() => setBusy(undefined));
     if (!r.ok) {

@@ -33,12 +33,12 @@
 
 1. 위 1절 파일 복사, `npm install` (react-dom override 유지 — `npm ls react-dom --all`이 `19.2.3` 하나인지).
 2. 확인: `npm test`, `npm run test:components`, `npm run typecheck`, `npm run lint`, `npm run test:server`(관리자 키 필요).
-3. 원격 주소가 바뀌면 `git remote set-url origin <새 주소>`. 정책 사이트(Netlify)가 정책 저장소의 `publish` 브랜치를 보고 있으니, 정책 저장소를 옮기면 Netlify 연결도 바꾼다.
-   - 정책 저장소는 이미 `nol-meok`을 거쳐 2026-10-17 `novum-lab-kr`로 옮겼다. Netlify의 GitHub 앱이 `novum-lab-kr` Org 저장소에 접근할 수 있는지, 사이트 설정(Build & deploy → Repository)이 새 주소를 가리키는지 확인한다. 사이트는 2026-10-04에도 열렸지만(200), 다음 `publish` push가 배포되는지는 확인 전이다.
+3. 원격 주소가 바뀌면 `git remote set-url origin <새 주소>`. 정책 사이트는 정책 저장소 `main`에 push하면 GitHub Actions가 운영 VPS로 올린다(2026-10-29~). 정책 저장소를 옮기면 Actions secret(배포 키와 서버 주소)도 새 저장소에 다시 넣는다.
+   - 정책 저장소는 이미 `nol-meok`을 거쳐 2026-10-17 `novum-lab-kr`로 옮겼다. (2026-10-29 전 Netlify 시절 기록) Netlify의 GitHub 앱이 `novum-lab-kr` Org 저장소에 접근할 수 있는지, 사이트 설정(Build & deploy → Repository)이 새 주소를 가리키는지 확인한다. 사이트는 2026-10-04에도 열렸지만(200), 다음 `publish` push가 배포되는지는 확인 전이다.
 4. 같은 방식으로 작업되는지 확인: 새 세션의 첫 응답이 한국어인지, 시안을 아티팩트로 내는지.
 
 ## 4. 외부에 걸린 것 (레포와 별개로 계속 쓰임)
 
 - 시안 아티팩트 3개(비공개): [시안 기록](../design/proposals-2026-10/README.md). 원본·메모는 저장소에 있다.
-- 정책 사이트 `https://chagok-app-terms.netlify.app` — 앱 코드(`src/policy/urls.ts`)가 이 주소를 본다.
+- 정책 사이트 `https://chagok.novum-lab.com` — 앱 코드(`src/policy/urls.ts`)가 이 주소를 본다.
 - Supabase 개발 프로젝트 `chagok-dev`(서울) — 앱이 `.env.local`로 연결.

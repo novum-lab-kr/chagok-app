@@ -2,7 +2,7 @@
 
 작성: 2026-10-11 · 상태: **답안 확정(2026-10-11 공식 정의 대조, 사용자 승인)** · 근거: PRD 8절, 출시 준비 결정, `node_modules`의 `PrivacyInfo.xcprivacy`
 
-스토어에 낼 때 채우는 세 가지 — iOS Privacy Manifest, App Store 개인정보 라벨, Google Play 데이터 보안·연령 등급 — 의 답안 초안이다. **결제(RevenueCat)·광고(AdMob)를 붙이기 전 기준**이고, 붙인 뒤 늘어나는 항목은 각 절 끝에 따로 적었다.
+스토어에 낼 때 채우는 세 가지 — iOS Privacy Manifest, App Store 개인정보 라벨, Google Play 데이터 보안·연령 등급 — 의 답안 초안이다. **결제(RevenueCat)·광고(AdMob)를 붙이기 전 기준**이고, 붙인 뒤 늘어나는 항목은 각 절 끝에 따로 적었다. 2절 끝의 결제와 광고 표는 2026-10-28에 더했고 사용자 확인 전이다.
 
 ## 1. iOS Privacy Manifest (`app.json` `ios.privacyManifests`)
 
@@ -52,10 +52,25 @@
 
 - 진단(충돌 기록)·사용 데이터: 지금은 수집하는 SDK가 없다.
 
-**결제·광고를 붙인 뒤 더할 것 (확인 필요)**
+**결제와 광고를 붙인 뒤 더할 것 (2026-10-28 초안, 사용자 확인 전)**
 
-- 구매 › 구매 내역 — RevenueCat(앱 기능).
-- 광고: AdMob이 수집하는 항목(기기 ID·광고 데이터·대략 위치·진단 등)을 Google의 「App Store 개인정보 공개 안내」에서 확인해 「제3자 광고」 목적으로 적는다. 비맞춤이어도 수집 항목은 있다.
+근거는 Apple 「App privacy details」 원문("You need to identify all of the data you or your third-party partners collect"), 두 SDK가 스스로 밝힌 선언(`ios/Pods/Google-Mobile-Ads-SDK/.../GoogleMobileAds.framework/PrivacyInfo.xcprivacy` 13.6.0, `ios/Pods/RevenueCat/Sources/PrivacyInfo.xcprivacy`), Google 「App Store data disclosure」(2026-10-27 갱신본)이다. 광고 SDK가 모으는 것은 로그인과 상관없이 모든 사용자에게 해당한다. Apple의 선택 공개 예외는 「제3자 광고에 쓰지 않을 것」이 조건이라 광고 항목에는 쓸 수 없다.
+
+| 데이터 유형 | 누가 | 목적 | 사용자와 연결 | 추적 |
+| --- | --- | --- | --- | --- |
+| 구매 › 구매 내역 | RevenueCat | 앱 기능 | 예 (로그인하면 계정 식별자로 `Purchases.logIn`, `src/purchases/revenueCat.ts:34`) | 아니요 |
+| 위치 › 대략적 위치 | AdMob (IP로 추정) | 제3자 광고, 개발자 광고, 분석 | 예 | 아니요 |
+| 식별자 › 기기 ID | AdMob | 제3자 광고, 분석 | 예 | **아니요 (추천안, 아래)** |
+| 사용 데이터 › 제품 상호작용 | AdMob | 제3자 광고, 개발자 광고, 분석 | 예 | 아니요 |
+| 사용 데이터 › 광고 데이터 | AdMob | 제3자 광고, 개발자 광고, 분석 | 예 | 아니요 |
+| 진단 › 충돌 데이터 | AdMob | 분석 | 아니요 | 아니요 |
+| 진단 › 성능 데이터 | AdMob | 제3자 광고, 개발자 광고, 분석 | 아니요 | 아니요 |
+| 진단 › 기타 진단 데이터 | AdMob | 제3자 광고, 개발자 광고, 분석 | 아니요 | 아니요 |
+
+- 「연결」과 「추적」 칸은 Google SDK 선언을 따랐다. Google 웹 안내는 이 두 칸을 나누어 적지 않는다.
+- **기기 ID의 추적 칸은 사용자 결정이 필요하다.** SDK 선언은 기기 ID를 「추적에 사용」으로 적는다. 그런데 앱은 ATT를 묻지 않으므로 광고 식별자가 0이고(Apple 원문 "the device's advertising identifier value will be all zeros"), Google도 ATT 동의가 없으면 "the Google Mobile Ads SDK will not send the IDFA"라고 한다. 추천안은 실제 동작대로 「아니요」로 두고 앱 전체 「추적: 하지 않음」을 유지하는 것이다. SDK 선언 그대로 「예」로 적으면 스토어에 「사용자를 추적하는 데 사용되는 데이터」가 보이고 ATT 없이 추적한다고 읽힐 수 있다.
+- 맞춤 광고로 바꾸면(RELEASE-DECISIONS 2026-10-05 「광고」) 기기 ID와 광고 데이터의 추적 칸을 다시 본다.
+- Sentry를 넣으면(PRD 11절) 충돌 데이터와 기기 ID(설치 ID) 줄이 늘어난다.
 
 ## 3. Google Play 데이터 보안
 
@@ -66,7 +81,7 @@
 | 목적 | 앱 기능, 계정 관리 |
 | 필수/선택 | 선택(로그인하지 않아도 쓴다) |
 | 전송 중 암호화 | 예 |
-| 삭제 요청 | 예 — 앱 안 계정 삭제 + 웹 요청 경로 `https://chagok-app-terms.netlify.app/delete-account/`(이미 있음. 앱 이름·앱 안 삭제 방법·메일 요청·지워지는 정보와 30일 백업 보관을 적어 둠 — Google 요건 충족) |
+| 삭제 요청 | 예 — 앱 안 계정 삭제 + 웹 요청 경로 `https://chagok.novum-lab.com/delete-account/`(이미 있음. 앱 이름·앱 안 삭제 방법·메일 요청·지워지는 정보와 30일 백업 보관을 적어 둠 — Google 요건 충족) |
 
 **광고를 붙인 뒤:** 기기 또는 기타 ID(광고 ID) — 광고 목적, Google과 공유. 출시 준비 결정(2026-10-05)대로 비맞춤이어도 처음부터 적는다. 구매 내역 — 앱 기능.
 
@@ -77,7 +92,7 @@
 | App Store | 4+ | 폭력·성·도박 없음. 사용자 콘텐츠가 다른 사람에게 보이지 않음(공유·소통 기능 없음) |
 | Google Play (IARC) | 전체이용가 | 같은 이유. 「사용자 간 소통」 없음, 「위치 공유」 없음 |
 
-**함께 답할 것:** 앱 내 구매 있음(묶음·광고 제거), 광고 있음(홈 배너·보상형). Apple의 새 설문(2025)에 광고·사용자 콘텐츠 질문이 있으니 제출할 때 문항을 다시 본다. 동의 화면의 만 14세 이상 확인(PRD 4.8)은 등급과 별개다.
+**함께 답할 것:** 앱 내 구매 있음(묶음·광고 제거), 광고 있음(홈 배너·보상형). Apple의 새 설문(2025)에 광고·사용자 콘텐츠 질문이 있으니 제출할 때 문항을 다시 본다. 2026-10-28 도움말 「Age ratings values and definitions」에서 등급이 4+, 9+, 13+, 16+, 18+이고 설문 항목에 「Advertising」, 「User-Generated Content」, 「Messaging and Chat」, 「Parental Controls」, 「Age Assurance」가 있는 것을 봤다. 광고가 등급을 올리는지와 답해야 하는 마감일은 도움말에서 찾지 못했다(설문 화면에서 확인). 우리 답: 광고 있음, 사용자 콘텐츠는 기기와 본인 백업에만 있고 남에게 보이지 않음, 메시지 없음, 웹 열람 없음(약관 시트는 우리 문서만 연다). 심사 지침 2.3.6은 설문에 "honestly" 답하라고 하고, 광고 내용은 AdMob 등급 상한 G로 4+에 맞춘다(2.5.18). 동의 화면의 만 14세 이상 확인(PRD 4.8)은 등급과 별개다.
 
 ## 공식 정의와 대조한 결과 (2026-10-11)
 

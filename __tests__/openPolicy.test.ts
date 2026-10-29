@@ -3,7 +3,7 @@ jest.mock('expo-network', () => ({ getNetworkStateAsync: jest.fn() }));
 
 import * as WebBrowser from 'expo-web-browser';
 import * as Network from 'expo-network';
-import { openPolicy } from '../src/policy/openPolicy';
+import { confirmWithTerms, openPolicy } from '../src/policy/openPolicy';
 
 const open = WebBrowser.openBrowserAsync as jest.Mock;
 const network = Network.getNetworkStateAsync as jest.Mock;
@@ -17,7 +17,7 @@ describe('openPolicy', () => {
     open.mockResolvedValue({ type: 'dismiss' });
     const ask = jest.fn();
     await openPolicy('terms', ask);
-    expect(open).toHaveBeenCalledWith('https://chagok-app-terms.netlify.app/terms/');
+    expect(open).toHaveBeenCalledWith('https://chagok.novum-lab.com/terms/');
     expect(ask).not.toHaveBeenCalled();
   });
 
@@ -48,5 +48,25 @@ describe('openPolicy', () => {
     finish();
     await first;
     expect(open).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('confirmWithTerms', () => {
+  const spec = { title: '사기 전', description: '…', primaryLabel: '열기', secondaryLabel: '취소', linkLabel: '약관 보기' };
+
+  it('주 버튼을 고르면 true, 취소나 닫기면 false', async () => {
+    await expect(confirmWithTerms(jest.fn().mockResolvedValue('primary'), spec)).resolves.toBe(true);
+    await expect(confirmWithTerms(jest.fn().mockResolvedValue('secondary'), spec)).resolves.toBe(false);
+    await expect(confirmWithTerms(jest.fn().mockResolvedValue('dismiss'), spec)).resolves.toBe(false);
+  });
+
+  it('[약관 보기]를 누르면 약관 시트를 연 뒤 같은 확인 창을 다시 띄운다 (2026-10-29 법률 검토 2차)', async () => {
+    network.mockResolvedValue(online);
+    open.mockResolvedValue({ type: 'dismiss' });
+    const ask = jest.fn().mockResolvedValueOnce('link').mockResolvedValueOnce('primary');
+    await expect(confirmWithTerms(ask, spec)).resolves.toBe(true);
+    expect(open).toHaveBeenCalledWith('https://chagok.novum-lab.com/terms/');
+    expect(ask).toHaveBeenCalledTimes(2);
+    expect(ask).toHaveBeenNthCalledWith(2, spec);
   });
 });

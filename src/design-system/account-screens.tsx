@@ -202,6 +202,8 @@ export function DeleteAccountScreen({onDelete,onCancel,onBack}:{onDelete:()=>voi
     <PixelPanel contentStyle={{gap:8}}>
       <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>계정과 기록이 사라져요</PixelText>
       <PixelText>서버에 저장된 목표, 스티커, 메모, 사진과 계정을 삭제해요. 이 기기의 기록도 모두 지워져요. 되돌릴 수 없어요.</PixelText>
+      {/* 기기를 비울 때 산 표시도 지운다(src/sync/wipe.ts) — 구매가 사라진 줄 알지 않게 되살리는 길을 알린다 (2026-10-29 법률 검토 2차) */}
+      <PixelText>산 스티커 묶음과 광고 제거도 이 기기에서 지워져요. 같은 스토어 계정으로 앱 설정의 [구매 복원]을 누르면 다시 받을 수 있어요.</PixelText>
     </PixelPanel>
     <View style={{flex:1}}/>
     <PixelButton label="계정 삭제하기" onPress={onDelete}/>

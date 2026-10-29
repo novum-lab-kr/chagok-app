@@ -127,9 +127,11 @@ describe('묶음 화면',()=>{
     fireEvent.click(screen.getByRole('button',{name:'묶음 열기'}));expect(buy).toHaveBeenCalled();
   });
   it('다이얼로그 문구는 확정 시안 그대로다',()=>{
-    expect(stickerShopDialogs.confirmBuy('동물',10,'2,200원')).toMatchObject({title:'동물 묶음을 열까요?',description:'스티커 10개를 바로 붙일 수 있어요.\n고른 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'2,200원에 열기',secondaryLabel:'취소'});
+    // 결제 직전 고지 (2026-10-29 법률 검토 2차): 청약철회를 할 수 없게 되는 때는 약관 11조와 같은 뜻, 환불 요청처, 미성년자 취소, 약관 적용과 [약관 보기]
+    const notice='환불은 App Store에서 요청해 주세요.\n미성년자가 법정대리인 동의 없이\n샀다면 본인이나 법정대리인이\n취소할 수 있어요.\n이 구매에는 이용약관이 적용돼요.';
+    expect(stickerShopDialogs.confirmBuy('동물',10,'2,200원')).toMatchObject({title:'동물 묶음을 열까요?',description:`스티커 10개를 바로 붙일 수 있어요.\n스티커를 고르거나 판에 붙이면\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'2,200원에 열기',secondaryLabel:'취소',linkLabel:'약관 보기'});
     expect(stickerShopDialogs.confirmBuy('동물',10).primaryLabel).toBe('열기');
-    expect(stickerShopDialogs.confirmAdFree).toMatchObject({title:'광고를 없앨까요?',description:'목표 화면 아래 광고가 사라져요.\n산 뒤에는 환불이 어려울 수 있어요.',primaryLabel:'광고 없애기',secondaryLabel:'취소'});
+    expect(stickerShopDialogs.confirmAdFree).toMatchObject({title:'광고를 없앨까요?',description:`사는 즉시 목표 화면 아래\n광고가 사라져서\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'광고 없애기',secondaryLabel:'취소',linkLabel:'약관 보기'});
     expect(stickerShopDialogs.bought('동물')).toMatchObject({title:'동물 묶음을 열었어요',description:'기본 스티커로 쓸 그림을 골라 주세요.'});
     expect(stickerShopDialogs.adTrialStarted('내일 밤 11:00')).toMatchObject({title:'하루 동안 써 볼 수 있어요',description:'내일 밤 11:00까지 쓸 수 있어요.'});
     expect(stickerShopDialogs.trialEnded('3일')).toMatchObject({title:'3일 체험이 끝났어요',description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'묶음 열기',secondaryLabel:'다른 스티커'});

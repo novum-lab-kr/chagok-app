@@ -1,6 +1,6 @@
 import React,{type ReactNode} from 'react';
 import {View,useWindowDimensions} from 'react-native';
-import {AccountBackupPanel,FloatingTabBar,PixelPanel,PurchasePanel,RetroScreen,SettingRow,TabTitle,retro,type AccountBackupStatus,type TabItem} from '../../src/design-system';
+import {AccountBackupPanel,FloatingTabBar,HelpInfoPanel,PurchasePanel,RetroScreen,TabTitle,retro,type AccountBackupStatus,type TabItem} from '../../src/design-system';
 
 /** 화면 스토리 공통 틀. 화면 스토리는 이 파일만 쓰고 틀을 따로 만들지 않는다. */
 export const noop=()=>{};
@@ -36,7 +36,6 @@ export function SettingsTab({status={state:'synced',provider:'Apple',backedUpAt:
   return <RetroScreen style={{gap:16}} header={<TabTitle title="설정"/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
     <PurchasePanel adFree={adFree} price={price??undefined} onRemoveAds={noop} onRestore={noop} busy={busy}/>
-    <PixelPanel title="도움말"><SettingRow label="사용법 다시 보기" onPress={noop}/></PixelPanel>
-    <PixelPanel title="정보"><SettingRow label="약관과 라이선스" onPress={noop}/></PixelPanel>
+    <HelpInfoPanel adFree={adFree} version="1.0.0" onTutorial={noop} onContact={noop} onReportAd={noop} onPolicies={noop}/>
   </RetroScreen>;
 }

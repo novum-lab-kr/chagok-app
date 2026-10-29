@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import {
-  AccountBackupPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
+  AccountBackupPanel, HelpInfoPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
   stickerShopDialogs,
   type AccountBackupStatus,
 } from '../../src/design-system';
@@ -16,12 +16,14 @@ import { pushOnce } from '../../src/sync/push';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync, subscribeSyncStatus } from '../../src/sync/syncGate';
 import { wipeDevice } from '../../src/sync/wipe';
+import { confirmWithTerms } from '../../src/policy/openPolicy';
 import { getSetting } from '../../src/repositories/appSettingsRepository';
 import { loadPackState } from '../../src/repositories/packRepository';
 import { buyAdFree, restorePurchases } from '../../src/purchases';
 import { useDialog } from '../../src/app-data/useDialog';
 import { usePrices } from '../../src/app-data/usePrices';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
+import { appVersion, openContactMail } from '../../src/support/openContactMail';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
 
@@ -37,15 +39,15 @@ export default function AppSettings() {
   const [buyOnce] = useState(createSingleFlight);
   /** 기다리는 동안 누른 버튼에 로딩 점 (2026-10-13) */
   const [purchaseBusy, setPurchaseBusy] = useState<'adFree' | 'restore'>();
-  const { ask, confirm, dialog: purchaseDialog } = useDialog();
+  const { ask, dialog: purchaseDialog } = useDialog();
   useFocusEffect(useCallback(() => {
     let alive = true;
     void loadPackState().then((p) => { if (alive) setAdFree(p.adFree); });
     return () => { alive = false; };
   }, []));
-  /** 사기 전에 환불 안내 확인 창을 먼저 띄운다. 결제 창을 닫은 취소에는 알리지 않는다. */
+  /** 사기 전에 환불 안내 확인 창을 먼저 띄운다([약관 보기]를 누르면 약관을 본 뒤 다시 묻는다). 결제 창을 닫은 취소에는 알리지 않는다. */
   async function removeAds() {
-    if (!(await confirm(stickerShopDialogs.confirmAdFree))) return;
+    if (!(await confirmWithTerms(ask, stickerShopDialogs.confirmAdFree))) return;
     setPurchaseBusy('adFree');
     const r = await buyAdFree().finally(() => setPurchaseBusy(undefined));
     if (r.ok) setAdFree(true);
@@ -164,12 +166,14 @@ export default function AppSettings() {
           </PixelPanel>
         )}
         <PurchasePanel adFree={adFree} price={prices.adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
-        <PixelPanel title="도움말">
-          <SettingRow label="사용법 다시 보기" onPress={() => nav.push('/tutorial')} />
-        </PixelPanel>
-        <PixelPanel title="정보">
-          <SettingRow label="약관과 라이선스" onPress={() => nav.push('/policies')} />
-        </PixelPanel>
+        <HelpInfoPanel
+          adFree={adFree}
+          version={appVersion()}
+          onTutorial={() => nav.push('/tutorial')}
+          onContact={() => { void openContactMail('question', ask); }}
+          onReportAd={() => { void openContactMail('adReport', ask); }}
+          onPolicies={() => nav.push('/policies')}
+        />
         {__DEV__ && supabase && (
           <PixelPanel title="개발">
             <SettingRow label="서버 동기화 (개발)" onPress={() => nav.push('/dev/sync')} />

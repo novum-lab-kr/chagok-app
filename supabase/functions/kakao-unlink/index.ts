@@ -13,16 +13,21 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const RETRY_DELAYS_MS = [2000, 8000];
 
-async function remove(kakaoId: string, referrer: string) {
+async function remove(kakaoId: string, referrer: string, requestedAt: Date) {
   const admin = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  // 처음 찾은 사용자를 기억한다. 인증 계정을 지운 뒤(감사 기록 정리나 파기 기록에서 실패) 다시 하면 회원번호로는 더 찾을 수 없다.
+  let uid: string | null = null;
   const attempt = async (): Promise<UnlinkAttempt> => {
-    const found = await admin.rpc('admin_find_user_by_identity', { p_provider: 'kakao', p_provider_id: kakaoId });
-    if (found.error) return 'find';
-    if (typeof found.data !== 'string') return 'no_user';
+    if (!uid) {
+      const found = await admin.rpc('admin_find_user_by_identity', { p_provider: 'kakao', p_provider_id: kakaoId });
+      if (found.error) return 'find';
+      if (typeof found.data !== 'string') return 'no_user';
+      uid = found.data;
+    }
     // 카카오 연결은 이미 끊겼으니 다시 끊지 않는다
-    const result = await deleteUserData(admin, found.data, { unlinkKakao: false });
+    const result = await deleteUserData(admin, uid, { unlinkKakao: false, route: 'kakao_unlink', requestedAt });
     return 'error' in result ? result.step : 'deleted';
   };
   const outcome = await retryUnlink(attempt, RETRY_DELAYS_MS, (ms) => new Promise((r) => setTimeout(r, ms)));
@@ -36,6 +41,7 @@ async function remove(kakaoId: string, referrer: string) {
 }
 
 Deno.serve(async (req) => {
+  const requestedAt = new Date();
   const params = new URL(req.url).searchParams;
   if (req.method === 'POST') {
     const body = await req.text().catch(() => '');
@@ -48,7 +54,7 @@ Deno.serve(async (req) => {
     console.log('kakao-unlink: ignored', decision.referrer);
     return json({ ok: true });
   }
-  EdgeRuntime.waitUntil(remove(decision.kakaoId, decision.referrer).catch((e) => {
+  EdgeRuntime.waitUntil(remove(decision.kakaoId, decision.referrer, requestedAt).catch((e) => {
     console.error('kakao-unlink: failed', decision.referrer, 'unexpected', String(e));
   }));
   return json({ ok: true });
