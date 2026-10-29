@@ -1,4 +1,5 @@
-// 칸이나 버튼을 눌렀을 때 할 일 (PRD 4.14, 위젯 4.10과 같은 기준). 실제 판단은 폰이 다시 한다.
+// 칸이나 버튼을 눌렀을 때 할 일 (PRD 4.14). 실제 판단은 폰이 다시 한다.
+// 떼기는 폰처럼 꾹 눌러야 한다. 위젯(4.10)은 길게 누를 수 없어 누르면 떼지만, 워치는 붙이려고 연달아 누르다 떼졌다(2026-10-28).
 import Foundation
 
 enum Copy {
@@ -41,11 +42,20 @@ enum Tap {
     return g.remaining == 1 ? .confirm : .add
   }
 
-  /** 적립판 칸. 빈칸은 어디를 눌러도 다음 빈칸에 붙는다 */
+  /** 적립판 칸. 빈칸과 오늘 붙인 칸은 어디를 눌러도 다음 빈칸에 붙는다 */
   static func tally(_ g: WatchGoal, index: Int) -> TapResult {
+    guard case let .tally(cells, _) = g.board, index < cells.count else { return .none }
+    switch cells[index] {
+    case .empty, .placedToday: return stick(g)
+    case .placed: return .toast(Copy.pastCell)
+    }
+  }
+
+  /** 적립판 칸을 꾹 눌렀을 때. 오늘 붙인 칸만 뗀다 */
+  static func tallyHold(_ g: WatchGoal, index: Int) -> TapResult {
     guard case let .tally(cells, recorded) = g.board, index < cells.count else { return .none }
     switch cells[index] {
-    case .empty: return stick(g)
+    case .empty: return .none
     case .placedToday: return recorded.contains(index) ? .toast(Copy.pastCell) : .remove(slot: index)
     case .placed: return .toast(Copy.pastCell)
     }
@@ -60,9 +70,19 @@ enum Tap {
       if g.locked { return .toast(Copy.locked) }
       let key = DateKey.of(year: y, month: m, day: day)
       return g.remaining == 1 ? .confirmOn(dateKey: key) : .addOn(dateKey: key)
+    case .placedToday, .future, .outside: return .none
+    case .placed: return .toast(Copy.pastDay)
+    }
+  }
+
+  /** 달력판 날짜를 꾹 눌렀을 때. 오늘 붙인 날만 뗀다 */
+  static func dayHold(_ g: WatchGoal, day: Int) -> TapResult {
+    guard case let .calendar(_, _, _, days, recorded, _, _) = g.board, day >= 1, day <= days.count else { return .none }
+    let i = day - 1
+    switch days[i] {
     case .placedToday: return recorded.contains(i) ? .toast(Copy.pastDay) : .remove(slot: i)
     case .placed: return .toast(Copy.pastDay)
-    case .future, .outside: return .none
+    case .empty, .future, .outside: return .none
     }
   }
 }
