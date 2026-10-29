@@ -1,0 +1,203 @@
+<title>차곡차곡 스토어 스크린샷</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 위에서 아래로 한 줄. 안마다 7장을 가로로 넘겨 보고, 그 아래 고르기와 메모 */
+@font-face { font-family: Neo; src: url(data:font/ttf;base64,__FONT__); }
+:root {
+  --bg: #AFE1CB; --panel: #FEF1D1; --ink: #06261C; --soft: #3d5a4f; --accent: #FD855F; --line: #06261C;
+  --display: Neo, "Apple SD Gothic Neo", sans-serif; --body: "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f2a22; --panel: #183a2f; --ink: #F3EBD3; --soft: #b8c9bd; --accent: #FD855F; --line: #7fb39d; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0f2a22; --panel: #183a2f; --ink: #F3EBD3; --soft: #b8c9bd; --accent: #FD855F; --line: #7fb39d; color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; word-break: keep-all; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+h1, h2 { font-family: var(--display); font-weight: normal; margin: 0; text-wrap: balance; }
+h1 { font-size: 32px; line-height: 1.3; }
+h2 { font-size: 22px; }
+p { margin: 0; }
+.lead { color: var(--soft); max-width: 65ch; }
+#variants { display: grid; gap: 28px; }
+.card { background: var(--panel); border: 3px solid var(--line); box-shadow: 4px 4px 0 var(--line); padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.card.picked { outline: 4px solid var(--accent); outline-offset: 3px; }
+.head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tag { font-family: var(--display); font-size: 13px; background: var(--accent); color: #01241C; padding: 2px 10px; }
+.strip { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+.strip img { width: 200px; flex: none; border: 2px solid var(--line); scroll-snap-align: start; display: block; }
+.watch img { width: 150px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+button { font: 15px var(--display); color: var(--ink); background: var(--panel); border: 3px solid var(--line); padding: 8px 16px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--accent); color: #01241C; }
+button:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+textarea { width: 100%; min-height: 64px; font: 15px var(--body); color: var(--ink); background: var(--bg); border: 2px solid var(--line); padding: 8px; box-sizing: border-box; resize: vertical; }
+.state { font-size: 13px; color: var(--soft); }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.src { font-size: 13px; color: var(--soft); }
+a { color: inherit; }
+.q { display: grid; gap: 8px; border-top: 2px dashed var(--line); padding-top: 14px; }
+.q.first { border-top: 0; padding-top: 0; }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <h1>스토어 스크린샷 시안 7판</h1>
+    <p class="lead">6판이 「화면이 작고 잘 안 보인다, 전체가 밋밋하다」여서 세 안을 서로 확실히 다르게 새로 짰어요. 캡처는 6판에서 찍은 것을 그대로 썼어요. 공통으로 첫 장부터 앱 화면을 크게 넣고(차곡이 단독 장은 뺐어요), 장마다 핵심 낱말 하나에 색을 넣었어요. iPhone 8장이고 1320×2868(6.9인치)과 꼭 내야 하는 1206×2622(6.3인치)를 모두 만들었어요. Watch는 고른 B안(먹색 바탕, 위쪽 문구)을 바탕으로 화면을 더 크게 키우고 안마다 강조색만 맞췄어요.</p>
+    <p class="state" id="store-state">저장소에 연결하는 중이에요</p>
+  </header>
+
+  <div id="variants"></div>
+
+  <section class="card">
+    <div class="head"><h2>Apple Watch 4장</h2></div>
+    <p>고른 B안(먹색 바탕, 위쪽 문구)으로 만들었어요. 화면 폭을 344에서 384로 키우고 아래 끝은 조금 잘랐어요. 판 고르기, 붙이기 화면, 붙이자 블록이 떨어지는 순간, 다 찬 블록을 보관함에 넣은 순간의 네 장이에요. 보관함 구경 화면은 뺐어요. 장면은 각 안 카드 아래에 함께 있어요. 크기는 416×496 그대로예요.</p>
+    <textarea id="note-shots7-watch" data-k="note-shots7-watch" aria-label="Watch 메모" placeholder="Watch 화면 메모"></textarea>
+    <span class="state" id="state-note-shots7-watch"></span>
+  </section>
+
+  <section class="card">
+    <h2>같이 정할 것</h2>
+    <div class="q first">
+      <strong>광고 배너</strong>
+      <p>목표 탭 아래 광고 배너가 나오지 않게 「광고 제거」 상태로 찍었어요. 무료로 쓰면 실제로는 배너가 있어요. 심사 지침에 광고를 보여 줘야 한다는 규정은 없어요.</p>
+      <textarea id="note-shots7-ads" data-k="note-shots7-ads" aria-label="광고 배너 메모" placeholder="그대로 둘지, 배너가 보이는 화면으로 바꿀지"></textarea>
+      <span class="state" id="state-note-shots7-ads"></span>
+    </div>
+    <div class="q">
+      <strong>스티커 화면(8번)</strong>
+      <p>지침 2.3.2에 따라 「원하면 사서 더 많이 골라요」로 사야 하는 묶음이 있다고 밝혔어요. 화면에는 앱 그대로 「무료」와 「3일 무료」(체험) 표시가 보여요. 지침 2.3.7은 스크린샷 문구에 가격을 넣지 말라는 것이라 앱 화면 속 표시는 괜찮다고 봤어요. 다만 제 해석이에요.</p>
+      <textarea id="note-shots7-shop" data-k="note-shots7-shop" aria-label="스티커 화면 메모" placeholder="이 장을 넣을지, 다른 화면으로 바꿀지"></textarea>
+      <span class="state" id="state-note-shots7-shop"></span>
+    </div>
+    <div class="q">
+      <strong>기록 사진</strong>
+      <p>기록 사진은 앱의 도트 그림 예시 사진(노을, 나무, 구름, 책장, 차)이에요. 휴대폰 테두리는 직접 그린 것이고 Apple 기기 그림은 쓰지 않았어요.</p>
+      <textarea id="note-shots7-photo" data-k="note-shots7-photo" aria-label="기록 사진 메모" placeholder="사진이나 휴대폰 테두리에 대한 메모"></textarea>
+      <span class="state" id="state-note-shots7-photo"></span>
+    </div>
+    <div class="q">
+      <strong>문구</strong>
+      <p>첫 세 장에 핵심을 담았어요. 1 「해낸 날, 스티커 한 칸」, 2 「목표마다 판 하나씩」, 3 「사진 한 장, 메모 한 줄」, 4 「쌓인 날을 다시 봐요」, 5 「그날 기분도 한 칸씩」, 6 「달력에 하루씩 채워요」, 7 「홈 화면과 손목에서도」, 8 「스티커로 꾸며요」(기본 스티커로 꾸미고, 원하면 사서 더 많이 골라요). Watch는 「붙일 목표를 골라요」, 「손목에서 바로 붙여요」, 「붙이면 블록이 톡」, 「다 차면 보관함으로」. 순서와 낱말을 바꾸고 싶으면 적어 주세요.</p>
+      <textarea id="note-shots7-copy" data-k="note-shots7-copy" aria-label="문구 메모" placeholder="바꿀 문구"></textarea>
+      <span class="state" id="state-note-shots7-copy"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>폰에서 붙이는 순간</h2>
+    <p>녹화해 보니 폰에서 스티커를 붙이면 칸에 살짝 커지며 나타나기만 하고 차곡이 반응이 없어요. 스크린샷으로는 칸을 크게 키워 보여 주는 것까지가 한계예요. 붙이는 순간을 더 귀엽게 만드는 것은 앱 연출을 바꾸는 일이라 따로 기획할 거리로 남겨 둘게요.</p>
+  </section>
+
+  <section class="card">
+    <h2>미리보기 영상</h2>
+    <p>iPhone에는 15~30초 영상을 3개까지 넣을 수 있고 스크린샷보다 앞에 나와요(886×1920, 30fps). Watch에는 영상을 넣을 수 없어요. 지침 2.3.4는 앱 화면을 녹화한 영상만 허용해요. launch-video의 영상은 캡처 위에 움직임을 얹은 모션 그래픽이고 유료 스티커(간식, 운동, 날씨)가 나와서 그대로는 못 써요. 같은 흐름(스플래시, 스티커 붙이기, 사진과 메모, 기록 모아보기)을 시뮬레이터에서 직접 녹화해 만드는 것을 제안해요.</p>
+    <textarea id="note-shots7-video" data-k="note-shots7-video" aria-label="영상 메모" placeholder="영상에 넣고 싶은 장면"></textarea>
+    <span class="state" id="state-note-shots7-video"></span>
+  </section>
+
+  <section class="card">
+    <h2>유료 스티커를 보여 줘도 되나</h2>
+    <p>돼요. 다만 지침 2.3.2에 따라 그 장에 따로 사야 한다는 것을 분명히 적어야 해요. 유료를 무료처럼 보이게 하면 반려될 수 있어요. 지금은 구매 안내를 장마다 붙이지 않으려고 화면과 장식 모두 무료 스티커(기본, 동물, 감정)만 썼고, 사야 하는 것이 있다는 것은 8번 장에서 밝혔어요.</p>
+  </section>
+
+  <section class="card">
+    <h2>확인한 규정</h2>
+    <ul>
+      <li>꼭 내야 하는 iPhone 크기는 Dynamic Island 중간 화면(1179×2556 또는 1206×2622)이에요. 큰 화면(1320×2868)은 넣어도 되는 크기예요. 크기마다 1장에서 10장, 투명 없이.</li>
+      <li>Watch 앱이 있으면 Watch 스크린샷이 필요해요. 모든 언어에 같은 크기를 써요.</li>
+      <li>2.3.3 스크린샷은 앱을 쓰는 모습을 보여 줘야 해요. 문구와 그림을 얹는 것은 돼요.</li>
+      <li>2.3.2 인앱 구매가 있으면 따로 사야 하는 것이 있는지 분명히 해야 해요.</li>
+      <li>2.3.7 스크린샷 문구에 가격을 넣지 않아요. 2.3.8 4+ 등급에 맞게. 2.3.9 실제 사람의 정보 대신 지어낸 예시를 써요.</li>
+      <li>4.4 앱 설명에 위젯이 있다는 것을 정확히 밝혀요. 위젯이나 Watch를 iPhone 스크린샷에 넣는 것을 막는 규정은 없었어요(제 해석).</li>
+    </ul>
+    <p class="src">출처: <a href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications">Screenshot specifications</a>, <a href="https://developer.apple.com/app-store/review/guidelines/">App Review Guidelines</a> 2.3, 4.4 (2026-10-26 원문 확인)</p>
+  </section>
+
+  <section class="card">
+    <h2>전체 메모</h2>
+    <textarea id="note-shots7-all" data-k="note-shots7-all" aria-label="전체 메모" placeholder="그 밖에 하고 싶은 말"></textarea>
+    <span class="state" id="state-note-shots7-all"></span>
+    <div class="row"><button id="copy" type="button">메모까지 복사</button><span class="state" id="summary"></span></div>
+  </section>
+</div>
+
+<script>
+const IMG = /*__IMG__*/{};
+const VARIANTS = [
+  { id: 'a', title: 'A안 출시 영상 결', desc: '출시 영상처럼 민트, 아이보리, 연두를 장마다 번갈아 칠하고 「01 붙이기」 같은 단계 배지와 살구색 강조 낱말을 넣었어요. 굵은 먹색 테두리 휴대폰을 화면 폭 가득 넣고(6판의 약 1.1배), 붙이는 칸과 달력 줄은 확대 조각으로 한 번 더 키웠어요. 영상과 한 벌로 보여요.' },
+  { id: 'b', title: 'B안 크게 잘라 보기', rec: true, desc: '먹색 바탕에 휴대폰 테두리를 빼고 화면에서 보여 줄 부분만 잘라 가장 크게 넣었어요. 6판보다 화면 속 글자와 스티커가 1.1배에서 1.2배 커요. 무료 스티커가 카드 모서리에 튀어나와요. 고른 Watch B안과 같은 먹색이라 iPhone과 Watch가 한 벌로 보여요.' },
+  { id: 'c', title: 'C안 이어지는 파노라마', desc: '살구 바탕에 아이보리 띠가 오르내리며 여덟 장이 한 그림으로 이어져요. 장과 장 사이에 스티커가 반씩 걸쳐 넘겨 보고 싶게 만들어요. 휴대폰은 번갈아 기울였어요. 화면 크기는 A안과 비슷해요(6판의 약 1.05배).' },
+];
+const $ = (id) => document.getElementById(id);
+const LS = 'chagok-store-shots7';
+let state = { pick: '', notes: {} };
+try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS) || '{}')); } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+
+$('variants').innerHTML = VARIANTS.map(v => `
+  <section class="card" id="card-${v.id}">
+    <div class="head"><h2>${v.title}</h2>${v.rec ? '<span class="tag">추천</span>' : ''}</div>
+    <p>${v.desc}</p>
+    <div class="strip">${[1,2,3,4,5,6,7,8].map(n => `<img alt="${v.title} ${n}번" src="${IMG[v.id + '-0' + n]}">`).join('')}</div>
+    <div class="strip watch">${[1,2,3,4].map(n => `<img alt="${v.title} Watch ${n}번" src="${IMG['w' + v.id + '-0' + n]}">`).join('')}</div>
+    <div class="row"><button type="button" data-pick="${v.id}" aria-pressed="false">이 안으로 할게요</button><span class="state" id="state-choice-${v.id}"></span></div>
+    <textarea id="note-shots7-${v.id}" data-k="note-shots7-${v.id}" aria-label="${v.title} 메모" placeholder="${v.title}에 대한 메모"></textarea>
+    <span class="state" id="state-note-shots7-${v.id}"></span>
+  </section>`).join('');
+
+function paint() {
+  for (const v of VARIANTS) {
+    const on = state.pick === v.id;
+    $(`card-${v.id}`).classList.toggle('picked', on);
+    document.querySelector(`[data-pick="${v.id}"]`).setAttribute('aria-pressed', String(on));
+  }
+  document.querySelectorAll('textarea[data-k]').forEach(t => { if (document.activeElement !== t) t.value = state.notes[t.dataset.k] || ''; });
+  const v = VARIANTS.find(x => x.id === state.pick);
+  $('summary').textContent = `고른 안: ${v ? v.title : '아직'}`;
+}
+function setStatus(k, t) { const el = $(`state-${k}`); if (el) el.textContent = t; }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+async function persist(k) {
+  saveLocal();
+  const sk = k === 'choice-shots7' ? `choice-${state.pick || 'a'}` : k;
+  if (!db) { setStatus(sk, '이 브라우저에만 저장됐어요'); return; }
+  if (writing[k]) { queued[k] = true; return; }
+  writing[k] = true; setStatus(sk, '저장 중…');
+  const at = new Date().toISOString();
+  try {
+    await db.doc(`review/${k}`).set(k === 'choice-shots7' ? { value: state.pick, updatedAt: at } : { note: state.notes[k] || '', updatedAt: at });
+    setStatus(sk, k.startsWith('choice-') ? '고른 것을 저장했어요' : '저장했어요');
+  } catch (e) { setStatus(sk, '저장하지 못했어요. 메모까지 복사로 보내 주세요'); }
+  finally { writing[k] = false; if (queued[k]) { queued[k] = false; persist(k); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  VARIANTS.forEach(v => setStatus(`choice-${v.id}`, ''));
+  state.pick = state.pick === b.dataset.pick ? '' : b.dataset.pick; paint(); persist('choice-shots7');
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-k]'); if (!t) return;
+  const k = t.dataset.k; state.notes[k] = t.value; setStatus(k, '적는 중…');
+  clearTimeout(timers[k]); timers[k] = setTimeout(() => persist(k), 800);
+});
+$('copy').addEventListener('click', () => {
+  const v = VARIANTS.find(x => x.id === state.pick);
+  const text = '스토어 스크린샷 시안 7판\n' + $('summary').textContent + '\n' + Object.entries(state.notes).filter(([, s]) => s && s.trim()).map(([k, s]) => `${k}: ${s.trim()}`).join('\n');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(() => { $('copy').textContent = '복사했어요'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); }, fallback); } catch (err) { fallback(); }
+});
+paint();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장돼요. 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = '고른 안과 메모는 Claude가 읽을 수 있게 저장돼요';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id === 'choice-shots7') { if (typeof v.value === 'string') state.pick = v.value; continue; }
+      if (!/^note-shots7-(a|b|c|watch|ads|shop|photo|video|copy|all)$/.test(d.id)) continue;
+      const t = document.activeElement; state.notes[d.id] = t && t.dataset && t.dataset.k === d.id ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소 연결이 끊겼어요. 메모까지 복사로 보내 주세요'; });
+})();
+</script>
