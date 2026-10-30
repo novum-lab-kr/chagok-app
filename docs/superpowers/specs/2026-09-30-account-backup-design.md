@@ -117,6 +117,7 @@ PRD 4.8 전체를 구현한다. Apple·Google 로그인, 변경마다 자동 백
 **위치** — 이 저장소의 `supabase/`(마이그레이션 SQL, Edge Functions, `config.toml`). 개발은 Supabase 클라우드 무료 프로젝트 `chagok-dev`(서울 리전)다(2026-09-30 — 맥을 켜 두지 않아도 되고 Docker가 필요 없다). 테스트 데이터만 둔다. 실행법은 `docs/DEV-SETUP.md` 「개발 서버」.
 **운영 서버는 출시 전에 정한다.** 1순위는 Supabase 클라우드 서울 리전의 별도 프로젝트(같은 마이그레이션·함수를 올린다)다. 무료 요금제로 시작하면 자동 백업이 없으므로 **매일 DB를 내보내는 작업을 출시 전에 만든다**; 사진이 1GB에 가까워지면 Pro로 올리거나 사진만 다른 저장소로 옮긴다.
 대안은 VPS 셀프 호스팅(Hostinger KVM 4, 말레이시아)이다 — 비용은 없지만 방화벽·HTTPS·매일 백업·복구 시험을 직접 맡고, 처리방침에 국외 이전을 적는다.
+→ 2026-10-21 대안인 Hostinger VPS(말레이시아) 셀프 호스팅으로 정했다. 매일 백업은 Cloudflare R2(미국). [운영 서버 계획](../plans/2026-10-21-production-server.md).
 
 **이식성 원칙** — 동기화 규칙은 SQL 함수에만 둔다. 앱은 `SyncServer`·`PhotoStore` 인터페이스로만 서버를 안다.
 Supabase 전용 기능은 Auth·Storage·Edge Functions까지만 쓴다. 비용·운영 문제로 옮길 때 DB는 `pg_dump`, 사진은 S3 호환 저장소 복사,
