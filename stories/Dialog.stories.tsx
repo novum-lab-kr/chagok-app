@@ -81,6 +81,7 @@ const groups: [string, [string, Spec][]][] = [
     ['계정 삭제 · 최종 확인', accountDialogs.deleteAccount],
     ['계정 삭제 · 삭제 중', {...accountDialogs.deleteAccount, loading: true}],
     ['계정 삭제 · 실패', accountDialogs.deleteFailed],
+    ['계정 삭제 · 로그인이 풀려 있음', accountDialogs.deleteNeedsLogin],
   ]],
   ['스티커 묶음·구매 (stickerShopDialogs)', [
     ['묶음 · 사기 전 확인', stickerShopDialogs.confirmBuy(colorPack('objects_normal', 'locked').label, colorPack('objects_normal', 'locked').stickers.length, '2,200원')],

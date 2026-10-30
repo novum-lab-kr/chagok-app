@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 import { router, useNavigation } from 'expo-router';
 import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDialogs } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
-import { deleteAccountOnServer, signOutLocal } from '../../src/sync/account';
+import { deleteAccountOnServer, NeedsLoginError, signOutLocal } from '../../src/sync/account';
 import { revokeGoogle, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
 import { signOutKakao } from '../../src/sync/signIn/expoKakao';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
 import { wipeDevice } from '../../src/sync/wipe';
 
-type Step = 'review' | 'confirm' | 'busy' | 'failed' | 'done';
+type Step = 'review' | 'confirm' | 'busy' | 'failed' | 'needsLogin' | 'done';
+
+/** 닫히는 애니메이션(fade)보다 넉넉하게 (useDialog와 같은 값) */
+const DISMISS_FALLBACK_MS = 700;
 
 /**
  * 계정 삭제 (시안 6A, 계정·백업 설계 ①). 내용 확인 → 최종 확인 → 삭제 중 → 완료.
@@ -24,6 +27,8 @@ export default function DeleteAccount() {
   /** 서버 삭제가 끝났다. 그 뒤 기기 정리만 실패했으면 [다시 시도]는 기기 정리만 한다 — 세션이 이미 없다. */
   const serverDone = useRef(false);
   const navigation = useNavigation();
+  /** [로그인]을 눌렀다. 창이 다 닫힌 뒤 로그인 화면으로 간다 — 닫히는 창과 화면 이동이 겹치지 않게 */
+  const loginAfterClose = useRef(false);
 
   // [계정 삭제하기]를 누른 뒤에는 iOS 스와이프로 빠져나가지 않는다. 안내만 보는 동안은 스와이프로 나갈 수 있다 (2026-10-11)
   useEffect(() => {
@@ -55,8 +60,9 @@ export default function DeleteAccount() {
       await signOutKakao();
       await signOutGoogle();
       await wipeDevice(removeAllManagedPhotos);
-    } catch {
-      setStep('failed');
+    } catch (error) {
+      // 로그인이 풀려 있으면 다시 시도해도 같다 — 로그인을 안내한다 (2026-10-29)
+      setStep(error instanceof NeedsLoginError ? 'needsLogin' : 'failed');
       return;
     }
     resumeSync();
@@ -64,27 +70,33 @@ export default function DeleteAccount() {
   };
 
   const close = () => { resumeSync(); setStep('review'); };
+  const openLogin = () => {
+    if (!loginAfterClose.current) return;
+    loginAfterClose.current = false;
+    router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
+  };
+  /** 창이 다 닫힌 뒤 로그인 화면으로 간다(iOS onDismiss). 닫힘 신호가 안 오면 잠시 뒤 간다 */
+  const login = () => {
+    loginAfterClose.current = true;
+    close();
+    if (Platform.OS === 'ios') setTimeout(openLogin, DISMISS_FALLBACK_MS);
+    else openLogin();
+  };
+  const cancel = () => setStep('review');
+  const dialog = (() => {
+    if (step === 'failed') return { ...accountDialogs.deleteFailed, onPrimary: () => void run(), onSecondary: close, onRequestClose: close };
+    if (step === 'needsLogin') return { ...accountDialogs.deleteNeedsLogin, onPrimary: login, onSecondary: close, onRequestClose: close };
+    return { ...accountDialogs.deleteAccount, onPrimary: () => void run(), onSecondary: cancel, onRequestClose: cancel };
+  })();
 
   if (step === 'done') return <AccountDeletedScreen onDone={() => router.replace('/')} />;
 
   return (
     <>
       <DeleteAccountScreen onDelete={() => setStep('confirm')} onCancel={goBackOrHome} onBack={goBackOrHome} />
-      <PixelDialogModal
-        visible={step === 'confirm' || step === 'busy'}
-        {...accountDialogs.deleteAccount}
-        loading={step === 'busy'}
-        onRequestClose={() => setStep('review')}
-        onPrimary={() => void run()}
-        onSecondary={() => setStep('review')}
-      />
-      <PixelDialogModal
-        visible={step === 'failed'}
-        {...accountDialogs.deleteFailed}
-        onRequestClose={close}
-        onPrimary={() => void run()}
-        onSecondary={close}
-      />
+      {/* 확인, 삭제 중, 실패, 로그인 안내를 창 하나에서 내용만 바꿔 보여 준다. 창 둘을 동시에 닫고 열면 iOS가 새 창을 띄우지 못하고
+          보이지 않는 창이 화면을 덮어 앱 전체가 터치되지 않았다 (2026-10-29 TestFlight 6, 실패 뒤 [다시 시도]) */}
+      <PixelDialogModal visible={step !== 'review'} {...dialog} loading={step === 'busy'} onDismiss={openLogin} />
     </>
   );
 }
