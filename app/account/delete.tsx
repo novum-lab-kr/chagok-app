@@ -24,6 +24,8 @@ const DISMISS_FALLBACK_MS = 700;
 export default function DeleteAccount() {
   const supabase = getSupabase();
   const [step, setStep] = useState<Step>('review');
+  /** 닫히는 동안 보여 줄 내용. 창은 fade로 사라지므로 닫는 순간 내용이 삭제 확인으로 바뀌면 눈에 보인다 */
+  const [closing, setClosing] = useState<'failed' | 'needsLogin' | null>(null);
   /** 서버 삭제가 끝났다. 그 뒤 기기 정리만 실패했으면 [다시 시도]는 기기 정리만 한다 — 세션이 이미 없다. */
   const serverDone = useRef(false);
   const navigation = useNavigation();
@@ -69,7 +71,7 @@ export default function DeleteAccount() {
     setStep('done');
   };
 
-  const close = () => { resumeSync(); setStep('review'); };
+  const close = (from: 'failed' | 'needsLogin') => { resumeSync(); setClosing(from); setStep('review'); };
   const openLogin = () => {
     if (!loginAfterClose.current) return;
     loginAfterClose.current = false;
@@ -78,14 +80,15 @@ export default function DeleteAccount() {
   /** 창이 다 닫힌 뒤 로그인 화면으로 간다(iOS onDismiss). 닫힘 신호가 안 오면 잠시 뒤 간다 */
   const login = () => {
     loginAfterClose.current = true;
-    close();
+    close('needsLogin');
     if (Platform.OS === 'ios') setTimeout(openLogin, DISMISS_FALLBACK_MS);
     else openLogin();
   };
   const cancel = () => setStep('review');
+  const shown = step === 'review' ? closing : step;
   const dialog = (() => {
-    if (step === 'failed') return { ...accountDialogs.deleteFailed, onPrimary: () => void run(), onSecondary: close, onRequestClose: close };
-    if (step === 'needsLogin') return { ...accountDialogs.deleteNeedsLogin, onPrimary: login, onSecondary: close, onRequestClose: close };
+    if (shown === 'failed') return { ...accountDialogs.deleteFailed, onPrimary: () => void run(), onSecondary: () => close('failed'), onRequestClose: () => close('failed') };
+    if (shown === 'needsLogin') return { ...accountDialogs.deleteNeedsLogin, onPrimary: login, onSecondary: () => close('needsLogin'), onRequestClose: () => close('needsLogin') };
     return { ...accountDialogs.deleteAccount, onPrimary: () => void run(), onSecondary: cancel, onRequestClose: cancel };
   })();
 
@@ -93,7 +96,7 @@ export default function DeleteAccount() {
 
   return (
     <>
-      <DeleteAccountScreen onDelete={() => setStep('confirm')} onCancel={goBackOrHome} onBack={goBackOrHome} />
+      <DeleteAccountScreen onDelete={() => { setClosing(null); setStep('confirm'); }} onCancel={goBackOrHome} onBack={goBackOrHome} />
       {/* 확인, 삭제 중, 실패, 로그인 안내를 창 하나에서 내용만 바꿔 보여 준다. 창 둘을 동시에 닫고 열면 iOS가 새 창을 띄우지 못하고
           보이지 않는 창이 화면을 덮어 앱 전체가 터치되지 않았다 (2026-10-29 TestFlight 6, 실패 뒤 [다시 시도]) */}
       <PixelDialogModal visible={step !== 'review'} {...dialog} loading={step === 'busy'} onDismiss={openLogin} />
