@@ -25,6 +25,8 @@ export const accountDialogs={
   /** 삭제 중에는 loading으로 같은 다이얼로그를 둔다. */
   deleteAccount:{title:'계정을 삭제할까요?',description:'서버와 이 기기의 기록이 모두 지워지고 되돌릴 수 없어요.',primaryLabel:'삭제하기',secondaryLabel:'취소'},
   deleteFailed:{title:'삭제하지 못했어요',description:'연결을 확인하고 다시 시도해 주세요. 아무것도 지우지 않았어요.',primaryLabel:'다시 시도',secondaryLabel:'닫기'},
+  /** 계정 삭제를 눌렀는데 이 기기의 로그인이 풀려 있을 때 (2026-10-29). [로그인]은 다시 로그인 화면으로 간다. */
+  deleteNeedsLogin:{title:'로그인이 필요해요',description:'계정을 삭제하려면 다시 로그인해 주세요. 아무것도 지우지 않았어요.',primaryLabel:'로그인',secondaryLabel:'닫기'},
   /** 약관 개정: 게시일부터 시행일 사이에 한 번. 재동의 화면은 두지 않는다. */
   termsChanged:(effectiveLabel:string)=>({title:'이용약관이 바뀌어요',description:`${effectiveLabel}부터 새 약관이 적용돼요. 바뀐 내용은 약관 보기에서 확인해 주세요.`,primaryLabel:'확인',secondaryLabel:'약관 보기'}),
   /** 새 계정 동의 시트를 동의 없이 닫을 때 (2026-10-21). 그만하면 방금 만든 계정을 서버에서 지운다. */

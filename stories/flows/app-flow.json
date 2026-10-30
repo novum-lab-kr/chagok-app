@@ -1196,6 +1196,17 @@
       }
     },
     {
+      "id": "account-delete-start",
+      "source": "account-delete",
+      "target": "start",
+      "label": "로그인 (로그인이 풀려 있을 때)",
+      "data": {
+        "scenarios": [
+          "account"
+        ]
+      }
+    },
+    {
       "id": "deleted-start",
       "source": "deleted",
       "target": "start",
