@@ -64,3 +64,7 @@
 - **`supabase db reset --linked`가 `public.change_seq` 시퀀스를 남긴다(2026-10-12):** 첫 마이그레이션이 `create sequence if not exists`라 다시 적용해도 된다. 예전처럼 "already exists"가 나면 `supabase db query --linked "drop sequence public.change_seq"` 뒤 다시 리셋한다.
 - **`deno check`는 저장소 안에서 돌리면 끝나지 않는다(2026-10-15):** 루트 `package.json`·`node_modules`를 읽으려다 멈춘다(import 없는 파일도 4분 넘게). `supabase/functions`의 `_shared`와 확인할 함수 폴더를 빈 임시 폴더에 복사해서 그 안에서 `deno check <함수>/index.ts`를 돌리면 1분 안에 끝난다.
 - **Apple 코드 교환의 `invalid_client` (2026-10-17):** 서버 secret 네 개와 키 설정(Keys → Sign In with Apple → `AJ7LJPM82M.com.novumlab.chagok`)이 맞는데도 첫 로그인에서 `apple-link`가 `invalid_client`로 실패했다가, 몇 분 뒤 같은 설정으로 성공했다. 키를 만들거나 고친 직후라면 잠시 뒤 다시 해 본다. 가짜 코드나 가짜 토큰으로는 서명이 맞는지 가릴 수 없다 — Apple은 키 ID가 틀려도 가짜 코드에 `invalid_grant`, 폐기에 200을 준다. 확인은 진짜 코드로만 된다. 실패 이유는 개발 빌드의 Metro 로그 `[connect] failed`에 함수 응답 본문째 나온다.
+
+## iOS에서 모달을 겹치면 터치만 막힌다
+
+다른 모달이 떠 있거나 닫히는 중에 새 모달을 띄우면 빨간 화면 없이 화면이 터치를 받지 않는다(2026-11-01, 동의 시트와 판 완성 창). 로그에서 `Attempt to present`를 찾으면 드러난다. 띄우기 전에 `useDialog`의 `dialogOpen`을 본다. Maestro로는 0.6초 안의 연타가 재현되지 않으니, 타이머로 뜨는 모달은 연타 경로까지 확인한다.
