@@ -53,6 +53,7 @@ export default function Board() {
   useEffect(() => {
     if (!consentPending) return;
     if (dialogOpen || completionWaiting) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 다른 창이 뜬 순간에 대기를 취소한다
       setConsentPending(false);
       return;
     }
