@@ -25,6 +25,7 @@ import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRe
 import { subscribeWidgetApplied } from '../../../src/widgets/applied';
 import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
 import { syncWidgetsNow } from '../../../src/widgets/syncWidgets';
+import { t } from '../../../src/i18n';
 
 /** [완성] 스티커 붙이기 모션이 끝나고 다이얼로그를 띄우기까지 */
 const COMPLETION_DIALOG_DELAY_MS = 700;
@@ -94,14 +95,14 @@ export default function Board() {
     const choice = await ask(boardDialogs.completed(goal.boardType === 'tally' ? 'tally' : goal.endDate ? 'period' : 'open'));
     if (choice === 'dismiss') return;
     if (choice === 'secondary') {
-      if (await saveOrNotify(ask, '저장하지 못했어요', () => markCompletionSeen(goal.id))) {
+      if (await saveOrNotify(ask, t('failed.save'), () => markCompletionSeen(goal.id))) {
         await reload();
         setNudge(true);
       }
       return;
     }
     if (goal.boardType === 'calendar' && !goal.endDate) {
-      if (await saveOrNotify(ask, '저장하지 못했어요', () => reopenGoal(goal.id))) await reload();
+      if (await saveOrNotify(ask, t('failed.save'), () => reopenGoal(goal.id))) await reload();
       return;
     }
     router.push({ pathname: '/goal/[id]/extend', params: { id: goal.id } });
@@ -174,7 +175,7 @@ export default function Board() {
     }
     const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
     if (complete && !(await confirm(boardDialogs.confirmLast(target.boardType)))) return;
-    const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
+    const ok = await saveOrNotify(ask, t('failed.placeSticker'), async () => {
       await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt });
     });
     if (!ok) return;
@@ -193,7 +194,7 @@ export default function Board() {
       if (!(await confirm(boardDialogs.removeSticker))) return;
     }
     let photo: string | null = null;
-    const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(target.id); });
+    const ok = await saveOrNotify(ask, t('failed.removeSticker'), async () => { photo = await removeSticker(target.id); });
     if (!ok) return;
     track('sticker_remove', { source: 'app' });
     try { removeManagedRecordPhoto(photo); } catch { /* 고아 파일로 남는다. 기록은 이미 지워졌다 */ }

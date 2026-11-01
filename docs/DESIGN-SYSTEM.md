@@ -25,7 +25,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 
 - **기존 디자인 시스템으로 화면을 조립한다.** 팔레트·폰트·공통 프레임·포커스를 새로 바꾸지 않는다. 토큰은 추가만 하고 기존 값은 바꾸지 않는다(사용자 승인 기준). 앱 연결은 기존 컴포넌트에 선택(optional) prop을 더하는 방식으로 한다.
 - **기준은 Storybook이다**(2026-09-29 확정). 원본 이미지 시안과 픽셀 단위로 같다는 뜻은 아니다 — 폰트·프레임 치수·포커스·단색 자산에서 오는 차이는 남아 있다. 테스트 통과나 토큰 버전을 사용자 승인으로 보지 않는다.
-- 새 화면 시안은 아티팩트로 먼저 보여 주고, 확정되면 Storybook에 반영한다. 아직 열려 있는 시안의 원본은 [design/proposals-2026-10/](design/proposals-2026-10/README.md), 확정된 시안의 원본은 git 기록(`402913e`)에 있다.
+- 새 화면 시안은 초안까지 디자인 시스템을 기준으로 만들어 아티팩트로 먼저 보여 준다. 확정되면 기존 Storybook 컴포넌트를 먼저 확인하고, 없던 컴포넌트이거나 props가 늘어나는 경우에만 Storybook에 추가한다. 아직 열려 있는 시안의 원본은 [design/proposals-2026-10/](design/proposals-2026-10/README.md), 확정된 시안의 원본은 git 기록(`402913e`)에 있다.
 - 판 종류 카드는 사용자가 첨부한 [상세 시안](design/retro-pocket-v1/review-set-02/references/board-type-detail-user.png)이 기준이다(달력 요일/빈칸, 적립판 첫 칸 체크, 주황 외곽 선택).
 - 시안의 폰 목업·OS 상태바·광원·질감은 구현 대상이 아니다. `review-set-01`, `screen-preview`의 거절된 실험과 종이 테마를 되살리지 않는다.
 - 확대 화면만 보고 끝내지 않는다. 100% 배율, DPR 1, 390px와 320px에서 본다.
@@ -97,7 +97,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | PhotoAttachment | 사진 프레임 안 추가 버튼과 첨부 사진 오른쪽 위 삭제 버튼 (`actionsInFrame`) |
 | SettingRow | 앱 설정·약관의 이동 행, 값 표시, 비활성 상태 |
 | ShortNotice / PixelLoadingIndicator | 백업·저장 알림 표면과 복원·로그아웃 로딩 표시. 로딩 점(`PixelLoadingDots`)은 진한 점이 250ms마다 오른쪽으로 옮겨 가고, 기기의 모션 감소 설정이면 가운데 점에 멈춘다 |
-| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
+| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, 문구가 화면보다 길면 스크롤, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
 | PixelBottomSheet | 화면 아래에 붙는 시트. 다이얼로그 틀(`PixelFrame` dialog)과 `dialogPadding`을 그대로 쓰고 제목은 22/30, 위 여백 24, 줄 사이 16. 양옆 12, 아래는 기기 여백(최소 12). 끌어 닫기는 없고 배경 누르기와 Android 뒤로가기가 `onRequestClose`를 부른다. 첫 사용처는 로그인 뒤 새 계정 동의 (2026-10-21) |
 | PixelBadge | 짧은 글자 배지. `tone`: `ink`(판 종류), `primary`(완성). `badge` 글씨 |
 | PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |

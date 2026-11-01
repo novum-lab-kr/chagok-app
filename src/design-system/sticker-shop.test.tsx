@@ -3,6 +3,9 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {FoldToggle,PackCard,PackViewSwitch,PickedStickerBar,RewardProgress,StickerChoice,StickerChooserScreen,colorPack,PackScreen,PurchasePanel,stickerShopDialogs,togglePack} from './sticker-shop';
 import {InfoRow} from './composition-controls';
+import {Platform} from 'react-native';
+import {setLanguage,t} from '../i18n';
+import {SUPPORT_EMAIL} from '../support/contactMail';
 afterEach(cleanup);
 /** 원화 계정에서 받아 온 가격 */
 const priced={...colorPack('animals_normal','locked'),price:'2,200원'};
@@ -127,8 +130,8 @@ describe('묶음 화면',()=>{
     fireEvent.click(screen.getByRole('button',{name:'묶음 열기'}));expect(buy).toHaveBeenCalled();
   });
   it('다이얼로그 문구는 확정 시안 그대로다',()=>{
-    // 결제 직전 고지 (2026-10-29 법률 검토 2차): 청약철회를 할 수 없게 되는 때는 약관 11조와 같은 뜻, 환불 요청처, 미성년자 취소, 약관 적용과 [약관 보기]
-    const notice='환불은 App Store에서 요청해 주세요.\n미성년자가 법정대리인 동의 없이\n샀다면 본인이나 법정대리인이\n취소할 수 있어요.\n이 구매에는 이용약관이 적용돼요.';
+    // 결제 직전 고지 (2026-10-31 문구 줄이기): 청약철회를 할 수 없게 되는 때는 약관 11조와 같은 뜻, 미성년자 취소, [약관 보기]
+    const notice='미성년자가 법정대리인 동의 없이\n샀다면 취소할 수 있어요.';
     expect(stickerShopDialogs.confirmBuy('동물',10,'2,200원')).toMatchObject({title:'동물 묶음을 열까요?',description:`스티커 10개를 바로 붙일 수 있어요.\n스티커를 고르거나 판에 붙이면\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'2,200원에 열기',secondaryLabel:'취소',linkLabel:'약관 보기'});
     expect(stickerShopDialogs.confirmBuy('동물',10).primaryLabel).toBe('열기');
     expect(stickerShopDialogs.confirmAdFree).toMatchObject({title:'광고를 없앨까요?',description:`사는 즉시 목표 화면 아래\n광고가 사라져서\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'광고 없애기',secondaryLabel:'취소',linkLabel:'약관 보기'});
@@ -140,6 +143,38 @@ describe('묶음 화면',()=>{
     expect(stickerShopDialogs.restoreNone).toMatchObject({title:'이 계정으로 구매 내역이 없어요',description:'구매한 스토어 계정으로 로그인했는지 확인해 주세요.'});
   });
 });
+describe('구매 창의 영어 설명',()=>{
+  it('묶음과 광고 제거 창에 법 근거 문구가 들어간다',()=>{
+    setLanguage('en');
+    try {
+      const buy=stickerShopDialogs.confirmBuy('Snacks',10,'$1.99').description;
+      expect(buy).toContain(t('legal.packNoRefund','apple',SUPPORT_EMAIL));
+      expect(buy).toContain(t('legal.minorCancel'));
+      const adFree=stickerShopDialogs.confirmAdFree.description;
+      expect(adFree).toContain(t('legal.adFreeNoRefund','apple',SUPPORT_EMAIL));
+      expect(adFree).toContain(t('legal.minorCancel'));
+    } finally {
+      setLanguage('ko');
+    }
+  });
+  it('Android 에는 Apple 안내가 나가지 않는다',()=>{
+    const platform=Platform as {OS:string};
+    const originalOs=platform.OS;
+    setLanguage('en');
+    platform.OS='android';
+    try {
+      for(const description of [stickerShopDialogs.confirmBuy('Snacks',10,'$1.99').description,stickerShopDialogs.confirmAdFree.description]){
+        expect(description).toContain('Google Play (Budget & order history > Report a problem)');
+        expect(description).toContain(SUPPORT_EMAIL);
+        expect(description).not.toContain('Apple');
+      }
+    } finally {
+      platform.OS=originalOs;
+      setLanguage('ko');
+    }
+  });
+});
+
 describe('앱 설정 「구매」 블럭',()=>{
   it('사기 전에는 광고 제거 설명과 버튼, 늘 구매 복원 버튼과 설명이 있다',()=>{
     const remove=vi.fn(),restore=vi.fn();render(<PurchasePanel adFree={false} price="5,500원" onRemoveAds={remove} onRestore={restore}/>);

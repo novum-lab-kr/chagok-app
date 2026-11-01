@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { ColorStickerPackId } from '../stickers/color/catalog';
 
 /** 스토어가 돌려준 가격. amount·currency는 그 사람 스토어 계정 국가 기준, text는 기기 언어 형식(예: 「₩2,200」). */
@@ -12,5 +13,5 @@ export type PriceLabels = Partial<Record<ProductKey, string>>;
  */
 export function priceLabel(p: StorePrice): string {
   if (p.currency !== 'KRW') return p.text;
-  return `${String(Math.round(p.amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}원`;
+  return t('shop.priceWon', String(Math.round(p.amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
 }
