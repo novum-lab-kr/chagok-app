@@ -298,7 +298,7 @@ npm run test:server                                # 실제 서버 테스트 (�
 npm run server:dev-user                            # 개발용 계정 만들기
 ```
 
-**출시 전(2026-10-12~):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **출시 뒤에는** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`).
+**1.0.0 심사 제출 전(2026-10-12~, 끝남):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **지금은** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`). 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
 
 **Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
 
@@ -391,6 +391,63 @@ delete from private.account_deletions where completed_at < now() - interval '1 y
 - **DB 오류:** 오류는 남기되 오류 난 SQL 문장은 남기지 않는다(`log_min_error_statement=panic`, `ALTER SYSTEM`이라 다시 만들어도 남는다).
 - **알림:** Healthchecks.io의 「서버 오류」 점검이 모은 로그의 오류를 받아 메일로 알린다. 신호 주소는 `~/monitor/hc.env`(비밀값).
 - **다시 만들기 전에:** `sh run.sh recreate`나 업데이트 전에 `~/logs/collect.sh`를 한 번 돌린다. 안 돌리면 마지막으로 모은 뒤의 로그가 사라진다.
+
+## 운영 DB 바꾸기
+
+`supabase/migrations`를 운영 DB에 올리는 방법은 1.0.0 심사 제출 전과 뒤가 다르다. 지금은 제출 뒤다(AGENTS.md 「서버와 약관 규칙」).
+
+**주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 `20260930000004_account_admin.sql`을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
+
+**1.0.0 심사 제출 전까지만 쓴 방법 (지금은 하지 않는다): 통째로 다시 넣는다**
+
+심사와 승인 직후 사용이 운영 서버를 쓰므로 다시 하면 안 된다. 기록으로만 남긴다.
+
+마이그레이션 파일을 고쳐도 된다. 운영은 DB와 사진을 비우고 main의 파일 전체를 다시 넣는다(2026-10-29에 이 순서로 했다). 운영의 사용자, 기록, 사진이 모두 사라진다.
+
+```sh
+# 서버 (ssh chagok@<운영 서버 주소>)
+# 1. 백업
+mkdir -p ~/backup/manual
+docker exec supabase-db pg_dump -U supabase_admin -d postgres -Fc > ~/backup/manual/prod-<날짜>-before-reset.dump
+tar -C ~/supabase/volumes -czf ~/backup/manual/storage-<날짜>-before-reset.tgz storage
+
+# 2. 비우기
+~/logs/collect.sh   # 다시 만들면 컨테이너 로그가 사라지므로 먼저 모은다(운영 서버 로그)
+cd ~/supabase && sh run.sh stop
+mv volumes/db/data volumes/db/data.bak-<날짜>
+mv volumes/storage volumes/storage.bak-<날짜>
+sh run.sh start     # 빈 DB로 뜬다. 컨테이너 11개가 healthy인지 본다
+
+# 3. 이 맥 (main 체크아웃): 터널을 열고 마이그레이션 전체를 넣는다
+ssh -f -N -L 18432:127.0.0.1:5432 chagok@<운영 서버 주소>
+supabase db push --db-url "postgresql://postgres.chagok:<비밀번호>@127.0.0.1:18432/postgres?sslmode=disable"
+pkill -f "ssh .*-L 18432:127.0.0.1:5432"
+
+# 4. 서버: DB 설정을 다시 건다. ALTER SYSTEM 값은 volumes/db/data 안에 있어 새 DB에는 없다
+docker exec supabase-db psql -U supabase_admin -d postgres \
+  -c "ALTER SYSTEM SET log_min_error_statement = panic" -c "select pg_reload_conf()"
+```
+
+5. **함수:** [운영 서버 함수 올리기](#운영-서버-함수-올리기)대로 네 폴더를 모두 main으로 넣는다.
+6. **확인:** `public` 표 4개, `private` 표 3개(`apple_tokens`, `kakao_unlink_failures`, `account_deletions`), `record-photos` 버킷, RLS 정책 8개가 있는지 본다. 그다음 함수 「올린 뒤 확인」(401, `external`, Healthchecks)과 카카오 콘솔 웹훅 테스트(200, 함수 로그 `no_user`)를 한다.
+7. **되돌리기:** `sh run.sh stop`, 새 `data`와 `storage`를 지우고 `.bak-<날짜>` 이름을 되돌린 뒤 `sh run.sh start`.
+
+**지금: 통째로 지우지 않는다**
+
+올린 마이그레이션 파일을 고치지 않고 새 파일만 더한다. 운영에는 새 파일만 올린다.
+
+1. **운영과 main 비교:** 운영 `supabase_migrations.schema_migrations`의 `statements`(버전마다 적용한 문장 목록)를 꺼내 main의 같은 버전 파일과 문장 단위로 비교한다. 주석과 공백은 빼고 본다. 이미 있는 버전에 차이가 있으면 누군가 올린 파일을 고친 것이니 멈추고, 그 차이를 새 파일로 옮긴다.
+
+   ```sh
+   docker exec supabase-db psql -U supabase_admin -d postgres -At \
+     -c "select version, statements from supabase_migrations.schema_migrations order by version"
+   ```
+
+2. **백업:** `docker exec supabase-db pg_dump -U supabase_admin -d postgres -Fc > ~/backup/manual/prod-<날짜>-before-<파일 이름>.dump`
+3. **올리기:** 위 3번처럼 터널을 열고 같은 `supabase db push --db-url ...`를 한다. 운영에 없는 버전(새 파일)만 들어간다. 먼저 `--dry-run`을 붙여 들어갈 파일이 새 파일뿐인지 본다.
+4. **함수:** 바뀐 폴더만 올린다. 방법은 [운영 서버 함수 올리기](#운영-서버-함수-올리기)와 같고 묶음과 지울 폴더 목록만 바뀐 폴더로 줄인다.
+5. **확인:** 새 파일이 만든 표, 함수, 정책이 있는지 보고, 함수 「올린 뒤 확인」을 한다.
+6. **되돌리기:** 2번 덤프를 [운영 서버 복구](#운영-서버-복구)의 `pg_restore`로 넣는다. 그 사이에 생긴 사용자 데이터는 사라지므로 먼저 새 파일로 되돌리는 마이그레이션을 쓸 수 있는지 본다.
 
 ## 운영 서버 함수 올리기
 

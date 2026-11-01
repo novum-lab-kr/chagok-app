@@ -9,7 +9,7 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 
 ## 대상
 
-- 개발 서버만 다룬다: 프로젝트 ref `cmkmhrzvxbtuxbgixqoo`(`chagok-dev`). 운영 서버는 아직 정하지 않았다. 다른 프로젝트 ref가 보이면 멈추고 보고한다.
+- 개발 서버만 다룬다: 프로젝트 ref `cmkmhrzvxbtuxbgixqoo`(`chagok-dev`). 운영 서버는 이 스킬로 다루지 않는다([DEV-SETUP](../../../docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 다른 프로젝트 ref가 보이면 멈추고 보고한다.
 
 ## 토큰
 
@@ -22,9 +22,9 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 - 짧은 SQL: `supabase db query --linked "<sql>"` 또는 Management API `POST https://api.supabase.com/v1/projects/<ref>/database/query`.
 - 값을 바꾸기 전에 바꿀 행의 원래 값을 파일로 남긴다. 끝나면 되돌리거나, 되돌릴 필요가 없음을 확인해 보고한다.
 
-## 구조 바꾸기 (출시 전 규칙)
+## 구조 바꾸기
 
-1. 새 마이그레이션 파일을 더하지 않는다. `supabase/migrations`의 파일을 최종 구조로 고친다. 기기 DB(`src/db/schema.ts`)도 v1을 고친다.
+1. 올린 파일을 고치지 않고 새 마이그레이션 파일을 더한다. 기기 DB(`src/db/schema.ts`)도 버전을 올린다. 1.0.0과 함께 돌 수 있게 칸 추가부터 생각한다.
 2. 새 테이블은 RLS를 켜고 본인 행만 읽고 쓰게 한다. 다른 사용자 행이 보이는 정책을 만들지 않는다.
 3. `supabase db reset --linked`로 개발 서버를 비우고 다시 적용한다. `public.change_seq`가 남는 함정은 PITFALLS를 본다.
 4. 리셋하면 로그인 사용자도 지워진다. `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일을 지운다.

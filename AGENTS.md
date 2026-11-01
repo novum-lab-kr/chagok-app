@@ -15,6 +15,7 @@
 | [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | 개발 빌드, 시뮬레이터, 개발 서버 실행 |
 | [docs/RELEASE-DECISIONS.md](docs/RELEASE-DECISIONS.md) | 식별자, 계정, 가격, 광고 같은 출시 결정 |
 | [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 스토어에 내기 직전. 출시 전 최종 점검 목록 |
+| [docs/RELEASE-1.0.1.md](docs/RELEASE-1.0.1.md) | 1.0.1을 합치거나 내보낼 때. 심사 시점별 처리, 운영 DB 반영 순서 |
 | [docs/LEGAL-REVIEW.md](docs/LEGAL-REVIEW.md) | 출시와 업데이트 때마다. 약관과 처리방침이 기대는 법령의 개정 확인과 문서 유효성 점검 |
 | [docs/migration/README.md](docs/migration/README.md) | 레포를 옮긴 직후에만 |
 
@@ -73,10 +74,12 @@ Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](
 5. **쓰지 않는 코드를 지운다.** `npx knip`으로 후보를 찾되, 가져다 쓰는 곳을 직접 확인한 것만 지운다. Expo 설정, 위젯 진입점, 서버 함수, npm 스크립트, `src/stickers/catalog.ts`는 쓰이지 않는 것처럼 보여도 남긴다.
 6. **확인과 커밋.** 지울 목록을 먼저 보여 주고 사용자의 OK를 받는다. 테스트, 타입 검사, 린트, 번들을 돌린 뒤 정리만 담은 커밋 하나(`chore(cleanup): ...`)로 남기고, 그다음 원래 작업을 시작한다. 정리할 것이 없으면 "정리할 것 없음"이라고 한 줄 보고하고 바로 시작한다.
 
-## 출시 전까지
+## 서버와 약관 규칙
 
-- 약관과 처리방침 변경은 모두 1판에 넣는다. `v2/` 폴더, `versions.json` 항목, 앱 동의 버전 올리기를 하지 않는다.
-- 단계별 마이그레이션을 만들지 않는다. `supabase/migrations`와 `src/db/schema.ts`를 최종 구조로 고치고 개발 데이터를 지운다([DEV-SETUP](docs/DEV-SETUP.md) 「개발 서버」).
+1.0.0을 심사에 낸 뒤부터 적용한다.
+
+- 올린 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 운영 DB를 통째로 지우지 않고 바뀐 파일만 올린다([DEV-SETUP](docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 기기 DB(`src/db/schema.ts`)도 버전을 올려 옮긴다.
+- 약관과 처리방침은 1.0.0 출시 전이면 1판을 고치고, 출시 뒤면 새 판을 낸다([1.0.1 출시 순서](docs/RELEASE-1.0.1.md) 「처리방침 판」).
 
 ## 빠른 확인
 
