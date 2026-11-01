@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
 import type { GoalListTab } from '../../src/design-system';
-import { listGoalSummaries, settleExpiredPeriods } from '../../src/repositories/goalRepository';
+import { listGoalSummaries, reorderGoals, settleExpiredPeriods } from '../../src/repositories/goalRepository';
 import type { GoalSummary } from '../../src/repositories/goalRepository';
 import { getFlag, getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
 import { useDialog } from '../../src/app-data/useDialog';
 import { ConnectAccount } from '../account/connect';
 import { readAccountState } from '../../src/sync/accountStatus';
 import { getSupabase } from '../../src/sync/supabaseClient';
-import { orderGoals } from '../../src/domain/board';
+import { moveItem, orderGoals } from '../../src/domain/board';
 import { goalCard } from '../../src/app-data/pocketAdapter';
 import { localDateKey } from '../../src/domain/dates';
 import { fetchPolicyManifest } from '../../src/policy/manifest';
@@ -39,6 +40,8 @@ export default function GoalList() {
   /** 시작 화면에서 복원을 마치면 올린다. 목표 탭은 그동안 계속 보이는 중이라 포커스로는 다시 읽지 않는다 (2026-10-22). */
   const [reload, setReload] = useState(0);
   const navigation = useNavigation();
+  /** 내 목표를 끄는 동안. 화면을 밀어 탭이 바뀌지 않게 한다 (PRD 4.1, 2026-10-30). */
+  const [dragging, setDragging] = useState(false);
 
   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
   useFocusEffect(useCallback(() => {
@@ -127,8 +130,8 @@ export default function GoalList() {
   const hideTabBar = !summaries || showTutorial !== false || showStart !== false;
   useEffect(() => {
     // 숨긴 동안은 화면을 밀어 다른 탭으로 가지도 못한다
-    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined, swipeEnabled: !hideTabBar });
-  }, [navigation, hideTabBar]);
+    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined, swipeEnabled: !hideTabBar && !dragging });
+  }, [navigation, hideTabBar, dragging]);
 
   if (!summaries || showTutorial === undefined || showStart === undefined) {
     return <LoadingScreen failed={failed} kind="goals" onRetry={retry} />;
@@ -158,6 +161,22 @@ export default function GoalList() {
   const { active, completed } = orderGoals(summaries.map((s) => s.goal));
   const cards = (goals: typeof active) => goals.map((g) => goalCard(byId.get(g.id)!, now));
 
+  // 옮긴 순서를 바로 보여 주고 저장한다. 위젯과 워치는 저장이 보내는 변경 신호로 다시 그린다.
+  // 저장이 실패하면 저장된 순서로 다시 읽는다.
+  const moveGoal = (from: number, to: number) => {
+    const ids = moveItem(active.map((goal) => goal.id), from, to);
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    setSummaries(summaries.map((summary) => {
+      const sortOrder = rank.get(summary.goal.id);
+      return sortOrder === undefined ? summary : { ...summary, goal: { ...summary.goal, sortOrder } };
+    }));
+    void reorderGoals(ids).catch(() => listGoalSummaries(new Date()).then(setSummaries)).catch(() => {});
+  };
+  const dragChange = (value: boolean) => {
+    setDragging(value);
+    if (value) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+
   const closeTrial = () => {
     if (trial === null) return;
     setTrial(null);
@@ -173,6 +192,8 @@ export default function GoalList() {
         completed={cards(completed)}
         onOpen={(id) => router.push({ pathname: '/goal/[id]', params: { id } })}
         onAdd={() => router.push('/goal/new')}
+        onMove={moveGoal}
+        onDragChange={dragChange}
         footer={<GoalsAdBanner />}
         notice={tab === 'active' && trial !== null
           ? <TrialReadyCard days={trial} onChoose={() => router.navigate('/stickers')} onClose={closeTrial} />

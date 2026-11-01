@@ -1,5 +1,5 @@
 import { setDriverFactory, getDb, currentSchemaVersion } from '../src/db/client';
-import { SCHEMA_VERSION } from '../src/db/schema';
+import { MIGRATIONS, SCHEMA_VERSION } from '../src/db/schema';
 import { createNodeDriver } from './support/nodeDriver';
 import type { DbDriver } from '../src/db/driver';
 
@@ -103,5 +103,60 @@ describe('마이그레이션 원자성 (리뷰 #7)', () => {
     setDriverFactory(async () => flaky);
     await getDb();
     expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+  });
+});
+
+describe('v2 내 목표 순서 (PRD 4.1, 2026-10-30)', () => {
+  /** 1.0 기기를 흉내 낸다: v1까지만 올린 DB에 목표를 넣어 둔다. */
+  async function legacyDb(): Promise<DbDriver> {
+    const driver = createNodeDriver();
+    for (const sql of MIGRATIONS[0] ?? []) await driver.exec(sql);
+    await driver.exec('PRAGMA user_version = 1');
+    const goal = (id: string, createdAt: number, lastPlacedAt: number | null, completedAt: number | null = null) => driver.run(
+      `INSERT INTO goals (id, name, board_type, total_slots, created_at, last_placed_at, completed_at, updated_at)
+       VALUES (?, ?, 'tally', 10, ?, ?, ?, ?)`, id, id, createdAt, lastPlacedAt, completedAt, 5,
+    );
+    await goal('old', 1, null);       // 만든 지 오래, 안 붙임
+    await goal('placed', 2, 50);      // 가장 최근에 붙임
+    await goal('fresh', 40, null);    // 최근에 만듦
+    await goal('tieB', 30, null);     // 같은 시각이면 id순
+    await goal('tieA', 30, null);
+    await goal('done', 3, 60, 61);    // 완성한 판에도 값을 둔다
+    await driver.run("INSERT INTO outbox (entity, row_id, queued_at, attempts, last_error) VALUES ('goal', 'old', 1, 3, 'x')");
+    return driver;
+  }
+
+  it('지금 보이는 순서(최근순)로 굳히고 updated_at은 그대로 둔다', async () => {
+    const driver = await legacyDb();
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+    const rows = await db.all<{ id: string; sort_order: number; updated_at: number }>(
+      'SELECT id, sort_order, updated_at FROM goals ORDER BY sort_order',
+    );
+    expect(rows.map((row) => row.id)).toEqual(['done', 'placed', 'fresh', 'tieA', 'tieB', 'old']);
+    expect(rows.map((row) => row.sort_order)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(rows.every((row) => row.updated_at === 5)).toBe(true);
+  });
+
+  it('굳힌 순서를 서버에 올리도록 모든 목표를 outbox에 넣고, 보류된 항목도 다시 보낸다', async () => {
+    const driver = await legacyDb();
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    const queued = await db.all<{ row_id: string; attempts: number; last_error: string | null }>(
+      "SELECT row_id, attempts, last_error FROM outbox WHERE entity = 'goal' ORDER BY row_id",
+    );
+    expect(queued.map((entry) => entry.row_id)).toEqual(['done', 'fresh', 'old', 'placed', 'tieA', 'tieB']);
+    expect(queued.find((entry) => entry.row_id === 'old')).toEqual({ row_id: 'old', attempts: 0, last_error: null });
+  });
+
+  it('목표가 없어도 올라간다', async () => {
+    const driver = createNodeDriver();
+    for (const sql of MIGRATIONS[0] ?? []) await driver.exec(sql);
+    await driver.exec('PRAGMA user_version = 1');
+    setDriverFactory(async () => driver);
+    const db = await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+    expect(await db.all('SELECT * FROM outbox')).toEqual([]);
   });
 });

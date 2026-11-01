@@ -19,10 +19,15 @@ export type Goal = {
   completedAt: number | null;
   /** 완성 뒤 닫기/계속하기를 골랐는가. false인 완성한 판은 열 때 완성 흐름을 보여준다 */
   completionSeen: boolean;
-  /** 마지막으로 붙인 시각. 떼도 바뀌지 않는다. 목록 정렬과 종료일 하한에 쓴다 (PRD 4.1) */
+  /** 마지막으로 붙인 시각. 떼도 바뀌지 않는다. 종료일 하한과 옛 목표의 첫 순서에 쓴다 (PRD 4.1) */
   lastPlacedAt: number | null;
   /** 적립판을 만들 때의 칸 수. 칸 늘리기 기본값. 달력판은 null */
   initialSlots: number | null;
+  /**
+   * 내 목표 목록 순서. 작을수록 위다. 사용자가 끌어 옮겨 정한다 (PRD 4.1, 2026-10-30).
+   * null = 순서를 정하기 전 기록(서버에만 남은 옛 행). 읽을 때 최근순으로 놓는다.
+   */
+  sortOrder: number | null;
 };
 
 /** 목표가 기본 스티커 없이 만들어졌을 때의 값 */

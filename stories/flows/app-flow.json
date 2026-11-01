@@ -1562,6 +1562,17 @@
           "sticker"
         ]
       }
+    },
+    {
+      "id": "completed-board-list",
+      "source": "completed-board",
+      "target": "list",
+      "label": "홈으로",
+      "data": {
+        "scenarios": [
+          "complete"
+        ]
+      }
     }
   ]
 }

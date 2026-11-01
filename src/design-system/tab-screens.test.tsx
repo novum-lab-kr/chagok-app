@@ -86,9 +86,10 @@ describe('흐름 중간 안내',()=>{
     fireEvent.click(screen.getByRole('button',{name:'묶음 고르기'}));expect(choose).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'닫기'}));expect(close).toHaveBeenCalled();
   });
-  it('완성 권하기: [스티커 보기]와 닫기',()=>{
-    const go=vi.fn(),close=vi.fn();render(<CompletionNudge onStickers={go} onClose={close}/>);
+  it('완성 권하기: [스티커 보기], [홈으로]와 닫기',()=>{
+    const go=vi.fn(),home=vi.fn(),close=vi.fn();render(<CompletionNudge onStickers={go} onHome={home} onClose={close}/>);
     fireEvent.click(screen.getByRole('button',{name:'스티커 보기'}));expect(go).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'홈으로'}));expect(home).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'닫기'}));expect(close).toHaveBeenCalled();
   });
 });

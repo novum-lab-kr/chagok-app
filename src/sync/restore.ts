@@ -39,8 +39,31 @@ export async function pullAll(server: SyncServer, pageSize = 500): Promise<Serve
   return { goals: [...goals.values()], stickers: [...stickers.values()], records: [...records.values()], cursor };
 }
 
+const recentAt = (goal: GoalRow) => goal.last_placed_at ?? goal.created_at;
+
 /**
- * 받은 백업으로 기기를 한 트랜잭션에 바꾼다. 복원은 outbox를 만들지 않는다.
+ * 순서가 없는 목표(서버에 칸이 생기기 전 백업)에 순서를 채운다 (PRD 4.1, 2026-10-30).
+ * 순서가 있는 목표 아래에, 마지막으로 붙인 시각(없으면 만든 시각) 최근순으로 — orderGoals가 보여 주던 순서 그대로 굳힌다.
+ * 채운 목표 id도 돌려준다. 그 값을 서버에 올려야 다음 복원에서도 같은 순서가 된다.
+ */
+function fillSortOrder(goals: readonly GoalRow[]): { goals: GoalRow[]; filled: string[] } {
+  const known = goals.flatMap((goal) => (goal.sort_order == null ? [] : [goal.sort_order]));
+  const start = known.length ? Math.max(...known) + 1 : 0;
+  const missing = goals.filter((goal) => goal.sort_order == null).sort((left, right) => {
+    const recent = recentAt(right) - recentAt(left);
+    if (recent !== 0) return recent;
+    if (left.id === right.id) return 0;
+    return left.id < right.id ? -1 : 1;
+  });
+  const assigned = new Map(missing.map((goal, index) => [goal.id, start + index]));
+  return {
+    goals: goals.map((goal) => (assigned.has(goal.id) ? { ...goal, sort_order: assigned.get(goal.id) } : goal)),
+    filled: missing.map((goal) => goal.id),
+  };
+}
+
+/**
+ * 받은 백업으로 기기를 한 트랜잭션에 바꾼다. 복원은 outbox를 만들지 않는다 — 순서를 새로 채운 목표만 넣는다(fillSortOrder).
  * 바꾸기 전 기기 사진 경로를 돌려준다 — 호출자가 이 함수 성공 뒤 그 파일들을 지운다.
  */
 export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: PhotoToFetch[]; oldPhotoUris: string[] }> {
@@ -49,12 +72,13 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
     .map((r) => r.photo_uri);
   await db.transaction(async (tx) => {
     await tx.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox;');
-    for (const g of snap.goals) {
+    const { goals, filled } = fillSortOrder(snap.goals);
+    for (const g of goals) {
       await tx.run(
         `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at,
-           completion_seen, last_placed_at, initial_slots, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           completion_seen, last_placed_at, initial_slots, updated_at, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         g.id, g.name, g.board_type, g.total_slots, g.default_sticker_id, g.created_at, g.end_date, g.completed_at,
-        g.completion_seen, g.last_placed_at, g.initial_slots, g.updated_at,
+        g.completion_seen, g.last_placed_at, g.initial_slots, g.updated_at, g.sort_order ?? null,
       );
     }
     for (const s of snap.stickers) {
@@ -73,6 +97,9 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
     await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key) SELECT DISTINCT date_key FROM stickers;`);
     // 워치 성장 수는 복원된 스티커 수부터 다시 센다 (PRD 4.14). 같은 트랜잭션이라 사이에 예전 최고치가 끼지 않는다.
     await tx.run("DELETE FROM app_settings WHERE key = 'watchGrowth'");
+    // 채운 순서를 서버에 올린다. updated_at은 그대로 둔다 — push_changes는 같으면 받아들이고, 다른 기기의 더 최근 수정은 덮지 않는다.
+    const now = Date.now();
+    for (const id of filled) await enqueue(tx, 'goal', id, now);
   });
   await setSetting('syncCursor', String(snap.cursor));
   await setSetting('lastSyncedAt', String(Date.now()));
@@ -141,7 +168,7 @@ export async function replaceServerWithDevice(server: SyncServer, deviceId: stri
   const db = await getDb();
   const goals = await db.all<GoalRow>(
     `SELECT id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at, completion_seen,
-            last_placed_at, initial_slots, updated_at FROM goals`,
+            last_placed_at, initial_slots, updated_at, sort_order FROM goals`,
   );
   const stickers = await db.all<StickerRow>('SELECT id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min FROM stickers');
   const records = await db.all<RecordRow>(

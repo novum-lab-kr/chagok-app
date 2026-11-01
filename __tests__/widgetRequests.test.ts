@@ -7,7 +7,7 @@ const t = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m - 
 const goal = (over: Partial<Goal> = {}): Goal => ({
   id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sprout',
   createdAt: t(2026, 10, 1), endDate: null, completedAt: null, completionSeen: false,
-  lastPlacedAt: null, initialSlots: null, ...over,
+  lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });
 const tally = (over: Partial<Goal> = {}) => goal({ boardType: 'tally', totalSlots: 5, ...over });
 const st = (id: string, placedAt: number, slotIndex: number): Sticker =>

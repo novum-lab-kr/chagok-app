@@ -13,7 +13,7 @@ export const TODAY = localDateKey(NOW.getTime());
 const at = (month: number, day: number, hour = 9) => new Date(2026, month - 1, day, hour).getTime();
 
 type Fields = Pick<Goal, 'id' | 'name' | 'defaultStickerId' | 'createdAt'> & Partial<Goal>;
-const base = {totalSlots: null, endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, initialSlots: null};
+const base = {totalSlots: null, endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, initialSlots: null, sortOrder: null};
 const tally = (g: Fields & {totalSlots: number}): Goal => ({...base, boardType: 'tally', initialSlots: g.totalSlots, ...g});
 const calendar = (g: Fields): Goal => ({...base, boardType: 'calendar', ...g});
 

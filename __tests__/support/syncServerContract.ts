@@ -2,7 +2,7 @@ import type { GoalRow, PulledRow, RecordRow, StickerRow, SyncServer } from '../.
 
 export const goal = (id: string, updatedAt = 1, name = `목표 ${id}`): GoalRow => ({
   id, name, board_type: 'tally', total_slots: 10, default_sticker_id: 'sprout', created_at: 1, end_date: null,
-  completed_at: null, completion_seen: 0, last_placed_at: null, initial_slots: 10, updated_at: updatedAt,
+  completed_at: null, completion_seen: 0, last_placed_at: null, initial_slots: 10, updated_at: updatedAt, sort_order: null,
 });
 export const sticker = (id: string, goalId: string, updatedAt = 1): StickerRow => ({
   id, goal_id: goalId, placed_at: 1, slot_index: 0, sticker_type: 'sprout', updated_at: updatedAt,
@@ -129,6 +129,54 @@ export function describeSyncServerContract(label: string, make: () => Promise<Sy
       const m = await snapshot(s);
       expect(liveIds(m, 'goal')).toEqual(['new', 'same']);
       expect(m.get('goal:same')?.row).toEqual(goal('same', 1, '기기 것'));
+    });
+
+    it('지운 목표는 updated_at이 같은 upsert로 되살아나지 않는다', async () => {
+      const s = await make();
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: goal('g1', 5) }]);
+      await s.push('d2', [{ entity: 'goal', op: 'delete', id: 'g1', deletedAt: 9 }]);
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: { ...goal('g1', 5), sort_order: 3 } }]);
+      const m = await snapshot(s);
+      expect(liveIds(m, 'goal')).toEqual([]);
+      expect(m.get('goal:g1')?.deletedAt).toBe(9);
+    });
+
+    it('지운 목표도 더 새로운 updated_at이 오면 되살아난다', async () => {
+      const s = await make();
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: goal('g1', 5) }]);
+      await s.push('d2', [{ entity: 'goal', op: 'delete', id: 'g1', deletedAt: 9 }]);
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: goal('g1', 6) }]);
+      expect(liveIds(await snapshot(s), 'goal')).toEqual(['g1']);
+    });
+
+    it('살아 있는 목표는 updated_at이 같은 upsert로 순서를 받는다', async () => {
+      const s = await make();
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: goal('g1', 5) }]);
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: { ...goal('g1', 5), sort_order: 3 } }]);
+      expect((await snapshot(s)).get('goal:g1')?.row).toEqual({ ...goal('g1', 5), sort_order: 3 });
+    });
+
+    it('옛 앱이 sort_order 키 없이 올려도 저장된 순서가 남는다', async () => {
+      const s = await make();
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: { ...goal('g1', 5), sort_order: 3 } }]);
+      const { sort_order: _omitted, ...oldAppRow } = goal('g1', 6, '옛 앱 이름');
+      await s.push('d2', [{ entity: 'goal', op: 'upsert', row: oldAppRow }]);
+      expect((await snapshot(s)).get('goal:g1')?.row).toEqual({ ...goal('g1', 6, '옛 앱 이름'), sort_order: 3 });
+    });
+
+    it('replaceAll 뒤에 받으면 sort_order가 실려 있다', async () => {
+      const s = await make();
+      await s.replaceAll('d1', { goals: [{ ...goal('g1'), sort_order: 2 }, { ...goal('g2'), sort_order: -1 }], stickers: [], records: [] });
+      const m = await snapshot(s);
+      expect(m.get('goal:g1')?.row).toEqual({ ...goal('g1'), sort_order: 2 });
+      expect(m.get('goal:g2')?.row).toEqual({ ...goal('g2'), sort_order: -1 });
+    });
+
+    it('replaceAll이 sort_order 없는 행을 보내도 저장된 순서가 남는다', async () => {
+      const s = await make();
+      await s.push('d1', [{ entity: 'goal', op: 'upsert', row: { ...goal('g1'), sort_order: 2 } }]);
+      await s.replaceAll('d2', { goals: [goal('g1')], stickers: [], records: [] });
+      expect((await snapshot(s)).get('goal:g1')?.row).toEqual({ ...goal('g1'), sort_order: 2 });
     });
   });
 }

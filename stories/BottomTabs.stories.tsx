@@ -60,5 +60,5 @@ export const RecordsTabEmpty:Story={name:'2 기록 탭 · 비었을 때',render:
 export const StickersTab:Story={name:'3 스티커 탭',render:()=><Stage tab="stickers"><Stickers/></Stage>};
 export const SettingsTab:Story={name:'4 설정 탭',render:()=><Stage tab="settings"><Settings status={{state:'local'}}/></Stage>};
 export const CompletionNudgeOnBoard:Story={name:'5 판 완성 뒤 · 다음 판 권하기',render:()=><Stage>
-  <BoardDetailScreen {...boardOf(fixtures.stretch,stickersOf.stretch)} onBack={noop} onSettings={noop} notice={<CompletionNudge onStickers={noop} onClose={noop}/>}/>
+  <BoardDetailScreen {...boardOf(fixtures.stretch,stickersOf.stretch)} onBack={noop} onSettings={noop} notice={<CompletionNudge onStickers={noop} onHome={noop} onClose={noop}/>}/>
 </Stage>};

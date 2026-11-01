@@ -1,3 +1,4 @@
+import { getDb } from '../src/db/client';
 import { createGoal, deleteGoal, updateGoal } from '../src/repositories/goalRepository';
 import { placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
@@ -118,6 +119,22 @@ describe('pushOnce', () => {
     await pushOnce(deps);
     expect((deps.server.rows.get(`goal:${g.id}`)!.row as { name: string }).name).toBe('걷기');
     expect(await takeBatch(10)).toEqual([]);
+  });
+});
+
+describe('기기 DB v2가 모든 목표를 다시 올릴 때 (PRD 4.1, 2026-10-30)', () => {
+  it('다른 기기에서 지운 목표는 서버에서 되살아나지 않는다', async () => {
+    const deps = setup();
+    const kept = await createGoal({ name: '남길 목표', boardType: 'tally', totalSlots: 3 });
+    const removed = await createGoal({ name: '지운 목표', boardType: 'tally', totalSlots: 3 });
+    await pushOnce(deps);
+    await deps.server.push('d2', [{ entity: 'goal', op: 'delete', id: removed.id, deletedAt: Date.now() }]);
+
+    // v2 마이그레이션과 같은 동작: updated_at은 그대로 두고 outbox에만 넣는다
+    await (await getDb()).run(`INSERT INTO outbox (entity, row_id, queued_at) SELECT 'goal', id, 1 FROM goals WHERE true`);
+    await pushOnce(deps);
+
+    expect(deps.server.live('goal')).toEqual([kept.id]);
   });
 });
 
