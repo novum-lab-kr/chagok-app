@@ -8,6 +8,7 @@ import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { defaultExtraSlots, extendEndDateFloor, isCompleted } from '../../../src/domain/board';
 import type { Goal } from '../../../src/domain/types';
+import { t } from '../../../src/i18n';
 
 /**
  * 완성 다이얼로그의 계속하기 (PRD 4.7). 적립판은 칸을 더하고(기본 = 처음 만든 칸 수, 상한 없음),
@@ -41,7 +42,7 @@ export default function ExtendBoard() {
   const current = goal;
 
   async function submit(task: () => Promise<void>) {
-    if (await saveOrNotify(ask, '늘리지 못했어요', task)) goBackOrHome();
+    if (await saveOrNotify(ask, t('failed.extend'), task)) goBackOrHome();
   }
 
   return (

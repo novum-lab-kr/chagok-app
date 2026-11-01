@@ -16,6 +16,7 @@ import { takeOfferedSticker } from '../../../src/app-data/stickerChoice';
 import { GOAL_NAME_MAX, goalNameError, isCompleted, parseSlotCount, startDate } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Goal } from '../../../src/domain/types';
+import { t } from '../../../src/i18n';
 
 /**
  * 목표 설정 (PRD 4.4). 진행 중: 이름 → 기본 스티커 → 기간(달력판) 또는 칸 수(적립판, 늘리기만) → [이 판 완성하기] → 저장 → [삭제하기].
@@ -77,13 +78,13 @@ export default function GoalSettings() {
   });
 
   async function save() {
-    if (await saveOrNotify(ask, '저장하지 못했어요', saveEdits)) goBackOrHome();
+    if (await saveOrNotify(ask, t('failed.save'), saveEdits)) goBackOrHome();
   }
 
   /** 기간 없는 달력판의 수동 완성 (PRD 4.3). 판 상세로 돌아가면 완성 흐름이 뜬다. */
   async function complete() {
     if (!(await confirm(boardDialogs.confirmManual))) return;
-    const ok = await saveOrNotify(ask, '완성하지 못했어요', async () => {
+    const ok = await saveOrNotify(ask, t('failed.complete'), async () => {
       await saveEdits();
       await completeGoal(current.id, Date.now());
     });
@@ -95,7 +96,7 @@ export default function GoalSettings() {
     const counts = await countGoalContents(current.id);
     if (!(await confirm(boardDialogs.deleteGoal(deleteDescription(counts))))) return;
     let photos: string[] = [];
-    const ok = await saveOrNotify(ask, '목표를 삭제하지 못했어요', async () => { photos = await deleteGoal(current.id); });
+    const ok = await saveOrNotify(ask, t('failed.deleteGoal'), async () => { photos = await deleteGoal(current.id); });
     if (!ok) return;
     for (const uri of photos) {
       try { removeManagedRecordPhoto(uri); } catch { /* 고아 파일로 남는다. 목표는 이미 지워졌다 */ }

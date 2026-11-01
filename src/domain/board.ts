@@ -6,6 +6,7 @@
 import { dateKeyOf, dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
 import type { DateKey } from './dates';
 import type { Goal, Sticker } from './types';
+import { t } from '../i18n';
 
 /** 붙일 자리. 적립판은 칸, 달력판은 날짜. */
 export type PlaceTarget = { slot: number } | { date: DateKey };
@@ -165,11 +166,11 @@ export function orderGoals<G extends Goal>(goals: readonly G[]): { active: G[]; 
  */
 export function parseSlotCount(input: string, current: number): { ok: true; value: number } | { ok: false; reason: string } {
   const text = input.trim();
-  if (text === '') return { ok: false, reason: '칸 수를 입력해 주세요.' };
-  if (!/^\d+$/.test(text)) return { ok: false, reason: '숫자만 입력할 수 있어요.' };
+  if (text === '') return { ok: false, reason: t('validation.slotCountEmpty') };
+  if (!/^\d+$/.test(text)) return { ok: false, reason: t('validation.digitsOnly') };
   const value = Number(text);
-  if (value < 1) return { ok: false, reason: '1칸 이상이어야 해요.' };
-  if (value < current) return { ok: false, reason: `지금 ${current}칸보다 줄일 수 없어요.` };
+  if (value < 1) return { ok: false, reason: t('validation.slotCountMin') };
+  if (value < current) return { ok: false, reason: t('validation.slotCountBelowCurrent', current) };
   return { ok: true, value };
 }
 
@@ -180,13 +181,13 @@ export function parseSlotCount(input: string, current: number): { ok: true; valu
 export const GOAL_NAME_MAX = 20;
 export const MEMO_MAX = 500;
 export function goalNameError(name: string): string | undefined {
-  if (name.trim() === '') return '목표 이름을 입력해주세요.';
-  if (name.length >= GOAL_NAME_MAX) return `${GOAL_NAME_MAX}자까지 입력할 수 있어요.`;
+  if (name.trim() === '') return t('validation.goalNameEmpty');
+  if (name.length >= GOAL_NAME_MAX) return t('validation.maxLength', GOAL_NAME_MAX);
   return undefined;
 }
 /** 메모는 비워 둬도 된다. */
 export function memoError(memo: string): string | undefined {
-  return memo.length >= MEMO_MAX ? `${MEMO_MAX}자까지 입력할 수 있어요.` : undefined;
+  return memo.length >= MEMO_MAX ? t('validation.maxLength', MEMO_MAX) : undefined;
 }
 /**
  * 새 목표의 이름 문구. 처음 연 빈 칸에는 보이지 않고, 이름을 썼다가 지웠거나

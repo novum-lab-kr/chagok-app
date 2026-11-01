@@ -10,6 +10,7 @@ import { longDate } from '../../src/app-data/pocketAdapter';
 import { localDateKey } from '../../src/domain/dates';
 import { takeOfferedSticker } from '../../src/app-data/stickerChoice';
 import { GOAL_NAME_MAX, shownGoalNameError } from '../../src/domain/board';
+import { t } from '../../src/i18n';
 
 const DEFAULT_COUNT = '15';
 
@@ -44,7 +45,7 @@ export default function NewGoal() {
   /** 저장이 끝난 뒤에 판을 연다. 실패하면 화면을 그대로 두어 입력을 잃지 않는다 (PRD 7절). */
   async function submit() {
     let createdId = '';
-    const ok = await saveOrNotify(ask, '목표를 만들지 못했어요', async () => {
+    const ok = await saveOrNotify(ask, t('failed.createGoal'), async () => {
       const created = await createGoal({
         name: name.trim(),
         boardType: kind,
@@ -72,7 +73,7 @@ export default function NewGoal() {
         endMode={endMode} onChangeEndMode={setEndMode}
         endDate={endDate} onChangeEndDate={setEndDate}
         today={today} todayLabel={longDate(today)}
-        error={kind === 'tally' && !countValid && name.trim().length > 0 ? '칸 수를 1 이상으로 입력해주세요.' : undefined}
+        error={kind === 'tally' && !countValid && name.trim().length > 0 ? t('validation.slotCountRequired') : undefined}
         submitDisabled={!valid}
         onSubmit={() => { void submitOnce(submit); }}
         onBack={goBack}

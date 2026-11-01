@@ -10,6 +10,7 @@ import {ActionSymbol,StickerGlyph,type StickerId} from './sticker-glyphs';
 import {Mascot} from './mascot';
 import {PackCard,PackViewSwitch,RewardProgress,type PackView} from './sticker-shop';
 import {gearPath,gearViewBox} from './assets/gear';
+import {t} from '../i18n';
 import type {ColorStickerPackId} from '../stickers/color/catalog';
 
 /**
@@ -142,7 +143,7 @@ export type TimelineGoalView={id:string;name:string;sticker:StickerId};
 /** 기록 줄 (2026-10-17 시안 1안): 목표 이름은 민트 배지, 메모는 잉크 글씨, 사진 72. */
 function TimelineItem({entry,onPress}:{entry:TimelineEntryView;onPress:()=>void}) {
   const memo=entry.memo?.trim();
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${entry.goalName}, ${memo||'사진'}`} onPress={onPress}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${entry.goalName}, ${memo||t('record.photo')}`} onPress={onPress}>
     {({pressed})=><PixelFrame variant="button" fill={c.secondary} pressed={pressed} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:12}}>
       <StickerGlyph id={entry.sticker} size={40}/>
       <View style={{flex:1,gap:6}}>
@@ -152,10 +153,10 @@ function TimelineItem({entry,onPress}:{entry:TimelineEntryView;onPress:()=>void}
           </PixelFrame>
         </View>
         {memo?<PixelText numberOfLines={2} style={{fontSize:16,lineHeight:22,color:c.ink}}>{memo}</PixelText>
-          :<PixelText variant="caption" style={caption}>사진만 남겼어요</PixelText>}
+          :<PixelText variant="caption" style={caption}>{t('record.photoOnly')}</PixelText>}
       </View>
       {entry.photo&&<View style={{width:72,height:72,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.screen}}>
-        <Image source={entry.photo} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>
+        <Image source={entry.photo} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/>
       </View>}
     </PixelFrame>}
   </Pressable>;
@@ -178,7 +179,7 @@ function TimelineGoalChips({goals,goal,onGoal}:{goals:readonly TimelineGoalView[
   </Pressable>;
   return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{flexGrow:0}}>
     <View accessibilityRole="tablist" style={{flexDirection:'row',alignItems:'center',gap:6}}>
-      {chip('__all','전체',goal===null,()=>onGoal(null),<PixelText style={{fontSize:16,lineHeight:22,color:goal===null?c.lcd:c.buttonText}}>전체</PixelText>)}
+      {chip('__all',t('common.all'),goal===null,()=>onGoal(null),<PixelText style={{fontSize:16,lineHeight:22,color:goal===null?c.lcd:c.buttonText}}>{t('common.all')}</PixelText>)}
       {goals.map(g=>{const on=g.id===goal;return chip(g.id,g.name,on,()=>onGoal(g.id),<>
         <StickerGlyph id={g.sticker} size={28}/>
         {on&&<PixelText numberOfLines={1} style={{fontSize:16,lineHeight:22,maxWidth:150,color:c.lcd}}>{g.name}</PixelText>}
@@ -191,7 +192,7 @@ export type RecordView='timeline'|'feed';
 const VIEW_ICONS={timeline:'M1 2H3V4H1Z M5 2H15V4H5Z M1 7H3V9H1Z M5 7H15V9H5Z M1 12H3V14H1Z M5 12H15V14H5Z',feed:'M1 1H5V5H1Z M6 1H10V5H6Z M11 1H15V5H11Z M1 6H5V10H1Z M6 6H10V10H6Z M11 6H15V10H11Z M1 11H5V15H1Z M6 11H10V15H6Z M11 11H15V15H11Z'};
 function RecordViewSwitch({view,onView}:{view:RecordView;onView:(view:RecordView)=>void}) {
   return <View accessibilityRole="tablist" style={{flexDirection:'row',gap:4}}>
-    {(['timeline','feed'] as const).map(v=>{const on=v===view;return <Pressable key={v} accessibilityRole="tab" accessibilityLabel={v==='timeline'?'타임라인으로 보기':'사진으로 보기'} aria-selected={on} accessibilityState={{selected:on}} onPress={()=>onView(v)}>
+    {(['timeline','feed'] as const).map(v=>{const on=v===view;return <Pressable key={v} accessibilityRole="tab" accessibilityLabel={v==='timeline'?t('record.viewTimeline'):t('record.viewPhotos')} aria-selected={on} accessibilityState={{selected:on}} onPress={()=>onView(v)}>
       <PixelFrame variant="selection" fill={on?c.ink:'transparent'} contentStyle={{width:retro.layout.touch,height:retro.layout.touch,alignItems:'center',justifyContent:'center'}}>
         <Svg width={22} height={22} viewBox="0 0 16 16"><Path d={VIEW_ICONS[v]} fill={on?c.lcd:c.buttonText} fillRule="evenodd"/></Svg>
       </PixelFrame>
@@ -202,9 +203,9 @@ function RecordViewSwitch({view,onView}:{view:RecordView;onView:(view:RecordView
 function FeedTile({entry,onPress}:{entry:TimelineEntryView;onPress:()=>void}) {
   const memo=entry.memo?.trim();
   return <View style={{width:'33.333%',aspectRatio:1,padding:1.5}}>
-    <Pressable accessibilityRole="button" accessibilityLabel={`${entry.goalName}, ${memo||'사진'}`} onPress={onPress} style={{flex:1,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.secondary,overflow:'hidden'}}>
-      {entry.photo?<Image source={entry.photo} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>
-        :<View style={{flex:1,padding:8,justifyContent:'center'}}><PixelText numberOfLines={4} style={memo?{fontSize:13,lineHeight:18,color:c.ink}:[caption,{fontSize:13,lineHeight:18}]}>{memo||'사진만 남겼어요'}</PixelText></View>}
+    <Pressable accessibilityRole="button" accessibilityLabel={`${entry.goalName}, ${memo||t('record.photo')}`} onPress={onPress} style={{flex:1,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.secondary,overflow:'hidden'}}>
+      {entry.photo?<Image source={entry.photo} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/>
+        :<View style={{flex:1,padding:8,justifyContent:'center'}}><PixelText numberOfLines={4} style={memo?{fontSize:13,lineHeight:18,color:c.ink}:[caption,{fontSize:13,lineHeight:18}]}>{memo||t('record.photoOnly')}</PixelText></View>}
     </Pressable>
   </View>;
 }
@@ -214,11 +215,11 @@ function FeedTile({entry,onPress}:{entry:TimelineEntryView;onPress:()=>void}) {
  * 2026-10-17 2판: 제목 옆 아이콘으로 피드(사진 격자)로 바꾼다. 피드 칸을 누르면 펼친 화면.
  */
 export function RecordTimelineScreen({days,goals,goal,onGoal,onOpen,view='timeline',onView,onOpenFeed}:{days:readonly TimelineDayView[];/** 칩: 기록이 있는 목표 */goals:readonly TimelineGoalView[];/** 고른 목표. null = 전체 */goal:string|null;onGoal:(id:string|null)=>void;onOpen:(stickerId:string)=>void;view?:RecordView;onView?:(view:RecordView)=>void;/** 피드 칸을 눌렀을 때: 그 기록부터 펼친 화면 */onOpenFeed?:(stickerId:string)=>void}) {
-  const header=<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><TabTitle title="기록"/>{onView&&<RecordViewSwitch view={view} onView={onView}/>}</View>;
+  const header=<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><TabTitle title={t('tabs.records')}/>{onView&&<RecordViewSwitch view={view} onView={onView}/>}</View>;
   return <RetroScreen style={{gap:16}} header={header}>
     {goals.length>0&&<TimelineGoalChips goals={goals} goal={goal} onGoal={onGoal}/>}
     {days.length===0
-      ?<EmptyState title="아직 남긴 기록이 없어요" description="판에서 붙인 칸을 누르면 사진과 메모를 남길 수 있어요."/>
+      ?<EmptyState title={t('record.emptyTitle')} description={t('record.emptyDescription')}/>
       :view==='feed'
         ?<View style={{flexDirection:'row',flexWrap:'wrap',marginHorizontal:-1.5}}>
           {days.flatMap(day=>day.entries).map(entry=><FeedTile key={entry.id} entry={entry} onPress={()=>(onOpenFeed??onOpen)(entry.id)}/>)}
@@ -236,7 +237,7 @@ export type FeedPostView=TimelineEntryView&{date:string};
 const FEED_PHOTO_RATIO=586/494;
 function FeedPost({post,onPress}:{post:FeedPostView;onPress:()=>void}) {
   const memo=post.memo?.trim();
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${post.goalName}, ${post.date}, ${memo||'사진'}`} onPress={onPress} style={{gap:10}}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${post.goalName}, ${post.date}, ${memo||t('record.photo')}`} onPress={onPress} style={{gap:10}}>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
       <StickerGlyph id={post.sticker} size={32}/>
       <View style={{flex:1,minWidth:0,alignItems:'flex-start'}}>
@@ -245,16 +246,16 @@ function FeedPost({post,onPress}:{post:FeedPostView;onPress:()=>void}) {
       <PixelText variant="caption" style={caption}>{post.date}</PixelText>
     </View>
     {post.photo
-      ?<View style={{width:'100%',aspectRatio:FEED_PHOTO_RATIO,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.screen}}><Image source={post.photo} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/></View>
-      :<PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:16,minHeight:120,justifyContent:'center'}}><PixelText style={memo?{fontSize:18,lineHeight:26,color:c.ink}:caption}>{memo||'사진만 남겼어요'}</PixelText></PixelFrame>}
+      ?<View style={{width:'100%',aspectRatio:FEED_PHOTO_RATIO,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.screen}}><Image source={post.photo} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/></View>
+      :<PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:16,minHeight:120,justifyContent:'center'}}><PixelText style={memo?{fontSize:18,lineHeight:26,color:c.ink}:caption}>{memo||t('record.photoOnly')}</PixelText></PixelFrame>}
     {post.photo&&memo&&<PixelText style={{fontSize:16,lineHeight:22,color:c.ink}}>{memo}</PixelText>}
   </Pressable>;
 }
 /** 펼친 화면 (2026-10-17 시안 2판): 피드에서 누른 기록부터 사진과 메모 전체를 이어 본다. 기록을 누르면 그 칸의 기록 화면. */
 export function RecordFeedScreen({posts,onBack,onOpen}:{posts:readonly FeedPostView[];onBack:()=>void;onOpen:(stickerId:string)=>void}) {
-  return <RetroScreen style={{gap:28}} header={<ScreenHeader title="기록" onBack={onBack}/>}>
+  return <RetroScreen style={{gap:28}} header={<ScreenHeader title={t('tabs.records')} onBack={onBack}/>}>
     {posts.length===0
-      ?<EmptyState title="아직 남긴 기록이 없어요" description="판에서 붙인 칸을 누르면 사진과 메모를 남길 수 있어요."/>
+      ?<EmptyState title={t('record.emptyTitle')} description={t('record.emptyDescription')}/>
       :posts.map(post=><FeedPost key={post.id} post={post} onPress={()=>onOpen(post.id)}/>)}
   </RetroScreen>;
 }
@@ -265,7 +266,7 @@ const noop=()=>{};
 export function StickerCollectionScreen({packs,mine,onChangeMine,openPacks,onToggle,reward,onOpenPack}:{packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void}) {
   const order=[...packs.filter(p=>p.state!=='locked'),...(mine?[]:packs.filter(p=>p.state==='locked'))];
   const rewardReady=reward.days>=reward.goal;
-  return <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:16}}><TabTitle title="스티커"/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
+  return <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:16}}><TabTitle title={t('tabs.stickers')}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
     <RewardProgress days={reward.days} goal={reward.goal}/>
     {order.map(p=><PackCard key={p.id} pack={p} selectable={false} open={openPacks.includes(p.id)} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={noop} onOpenPack={()=>onOpenPack(p.id)}/>)}
   </RetroScreen>;
@@ -274,7 +275,7 @@ export function StickerCollectionScreen({packs,mine,onChangeMine,openPacks,onTog
 // ── 흐름 중간 안내 ───────────────────────────────────────────────
 /** 카드 오른쪽 위 모서리의 ×. 글자 폭을 빼앗지 않게 겹쳐 둔다(누르는 곳은 44pt). */
 function CloseButton({onPress}:{onPress:()=>void}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="닫기" onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:-4,right:-4,width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:-4,right:-4,width:44,height:44,alignItems:'center',justifyContent:'center'}}>
     <ActionSymbol name="close" size={14} color={c.buttonText}/>
   </Pressable>;
 }
@@ -283,9 +284,9 @@ export function TrialReadyCard({days,onChoose,onClose}:{/** 넘긴 문턱(7, 14,
   return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:10}}>
     <Mascot pose="sparkle" size={44}/>
     <View style={{flex:1,gap:4,paddingRight:16}}>
-      <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{`스티커 붙인 날 ${days}일을 모았어요`}</PixelText>
-      <PixelText variant="caption" style={caption}>잠긴 묶음 하나를 3일 써 볼 수 있어요</PixelText>
-      <View style={{alignSelf:'flex-start',marginTop:4}}><PixelButton label="묶음 고르기" minHeight={40} onPress={onChoose}/></View>
+      <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{t('nudge.stickerDays',days)}</PixelText>
+      <PixelText variant="caption" style={caption}>{t('nudge.trialHint')}</PixelText>
+      <View style={{alignSelf:'flex-start',marginTop:4}}><PixelButton label={t('nudge.choosePack')} minHeight={40} onPress={onChoose}/></View>
     </View>
     <CloseButton onPress={onClose}/>
   </PixelFrame>;
@@ -295,8 +296,8 @@ export function CompletionNudge({onStickers,onClose}:{onStickers:()=>void;onClos
   return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:10}}>
     <Mascot pose="sparkle" size={44}/>
     <View style={{flex:1,gap:8,paddingRight:16}}>
-      <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{'다음 판은\n새 스티커로 시작해 볼까요?'}</PixelText>
-      <View style={{alignSelf:'flex-start'}}><PixelButton label="스티커 보기" minHeight={40} onPress={onStickers}/></View>
+      <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{t('nudge.nextBoard')}</PixelText>
+      <View style={{alignSelf:'flex-start'}}><PixelButton label={t('nudge.seeStickers')} minHeight={40} onPress={onStickers}/></View>
     </View>
     <CloseButton onPress={onClose}/>
   </PixelFrame>;
