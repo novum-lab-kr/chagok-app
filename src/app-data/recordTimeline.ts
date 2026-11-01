@@ -1,12 +1,11 @@
 import { parseDateKey } from '../domain/dates';
+import { t } from '../i18n';
 import type { TimelineEntry } from '../repositories/recordRepository';
-
-const WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
 
 /** 기록 모아보기의 날짜 머리글: 「10월 12일 월요일」. 붙인 날짜(dateKey)다. */
 export function dayLabel(key: string): string {
   const d = parseDateKey(key);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}`;
+  return t('date.monthDayWeekday', d.getMonth() + 1, d.getDate(), d.getDay());
 }
 
 export type TimelineDay = { key: string; label: string; entries: TimelineEntry[] };

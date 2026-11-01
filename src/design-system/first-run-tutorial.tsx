@@ -4,19 +4,22 @@ import {TutorialSpotlight} from './tutorial';
 import {useLayoutSize} from './components';
 import {BoardDetailScreen,GoalListScreen,NewGoalScreen} from './board-screens';
 import type {StickerId} from './sticker-glyphs';
+import {t} from '../i18n';
 
 /**
  * 첫 실행 튜토리얼 5단계 (PRD 4.6). 예시 화면 위에 대상 하나를 재서 스포트라이트를 씌운다.
  * 실제 목표나 기록은 만들지 않는다.
  */
 export type TutorialSpotName='add'|'sticker'|'slot'|'record'|'done';
-export const firstRunSteps:readonly {name:TutorialSpotName;title:string;description:string}[]=[
-  {name:'add',title:'목표 만들기',description:'＋를 눌러 목표를 만들어요'},
-  {name:'sticker',title:'스티커 고르기',description:'목표마다 스티커를 정해요'},
-  {name:'slot',title:'빈칸에 톡!',description:'어느 빈칸이든 누르면 스티커가 붙어요. 꾹 누르면 떼져요'},
-  {name:'record',title:'기록 남기기',description:'붙인 스티커를 누르면 사진과 메모를 남길 수 있어요'},
-  {name:'done',title:'완성한 판',description:'판을 다 채우면 완성! 완성한 뒤에도 빠진 칸과 기록을 고칠 수 있어요'},
-];
+const firstRunStepNames:readonly TutorialSpotName[]=['add','sticker','slot','record','done'];
+/** 부르는 순간의 언어로 읽는다 */
+const firstRunStepText=(name:TutorialSpotName)=>({
+  add:{title:t('tutorial.addTitle'),description:t('tutorial.firstRunAddDescription')},
+  sticker:{title:t('tutorial.stickerTitle'),description:t('tutorial.stickerDescription')},
+  slot:{title:t('tutorial.slotTitle'),description:t('tutorial.firstRunSlotDescription')},
+  record:{title:t('tutorial.recordTitle'),description:t('tutorial.recordDescription')},
+  done:{title:t('tutorial.doneTitle'),description:t('tutorial.doneDescription')},
+})[name];
 
 type Spot={name:TutorialSpotName;root:React.RefObject<View|null>;set:(rect:LayoutRectangle)=>void};
 const SpotContext=React.createContext<Spot|null>(null);
@@ -39,14 +42,14 @@ export function useTutorialSpot(name:TutorialSpotName) {
 export function FirstRunTutorialFrame({index,children,onNext,onPrev,onSkip,autoFocus=true,style}:{index:number;children:ReactNode;onNext:()=>void;onPrev:()=>void;onSkip:()=>void;/** 한 페이지에 여러 개를 그리는 문서 화면에서는 끈다 */autoFocus?:boolean;style?:StyleProp<ViewStyle>}) {
   const {ref:root,size,onLayout}=useLayoutSize();
   const [target,setTarget]=useState<LayoutRectangle>();
-  const step=firstRunSteps[index],last=index===firstRunSteps.length-1;
+  const name=firstRunStepNames[index],last=index===firstRunStepNames.length-1;
   const set=useCallback((rect:LayoutRectangle)=>setTarget(previous=>previous&&previous.x===rect.x&&previous.y===rect.y&&previous.width===rect.width&&previous.height===rect.height?previous:rect),[]);
-  const spot=useMemo(()=>({name:step.name,root,set}),[step.name,root,set]);
+  const spot=useMemo(()=>({name,root,set}),[name,root,set]);
   return <SpotContext.Provider value={spot}>
     <View ref={root} style={style} onLayout={onLayout}>
       <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{flex:1}}>{children}</View>
       {target&&size.width>0&&<TutorialSpotlight autoFocus={autoFocus} step={index===0?1:3} target={target} width={size.width} height={size.height} onNext={onNext} onPrev={index>0?onPrev:undefined} onSkip={last?undefined:onSkip}
-        content={{step:`${index+1} / ${firstRunSteps.length}`,title:step.title,description:step.description,primaryLabel:last?'시작하기':'다음',secondaryLabel:'이전'}}/>}
+        content={{step:`${index+1} / ${firstRunStepNames.length}`,...firstRunStepText(name),primaryLabel:last?t('tutorial.start'):t('common.next'),secondaryLabel:t('common.previous')}}/>}
     </View>
   </SpotContext.Provider>;
 }
@@ -60,26 +63,26 @@ const filledWith=(n:number,sticker:StickerId)=>Object.fromEntries(range(n).map(k
 export function TutorialListExample() {
   const add=useTutorialSpot('add');
   return <GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} addTargetRef={add} completed={[]} active={[
-    {id:'reading',name:'책 읽기',sticker:'basic.sprout',kind:'적립판',percent:40,status:['40% 채웠어요']},
-    {id:'walk',name:'매일 저녁 동네 한 바퀴 걷기',sticker:'basic.shoe',kind:'달력판',percent:30,status:['이번 달 30% 채웠어요']},
+    {id:'reading',name:t('example.reading'),sticker:'basic.sprout',kind:t('board.tally'),percent:40,status:[t('goalCard.filled','40%')]},
+    {id:'walk',name:t('example.walkEveryEvening'),sticker:'basic.shoe',kind:t('board.calendar'),percent:30,status:[t('goalCard.filled',t('goalCard.percentThisMonth',30))]},
   ]}/>;
 }
 /** 2단계: 새 목표의 기본 스티커 */
 export function TutorialNewGoalExample() {
   const sticker=useTutorialSpot('sticker');
-  return <NewGoalScreen name="물 여덟 잔 마시기" onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker="basic.flower" onChooseSticker={noop}
-    endMode="none" onChangeEndMode={noop} onChangeEndDate={noop} today="2026-09-29" todayLabel="9월 29일" onSubmit={noop} onBack={noop} stickerTargetRef={sticker}/>;
+  return <NewGoalScreen name={t('example.water')} onChangeName={noop} kind="calendar" onChangeKind={noop} count="15" onChangeCount={noop} sticker="basic.flower" onChooseSticker={noop}
+    endMode="none" onChangeEndMode={noop} onChangeEndDate={noop} today="2026-09-29" todayLabel={t('date.monthDay',9,29)} onSubmit={noop} onBack={noop} stickerTargetRef={sticker}/>;
 }
 /** 3·4단계: 진행 중인 적립판의 다음 빈칸과 붙인 칸 */
 export function TutorialBoardExample() {
   const slot=useTutorialSpot('slot'),record=useTutorialSpot('record');
-  return <BoardDetailScreen name="책 읽기" sticker="basic.sprout" completed={false} progress={{value:6,total:15,percentLabel:'40%'}} onBack={noop} onSettings={noop}
+  return <BoardDetailScreen name={t('example.reading')} sticker="basic.sprout" completed={false} progress={{value:6,total:15,percentLabel:'40%'}} onBack={noop} onSettings={noop}
     board={{kind:'tally',total:15,filled:filledWith(6,'basic.sprout'),onPress:noop,onOpenRecord:noop,nextSlotRef:slot,recordSlotRef:record}}/>;
 }
 /** 5단계: 완성한 판의 [완성] 스티커 */
 export function TutorialCompletedExample() {
   const done=useTutorialSpot('done');
-  return <BoardDetailScreen name="자기 전 스트레칭 십 분" sticker="basic.star" completed progress={{value:20,total:20,percentLabel:'100%'}} onBack={noop} onSettings={noop} completionTargetRef={done}
+  return <BoardDetailScreen name={t('example.stretching')} sticker="basic.star" completed progress={{value:20,total:20,percentLabel:'100%'}} onBack={noop} onSettings={noop} completionTargetRef={done}
     board={{kind:'tally',total:20,filled:filledWith(20,'basic.star'),onPress:noop,onOpenRecord:noop}}/>;
 }
 
@@ -87,5 +90,5 @@ export function TutorialCompletedExample() {
 export function FirstRunTutorial({onFinish}:{onFinish:()=>void}) {
   const [index,setIndex]=useState(0);
   const screen=index===0?<TutorialListExample/>:index===1?<TutorialNewGoalExample/>:index<4?<TutorialBoardExample/>:<TutorialCompletedExample/>;
-  return <FirstRunTutorialFrame key={index} index={index} style={{flex:1}} onSkip={onFinish} onPrev={()=>setIndex(index-1)} onNext={()=>index===firstRunSteps.length-1?onFinish():setIndex(index+1)}>{screen}</FirstRunTutorialFrame>;
+  return <FirstRunTutorialFrame key={index} index={index} style={{flex:1}} onSkip={onFinish} onPrev={()=>setIndex(index-1)} onNext={()=>index===firstRunStepNames.length-1?onFinish():setIndex(index+1)}>{screen}</FirstRunTutorialFrame>;
 }

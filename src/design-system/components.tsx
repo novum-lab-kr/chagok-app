@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  View, Text, Pressable, TextInput, StyleSheet, Platform, Modal, AccessibilityInfo, Animated, useWindowDimensions,
+  View, Text, Pressable, TextInput, StyleSheet, Platform, Modal, AccessibilityInfo, Animated, ScrollView, useWindowDimensions,
   type TextProps, type StyleProp, type ViewStyle, type TextInputProps, type DimensionValue, type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -8,11 +8,12 @@ import { retro, type TextVariant } from './tokens';
 import { pixelOutline, progressRatio } from './geometry';
 import { sproutPath, sproutViewBox } from './assets/sprout';
 import { StickerGlyph, type StickerId } from './sticker-glyphs';
+import { t } from '../i18n';
 import { gearPath, gearViewBox } from './assets/gear';
 
 const c = retro.color;
 const decorativeSvg = Platform.OS === 'web' ? { 'aria-hidden': true } as const : { accessible: false };
-const sproutAccessibility = Platform.OS === 'web' ? { role: 'img', 'aria-label': '새싹이' } as const : { accessible: true, accessibilityLabel: '새싹이' };
+const sproutAccessibility = () => Platform.OS === 'web' ? { role: 'img', 'aria-label': t('character.sprout') } as const : { accessible: true, accessibilityLabel: t('character.sprout') };
 export function PixelText({ variant = 'body', style, ...props }: TextProps & { variant?: TextVariant }) {
   return <Text allowFontScaling={false} {...props} style={[{ color: c.ink, ...retro.typography[variant] }, style,
     { fontFamily: retro.fontFamily, fontWeight: '400', fontStyle: 'normal', letterSpacing: 0 }]} />;
@@ -116,7 +117,7 @@ export function PixelButton({ label, variant = 'primary', disabled = false, load
   { label: string; variant?: 'primary' | 'secondary'; disabled?: boolean; loading?: boolean; onPress?: () => void; icon?: ReactNode; accessibilityLabel?: string; style?: StyleProp<ViewStyle>; minHeight?: number }) {
   const [focused,setFocused] = useState(false);
   const blocked = disabled || loading;
-  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? (loading ? '저장 중' : label)}
+  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? (loading ? t('common.saving') : label)}
     aria-disabled={blocked} aria-busy={loading} accessibilityState={{disabled: blocked, busy: loading}} disabled={blocked} onPress={onPress}
     onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={[{opacity: disabled ? retro.opacity.disabled : 1}, style]}>
     {({pressed}) => <PixelFrame variant="button" fill={variant === 'primary' ? c.primary : c.secondary} pressed={pressed} focused={focused}
@@ -173,14 +174,14 @@ export function PixelInput({label, error, style, onFocus, onBlur, onChangeText, 
 
 export function ProgressBar({value,total}: {value:number;total:number}) {
   const ratio=progressRatio(value,total);
-  return <View accessible accessibilityRole="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ratio*100)} accessibilityValue={{min:0,max:100,now:Math.round(ratio*100)}} accessibilityLabel="목표 진행률" style={{height:10,borderRadius:4,overflow:'hidden'}}>
+  return <View accessible accessibilityRole="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ratio*100)} accessibilityValue={{min:0,max:100,now:Math.round(ratio*100)}} accessibilityLabel={t('progress.goal')} style={{height:10,borderRadius:4,overflow:'hidden'}}>
     <View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.track}]}/>
     <View style={{height:10,borderRadius:4,width:`${ratio*100}%`,backgroundColor:c.ink}}/>
   </View>;
 }
 
 export function SproutSticker({size=48}: {size?:number}) {
-  return <Svg width={size} height={size} viewBox={sproutViewBox} {...sproutAccessibility}>
+  return <Svg width={size} height={size} viewBox={sproutViewBox} {...sproutAccessibility()}>
     <Path d={sproutPath} fill={c.ink}/>
   </Svg>;
 }
@@ -242,7 +243,7 @@ export function StickerGrid({children}: {children:ReactNode}) {
 }
 
 /** 붙인 칸의 스티커 떼기를 스크린리더에서도 쓸 수 있게 하는 접근성 동작 (꾹 누르기 대체). */
-export const removeStickerAction={name:'longpress',label:'스티커 떼기'} as const;
+export const removeStickerAction={name:'longpress',get label(){return t('slot.removeSticker')}} as const;
 const ignoreLongPress=()=>{};
 export function StickerSlot({number,state='empty',onPress,onLongPress,width=84,height=64,enabled=state!=='empty'}: {number:number;state?:'empty'|'available'|'filled';onPress?:()=>void;/** 붙인 칸을 꾹 눌렀을 때 (스티커 떼기) */onLongPress?:()=>void;width?:DimensionValue;height?:DimensionValue;enabled?:boolean}) {
   const [focused,setFocused]=useState(false);
@@ -251,7 +252,7 @@ export function StickerSlot({number,state='empty',onPress,onLongPress,width=84,h
   // 꾹 누르기 처리기는 빈칸에도 둔다 — 떼자마자 빈칸으로 다시 그려진 칸에서 손을 떼면 한 번 누르기(붙이기)로 처리됐다 (2026-10-08). 스크린리더 동작은 onLongPress가 있을 때만.
   return <Pressable onLayout={e=>setSlotSize(e.nativeEvent.layout)} disabled={!enabled} onPress={onPress} onLongPress={onLongPress??ignoreLongPress}
     accessibilityActions={onLongPress?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===removeStickerAction.name)onLongPress?.()}} accessibilityRole="button"
-    accessibilityLabel={`${number}번 칸, ${state==='filled'?'새싹이 스티커':enabled?'붙일 수 있음':'빈칸'}`}
+    accessibilityLabel={`${t('slot.label',number)}, ${state==='filled'?t('slot.sproutSticker'):enabled?t('slot.available'):t('slot.empty')}`}
     accessibilityState={{disabled:!enabled}} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} style={{width,height}}>
     <PixelFrame variant={state==='available'?'selection':'slot'} style={{height:'100%'}} focused={focused} contentStyle={{height:'100%',padding:0,paddingBottom:state==='filled'?retro.layout.stickerBottomInset:0,alignItems:'center',justifyContent:state==='filled'?'flex-end':'center'}}>
       {state==='filled'?<SproutSticker size={Math.max(0, Math.min(retro.layout.stickerSize, sh-retro.layout.stickerBottomInset-6))}/>:<PixelText variant="slotNumber">{number}</PixelText>}
@@ -280,12 +281,12 @@ function DialogContent({title,description,primaryLabel,secondaryLabel,centerText
     </Pressable>}
     <View style={{flexDirection:'row',gap:12}}>
       {!single&&<PixelButton label={secondaryLabel} variant="secondary" disabled={loading||secondaryDisabled} onPress={onSecondary} style={{flex:1}}/>}
-      <PixelButton label={primaryLabel} loading={loading} accessibilityLabel={loading?'진행 중':undefined} onPress={onPrimary} style={{flex:1}}/>
+      <PixelButton label={primaryLabel} loading={loading} accessibilityLabel={loading?t('common.inProgress'):undefined} onPress={onPrimary} style={{flex:1}}/>
     </View></>;
 }
 
 /** Shared dialog surface. The host positions tutorial near its target and basic at screen center. */
-export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false,secondaryDisabled=false,skipLabel='건너뛰기',onSkip,linkLabel,onLink}:
+export function PixelDialog({variant='tutorial',step,title,description,primaryLabel,secondaryLabel,onPrimary,onSecondary,single=false,loading=false,secondaryDisabled=false,skipLabel=t('common.skip'),onSkip,linkLabel,onLink}:
   {variant?:'tutorial'|'basic';step?:string;title:string;description:string;primaryLabel?:string;secondaryLabel?:string;onPrimary?:()=>void;onSecondary?:()=>void;/** 버튼 하나(알림). primary가 다이얼로그 너비를 채운다 */single?:boolean;/** 주 버튼을 누른 뒤 진행 중: 주 버튼은 로딩 점, 보조 버튼은 비활성 (로그아웃·계정 삭제) */loading?:boolean;/** 보조 버튼만 비활성 (튜토리얼 첫 단계의 이전) */secondaryDisabled?:boolean;skipLabel?:string;/** tutorial: 단계 숫자 오른쪽의 밑줄 글자 버튼. 없으면 그리지 않는다 */onSkip?:()=>void;/** 설명 아래 보기 줄 글자(예: '약관 보기'). 없으면 줄이 없다 */linkLabel?:string;onLink?:()=>void}) {
   return <PixelFrame variant="dialog" fill={c.dialog} style={{width:'100%',maxWidth:DIALOG_MAX_WIDTH}} contentStyle={{padding:retro.layout.dialogPadding,gap:16}}>
     {variant==='tutorial'&&<>{(step||onSkip)&&<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
@@ -293,7 +294,7 @@ export function PixelDialog({variant='tutorial',step,title,description,primaryLa
       {/* 글자 한 줄 높이라 위아래로 누르는 범위를 넓혀 44pt쯤으로 맞춘다 */}
       {onSkip&&<Pressable accessibilityRole="button" accessibilityLabel={skipLabel} hitSlop={{top:12,bottom:12,left:12,right:12}} onPress={onSkip}><PixelText style={{textDecorationLine:'underline'}}>{skipLabel}</PixelText></Pressable>}
     </View>}<View style={{height:2,backgroundColor:c.ink}}/></>}
-    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?'다음':'확인')} secondaryLabel={secondaryLabel??(variant==='tutorial'?'이전':'취소')} single={single} loading={loading} secondaryDisabled={secondaryDisabled} onPrimary={onPrimary} onSecondary={onSecondary} linkLabel={linkLabel} onLink={onLink}/>
+    <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?t('common.next'):t('common.ok'))} secondaryLabel={secondaryLabel??(variant==='tutorial'?t('common.previous'):t('common.cancel'))} single={single} loading={loading} secondaryDisabled={secondaryDisabled} onPrimary={onPrimary} onSecondary={onSecondary} linkLabel={linkLabel} onLink={onLink}/>
   </PixelFrame>;
 }
 
@@ -308,9 +309,12 @@ export function PixelBusyDialog({title,description}:{title:string;description:st
 
 function ModalHost({visible,onRequestClose,onDismiss,children}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;children:ReactNode}) {
   return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
-    <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:SCREEN_PADDING}}>
+    <View style={{flex:1}}>
       <View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.scrim}]}/>
-      <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH-2*SCREEN_PADDING,alignItems:'center'}}>{children}</View>
+      {/* 문구가 화면보다 길면(좁은 기기의 구매 안내) 버튼까지 닿도록 스크롤한다. 짧으면 지금처럼 가운데다. */}
+      <ScrollView keyboardShouldPersistTaps="handled" bounces={false} contentContainerStyle={{flexGrow:1,alignItems:'center',justifyContent:'center',padding:SCREEN_PADDING}}>
+        <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH-2*SCREEN_PADDING,alignItems:'center'}}>{children}</View>
+      </ScrollView>
     </View>
   </Modal>;
 }
@@ -343,8 +347,8 @@ export function PixelBadge({label,tone='ink',large=false}:{label:string;tone?:Ba
 }
 /** 판이 100%가 되면 붙는 완성 스티커: 그 판의 기본 스티커 + 「완성」 배지. */
 export function CompletionSticker({sticker,size=36,tilted=false,animate=false}:{sticker:StickerId;size?:number;/** 스티커를 붙인 듯 비스듬히 (완성한 판 설정) */tilted?:boolean;/** 완성 순간: 붙이기 모션 한 번 (PRD 4.7) */animate?:boolean}) {
-  const body=<View accessible accessibilityLabel="완성" style={{flexDirection:'row',alignItems:'center',gap:4,transform:tilted?[{rotate:'-10deg'}]:undefined}}>
-    <StickerGlyph id={sticker} size={size}/><PixelBadge label="완성" tone="primary" large/>
+  const body=<View accessible accessibilityLabel={t('common.completedBadge')} style={{flexDirection:'row',alignItems:'center',gap:4,transform:tilted?[{rotate:'-10deg'}]:undefined}}>
+    <StickerGlyph id={sticker} size={size}/><PixelBadge label={t('common.completedBadge')} tone="primary" large/>
   </View>;
   return animate?<StickMotion from={1.8}>{body}</StickMotion>:body;
 }

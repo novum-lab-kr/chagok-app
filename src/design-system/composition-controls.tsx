@@ -9,10 +9,11 @@ import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
 import {pixelOutline} from './geometry';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
+import {t} from '../i18n';
 
 export function ScreenHeader({title,onBack,action}:{title:string;onBack?:()=>void;action?:ReactNode}) {
   return <View style={{flexDirection:'row',alignItems:'center',minHeight:48}}>
-    <View style={{width:72,alignItems:'flex-start'}}>{onBack&&<PixelButton label="" accessibilityLabel="뒤로" variant="secondary" icon={<ActionSymbol name="back"/>} onPress={onBack} style={{width:48}}/>}</View>
+    <View style={{width:72,alignItems:'flex-start'}}>{onBack&&<PixelButton label="" accessibilityLabel={t('common.back')} variant="secondary" icon={<ActionSymbol name="back"/>} onPress={onBack} style={{width:48}}/>}</View>
     <PixelText accessibilityRole="header" variant="title" style={{flex:1,textAlign:'center'}}>{title}</PixelText>
     <View style={{width:72,alignItems:'flex-end'}}>{action}</View>
   </View>;
@@ -29,7 +30,7 @@ function BoardMiniature({kind,selected}:{kind:BoardKind;selected:boolean}) {
   const height=96;
   return <View ref={ref} accessible={false} aria-hidden style={{height,width:'100%'}} onLayout={onLayout}>
     {width>0&&<>
-      {calendar&&<View style={{position:'absolute',top:8,left:start,width:cell*7+gap*6,flexDirection:'row',gap}}>{['일','월','화','수','목','금','토'].map(day=><PixelText key={day} style={{width:cell,textAlign:'center',fontSize:10,lineHeight:14}}>{day}</PixelText>)}</View>}
+      {calendar&&<View style={{position:'absolute',top:8,left:start,width:cell*7+gap*6,flexDirection:'row',gap}}>{[0,1,2,3,4,5,6].map(day=><PixelText key={day} style={{width:cell,textAlign:'center',fontSize:10,lineHeight:14}}>{t('date.weekdayNarrow',day)}</PixelText>)}</View>}
       <Svg key={`${width}x${height}`} width={width} height={height} style={{position:'absolute',left:0,top:0}}>
         {calendar&&<Path d={pixelOutline(width,height,1.5,3)} fill="none" stroke={retro.color.ink} strokeWidth={retro.shape.cellBorder}/>}
         {Array.from({length:calendar?28:9},(_,i)=>{
@@ -49,13 +50,13 @@ function BoardTypeCard({kind,selected}:{kind:BoardKind;selected:boolean}) {
       <Path d={pixelOutline(size.width,size.height,1.5,retro.shape.controlUnit)} fill={selected?retro.color.primary:retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>
       {selected&&<Path d={pixelOutline(size.width,size.height,7.5,retro.shape.controlUnit)} fill={retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>}
     </Svg>}
-    <PixelText style={{textAlign:'center',fontSize:20,lineHeight:28}}>{kind==='calendar'?'달력판':'적립판'}</PixelText>
+    <PixelText style={{textAlign:'center',fontSize:20,lineHeight:28}}>{kind==='calendar'?t('board.calendar'):t('board.tally')}</PixelText>
     <BoardMiniature kind={kind} selected={selected}/>
   </View>;
 }
 export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(value:BoardKind)=>void}) {
-  return <View style={{gap:8}}><PixelText>판 종류</PixelText><View accessibilityRole="radiogroup" style={{flexDirection:'row',gap:12}}>
-    {(['calendar','tally'] as const).map(kind=><Pressable key={kind} accessibilityRole="radio" accessibilityLabel={kind==='calendar'?'달력판':'적립판'} accessibilityState={{checked:value===kind}} aria-checked={value===kind} onPress={()=>onChange(kind)} style={{flex:1}}>
+  return <View style={{gap:8}}><PixelText>{t('board.type')}</PixelText><View accessibilityRole="radiogroup" style={{flexDirection:'row',gap:12}}>
+    {(['calendar','tally'] as const).map(kind=><Pressable key={kind} accessibilityRole="radio" accessibilityLabel={kind==='calendar'?t('board.calendar'):t('board.tally')} accessibilityState={{checked:value===kind}} aria-checked={value===kind} onPress={()=>onChange(kind)} style={{flex:1}}>
       <BoardTypeCard kind={kind} selected={value===kind}/>
     </Pressable>)}
   </View></View>;
@@ -64,17 +65,17 @@ export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(valu
  * 칸 수 고르기. min을 주면 그보다 작은 버튼은 비활성이다 — 목표 설정의 적립판 칸 수는 늘리기만 된다 (2026-09-30).
  * 직접 입력 자릿수는 min이 담기도록 늘린다. 칸 늘리기로 999칸을 넘긴 판도 지금 값을 보여줄 수 있어야 한다.
  */
-export function SlotCountPicker({value,onChange,label='칸 수',min=0}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number}) {
+export function SlotCountPicker({value,onChange,label=t('slotCount.label'),min=0}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number}) {
   const [custom,setCustom]=useState(!['15','20','30'].includes(value));
   return <View style={{gap:8}}><PixelText>{label}</PixelText><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
     {['15','20','30'].map(n=><PixelButton key={n} label={n} disabled={Number(n)<min} variant={!custom&&value===n?'primary':'secondary'} onPress={()=>{setCustom(false);onChange(n)}} style={{flex:1}}/>)}
-    <PixelButton label="직접 입력" variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
-  </View>{custom&&<PixelInput label={`${label} 직접 입력`} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1)}/>}</View>;
+    <PixelButton label={t('slotCount.custom')} variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
+  </View>{custom&&<PixelInput label={t('slotCount.customLabel',label)} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1)}/>}</View>;
 }
 export function StickerSummary({value,onChange}:{value:StickerId;onChange?:()=>void}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',gap:12,alignItems:'center'}}>
     <StickerGlyph id={value} size={48}/><View style={{width:retro.shape.border,height:48,backgroundColor:retro.color.ink}}/>
-    <PixelText style={{flex:1}}>{stickerLabel(value)}</PixelText>{onChange&&<PixelButton label="바꾸기" variant="secondary" onPress={onChange}/>}
+    <PixelText style={{flex:1}}>{stickerLabel(value)}</PixelText>{onChange&&<PixelButton label={t('common.change')} variant="secondary" onPress={onChange}/>}
   </PixelFrame>;
 }
 export function RecordSummary({goalName,date,sticker}:{goalName:string;date:string;sticker:StickerId}) {
@@ -84,14 +85,14 @@ export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,on
   const attached=!!source||!!preview;
   return <View style={{gap:12}}>
     <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:586/494,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
-      {source?<Image source={source} onError={onPhotoError} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label="사진 찍기" variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label="앨범에서 고르기" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label="사진 추가" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>사진을 남겨보세요</PixelText></View>)}
-      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel="사진 지우기" onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
+      {source?<Image source={source} onError={onPhotoError} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label={t('photo.take')} variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label={t('photo.choose')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label={t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>{t('photo.prompt')}</PixelText></View>)}
+      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel={t('photo.remove')} onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
     </View></PixelFrame>
-    {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?'사진 바꾸기':'사진 추가'} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label="사진 지우기" variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
+    {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?t('photo.replace'):t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label={t('photo.remove')} variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
   </View>;
 }
 export function MemoEditor({value,onChange,maxLength,error}:{value:string;onChange:(value:string)=>void;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
-  return <View style={{gap:8}}><PixelPanel title="메모"><TextInput allowFontScaling={false} accessibilityLabel="메모" value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder="오늘의 기록을 남겨보세요" placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
+  return <View style={{gap:8}}><PixelPanel title={t('memo.title')}><TextInput allowFontScaling={false} accessibilityLabel={t('memo.title')} value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder={t('memo.placeholder')} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={touchSlop({height:retro.layout.touch})} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
@@ -115,7 +116,7 @@ export function ShortNotice({title,detail,emphasis=false}:{title:string;detail?:
     {detail&&<PixelText variant={emphasis?'caption':'body'} style={emphasis?{color:retro.color.buttonText}:{fontSize:15,lineHeight:22}}>{detail}</PixelText>}
   </PixelFrame></View>;
 }
-export function PixelLoadingIndicator({label='진행 중'}:{label?:string}) {
+export function PixelLoadingIndicator({label=t('common.inProgress')}:{label?:string}) {
   return <View accessible accessibilityRole="progressbar" accessibilityLabel={label} style={{flexDirection:'row',justifyContent:'center',padding:14}}>
     <PixelLoadingDots/>
   </View>;
@@ -257,7 +258,7 @@ export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
   return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
     <View style={{flex:1,justifyContent:'flex-end',alignItems:'center',paddingHorizontal:12,paddingBottom:Math.max(insets.bottom,12)}}>
-      <Pressable testID="sheet-scrim" accessibilityLabel="닫기" onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
+      <Pressable testID="sheet-scrim" accessibilityLabel={t('common.close')} onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
       <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>
         <PixelFrame variant="dialog" contentStyle={{padding:retro.layout.dialogPadding,paddingTop:24,gap:16}}>
           <PixelText accessibilityRole="header" variant="title" style={{fontSize:22,lineHeight:30}}>{title}</PixelText>
@@ -278,16 +279,16 @@ const caption={color:retro.color.buttonText};
 /** 앱 최상단: 차곡이 + 차곡차곡. onSettings를 주면 톱니바퀴도(2026-10-12부터 앱은 하단 「설정」 탭을 쓴다). */
 export function AppHeader({onSettings}:{onSettings?:()=>void}) {
   return <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}>
-    <Mascot size={44}/><PixelText variant="brand">차곡차곡</PixelText>
-    {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel="앱 설정" onPress={onSettings} hitSlop={touchSlop({width:36,height:40})} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
+    <Mascot size={44}/><PixelText variant="brand">{t('app.name')}</PixelText>
+    {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel={t('header.settings')} onPress={onSettings} hitSlop={touchSlop({width:36,height:40})} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
   </View>;
 }
 export type GoalListTab='active'|'completed';
 /** 목록 위 한 줄: `내 목표 n / 완성한 판 n` 탭과 오른쪽 끝 주황 `+`. 작은 화면에서도 스크롤 없이 새 목표에 닿는다. */
 export function GoalListHeader({tab,counts,onTab,onAdd,addTargetRef}:{tab:GoalListTab;counts:Record<GoalListTab,number>;onTab:(tab:GoalListTab)=>void;onAdd:()=>void;/** 튜토리얼이 + 위치를 잴 때 */addTargetRef?:React.Ref<View>}) {
   return <View style={{flexDirection:'row',alignItems:'center',gap:8,paddingBottom:8,borderBottomWidth:retro.shape.panelTitleBorder,borderColor:retro.color.ink}}>
-    <PixelTabs items={[{key:'active',label:`내 목표 ${counts.active}`},{key:'completed',label:`완성한 판 ${counts.completed}`}] as const} value={tab} onChange={onTab}/>
-    <View ref={addTargetRef} style={{marginLeft:'auto'}}><PixelButton label="" accessibilityLabel="새 목표 만들기" minHeight={44} icon={<PixelIcon name="plus" size={20}/>} onPress={onAdd} style={{width:52}}/></View>
+    <PixelTabs items={[{key:'active',label:t('goalList.active',counts.active)},{key:'completed',label:t('goalList.completed',counts.completed)}] as const} value={tab} onChange={onTab}/>
+    <View ref={addTargetRef} style={{marginLeft:'auto'}}><PixelButton label="" accessibilityLabel={t('goalList.add')} minHeight={44} icon={<PixelIcon name="plus" size={20}/>} onPress={onAdd} style={{width:52}}/></View>
   </View>;
 }
 /** 목록 카드. 모든 판이 같은 모양: 스티커, 이름(최대 2줄), [판 종류 배지] 요약 글자, 진행 막대. */
@@ -310,7 +311,7 @@ export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name
 export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:StickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
   return <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:48}}>
     <PixelText variant="number">{value} / {total}</PixelText>
-    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 채웠어요</PixelText>}
+    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{t('board.percentAchieved',percentLabel)}</PixelText>}
   </View>;
 }
 /** 목록이 비었을 때의 안내 상자. */
@@ -335,7 +336,7 @@ export function EndDatePicker({firstAllowed,selected,hint,onSelect}:{firstAllowe
       isDateEnabled={date=>date>=firstAllowed} canGoPrev={shown.year*12+shown.month>first.year*12+first.month}/>
   </PixelFrame>;
 }
-const longDate=(key:string)=>`${Number(key.slice(5,7))}월 ${Number(key.slice(8,10))}일`;
+const longDate=(key:string)=>t('date.monthDay',Number(key.slice(5,7)),Number(key.slice(8,10)));
 const dayAfter=(key:string)=>{const d=new Date(`${key}T00:00`);d.setDate(d.getDate()+1);return calendarDateKey(d.getFullYear(),d.getMonth()+1,d.getDate());};
 function FieldRow({label,children,disabled=false}:{label:string;children:ReactNode;disabled?:boolean}) {
   return <View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:48,opacity:disabled?retro.opacity.disabled:1}}><PixelText style={{width:64}}>{label}</PixelText>{children}</View>;
@@ -347,19 +348,19 @@ function FieldRow({label,children,disabled=false}:{label:string;children:ReactNo
 export function PeriodField({startDate,endDate,lastPlacedDate,picking,onPick,onChange,onClear}:{startDate:string;endDate?:string;/** 없으면 시작일 */lastPlacedDate?:string;picking:boolean;onPick:()=>void;onChange:(date:string)=>void;onClear:()=>void}) {
   const last=lastPlacedDate??startDate;
   return <View style={{gap:4}}>
-    <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>기간</PixelText>
-    <FieldRow label="시작일" disabled><View style={{flex:1}}><PixelText>{longDate(startDate)}</PixelText><PixelText variant="caption" style={caption}>만든 날이라 바꿀 수 없어요</PixelText></View></FieldRow>
-    <FieldRow label="종료일">
-      <PixelText style={{flex:1}}>{endDate?longDate(endDate):'없음'}</PixelText>
-      {endDate?<><PixelButton label="바꾸기" variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/><PixelButton label="지우기" variant="secondary" minHeight={40} onPress={onClear}/></>:<PixelButton label="정하기" variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/>}
+    <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>{t('period.title')}</PixelText>
+    <FieldRow label={t('period.start')} disabled><View style={{flex:1}}><PixelText>{longDate(startDate)}</PixelText><PixelText variant="caption" style={caption}>{t('period.startLocked')}</PixelText></View></FieldRow>
+    <FieldRow label={t('period.end')}>
+      <PixelText style={{flex:1}}>{endDate?longDate(endDate):t('period.none')}</PixelText>
+      {endDate?<><PixelButton label={t('common.change')} variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/><PixelButton label={t('period.clear')} variant="secondary" minHeight={40} onPress={onClear}/></>:<PixelButton label={t('period.set')} variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/>}
     </FieldRow>
-    {picking&&<EndDatePicker firstAllowed={dayAfter(last)} selected={endDate} onSelect={onChange} hint={lastPlacedDate?`마지막으로 붙인 ${longDate(lastPlacedDate)} 다음 날부터 고를 수 있어요.`:'시작일 다음 날부터 고를 수 있어요.'}/>}
+    {picking&&<EndDatePicker firstAllowed={dayAfter(last)} selected={endDate} onSelect={onChange} hint={lastPlacedDate?t('period.hintAfterLast',longDate(lastPlacedDate)):t('period.hintAfterStart')}/>}
   </View>;
 }
 /** 화면 맨 아래 삭제 영역: 구분선, [삭제하기] 보조 버튼, 무엇이 지워지는지 안내. 누르면 호스트가 삭제 확인 다이얼로그를 띄운다. */
-export function DeleteSection({onDelete,description='목표와 붙인 스티커, 사진·메모가 모두 지워져요.'}:{onDelete:()=>void;description?:string}) {
+export function DeleteSection({onDelete,description=t('delete.goalDescription')}:{onDelete:()=>void;description?:string}) {
   return <View style={{gap:8,marginTop:8,paddingTop:16,borderTopWidth:retro.shape.cellBorder,borderColor:retro.color.ink}}>
-    <PixelButton label="삭제하기" variant="secondary" icon={<ActionSymbol name="trash" size={18}/>} onPress={onDelete}/>
+    <PixelButton label={t('common.delete')} variant="secondary" icon={<ActionSymbol name="trash" size={18}/>} onPress={onDelete}/>
     <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{description}</PixelText>
   </View>;
 }

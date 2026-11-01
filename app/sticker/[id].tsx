@@ -16,6 +16,7 @@ import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { goBackOrHome, goHome } from '../../src/app-data/goBack';
 import { MEMO_MAX, memoError, needsRemoveConfirm } from '../../src/domain/board';
 import { parseDateKey } from '../../src/domain/dates';
+import { t } from '../../src/i18n';
 import type { Goal, Sticker } from '../../src/domain/types';
 
 /**
@@ -60,7 +61,7 @@ export default function StickerRecord() {
       setStickerType(normalizeStickerId(s.stickerType));
       // 화면 표기는 시안과 같은 'YYYY년 M월 D일'. 저장 키(YYYY-MM-DD)를 그대로 보여주지 않는다.
       const d = parseDateKey(s.dateKey);
-      setDate(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`);
+      setDate(t('date.yearMonthDay', d.getFullYear(), d.getMonth() + 1, d.getDate()));
       setMemo(record?.memo ?? '');
       setDraftMemo(record?.memo ?? '');
       setPhotoUri(record?.photoUri ?? null);
@@ -111,7 +112,7 @@ export default function StickerRecord() {
   /** 저장이 끝난 뒤에 화면을 닫는다. 성공 전에 완료로 표시하지 않는다 (PRD 7절). */
   async function save(nextMemo: string) {
     let newPhotoUri: string | null = null;
-    const ok = await saveOrNotify(ask, '저장하지 못했어요', async () => {
+    const ok = await saveOrNotify(ask, t('failed.save'), async () => {
       try {
         if (photoUri && photoUri !== savedPhotoUri && !newPhotoUri) newPhotoUri = await preserveRecordPhoto(id, photoUri);
         await upsertRecord(id, {
@@ -139,7 +140,7 @@ export default function StickerRecord() {
       if (!(await confirm(boardDialogs.removeStickerInRecord))) return;
     }
     let photo: string | null = null;
-    const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(id); });
+    const ok = await saveOrNotify(ask, t('failed.removeSticker'), async () => { photo = await removeSticker(id); });
     if (!ok) return;
     try { removeManagedRecordPhoto(photo); } catch { /* 고아 파일로 남는다 */ }
     goBackOrHome();
@@ -153,7 +154,7 @@ export default function StickerRecord() {
         date={date}
         initialMemo={memo}
         photo={photoUri && !photoMissing ? { uri: displayRecordPhotoUri(photoUri) } : undefined}
-        photoPreview={photoMissing ? <View style={{ alignItems: 'center', gap: 12 }}><ActionSymbol name="photo" size={36}/><PixelText>사진을 불러올 수 없어요</PixelText></View> : undefined}
+        photoPreview={photoMissing ? <View style={{ alignItems: 'center', gap: 12 }}><ActionSymbol name="photo" size={36}/><PixelText>{t('record.photoMissing')}</PixelText></View> : undefined}
         onPhotoError={() => setPhotoMissing(true)}
         photoActionsInFrame
         onChoosePhoto={() => { void choosePhoto(); }}

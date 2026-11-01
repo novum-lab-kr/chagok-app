@@ -4,6 +4,7 @@ import {PixelFocusRing,PixelIcon,PixelText,StickMotion,useContentWidth,removeSti
 import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {ActionSymbol,StickerGlyph,type StickerId} from './sticker-glyphs';
+import {t} from '../i18n';
 
 export function monthCells(year:number,month:number):(number|null)[] {
   const first=new Date(year,month-1,1).getDay();
@@ -17,9 +18,9 @@ export function MonthNavigation({year,month,onChange,canGoPrev=true,canGoNext=tr
   const {width}=useWindowDimensions();
   const move=(amount:number)=>{const date=new Date(year,month-1+amount,1);onChange(date.getFullYear(),date.getMonth()+1)};
   return <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-    {canGoPrev?<Pressable accessibilityRole="button" accessibilityLabel="이전 달" onPress={()=>move(-1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="back" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
-    <PixelText variant="title" numberOfLines={1} style={{flex:1,textAlign:'center',fontSize:width<=320?18:22,lineHeight:width<=320?24:30}}>{year}년 {month}월</PixelText>
-    {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel="다음 달" onPress={()=>move(1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
+    {canGoPrev?<Pressable accessibilityRole="button" accessibilityLabel={t('calendar.previousMonth')} onPress={()=>move(-1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="back" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
+    <PixelText variant="title" numberOfLines={1} style={{flex:1,textAlign:'center',fontSize:width<=320?18:22,lineHeight:width<=320?24:30}}>{t('date.yearMonth',year,month)}</PixelText>
+    {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel={t('calendar.nextMonth')} onPress={()=>move(1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
   </View>;
 }
 export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void}) {
@@ -29,8 +30,8 @@ export function CalendarBoard({year,month,records={},recordedDates,selectedDate,
   const cellWidth=Math.max(0,Math.floor((width-border)/7));
   return <View onLayout={e=>setWidth(e.nativeEvent.layout.width)} style={{gap:16}}>
     <MonthNavigation year={year} month={month} onChange={onMonthChange} canGoPrev={canGoPrev} canGoNext={canGoNext}/>
-    <View accessibilityLabel={`${year}년 ${month}월 달력`} style={{width:cellWidth*7+border,borderTopWidth:border,borderLeftWidth:border,borderColor:retro.color.ink,alignSelf:'center'}}>
-      <View style={{flexDirection:'row'}}>{['일','월','화','수','목','금','토'].map(day=><View key={day} style={{width:cellWidth,height:36,alignItems:'center',justifyContent:'center',borderRightWidth:border,borderBottomWidth:border,borderColor:retro.color.ink}}><PixelText>{day}</PixelText></View>)}</View>
+    <View accessibilityLabel={t('calendar.label',t('date.yearMonth',year,month))} style={{width:cellWidth*7+border,borderTopWidth:border,borderLeftWidth:border,borderColor:retro.color.ink,alignSelf:'center'}}>
+      <View style={{flexDirection:'row'}}>{[0,1,2,3,4,5,6].map(day=><View key={day} style={{width:cellWidth,height:36,alignItems:'center',justifyContent:'center',borderRightWidth:border,borderBottomWidth:border,borderColor:retro.color.ink}}><PixelText>{t('date.weekdayShort',day)}</PixelText></View>)}</View>
       <View style={{flexDirection:'row',flexWrap:'wrap'}}>{monthCells(year,month).map((day,index)=>{
         const date=day?calendarDateKey(year,month,day):'';
         // 오늘 칸의 포커스는 격자선 위로 나간다. 뒤에 그려지는 옆 칸에 가리지 않게 그 칸을 위로 올린다 (2026-10-09)
@@ -54,9 +55,9 @@ function CalendarDay({day,month,date,sticker,recorded,selected,enabled,cellWidth
   const press=open??select;
   const remove=open?select:undefined;
   const active=enabled;
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${month}월 ${day}일${sticker?', 스티커 있음':''}${sticker&&recorded?', 사진 또는 메모 기록 있음':''}`} accessibilityState={{selected,disabled:!active}} aria-selected={selected} aria-disabled={!active} disabled={!active} onPress={press} onLongPress={remove??ignoreLongPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${t('date.monthDay',month,day)}${sticker?`, ${t('calendar.hasSticker')}`:''}${sticker&&recorded?`, ${t('calendar.hasRecord')}`:''}`} accessibilityState={{selected,disabled:!active}} aria-selected={selected} aria-disabled={!active} disabled={!active} onPress={press} onLongPress={remove??ignoreLongPress}
     accessibilityActions={remove?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(e.nativeEvent.actionName===removeStickerAction.name)remove?.()}} style={{flex:1,alignItems:'center',paddingTop:4,opacity:enabled?1:retro.opacity.disabled}}>
     <PixelText style={{fontSize:14,lineHeight:18}}>{day}</PixelText>{sticker&&(popIn?<StickMotion><StickerGlyph id={sticker} size={Math.min(28,cellWidth-6)}/></StickMotion>:<StickerGlyph id={sticker} size={Math.min(28,cellWidth-6)}/>)}{selected&&<View testID="calendar-focus" pointerEvents="none" style={{position:'absolute',left:-retro.shape.cellBorder,right:-retro.shape.cellBorder,top:-retro.shape.cellBorder,bottom:-retro.shape.cellBorder}}><PixelFocusRing/></View>}
-    {sticker&&recorded&&<View pointerEvents="none" accessibilityLabel="사진 또는 메모 기록 있음" style={{position:'absolute',right:2,top:2,width:10,height:10,backgroundColor:retro.color.primary,borderColor:retro.color.ink,borderWidth:2}}/>}
+    {sticker&&recorded&&<View pointerEvents="none" accessibilityLabel={t('calendar.hasRecord')} style={{position:'absolute',right:2,top:2,width:10,height:10,backgroundColor:retro.color.primary,borderColor:retro.color.ink,borderWidth:2}}/>}
   </Pressable>;
 }

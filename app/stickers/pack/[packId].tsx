@@ -12,6 +12,7 @@ import { loadPackState, startDayTrial } from '../../../src/repositories/packRepo
 import { buyPack, watchAdForPack } from '../../../src/purchases';
 import { confirmWithTerms } from '../../../src/policy/openPolicy';
 import type { ColorStickerPackId } from '../../../src/stickers/color/catalog';
+import { t } from '../../../src/i18n';
 
 type PackState = Awaited<ReturnType<typeof loadPackState>>;
 
@@ -75,7 +76,7 @@ export default function Pack() {
   }
 
   async function trial() {
-    const ok = await saveOrNotify(ask, '써 보기를 시작하지 못했어요', async () => { await startDayTrial(packId); });
+    const ok = await saveOrNotify(ask, t('shop.trialStartFailed'), async () => { await startDayTrial(packId); });
     if (ok) opened();
   }
 

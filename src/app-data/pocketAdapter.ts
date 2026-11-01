@@ -5,6 +5,7 @@ import { parseDateKey } from '../domain/dates';
 import type { DateKey } from '../domain/dates';
 import { isCompleted, progressBasis, progressOf, startDate } from '../domain/board';
 import type { GoalSummary } from '../repositories/goalRepository';
+import { t } from '../i18n';
 
 /**
  * 도메인 모델을 디자인 시스템의 화면 모델로 옮긴다.
@@ -45,18 +46,18 @@ export function toPocketGoal(goal: Goal, stickers: readonly Sticker[]): PocketGo
 
 // ── 문구 ────────────────────────────────────────────────────────────
 
-export const kindLabel = (goal: Goal): string => (goal.boardType === 'tally' ? '적립판' : '달력판');
+export const kindLabel = (goal: Goal): string => (goal.boardType === 'tally' ? t('board.tally') : t('board.calendar'));
 
 /** '9월 3일' */
 export function longDate(key: DateKey): string {
   const d = parseDateKey(key);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return t('date.monthDay', d.getMonth() + 1, d.getDate());
 }
 
 /** '9/29' */
 export function shortDate(epochMs: number): string {
   const d = new Date(epochMs);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  return t('date.monthDayNumeric', d.getMonth() + 1, d.getDate());
 }
 
 /**
@@ -67,7 +68,7 @@ export function percentLabel(goal: Goal, placedInBasis: number, now: Date): stri
   const { percent } = progressOf(goal, placedInBasis, now);
   const basis = progressBasis(goal, now);
   if (basis.kind === 'all') return `${percent}%`;
-  return basis.current ? `이번 달 ${percent}%` : `${basis.month}월 ${percent}%`;
+  return basis.current ? t('goalCard.percentThisMonth', percent) : t('goalCard.percentInMonth', basis.month, percent);
 }
 
 /** 목록 카드: `[판 종류] m% 채웠어요` 또는 `[판 종류] m% M/D 완성` (PRD 4.1). */
@@ -79,22 +80,21 @@ export function goalCard({ goal, placedInBasis }: GoalSummary, now: Date): GoalC
     sticker: normalizeStickerId(goal.defaultStickerId),
     kind: kindLabel(goal),
     percent: progressOf(goal, placedInBasis, now).percent,
-    status: isCompleted(goal) ? [label, `${shortDate(goal.completedAt!)} 완성`] : [`${label} 채웠어요`],
+    status: isCompleted(goal) ? [label, t('goalCard.completedOn', shortDate(goal.completedAt!))] : [t('goalCard.filled', label)],
   };
 }
 
 /** 완성한 판 설정의 판 종류 줄. '적립판 · 20칸' / '달력판' */
 export const boardLabel = (goal: Goal): string =>
-  goal.boardType === 'tally' ? `적립판 · ${goal.totalSlots ?? 0}칸` : '달력판';
+  goal.boardType === 'tally' ? t('board.tallyWithSlots', goal.totalSlots ?? 0) : t('board.calendar');
 
 /** 달력판 기간. '9월 1일 – 9월 23일' / '9월 1일부터' */
 export function periodLabel(goal: Goal): string {
   const start = longDate(startDate(goal));
-  return goal.endDate ? `${start} – ${longDate(goal.endDate)}` : `${start}부터`;
+  return goal.endDate ? t('period.range', start, longDate(goal.endDate)) : t('period.since', start);
 }
 
 /** 삭제 확인 문구 (PRD 4.4). 0개인 항목은 쓰지 않는다 (2026-09-30). */
 export function deleteDescription({ stickers, records }: { stickers: number; records: number }): string {
-  const parts = [stickers > 0 && `붙인 스티커 ${stickers}개`, records > 0 && `기록 ${records}개`].filter(Boolean);
-  return parts.length ? `${parts.join('와 ')}가 함께 지워지고, 되돌릴 수 없어요.` : '이 목표가 지워지고, 되돌릴 수 없어요.';
+  return t('goalDelete.description', stickers, records);
 }
