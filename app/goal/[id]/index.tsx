@@ -44,15 +44,21 @@ export default function Board() {
   const { failed, attempt, fail, retry } = useLoadRetry();
   const [justPlaced, setJustPlaced] = useState<{ slot?: number; date?: string }>({});
   const [actOnce] = useState(createSingleFlight);
-  const { ask, confirm, dialog } = useDialog();
+  const { ask, confirm, dialog, dialogOpen } = useDialog();
   /** 사용 기록 동의 (PRD 8.2). 붙는 모션을 본 뒤에 띄운다. */
   const [consentPending, setConsentPending] = useState(false);
   const [consentVisible, setConsentVisible] = useState(false);
+  // iOS에서 모달을 겹쳐 띄우면 시트가 뜨지 못한 채 터치만 막힌다. 다른 창이 떠 있으면 이번에는 묻지 않고 다음 스티커로 미룬다.
+  const completionWaiting = data ? pendingCompletion(data.goal) : false;
   useEffect(() => {
     if (!consentPending) return;
+    if (dialogOpen || completionWaiting) {
+      setConsentPending(false);
+      return;
+    }
     const timer = setTimeout(() => setConsentVisible(true), 600);
     return () => clearTimeout(timer);
-  }, [consentPending]);
+  }, [consentPending, dialogOpen, completionWaiting]);
   /** 저장에 실패하면 꺼진 채 두고 다음 스티커 때 다시 묻는다. 앱 사용을 막지 않는다. */
   function answerConsent(agreed: boolean) {
     setConsentVisible(false);

@@ -88,7 +88,10 @@ export function useDialog() {
     onLink: () => close('link'),
   });
 
-  return { ask, confirm, dialog };
+  /** 창이 떠 있거나 닫히는 중이다. iOS는 그 위에 다른 모달을 띄우지 못한다. */
+  const dialogOpen = open !== null || closing !== null;
+
+  return { ask, confirm, dialog, dialogOpen };
 }
 
 /**
