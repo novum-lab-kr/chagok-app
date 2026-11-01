@@ -88,6 +88,23 @@ export const MIGRATIONS: readonly (readonly string[])[] = [
      );`,
     `CREATE TABLE IF NOT EXISTS placed_days (date_key TEXT PRIMARY KEY);`,
   ],
+  // v2 (2026-10-30, 1.0 출시 뒤): 내 목표 순서를 사용자가 정한다 (PRD 4.1).
+  //   sort_order: 작을수록 위. 지금 보이는 순서(마지막으로 붙인 시각, 없으면 만든 시각 최근순)로 굳힌다 —
+  //   업데이트 뒤 첫 화면이 업데이트 전과 같다. 같은 시각이면 id순(orderGoals와 같은 기준).
+  //   굳힌 값을 서버에도 올리도록 모든 목표를 outbox에 넣는다. updated_at은 그대로 둔다 — 다른 기기의 더 최근 수정을 덮지 않는다.
+  //   UPDATE 안의 하위 쿼리는 sort_order를 읽지 않아 행을 고치는 순서와 상관없이 같은 값이 된다.
+  [
+    `ALTER TABLE goals ADD COLUMN sort_order INTEGER;`,
+    `UPDATE goals SET sort_order = (
+       SELECT COUNT(*) FROM goals AS other
+        WHERE COALESCE(other.last_placed_at, other.created_at) > COALESCE(goals.last_placed_at, goals.created_at)
+           OR (COALESCE(other.last_placed_at, other.created_at) = COALESCE(goals.last_placed_at, goals.created_at)
+               AND other.id < goals.id)
+     );`,
+    `INSERT INTO outbox (entity, row_id, queued_at)
+       SELECT 'goal', id, CAST(strftime('%s', 'now') AS INTEGER) * 1000 FROM goals WHERE true
+     ON CONFLICT(entity, row_id) DO UPDATE SET attempts = 0, last_error = NULL;`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

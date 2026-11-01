@@ -150,13 +150,60 @@ export function extendEndDateFloor(goal: Goal, now: Date): DateKey {
 /** 칸 늘리기의 기본값: 처음 만든 칸 수만큼 더한다 (2026-09-30). */
 export const defaultExtraSlots = (goal: Goal): number => goal.initialSlots ?? goal.totalSlots ?? 0;
 
-/** 내 목표: 마지막으로 붙인 시각(없으면 만든 시각) 최근순. 완성한 판: 완성 시각 최근순 (PRD 4.1). */
+/** 마지막으로 붙인 시각(없으면 만든 시각). 순서를 정하지 않은 옛 목표의 첫 순서 기준이다 (PRD 4.1). */
+const recentAt = (goal: Goal) => goal.lastPlacedAt ?? goal.createdAt;
+
+/** 순서 값이 없는 쪽을 아래로. 둘 다 있거나 둘 다 없으면 0. */
+function compareMissing(left: number | null, right: number | null): number {
+  if (left === null && right !== null) return 1;
+  if (left !== null && right === null) return -1;
+  return 0;
+}
+
+/** 최근순, 같은 시각이면 id순. 기기 DB 마이그레이션(v2)의 `other.id < goals.id`와 같은 바이트 비교다. */
+function compareRecent(left: Goal, right: Goal): number {
+  const recent = recentAt(right) - recentAt(left);
+  if (recent !== 0) return recent;
+  if (left.id === right.id) return 0;
+  return left.id < right.id ? -1 : 1;
+}
+
+/**
+ * 내 목표 순서 (PRD 4.1, 2026-10-30). 사용자가 정한 순서(sortOrder 작은 쪽이 위)이고 붙여도 바뀌지 않는다.
+ * 순서가 없는 옛 목표는 순서가 있는 목표 아래에 최근순으로 둔다. 값이 같으면 최근순, 그다음 id순.
+ */
+function compareActive(left: Goal, right: Goal): number {
+  const missing = compareMissing(left.sortOrder, right.sortOrder);
+  if (missing !== 0) return missing;
+  if (left.sortOrder !== null && right.sortOrder !== null && left.sortOrder !== right.sortOrder) {
+    return left.sortOrder - right.sortOrder;
+  }
+  return compareRecent(left, right);
+}
+
+/** 내 목표: 사용자가 정한 순서. 완성한 판: 완성 시각 최근순 (PRD 4.1). 목표 탭, 위젯, 워치가 함께 쓴다. */
 export function orderGoals<G extends Goal>(goals: readonly G[]): { active: G[]; completed: G[] } {
-  const recent = (g: Goal) => g.lastPlacedAt ?? g.createdAt;
   return {
-    active: goals.filter((g) => !isCompleted(g)).sort((a, b) => recent(b) - recent(a)),
+    active: goals.filter((g) => !isCompleted(g)).sort(compareActive),
     completed: goals.filter(isCompleted).sort((a, b) => b.completedAt! - a.completedAt!),
   };
+}
+
+/**
+ * 가장 최근에 붙인(한 번도 안 붙였으면 만든) 목표. 위젯에서 목표를 고르지 않았을 때 보인다 (PRD 4.10).
+ * 내 목표 순서와 따로 센다 — 맨 위 목표가 아니라 방금 쓴 목표가 나온다.
+ */
+export function mostRecentGoal<G extends Goal>(goals: readonly G[]): G | null {
+  return goals.reduce<G | null>((best, goal) => (best === null || compareRecent(goal, best) < 0 ? goal : best), null);
+}
+
+/** from 자리의 항목을 to 자리로 옮긴 새 배열. to는 0~마지막으로 맞춘다 (목표 옮기기, PRD 4.1). */
+export function moveItem<T>(items: readonly T[], from: number, to: number): T[] {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  if (moved === undefined) return next;
+  next.splice(Math.min(Math.max(to, 0), next.length), 0, moved);
+  return next;
 }
 
 /**

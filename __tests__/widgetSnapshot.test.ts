@@ -6,7 +6,7 @@ const at = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m -
 const goal = (over: Partial<Goal>): Goal => ({
   id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sprout',
   createdAt: at(2026, 9, 1).getTime(), endDate: null, completedAt: null, completionSeen: false,
-  lastPlacedAt: null, initialSlots: null, ...over,
+  lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });
 const cal = (over: Partial<WidgetInput> = {}): WidgetInput =>
   ({ goal: goal({}), placedAll: 0, placedDates: [], slotIndexes: [], ...over });
@@ -95,6 +95,13 @@ describe('위젯 스냅샷 · 목록', () => {
     const snap = buildWidgetSnapshot([a, b, done], at(2026, 9, 6));
     expect(snap.goals.map((g) => g.id)).toEqual(['b', 'a']);
     expect(snap.defaultGoalId).toBe('b');
+  });
+  it('사용자가 옮긴 순서를 따르고, 기본 목표는 가장 최근에 붙인 목표로 남는다 (PRD 4.1, 4.10)', () => {
+    const top = cal({ goal: goal({ id: 'top', sortOrder: 0, lastPlacedAt: at(2026, 9, 2).getTime() }) });
+    const used = cal({ goal: goal({ id: 'used', sortOrder: 1, lastPlacedAt: at(2026, 9, 5).getTime() }) });
+    const snap = buildWidgetSnapshot([used, top], at(2026, 9, 6));
+    expect(snap.goals.map((item) => item.id)).toEqual(['top', 'used']);
+    expect(snap.defaultGoalId).toBe('used');
   });
   it('목표가 없으면 빈 목록과 null', () => {
     expect(buildWidgetSnapshot([], at(2026, 9, 6))).toEqual({ today: '2026-09-06', goals: [], defaultGoalId: null });

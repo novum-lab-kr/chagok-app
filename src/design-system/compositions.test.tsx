@@ -3,8 +3,8 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
-import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
-import {PhotoAttachment,SlotCountPicker} from './composition-controls';
+import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen,goalDragShift,goalDropIndex} from './board-screens';
+import {PhotoAttachment,SlotCountPicker,goalMoveActionList} from './composition-controls';
 import {PixelDialog,PixelText} from './components';
 import {retro} from './tokens';
 afterEach(cleanup);
@@ -213,5 +213,53 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   it('홈 목록은 footer를 스크롤 밖 맨 아래에 둔다',()=>{
     render(<GoalListScreen tab="active" onTab={vi.fn()} active={[]} completed={[]} onOpen={vi.fn()} onAdd={vi.fn()} footer={<PixelText>광고 자리</PixelText>}/>);
     expect(screen.getByText('광고 자리')).toBeTruthy();
+  });
+});
+
+describe('내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30)',()=>{
+  const card=(id:string)=>({id,name:id,sticker:'basic.sprout' as const,kind:'적립판',percent:10,status:['10% 채웠어요']});
+  it('끄는 카드의 가운데가 다른 카드의 가운데를 지나면 그 자리로 간다',()=>{
+    const heights=[100,100,100,100]; // 간격 12 → 가운데 50, 162, 274, 386
+    expect(goalDropIndex(heights,0,0)).toBe(0);
+    expect(goalDropIndex(heights,0,111)).toBe(0);
+    expect(goalDropIndex(heights,0,113)).toBe(1);
+    expect(goalDropIndex(heights,0,400)).toBe(3);
+    expect(goalDropIndex(heights,3,-113)).toBe(2);
+    expect(goalDropIndex(heights,3,-1000)).toBe(0);
+  });
+  it('높이가 다른 카드도 가운데로 잰다',()=>{
+    expect(goalDropIndex([80,140,80],0,90)).toBe(0);  // 끄는 가운데 130 < 둘째 가운데 162
+    expect(goalDropIndex([80,140,80],0,140)).toBe(1); // 180 > 162
+  });
+  it('지나간 카드만 끄는 카드 높이만큼 비켜선다',()=>{
+    expect([0,1,2,3].map(index=>goalDragShift(index,1,3,112))).toEqual([0,0,-112,-112]);
+    expect([0,1,2,3].map(index=>goalDragShift(index,3,1,112))).toEqual([0,112,112,0]);
+    expect([0,1,2].map(index=>goalDragShift(index,1,1,112))).toEqual([0,0,0]);
+  });
+  it('화면 읽기 동작은 끝 자리에서 그 방향을 뺀다',()=>{
+    expect(goalMoveActionList(true,true).map(action=>action.label)).toEqual(['위로 옮기기','아래로 옮기기']);
+    expect(goalMoveActionList(false,true).map(action=>action.label)).toEqual(['아래로 옮기기']);
+    expect(goalMoveActionList(true,false).map(action=>action.label)).toEqual(['위로 옮기기']);
+    expect(goalMoveActionList(false,false)).toEqual([]);
+  });
+  it('꾹 눌렀다 움직이지 않고 떼면 들었다 내려놓기만 한다',()=>{
+    const onMove=vi.fn(),onOpen=vi.fn(),onDragChange=vi.fn();
+    render(<GoalListScreen tab="active" onTab={vi.fn()} active={[card('a'),card('b')]} completed={[]} onOpen={onOpen} onAdd={vi.fn()} onMove={onMove} onDragChange={onDragChange}/>);
+    longPress(screen.getByLabelText('a, 적립판, 10% 채웠어요'));
+    expect(onDragChange.mock.calls).toEqual([[true],[false]]);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+  it('완성한 판 탭은 꾹 눌러도 끌지 않는다',()=>{
+    const onDragChange=vi.fn();
+    render(<GoalListScreen tab="completed" onTab={vi.fn()} active={[]} completed={[card('a'),card('b')]} onOpen={vi.fn()} onAdd={vi.fn()} onMove={vi.fn()} onDragChange={onDragChange}/>);
+    longPress(screen.getByLabelText('a, 적립판, 10% 채웠어요'));
+    expect(onDragChange).not.toHaveBeenCalled();
+  });
+  it('짧게 누르면 그대로 판을 연다',()=>{
+    const onOpen=vi.fn();
+    render(<GoalListScreen tab="active" onTab={vi.fn()} active={[card('a'),card('b')]} completed={[]} onOpen={onOpen} onAdd={vi.fn()} onMove={vi.fn()}/>);
+    fireEvent.click(screen.getByLabelText('b, 적립판, 10% 채웠어요'));
+    expect(onOpen).toHaveBeenCalledWith('b');
   });
 });

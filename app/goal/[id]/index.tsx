@@ -230,7 +230,7 @@ export default function Board() {
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}
         onSettings={() => router.push({ pathname: '/goal/[id]/settings', params: { id: goal.id } })}
-        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onClose={() => setNudge(false)} /> : undefined}
+        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onHome={() => { setNudge(false); goHome(); }} onClose={() => setNudge(false)} /> : undefined}
         board={goal.boardType === 'tally'
           ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: (n) => openRecord(bySlot(n)) }
           : {
