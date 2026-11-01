@@ -1,4 +1,6 @@
 import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/catalog';
+import { t } from '../i18n';
+import { packName } from '../i18n/stickerNames';
 import { grantPurchase, setAdFree, startAdTrial } from '../repositories/packRepository';
 import { devStore } from './devStore';
 import { priceLabel, type PriceLabels, type ProductKey, type StorePrice } from './price';
@@ -72,8 +74,8 @@ export async function restorePurchases(now = Date.now()): Promise<string[]> {
   for (const id of packs) await grantPurchase(id, now);
   if (adFree) await setAdFree(true);
   return [
-    ...colorStickerPacks.filter((p) => packs.includes(p.id)).map((p) => `${p.label} 묶음`),
-    ...(adFree ? ['광고 제거'] : []),
+    ...colorStickerPacks.filter((p) => packs.includes(p.id)).map((p) => t('shop.packTitle', packName(p.id))),
+    ...(adFree ? [t('shop.adFree')] : []),
   ];
 }
 

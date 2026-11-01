@@ -97,7 +97,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | PhotoAttachment | 사진 프레임 안 추가 버튼과 첨부 사진 오른쪽 위 삭제 버튼 (`actionsInFrame`) |
 | SettingRow | 앱 설정·약관의 이동 행, 값 표시, 비활성 상태 |
 | ShortNotice / PixelLoadingIndicator | 백업·저장 알림 표면과 복원·로그아웃 로딩 표시. 로딩 점(`PixelLoadingDots`)은 진한 점이 250ms마다 오른쪽으로 옮겨 가고, 기기의 모션 감소 설정이면 가운데 점에 멈춘다 |
-| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
+| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, 문구가 화면보다 길면 스크롤, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
 | PixelBottomSheet | 화면 아래에 붙는 시트. 다이얼로그 틀(`PixelFrame` dialog)과 `dialogPadding`을 그대로 쓰고 제목은 22/30, 위 여백 24, 줄 사이 16. 양옆 12, 아래는 기기 여백(최소 12). 끌어 닫기는 없고 배경 누르기와 Android 뒤로가기가 `onRequestClose`를 부른다. 첫 사용처는 로그인 뒤 새 계정 동의 (2026-10-21) |
 | PixelBadge | 짧은 글자 배지. `tone`: `ink`(판 종류), `primary`(완성). `badge` 글씨 |
 | PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |
