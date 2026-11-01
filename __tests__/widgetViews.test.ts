@@ -180,6 +180,8 @@ describe('체험이 끝난 묶음 (2026-10-08)', () => {
 });
 
 describe('지금 붙일 칸 표시 (2026-10-16 결정 6 T1: 앱처럼 네 귀퉁이 괄호)', () => {
+  beforeEach(() => { jest.useFakeTimers(); jest.setSystemTime(t(7, 9)); });
+  afterEach(() => jest.useRealTimers());
   const props = (root: unknown) => JSON.stringify(all(root).map((e) => e.props));
   const rects = (root: unknown) => all(root).filter((e) => e.type === 'Rectangle').length;
   it('달력 위젯의 오늘 빈 칸은 괄호, 살구 테두리 없음', () => {

@@ -19,7 +19,7 @@ npm run typecheck
 npm run lint
 ```
 
-- 화면을 추가, 변경, 삭제했거나 이동 경로가 바뀌었으면 화면 흐름도(`stories/flows/app-flow.json`)를 맞추고 [stories/flows/README.md](../../../stories/flows/README.md)의 스토리 ID 검사를 돌린다.
+- 화면을 추가, 변경, 삭제했거나 이동 경로가 바뀌었으면 화면 흐름도(`stories/flows/app-flow.json`)를 맞추고 [stories/flows/README.md](../../../stories/flows/README.md)의 스토리 ID 검사를 돌린다. 시안을 거치는 작업은 그 작업의 시안이 전부 확정된 뒤 맞추므로, 아직 남은 시안이 있으면 이 커밋에서는 맞추지 않는다.
 - 새로 쓴 문구, 스토리 이름, 문서에 가운뎃점이 없는지 본다.
 
 ## 커밋
