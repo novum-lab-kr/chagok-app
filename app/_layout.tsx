@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
+import { applyDeviceLanguage, useDeviceLanguage } from '../src/i18n/device';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
 import { configureRevenueCat, linkPurchaseAccount } from '../src/purchases/revenueCat';
@@ -21,6 +22,8 @@ import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
 import { startWidgetSync } from '../src/widgets/syncWidgets';
 import { startWatchSync } from '../src/watch/syncWatch';
 
+// 어떤 화면이 문구를 읽기 전에 언어부터 정한다.
+applyDeviceLanguage();
 // OS 스플래시(윤곽선만 있는 차곡이)를 앱이 그릴 때까지 잡아 둔다. 같은 자리의 애니메이션 첫 장면이
 // 그려지는 순간 페이드 없이 내려서 끊김 없이 이어지게 한다 (docs/design/character/README.md 「스플래시」).
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -71,6 +74,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
+  const language = useDeviceLanguage();
   // 앱을 처음 켤 때만 재생한다. 백그라운드에서 돌아올 때는 이 레이아웃이 다시 만들어지지 않는다.
   const [splashDone, setSplashDone] = useState(false);
   const finishSplash = useCallback(() => setSplashDone(true), []);
@@ -149,6 +153,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <RetroFontProvider loading={<View style={{ flex: 1, backgroundColor: retro.color.screen }} />}>
         <Stack
+          key={language}
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: retro.color.screen },
