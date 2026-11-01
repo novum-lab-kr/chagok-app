@@ -24,6 +24,7 @@ import { useDialog } from '../../src/app-data/useDialog';
 import { usePrices } from '../../src/app-data/usePrices';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { appVersion, openContactMail } from '../../src/support/openContactMail';
+import { t } from '../../src/i18n';
 
 type Logout = null | { step: 'confirm' | 'busy' | 'failed' } | { step: 'held'; count: number };
 
@@ -64,7 +65,7 @@ export default function AppSettings() {
     } finally {
       setPurchaseBusy(undefined);
     }
-    if (names.includes('광고 제거')) setAdFree(true);
+    if (names.includes(t('shop.adFree'))) setAdFree(true);
     await ask(names.length > 0 ? stickerShopDialogs.restoreDone(names) : stickerShopDialogs.restoreNone);
   }
 
@@ -149,7 +150,7 @@ export default function AppSettings() {
 
   return (
     <TabSafeArea>
-      <RetroScreen style={{ gap: 16 }} header={<TabTitle title="설정" />}>
+      <RetroScreen style={{ gap: 16 }} header={<TabTitle title={t('tabs.settings')} />}>
         {supabase ? (
           status && (
             <AccountBackupPanel
@@ -161,8 +162,8 @@ export default function AppSettings() {
             />
           )
         ) : (
-          <PixelPanel title="이 기기의 기록">
-            <PixelText>지금은 이 기기에만 저장하고 있어요.</PixelText>
+          <PixelPanel title={t('settings.deviceOnlyTitle')}>
+            <PixelText>{t('settings.deviceOnlyBody')}</PixelText>
           </PixelPanel>
         )}
         <PurchasePanel adFree={adFree} price={prices.adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
