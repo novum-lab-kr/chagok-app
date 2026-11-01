@@ -18,7 +18,7 @@
 | 개발 서버 | Supabase 클라우드 `chagok-dev` 그대로 | `preview` 빌드와 개발은 계속 여기를 쓴다 |
 | 분리 | 리눅스 사용자 `chagok`을 만들고, 그 사용자만 쓰는 Docker(rootless Docker)에서 Supabase를 돌린다. `chagok`에는 sudo를 주지 않는다 | 이 VPS에서는 AI 에이전트가 root로 일한다. 서버 Docker를 같이 쓰면 `docker compose down`이나 `prune` 한 번에 같이 내려간다. 따로 돌리면 서버 Docker 명령에 보이지도 않는다. root는 여전히 모두 볼 수 있으므로 매일 외부 백업은 그대로 둔다 |
 | swap | 서버 전체에 4GB, `swappiness` 10 | 아래 「swap」 |
-| 주소 | `chagok-api.novum-lab.com`. Cloudflare DNS에 A 레코드 `187.127.114.161`, 프록시 끔(DNS only) | Caddy가 인증서를 직접 받아 가장 단순하다. 서버 IP는 Hostinger 서버 이름(`srv1840750.hstgr.cloud`)으로 이미 공개돼 있어 프록시로 숨기는 이득이 작다. 필요해지면 프록시를 켜고 SSL 모드를 Full (strict)로 맞춘다 |
+| 주소 | `chagok-api.novum-lab.com`. Cloudflare DNS에 A 레코드 `<운영 서버 주소>`, 프록시 끔(DNS only) | Caddy가 인증서를 직접 받아 가장 단순하다. 서버 IP는 Hostinger 서버 이름(`srv1840750.hstgr.cloud`)으로 이미 공개돼 있어 프록시로 숨기는 이득이 작다. 필요해지면 프록시를 켜고 SSL 모드를 Full (strict)로 맞춘다 |
 
 검토한 다른 안: Supabase 클라우드 서울(운영 부담이 가장 적지만 월 비용이 든다), S3 서울 리전 백업(처리방침의 나라가 하나 줄지만 설정이 더 복잡하다). 공식 문서와 가격 확인 결과는 2026-10-21 대화 기록에 있다.
 
@@ -51,7 +51,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 도메인은 Hostinger에서 샀고 DNS는 Cloudflare다. 2026-10-22에 존을 다른 Cloudflare 계정(`Mcsung.novum`, 네임서버 `annalise`, `vick`)에서 `Novum-lab@naver.com` 계정(네임서버 `carrera`, `clayton`)으로 옮겼다. 옛 존의 레코드 10개 가운데 메일(이메일 라우팅의 MX 3개, SPF, DKIM)은 더 쓰지 않아 옮기지 않았다. 옛 존은 전환이 퍼질 때까지(최대 이틀) 지우지 않는다.
 
 - [x] `Novum-lab@naver.com` 계정에서 R2를 켠다. 공식 문서에 "You must purchase R2 before you can generate an API token"이라고 되어 있어 결제 수단 등록이 필요할 수 있다.
-- [x] 새 존 레코드: `novum-lab.com`, `*`(A), `www`(CNAME), `syung`(A, DNS only), Google 인증 TXT, `chagok-api`(A `187.127.114.161`, DNS only). SSL/TLS 모드 Full. 확인: 공개 DNS 4곳이 `chagok-api`를 `187.127.114.161`로 답한다.
+- [x] 새 존 레코드: `novum-lab.com`, `*`(A), `www`(CNAME), `syung`(A, DNS only), Google 인증 TXT, `chagok-api`(A `<운영 서버 주소>`, DNS only). SSL/TLS 모드 Full. 확인: 공개 DNS 4곳이 `chagok-api`를 `<운영 서버 주소>`로 답한다.
 - [ ] 새 계정 활성화와 인증서 발급 뒤, 전환 동안 회색으로 둔 `novum-lab.com`, `*`, `www`를 다시 프록시로 켠다.
 - [ ] 이틀 뒤 옛 계정의 존을 지워도 되는지 확인한다(계정 주인이 지운다).
 - [ ] Hostinger의 정식 법인 이름과 연락처를 확인한다(처리방침의 이전받는 자).
@@ -65,7 +65,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - [x] 사용자 `chagok` 만들기. sudo 그룹에 넣지 않는다. 홈 폴더는 다른 사용자가 못 읽게 `700`.
 - [x] `/etc/subuid`, `/etc/subgid`에 `chagok` 줄이 65,536개 이상으로 생겼는지 확인(사용자를 만들 때 자동으로 생긴다).
 - [x] `apt-get install uidmap`. 지금 서버에 없는 유일한 준비물이다.
-- [x] 지금 쓰시는 SSH 공개키를 `/home/chagok/.ssh/authorized_keys`에 넣는다. 운영 작업은 `ssh chagok@187.127.114.161`로 한다. 공식 문서상 `sudo -iu`나 `sudo su`로 사용자를 바꾸면 rootless Docker가 제대로 안 돈다.
+- [x] 지금 쓰시는 SSH 공개키를 `/home/chagok/.ssh/authorized_keys`에 넣는다. 운영 작업은 `ssh chagok@<운영 서버 주소>`로 한다. 공식 문서상 `sudo -iu`나 `sudo su`로 사용자를 바꾸면 rootless Docker가 제대로 안 돈다.
 - [x] `loginctl enable-linger chagok`. 로그아웃해도 `chagok`의 Docker와 백업 타이머가 계속 돈다.
 - [x] swap 4GB 파일을 만들고 `swapon`, `sysctl vm.swappiness=10`. 둘 다 바로 적용되어 재부팅하지 않는다. 재부팅 뒤에도 유지되게 `/etc/fstab`와 `/etc/sysctl.d/`에 적는다. 확인: `free -h`에 Swap 4.0Gi, `findmnt --verify`가 깨끗하고, `swapoff` 뒤 `swapon -a`로 fstab만 보고 다시 켜진다(fstab이 틀리면 다음 부팅이 막힐 수 있어서).
 
@@ -111,7 +111,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - 11개 컨테이너가 rootless에서 모두 healthy. 서버 `ss`에 8000, 5432, 6543이 `127.0.0.1`에만 있고, 이 맥에서 훑으면 22, 80, 443만 열려 있다. 메모리는 약 1.2GB 늘었다(여유 7.3GB).
 - 확인 못 한 것: anon 키로 `/rest/v1/` 루트가 403이다(키 없이는 401). 테이블이 없는 지금은 판단할 수 없어 4단계에서 실제 테이블로 확인한다.
 - 비밀값 사본: 이 맥 `.secrets/prod/supabase.env`(권한 600, git 제외, 서버와 해시 같음).
-- 서버에서 `chagok` Docker 보기: `ssh chagok@187.127.114.161` 뒤 `docker ps`, 또는 root에서 `docker -H unix:///run/user/1003/docker.sock ps`. 8단계에서 DEV-SETUP에 옮긴다.
+- 서버에서 `chagok` Docker 보기: `ssh chagok@<운영 서버 주소>` 뒤 `docker ps`, 또는 root에서 `docker -H unix:///run/user/1003/docker.sock ps`. 8단계에서 DEV-SETUP에 옮긴다.
 
 ## 3단계: 주소 연결 (Caddy)
 
@@ -196,7 +196,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 **5단계 결과 (2026-10-22, 저장소 준비까지)**
 
 - 버킷 `chagok-prod-backup`, 관할 United States(US), Standard. 공개 주소와 사용자 도메인 없음. 관할 버킷은 Data Access Logs를 쓸 수 없다.
-- Account API 토큰 `chagok-prod-backup-server`: 이 버킷만, Object Read & Write, 기한 없음, IP는 서버의 IPv4 `187.127.114.161`과 IPv6 `2a02:4780:5e:83c9::1`만 허용.
+- Account API 토큰 `chagok-prod-backup-server`: 이 버킷만, Object Read & Write, 기한 없음, IP는 서버의 IPv4 `<운영 서버 주소>`과 IPv6 `<운영 서버 IPv6>`만 허용.
 - 키는 이 맥 `.secrets/prod/r2.env`(600)와 서버 `~/supabase/.env` 끝의 `R2_*`(해시 같음). 서버 `.env` 백업 `~/supabase/.env.pre-r2-20261022`.
 - 서버에서 `curl --aws-sigv4`로 `test/`에 올리기, 목록, 읽기, 지우기가 모두 성공했고 시험 파일은 지웠다. 이 맥에서는 같은 키가 403(`AccessDenied`)으로 막힌다. restic 저장소를 만들고 다시 여는 것까지 확인했다.
 - 함정: R2 주소에는 IPv6도 있고 서버도 IPv6로 나간다. 토큰에 IPv4만 넣었을 때 IPv6로 나간 요청은 403이었다(curl `-4`는 200, `-6`은 403, restic은 계속 403). IP 제한을 걸 때는 서버의 IPv4와 IPv6를 모두 넣는다. 처음에 이를 "토큰이 퍼지는 시간"으로 잘못 읽었다.
