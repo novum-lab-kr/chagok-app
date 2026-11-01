@@ -63,6 +63,8 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 [버전 규칙](RELEASE-VERSIONING.md)). iOS 실기기·스토어 빌드는 Apple Developer Program 승인 뒤에 한다.
 **클라우드 빌드는 `.env.local`을 읽지 않는다** — `preview`·`production`을 빌드하기 전에 서버 주소·키를 EAS 환경 변수로 넣어야 한다.
 
+**이벤트 기록과 오류 보고** — 이름은 `.env.example`에 있다. `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST`, `EXPO_PUBLIC_SENTRY_DSN`이 없으면 앱은 보내지 않고 그대로 동작한다. 개발 빌드(`__DEV__`)는 값이 있어도 보내지 않는다. 저장 지역은 둘 다 독일이다(2026-10-31, 처리방침과 같은 값). PostHog는 EU Cloud 프로젝트에 `https://eu.i.posthog.com`, Sentry는 Frankfurt로 만든 조직의 DSN을 쓴다. Sentry 지역은 조직을 만들 때 정하면 바꿀 수 없고 앱은 DSN이 가리키는 곳으로 보낸다. 소스맵 올리기는 `SENTRY_URL`(`https://de.sentry.io/`), `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`을 쓴다. 토큰은 앱에 들어가지 않게 `EXPO_PUBLIC_`을 붙이지 않는다. 토큰 없이 Release를 빌드할 때는 `SENTRY_DISABLE_AUTO_UPLOAD=true`를 붙인다.
+
 **실기기 iPhone 개발 빌드** (2026-10-10 설치, iPhone 15 Pro · iOS 26.6.2)
 
 - 빌드: `npx eas-cli@latest build --profile development --platform ios`. 전역 `eas`(16.17.4)는 오래돼서 Apple 로그인 단계가

@@ -21,6 +21,7 @@
   - RevenueCat 키가 Test Store 키(`test_`로 시작)가 아니라 iOS·Android 스토어 키다. Test Store 키로 만든 출시 빌드는 SDK가 일부러 멈춘다. 2026-10-26 iOS는 EAS `production`에 App Store 키(`appl_`)를 넣었다. Android는 아직.
   - AdMob 앱 ID(`app.json` 플러그인 `react-native-google-mobile-ads`)와 광고 단위 ID(`src/purchases/admob.ts` `adUnits`)가 Google 테스트 ID(`ca-app-pub-3940256099942544`)가 아니다. 2026-10-26 iOS는 실제 ID(출시 빌드만). Android 앱 ID와 광고 단위는 아직 테스트 ID.
   - 연결 화면의 [개발 계정으로 계속], `/dev/sync`가 출시 빌드에 보이지 않는다(`__DEV__`).
+- [ ] 이벤트 기록과 오류 수집이 켜져 있다(PRD 8.2, [개발 환경](DEV-SETUP.md)): EAS 환경 변수에 PostHog, Sentry 키가 있고, 소스맵 토큰이 있거나 없으면 `SENTRY_DISABLE_AUTO_UPLOAD=true`로 빌드한다. 저장 지역이 둘 다 독일이고, PostHog와 Sentry 프로젝트 설정에서 IP 저장을 껐다.
 - [x] 다크 모드 막기·글자 크기 고정이 들어가 있다(`app.json` `userInterfaceStyle: "light"`, `allowFontScaling={false}`, PRD 6.2). 2026-10-12 실기기 확인.
 - [ ] 한 번에 한 기기, 동기화 버전·최소 앱 버전이 서버와 앱에 들어가 있다(PRD 4.8, [버전 규칙](RELEASE-VERSIONING.md) 「가끔」).
 - [ ] 오픈소스 라이선스 목록이 지금 의존성과 맞다: `npm run licenses`를 돌려 `src/policy/oss-licenses.generated.ts`가 바뀌지 않는다. 바뀌면 커밋한다. 「LICENSE 파일이 없는 패키지」로 멈추면 원래 저장소의 LICENSE를 확인해 `scripts/licenses/packages.json`에 더한다. 네이티브 라이브러리(`scripts/licenses/native.json`)는 React Native를 올렸을 때 버전을 맞춘다.
