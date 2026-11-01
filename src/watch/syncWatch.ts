@@ -9,7 +9,7 @@ import { subscribeWatchRequests, watchPort } from './watchPort';
 
 /** 한 번에 하나만 돈다. 워치 요청을 반영했으면 열린 판 화면이 다시 읽는다(notifyWidgetApplied, 위젯과 같은 신호). */
 const runner = createSyncRunner(
-  () => syncWatchOnce({ port: watchPort(), apply: applyWidgetRequests, growth: updateGrowth, snapshot: loadWatchSnapshot, now: () => new Date() }),
+  () => syncWatchOnce({ port: watchPort(), apply: (requests) => applyWidgetRequests(requests, 'watch'), growth: updateGrowth, snapshot: loadWatchSnapshot, now: () => new Date() }),
   (e) => { console.warn('watch sync failed', e); },
 );
 

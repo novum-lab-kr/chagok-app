@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { track } from '../../src/analytics';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import {
   AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
@@ -263,6 +264,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         signingIn.current = true;
         // 로그인 실패도 check() 뒤에 던진다 — 화면을 떠난 시도가 다이얼로그를 띄우지 않게
         let signIn: { user: User } | 'canceled' | { failed: unknown };
+        track('login_start', { method });
         try {
           signIn = await signInWith(method);
         } catch (e) {
@@ -271,8 +273,15 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
           signingIn.current = false;
         }
         check();
-        if (signIn === 'canceled') throw CANCELED;
-        if ('failed' in signIn) throw signIn.failed;
+        if (signIn === 'canceled') {
+          track('login_cancel', { method });
+          throw CANCELED;
+        }
+        if ('failed' in signIn) {
+          track('login_fail', { method });
+          throw signIn.failed;
+        }
+        track('login_success', { method });
         const { user } = signIn;
         // 카카오에 가입 완료를 알린다. 로그인할 때마다 불러 한 번 실패해도 다음 로그인에서 메운다. 기다리지 않는다
         if (method === 'kakao') void completeKakaoSignUp();

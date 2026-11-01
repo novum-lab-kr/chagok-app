@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { trackBannerShown } from '../analytics';
 import { retro } from '../design-system';
 import { loadPackState } from '../repositories/packRepository';
 import { AD_REQUEST, adUnits, adsLib } from './admob';
@@ -30,7 +31,7 @@ export function GoalsAdBanner() {
         unitId={adUnits(ads).banner}
         size={ads.BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
         requestOptions={AD_REQUEST}
-        onAdLoaded={() => setLoaded(true)}
+        onAdLoaded={() => { setLoaded(true); trackBannerShown(); }}
         onAdFailedToLoad={() => setFailed(true)}
       />
     </View>

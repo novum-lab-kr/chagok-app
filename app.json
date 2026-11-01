@@ -163,7 +163,13 @@
           "iosAppId": "ca-app-pub-3557389923784580~6730991421"
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "expo-localization",
+      "@sentry/react-native",
+      [
+        "expo-build-properties",
+        { "android": { "extraMavenRepos": ["https://devrepo.kakao.com/nexus/content/groups/public/"] } }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

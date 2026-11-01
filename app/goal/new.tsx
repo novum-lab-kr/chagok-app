@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { track } from '../../src/analytics';
 import { NewGoalScreen } from '../../src/design-system';
 import type { BoardKind, EndDateMode, StickerId } from '../../src/design-system';
 import { createGoal } from '../../src/repositories/goalRepository';
@@ -54,7 +55,9 @@ export default function NewGoal() {
       });
       createdId = created.id;
     });
-    if (ok) router.replace({ pathname: '/goal/[id]', params: { id: createdId } });
+    if (!ok) return;
+    track('goal_create', kind === 'tally' ? { board_type: kind, slot_count: Number(count) } : { board_type: kind });
+    router.replace({ pathname: '/goal/[id]', params: { id: createdId } });
   }
 
   return (

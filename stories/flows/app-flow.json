@@ -160,6 +160,46 @@
       }
     },
     {
+      "id": "analytics-consent",
+      "data": {
+        "label": "사용 기록 동의",
+        "tags": [
+          "PRD 8.2",
+          "app/goal/[id]",
+          "app/send-info"
+        ],
+        "stories": [
+          {
+            "id": "screens-analytics-consent--default",
+            "label": "시트, 자세히 보기로 펼침"
+          }
+        ],
+        "scenarios": [
+          "first",
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "send-info",
+      "data": {
+        "label": "보내는 정보",
+        "tags": [
+          "PRD 8.2",
+          "app/send-info"
+        ],
+        "stories": [
+          {
+            "id": "screens-analytics-consent--send-info",
+            "label": "체크 상자 두 개"
+          }
+        ],
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
       "id": "tutorial",
       "data": {
         "label": "첫 실행 튜토리얼",
@@ -1560,6 +1600,39 @@
         "scenarios": [
           "complete",
           "sticker"
+        ]
+      }
+    },
+    {
+      "id": "detail-analytics-consent",
+      "source": "detail",
+      "target": "analytics-consent",
+      "label": "스티커를 붙인 뒤 한 번",
+      "data": {
+        "scenarios": [
+          "first"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-send-info",
+      "source": "app-settings",
+      "target": "send-info",
+      "label": "보내는 정보",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "send-info-analytics-consent",
+      "source": "send-info",
+      "target": "analytics-consent",
+      "label": "사용 기록 보내기 켜기",
+      "data": {
+        "scenarios": [
+          "info"
         ]
       }
     }

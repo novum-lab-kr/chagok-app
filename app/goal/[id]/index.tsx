@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BoardDetailScreen, CompletionNudge, LoadingScreen, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
+import { track } from '../../../src/analytics';
+import { hasAnsweredAnalytics, saveAnalyticsEnabled } from '../../../src/analytics/posthog';
+import { AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, LoadingScreen, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
@@ -42,6 +44,20 @@ export default function Board() {
   const [justPlaced, setJustPlaced] = useState<{ slot?: number; date?: string }>({});
   const [actOnce] = useState(createSingleFlight);
   const { ask, confirm, dialog } = useDialog();
+  /** 사용 기록 동의 (PRD 8.2). 붙는 모션을 본 뒤에 띄운다. */
+  const [consentPending, setConsentPending] = useState(false);
+  const [consentVisible, setConsentVisible] = useState(false);
+  useEffect(() => {
+    if (!consentPending) return;
+    const timer = setTimeout(() => setConsentVisible(true), 600);
+    return () => clearTimeout(timer);
+  }, [consentPending]);
+  /** 저장에 실패하면 꺼진 채 두고 다음 스티커 때 다시 묻는다. 앱 사용을 막지 않는다. */
+  function answerConsent(agreed: boolean) {
+    setConsentVisible(false);
+    setConsentPending(false);
+    saveAnalyticsEnabled(agreed).catch(() => {});
+  }
   /** 완성 다이얼로그가 떠 있는 동안 다시 띄우지 않는다 */
   const completionOpen = useRef(false);
   /** 완성한 판을 [닫기]로 보관한 순간에만 보이는 「다음 판은 새 스티커로」. 닫거나 판을 나가면 다시 보이지 않는다 (2026-10-12). */
@@ -162,9 +178,13 @@ export default function Board() {
       await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt });
     });
     if (!ok) return;
+    track('sticker_place', { board_type: target.boardType, source: 'app' });
+    if (complete) track('goal_complete', { source: 'app' });
     setJustPlaced(at);
     if (!complete) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await reload();
+    // 스티커를 붙인 뒤 한 번만 묻는다. 완성 흐름과 겹치면 다음 스티커로 미룬다 (PRD 8.2).
+    if (!complete && !(await hasAnsweredAnalytics().catch(() => true))) setConsentPending(true);
   }
 
   /** 뗀다. 기록이 있으면 먼저 확인한다 (PRD 4.5). 완성한 판에서도 뗀다 — 완성은 그대로 (2026-10-08). */
@@ -175,6 +195,7 @@ export default function Board() {
     let photo: string | null = null;
     const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(target.id); });
     if (!ok) return;
+    track('sticker_remove', { source: 'app' });
     try { removeManagedRecordPhoto(photo); } catch { /* 고아 파일로 남는다. 기록은 이미 지워졌다 */ }
     setJustPlaced({});
     await reload();
@@ -244,6 +265,7 @@ export default function Board() {
           }}
       />
       {dialog}
+      <AnalyticsConsentSheet visible={consentVisible} onAgree={() => answerConsent(true)} onDecline={() => answerConsent(false)} />
     </>
   );
 }

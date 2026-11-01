@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { track } from '../../src/analytics';
 import * as ImagePicker from 'expo-image-picker';
 import { ActionSymbol, LoadingScreen, RecordScreen, PixelText, boardDialogs, useLoadRetry } from '../../src/design-system';
 import type { PocketGoal, StickerId } from '../../src/design-system';
@@ -127,6 +128,8 @@ export default function StickerRecord() {
       }
     });
     if (!ok) return;
+    // 있는지만 남긴다. 사진 주소와 메모 글자는 보내지 않는다.
+    track('record_save', { has_photo: Boolean(newPhotoUri ?? photoUri), has_memo: nextMemo.trim().length > 0 });
     if (savedPhotoUri && savedPhotoUri !== (newPhotoUri ?? photoUri)) {
       try { removeManagedRecordPhoto(savedPhotoUri); } catch { /* 저장된 기록은 유지한다 */ }
     }
@@ -141,6 +144,7 @@ export default function StickerRecord() {
     let photo: string | null = null;
     const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(id); });
     if (!ok) return;
+    track('sticker_remove', { source: 'app' });
     try { removeManagedRecordPhoto(photo); } catch { /* 고아 파일로 남는다 */ }
     goBackOrHome();
   }

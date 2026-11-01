@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect, useRouter } from 'expo-router';
+import { resetUser, track } from '../../src/analytics';
+import { setErrorUser } from '../../src/analytics/sentry';
 import {
   AccountBackupPanel, HelpInfoPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
   stickerShopDialogs,
@@ -100,6 +102,10 @@ export default function AppSettings() {
       setLogout({ step: 'failed' });
       return;
     }
+    track('logout');
+    // 로그아웃 신호가 오지 않는 경우에도 계정 ID를 남기지 않는다
+    resetUser();
+    setErrorUser(null).catch(() => {});
     resumeSync();
     setLogout(null);
     router.replace('/');
@@ -173,6 +179,7 @@ export default function AppSettings() {
           onContact={() => { void openContactMail('question', ask); }}
           onReportAd={() => { void openContactMail('adReport', ask); }}
           onPolicies={() => nav.push('/policies')}
+          onSendInfo={() => nav.push('/send-info')}
         />
         {__DEV__ && supabase && (
           <PixelPanel title="개발">
