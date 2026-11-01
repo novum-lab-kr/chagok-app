@@ -306,11 +306,11 @@ export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name
     </PixelFrame>}
   </Pressable>;
 }
-/** 판 상세 상단 한 줄: `n / nn [여백] m% 달성중`. 완성하면 오른쪽이 완성 스티커로 바뀐다. */
+/** 판 상세 상단 한 줄: `n / nn [여백] m% 채웠어요`. 완성하면 오른쪽이 완성 스티커로 바뀐다. */
 export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:StickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
   return <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:48}}>
     <PixelText variant="number">{value} / {total}</PixelText>
-    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 달성중</PixelText>}
+    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 채웠어요</PixelText>}
   </View>;
 }
 /** 목록이 비었을 때의 안내 상자. */
