@@ -182,6 +182,9 @@ describe('체험이 끝난 묶음 (2026-10-08)', () => {
 describe('지금 붙일 칸 표시 (2026-10-16 결정 6 T1: 앱처럼 네 귀퉁이 괄호)', () => {
   const props = (root: unknown) => JSON.stringify(all(root).map((e) => e.props));
   const rects = (root: unknown) => all(root).filter((e) => e.type === 'Rectangle').length;
+  // 달력 위젯은 지금 시각도 본다. 실제 시계가 10월을 지나면 오늘 칸이 사라지므로 항목 시각에 맞춰 고정한다.
+  beforeEach(() => jest.useFakeTimers({ now: t(7, 9) }));
+  afterEach(() => jest.useRealTimers());
   it('달력 위젯의 오늘 빈 칸은 괄호, 살구 테두리 없음', () => {
     const days = Array.from({ length: 31 }, (_, i) => (i < 6 ? 'missed' : 'future'));
     const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
