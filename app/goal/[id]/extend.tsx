@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
+import { track } from '../../../src/analytics';
 import { ExtendEndDateScreen, ExtendSlotsScreen, LoadingScreen, useLoadRetry } from '../../../src/design-system';
 import { extendEndDate, extendSlots, getGoal } from '../../../src/repositories/goalRepository';
 import { periodLabel } from '../../../src/app-data/pocketAdapter';
@@ -41,7 +42,9 @@ export default function ExtendBoard() {
   const current = goal;
 
   async function submit(task: () => Promise<void>) {
-    if (await saveOrNotify(ask, '늘리지 못했어요', task)) goBackOrHome();
+    if (!(await saveOrNotify(ask, '늘리지 못했어요', task))) return;
+    track('goal_extend');
+    goBackOrHome();
   }
 
   return (
