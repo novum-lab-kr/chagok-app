@@ -15,7 +15,8 @@ const c = retro.color;
 const decorativeSvg = Platform.OS === 'web' ? { 'aria-hidden': true } as const : { accessible: false };
 const sproutAccessibility = () => Platform.OS === 'web' ? { role: 'img', 'aria-label': t('character.sprout') } as const : { accessible: true, accessibilityLabel: t('character.sprout') };
 export function PixelText({ variant = 'body', style, ...props }: TextProps & { variant?: TextVariant }) {
-  return <Text allowFontScaling={false} {...props} style={[{ color: c.ink, ...retro.typography[variant] }, style,
+  // iOS는 한글을 음절 단위로 줄바꿈해 「메모/와」처럼 끊는다. 낱말 단위로 바꾼다 (2026-11-02).
+  return <Text allowFontScaling={false} lineBreakStrategyIOS="hangul-word" {...props} style={[{ color: c.ink, ...retro.typography[variant] }, style,
     { fontFamily: retro.fontFamily, fontWeight: '400', fontStyle: 'normal', letterSpacing: 0 }]} />;
 }
 
@@ -293,7 +294,7 @@ export function PixelDialog({variant='tutorial',step,title,description,primaryLa
       <PixelText>{step}</PixelText>
       {/* 글자 한 줄 높이라 위아래로 누르는 범위를 넓혀 44pt쯤으로 맞춘다 */}
       {onSkip&&<Pressable accessibilityRole="button" accessibilityLabel={skipLabel} hitSlop={{top:12,bottom:12,left:12,right:12}} onPress={onSkip}><PixelText style={{textDecorationLine:'underline'}}>{skipLabel}</PixelText></Pressable>}
-    </View>}<View style={{height:2,backgroundColor:c.ink}}/></>}
+    </View>}{(step||onSkip)&&<View style={{height:2,backgroundColor:c.ink}}/>}</>}
     <DialogContent title={title} description={description} centerText={variant==='basic'} primaryLabel={primaryLabel??(variant==='tutorial'?t('common.next'):t('common.ok'))} secondaryLabel={secondaryLabel??(variant==='tutorial'?t('common.previous'):t('common.cancel'))} single={single} loading={loading} secondaryDisabled={secondaryDisabled} onPrimary={onPrimary} onSecondary={onSecondary} linkLabel={linkLabel} onLink={onLink}/>
   </PixelFrame>;
 }

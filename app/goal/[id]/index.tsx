@@ -198,10 +198,12 @@ export default function Board() {
     setFirstGuide(null);
     if (complete) return;
     // 앱 전체의 첫 스티커에는 메모 안내만 보여 주고, 사용 기록 동의는 다음 스티커로 미룬다 (2026-11-02).
-    const first = !(await getFlag('firstStickerGuideDone').catch(() => true)) && (await countAllStickers().catch(() => 0)) === 1;
+    // 본 것으로 치는 때는 카드를 닫거나 [메모 남기기]를 누른 때다. 그 전에 완성 창 등에 밀려 사라지면 다음 스티커에서 다시 보여 준다.
+    const guideDone = await getFlag('firstStickerGuideDone').catch(() => true);
+    const first = !guideDone && ((await countAllStickers().catch(() => 0)) === 1 || (await getFlag('firstStickerGuidePending').catch(() => false)));
     if (first && placedId) {
       setFirstGuide(placedId);
-      void setFlag('firstStickerGuideDone', true);
+      void setFlag('firstStickerGuidePending', true);
       return;
     }
     // 스티커를 붙인 뒤 한 번만 묻는다. 완성 흐름과 겹치면 다음 스티커로 미룬다 (PRD 8.2).
@@ -272,11 +274,11 @@ export default function Board() {
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}
         onSettings={() => router.push({ pathname: '/goal/[id]/settings', params: { id: goal.id } })}
-        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onHome={() => { setNudge(false); goHome(); }} onClose={() => setNudge(false)} /> : firstGuide ? (
+        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onHome={() => { setNudge(false); goHome(); }} onClose={() => setNudge(false)} /> : firstGuide && !dialogOpen ? (
           <GuideCard
             text={t('guide.firstSticker')}
-            onClose={() => setFirstGuide(null)}
-            actions={<PixelButton label={t('guide.writeMemo')} minHeight={40} onPress={() => { const target = firstGuide; setFirstGuide(null); router.push({ pathname: '/sticker/[id]', params: { id: target, from: 'board' } }); }} />}
+            onClose={() => { setFirstGuide(null); void setFlag('firstStickerGuideDone', true); }}
+            actions={<PixelButton label={t('guide.writeMemo')} minHeight={40} onPress={() => { const target = firstGuide; setFirstGuide(null); void setFlag('firstStickerGuideDone', true); router.push({ pathname: '/sticker/[id]', params: { id: target, from: 'board' } }); }} />}
           />
         ) : undefined}
         board={goal.boardType === 'tally'
