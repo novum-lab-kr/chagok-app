@@ -123,7 +123,7 @@ export function PixelButton({ label, variant = 'primary', disabled = false, load
     {({pressed}) => <PixelFrame variant="button" fill={variant === 'primary' ? c.primary : c.secondary} pressed={pressed} focused={focused}
       contentStyle={{ minHeight, paddingHorizontal: label ? 16 : 8, paddingVertical: 10, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
       {/* 저장 중에는 원래 내용을 투명하게 남겨 버튼 폭을 유지하고, 그 위에 로딩 점을 겹친다. */}
-      {icon && <View style={{opacity: loading ? 0 : 1}}>{icon}</View>}{label !== '' && <PixelText variant="button" style={{color:c.buttonText, opacity: loading ? 0 : 1}}>{label}</PixelText>}
+      {icon && <View style={{opacity: loading ? 0 : 1}}>{icon}</View>}{label !== '' && <PixelText variant="button" style={{color:c.buttonText, opacity: loading ? 0 : 1, flexShrink: 1, textAlign: 'center'}}>{label}</PixelText>}
       {loading && <View pointerEvents="none" style={[StyleSheet.absoluteFill, {alignItems:'center', justifyContent:'center'}]}><PixelLoadingDots size={8} gap={4}/></View>}
     </PixelFrame>}
   </Pressable>;
