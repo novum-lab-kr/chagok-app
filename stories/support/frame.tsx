@@ -1,6 +1,6 @@
 import React,{type ReactNode} from 'react';
 import {View,useWindowDimensions} from 'react-native';
-import {AccountBackupPanel,FloatingTabBar,HelpInfoPanel,PurchasePanel,RetroScreen,TabTitle,retro,type AccountBackupStatus,type TabItem} from '../../src/design-system';
+import {AccountBackupPanel,FloatingTabBar,HelpInfoPanel,PurchasePanel,RetroScreen,TabTitle,retro,type AccountBackupStatus,type SubscriptionSummary,type TabItem} from '../../src/design-system';
 
 /** 화면 스토리 공통 틀. 화면 스토리는 이 파일만 쓰고 틀을 따로 만들지 않는다. */
 export const noop=()=>{};
@@ -32,10 +32,10 @@ function AdSlot() {
 }
 
 /** 설정 탭 내용 (app/(tabs)/settings.tsx와 같은 순서). 탭 바는 Stage tab="settings"가 붙인다. */
-export function SettingsTab({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy,price='5,500원'}:{status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore';/** 스토어가 준 가격(원화 계정). null이면 못 받아 왔을 때 */price?:string|null}) {
+export function SettingsTab({status={state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'},adFree=false,busy,price='5,500원',subscription}:{subscription?:SubscriptionSummary;status?:AccountBackupStatus;adFree?:boolean;busy?:'adFree'|'restore';/** 스토어가 준 가격(원화 계정). null이면 못 받아 왔을 때 */price?:string|null}) {
   return <RetroScreen style={{gap:16}} header={<TabTitle title="설정"/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
-    <PurchasePanel adFree={adFree} price={price??undefined} onRemoveAds={noop} onRestore={noop} busy={busy}/>
+    <PurchasePanel adFree={adFree} price={price??undefined} onRemoveAds={noop} onRestore={noop} busy={busy} subscription={subscription} onSubscribe={noop} onManageSubscription={noop}/>
     <HelpInfoPanel adFree={adFree} version="1.0.0" onTutorial={noop} onContact={noop} onReportAd={noop} onPolicies={noop} onSendInfo={noop}/>
   </RetroScreen>;
 }

@@ -11,6 +11,9 @@ import {Mascot} from './mascot';
 import {t} from '../i18n';
 import {packName} from '../i18n/stickerNames';
 import {SUPPORT_EMAIL} from '../support/contactMail';
+import {SubscriptionRow,type SubscriptionSummary} from './subscription';
+
+const noopPress=()=>{};
 
 /** 스티커 묶음과 구매 (PRD 4.12, 2026-10-08 확정 시안 19판). */
 const c=retro.color;
@@ -156,7 +159,7 @@ export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,
 }
 
 /** 묶음 화면 (PRD 4.12). 스티커 영역은 고르기 카드와 같은 모양, 「판에 붙이면」은 6칸에 5개. */
-export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,onBack,busy}:{pack:PackView;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
+export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,onBack,busy,onSubscribe}:{pack:PackView;/** 구독 화면으로 가는 [구독하고 모든 묶음 열기]. 없으면 줄을 그리지 않는다 (2026-11-02 구독 흐름 시안) */onSubscribe?:()=>void;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
   const ready=reward.days>=reward.goal;
   return <RetroScreen style={{gap:14}} header={<ScreenHeader title={t('shop.packTitle',pack.label)} onBack={onBack}/>}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14}}>
@@ -169,6 +172,7 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
     </StickerGrid></View></PixelPanel>
     <View style={{gap:10}}>
       <PixelButton label={pack.price?t('shop.openForPrice',pack.price):t('shop.openPack')} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
+      {onSubscribe&&<PixelButton label={t('sub.openAllPacks')} variant="secondary" disabled={busy!==undefined} onPress={onSubscribe}/>}
       {!adFree&&<PixelButton label={t('shop.watchAd')} variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
       <PixelButton label={t('shop.tryThreeDays')} variant="secondary" disabled={!ready||busy!==undefined} onPress={onTrial}/>
       {!ready&&<PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{t('shop.tryAfter',reward.goal-reward.days,reward.days,reward.goal)}</PixelText>}
@@ -190,6 +194,8 @@ export const stickerShopDialogs={
   bought:(label:string)=>({title:t('shop.boughtTitle',label),description:t('shop.boughtDescription'),primaryLabel:t('common.ok'),single:true}),
   /** endLabel 예: '내일 밤 11:00' — 광고를 다 본 때부터 24시간 */
   adTrialStarted:(endLabel:string)=>({title:t('shop.adTrialTitle'),description:t('shop.adTrialDescription',endLabel),primaryLabel:t('common.ok'),single:true}),
+  /** 구독으로 쓰던 묶음의 스티커를 다음에 붙이려 할 때만 띄운다. 체험이 끝났을 때와 같은 모양 (2026-11-02 구독 흐름 시안) */
+  get subscriptionEnded(){return {title:t('sub.endedTitle'),description:t('shop.trialEndedDescription'),primaryLabel:t('shop.openPack'),secondaryLabel:t('shop.otherSticker')};},
   trialEnded:(kind:'3일'|'하루')=>({title:t('shop.trialEndedTitle',kind),description:t('shop.trialEndedDescription'),primaryLabel:t('shop.openPack'),secondaryLabel:t('shop.otherSticker')}),
   restoreDone:(names:readonly string[])=>({title:t('shop.restoreDoneTitle'),description:names.join(', '),primaryLabel:t('common.ok'),single:true}),
   get restoreNone(){return {title:t('shop.restoreNoneTitle'),description:t('shop.restoreNoneDescription'),primaryLabel:t('common.ok'),single:true};},
@@ -203,18 +209,20 @@ export const stickerShopDialogs={
 };
 
 /** 앱 설정 「구매」 블럭 (PRD 4.9). 구매 복원은 앱 설정에만 두고, 사기 전·후 같은 자리다. */
-export function PurchasePanel({adFree,price,onRemoveAds,onRestore,busy}:{adFree:boolean;/** 스토어에서 받아 온 광고 제거 가격 글자. 못 받아 왔으면 없다 */price?:string;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
+export function PurchasePanel({adFree,price,onRemoveAds,onRestore,busy,subscription,onSubscribe=noopPress,onManageSubscription=noopPress}:{/** 구독 칸 (2026-11-02 구독 흐름 시안). 없으면 그리지 않고, 구독 중이면 광고 제거 칸을 숨긴다 */subscription?:SubscriptionSummary;onSubscribe?:()=>void;onManageSubscription?:()=>void;adFree:boolean;/** 스토어에서 받아 온 광고 제거 가격 글자. 못 받아 왔으면 없다 */price?:string;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
+  const subscribed=subscription!==undefined&&subscription.state!=='none';
   return <PixelPanel title={t('shop.purchaseSection')} contentStyle={{gap:0}}>
-    {adFree?<InfoRow label={t('shop.adFree')} value={t('shop.adFreeOn')}/>
+    {subscription&&<SubscriptionRow summary={subscription} onSubscribe={onSubscribe} onManage={onManageSubscription}/>}
+    {subscribed?null:adFree?<InfoRow label={t('shop.adFree')} value={t('shop.adFreeOn')}/>
       :<View style={{gap:12,paddingVertical:12}}>
         <PixelText style={{fontSize:18,lineHeight:24}}>{t('shop.adFree')}</PixelText>
         <PixelText>{t('shop.adFreeDescription')}</PixelText>
         <PixelButton label={price?t('shop.removeAdsForPrice',price):t('shop.removeAds')} loading={busy==='adFree'} disabled={busy==='restore'} onPress={onRemoveAds}/>
       </View>}
-    <View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>
+    {!subscribed&&<View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>}
     <View style={{gap:8,paddingVertical:12}}>
       <PixelButton label={t('shop.restore')} variant="secondary" loading={busy==='restore'} disabled={busy==='adFree'} onPress={onRestore}/>
-      <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{t('shop.restoreHint')}</PixelText>
+      <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{t(subscription?'sub.restoreHint':'shop.restoreHint')}</PixelText>
     </View>
   </PixelPanel>;
 }

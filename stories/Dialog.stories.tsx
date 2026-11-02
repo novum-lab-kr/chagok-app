@@ -93,6 +93,7 @@ const groups = (): [string, [string, Spec][]][] => [
     ['묶음 · 광고를 못 불러옴', stickerShopDialogs.adUnavailable],
     ['묶음 · 광고를 다 본 뒤', stickerShopDialogs.adTrialStarted('내일 밤 11:00')],
     ['판 · 체험이 끝난 뒤 붙이려 할 때', stickerShopDialogs.trialEnded('3일')],
+    ['판, 구독이 끝난 뒤 붙이려 할 때', stickerShopDialogs.subscriptionEnded],
     ['설정 · 광고 제거 사기 전', stickerShopDialogs.confirmAdFree],
     ['설정 · 광고 제거 실패', stickerShopDialogs.adFreeFailed],
     ['설정 · 구매 복원 찾음', stickerShopDialogs.restoreDone(['동물 묶음', '간식 묶음', '광고 제거'])],

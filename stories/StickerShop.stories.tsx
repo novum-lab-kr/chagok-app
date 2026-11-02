@@ -22,7 +22,7 @@ const afterBuy=[colorPack('basic','free'),colorPack('snack_normal','owned'),colo
 const animals=locked('objects_normal');
 /** 판 예시: 묶음 안에서 서로 다른 5개 */
 const sample=[0,4,7,2,9].map(i=>animals.stickers[i]);
-const pack=(adFree:boolean,days:number,busy?:'buy'|'ad',p:PackView=animals)=><PackScreen pack={p} sample={sample} adFree={adFree} reward={{days,goal:7}} onBuy={noop} onWatchAd={noop} onTrial={noop} onBack={noop} busy={busy}/>;
+const pack=(adFree:boolean,days:number,busy?:'buy'|'ad',p:PackView=animals)=><PackScreen pack={p} sample={sample} adFree={adFree} reward={{days,goal:7}} onBuy={noop} onWatchAd={noop} onTrial={noop} onSubscribe={noop} onBack={noop} busy={busy}/>;
 
 // 1. 기본 스티커
 export const Chooser:Story={name:'1 기본 스티커',render:()=><Stage><ChooserHost packs={owned}/></Stage>};
