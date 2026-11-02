@@ -112,6 +112,7 @@ export const ko = {
   'dialog.cameraUnavailableTitle': '카메라를 열 수 없어요',
   'dialog.cameraUnavailableDescription': '앨범에서 사진을 골라 주세요. 메모는 그대로 남길 수 있어요.',
   'dialog.saveFailedDescription': '잠시 후 다시 시도해주세요. 입력한 내용은 그대로 있어요.',
+  'splash.word': '차곡차곡',
   'app.name': '차곡차곡',
   'character.sprout': '새싹이',
   'slot.sproutSticker': '새싹이 스티커',
