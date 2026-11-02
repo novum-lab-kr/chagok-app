@@ -52,9 +52,3 @@ export type RecordNote = {
   memo: string | null;
   createdAt: number;
 };
-
-export type Slot = {
-  index: number;
-  label: string;
-  sticker: Sticker | null;
-};
