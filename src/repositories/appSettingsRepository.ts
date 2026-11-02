@@ -1,7 +1,7 @@
 import { getDb } from '../db/client';
 import { newId } from './ids';
 
-export type AppFlag = 'tutorialDone' | 'startDone' | 'reorderGuideDone' | 'firstStickerGuideDone';
+export type AppFlag = 'tutorialDone' | 'startDone' | 'reorderGuideDone' | 'firstStickerGuideDone' | 'firstStickerGuidePending';
 
 /** 정해둔 적 없으면 false. 첫 실행에서 튜토리얼이 뜨도록 한다. */
 export async function getFlag(key: AppFlag): Promise<boolean> {
