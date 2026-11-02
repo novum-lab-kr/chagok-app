@@ -68,7 +68,7 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
 }
 
 /** 기기의 모션 감소 설정. 켜져 있으면 반복 모션을 멈춘다 (PRD 6.1). */
-function useReducedMotion() {
+export function useReducedMotion() {
   const [reduced,setReduced] = useState(false);
   useEffect(() => {
     let alive = true;
