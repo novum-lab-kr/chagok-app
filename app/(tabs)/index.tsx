@@ -29,6 +29,7 @@ export default function GoalList() {
   const [tab, setTab] = useState<GoalListTab>(initialTab === 'completed' ? 'completed' : 'active');
   const [summaries, setSummaries] = useState<GoalSummary[] | null>(null);
   /** undefined = 아직 모름. 값을 읽기 전에 튜토리얼을 띄우지 않는다. */
+  const [reorderGuide, setReorderGuide] = useState(false);
   const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
   /** 첫 실행 시작 화면 (시안 1B). 로그아웃·계정 삭제 뒤에도 기기가 비워져 다시 나온다. */
   const [showStart, setShowStart] = useState<boolean | undefined>(undefined);
@@ -113,6 +114,8 @@ export default function GoalList() {
       await settleExpiredPeriods(now);
       const next = await listGoalSummaries(now);
       if (alive) setSummaries(next);
+      const guideDone = await getFlag('reorderGuideDone');
+      if (alive) setReorderGuide(!guideDone);
       const pack = await loadPackState();
       const dismissed = Number(await getSetting('trialCardDismissed') ?? 0);
       if (alive) setTrial(showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
@@ -162,6 +165,11 @@ export default function GoalList() {
   const { active, completed } = orderGoals(summaries.map((s) => s.goal));
   const cards = (goals: typeof active) => goals.map((g) => goalCard(byId.get(g.id)!, now));
 
+  const finishReorderGuide = () => {
+    setReorderGuide(false);
+    void setFlag('reorderGuideDone', true);
+  };
+
   // 옮긴 순서를 바로 보여 주고 저장한다. 위젯과 워치는 저장이 보내는 변경 신호로 다시 그린다.
   // 저장이 실패하면 저장된 순서로 다시 읽는다.
   const moveGoal = (from: number, to: number) => {
@@ -195,6 +203,7 @@ export default function GoalList() {
         onAdd={() => router.push('/goal/new')}
         onMove={moveGoal}
         onDragChange={dragChange}
+        onReorderGuideDone={reorderGuide ? finishReorderGuide : undefined}
         footer={<GoalsAdBanner />}
         notice={tab === 'active' && trial !== null
           ? <TrialReadyCard days={trial} onChoose={() => router.navigate('/stickers')} onClose={closeTrial} />

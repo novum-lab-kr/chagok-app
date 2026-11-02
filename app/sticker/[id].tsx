@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Linking, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { Keyboard, Linking, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { track } from '../../src/analytics';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSymbol, LoadingScreen, RecordScreen, PixelText, boardDialogs, useLoadRetry } from '../../src/design-system';
+import { ActionSymbol, GuideCard, LoadingScreen, PixelButton, RecordScreen, PixelText, boardDialogs, useLoadRetry } from '../../src/design-system';
 import type { PocketGoal, StickerId } from '../../src/design-system';
 import { getSticker, listStickers, removeSticker } from '../../src/repositories/stickerRepository';
 import { getGoal } from '../../src/repositories/goalRepository';
@@ -25,7 +25,7 @@ import type { Goal, Sticker } from '../../src/domain/types';
  * 읽기 전용 여부는 목표에서 읽는다. 링크로 열어도 맞도록 파라미터로 받지 않는다.
  */
 export default function StickerRecord() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const [goal, setGoal] = useState<Goal | null>(null);
   const [pocketGoal, setPocketGoal] = useState<PocketGoal | null>(null);
   const [sticker, setSticker] = useState<Sticker | null>(null);
@@ -38,6 +38,8 @@ export default function StickerRecord() {
   const [photoMissing, setPhotoMissing] = useState(false);
   const [hasStoredRecord, setHasStoredRecord] = useState(false);
   const [saveOnce] = useState(createSingleFlight);
+  /** 판에서 온 기록을 저장한 뒤의 안내 (2026-11-02) */
+  const [savedCard, setSavedCard] = useState(false);
   const { ask, confirm, dialog: confirmDialog } = useDialog();
   const { goBack, dialog } = useUnsavedBack(draftMemo !== memo || photoUri !== savedPhotoUri);
   const { failed, attempt, fail, retry } = useLoadRetry();
@@ -134,7 +136,16 @@ export default function StickerRecord() {
     if (savedPhotoUri && savedPhotoUri !== (newPhotoUri ?? photoUri)) {
       try { removeManagedRecordPhoto(savedPhotoUri); } catch { /* 저장된 기록은 유지한다 */ }
     }
-    goBackOrHome();
+    if (from !== 'board') { goBackOrHome(); return; }
+    // 판에서 왔으면 돌아갈 곳을 고르게 한다. 저장한 값으로 맞춰 나갈 때 저장 안 함 창이 뜨지 않게 한다.
+    const storedPhoto = newPhotoUri ?? photoUri;
+    setMemo(nextMemo);
+    setDraftMemo(nextMemo);
+    setPhotoUri(storedPhoto);
+    setSavedPhotoUri(storedPhoto);
+    setHasStoredRecord(Boolean(storedPhoto?.trim() || nextMemo.trim()));
+    Keyboard.dismiss();
+    setSavedCard(true);
   }
 
   /** 떼기. 기록이 있으면 확인한다 (PRD 4.5). 완성한 판도 뗀다 (2026-10-08). */
@@ -165,6 +176,16 @@ export default function StickerRecord() {
         onTakePhoto={() => { void takePhoto(); }}
         onRemovePhoto={() => { setPhotoUri(null); setPhotoMissing(false); }}
         onBack={goBack}
+        notice={savedCard ? (
+          <GuideCard
+            text={t('record.savedHint')}
+            onClose={() => setSavedCard(false)}
+            actions={<>
+              <PixelButton label={t('record.backToBoard')} variant="secondary" minHeight={40} onPress={goBackOrHome} />
+              <PixelButton label={t('record.toRecords')} minHeight={40} onPress={() => { router.dismissTo('/'); router.navigate('/records'); }} />
+            </>}
+          />
+        ) : undefined}
         onMemoChange={setDraftMemo}
         memoMaxLength={MEMO_MAX}
         memoError={memoError(draftMemo)}

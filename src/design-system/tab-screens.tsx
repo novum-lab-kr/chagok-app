@@ -275,7 +275,7 @@ export function StickerCollectionScreen({packs,mine,onChangeMine,openPacks,onTog
 // ── 흐름 중간 안내 ───────────────────────────────────────────────
 /** 카드 오른쪽 위 모서리의 ×. 글자 폭을 빼앗지 않게 겹쳐 둔다(누르는 곳은 44pt). */
 function CloseButton({onPress}:{onPress:()=>void}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:-4,right:-4,width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:4,right:4,width:44,height:44,alignItems:'center',justifyContent:'center'}}>
     <ActionSymbol name="close" size={14} color={c.buttonText}/>
   </Pressable>;
 }
@@ -283,10 +283,21 @@ function CloseButton({onPress}:{onPress:()=>void}) {
 export function TrialReadyCard({days,onChoose,onClose}:{/** 넘긴 문턱(7, 14, 44…) */days:number;onChoose:()=>void;onClose:()=>void}) {
   return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:10}}>
     <Mascot pose="sparkle" size={44}/>
-    <View style={{flex:1,gap:4,paddingRight:16}}>
+    <View style={{flex:1,gap:4,paddingRight:28}}>
       <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{t('nudge.stickerDays',days)}</PixelText>
       <PixelText variant="caption" style={caption}>{t('nudge.trialHint')}</PixelText>
       <View style={{alignSelf:'flex-start',marginTop:4}}><PixelButton label={t('nudge.choosePack')} minHeight={40} onPress={onChoose}/></View>
+    </View>
+    <CloseButton onPress={onClose}/>
+  </PixelFrame>;
+}
+/** 체험 카드, 완성 카드와 같은 틀의 한 번짜리 안내 (2026-11-02). 첫 스티커 안내, 기록 저장 뒤 안내에 쓴다. */
+export function GuideCard({text,actions,onClose}:{text:string;actions?:ReactNode;onClose:()=>void}) {
+  return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:10}}>
+    <Mascot pose="sparkle" size={44}/>
+    <View style={{flex:1,gap:8,paddingRight:28}}>
+      <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{text}</PixelText>
+      {actions&&<View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{actions}</View>}
     </View>
     <CloseButton onPress={onClose}/>
   </PixelFrame>;
@@ -295,7 +306,7 @@ export function TrialReadyCard({days,onChoose,onClose}:{/** 넘긴 문턱(7, 14,
 export function CompletionNudge({onStickers,onHome,onClose}:{onStickers:()=>void;onHome:()=>void;onClose:()=>void}) {
   return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:10}}>
     <Mascot pose="sparkle" size={44}/>
-    <View style={{flex:1,gap:8,paddingRight:16}}>
+    <View style={{flex:1,gap:8,paddingRight:28}}>
       <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{t('nudge.nextBoard')}</PixelText>
       <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
         <PixelButton label={t('nudge.seeStickers')} minHeight={40} onPress={onStickers}/>

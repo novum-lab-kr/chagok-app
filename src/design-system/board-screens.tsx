@@ -1,9 +1,10 @@
 import React,{memo,useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
-import {Animated,PanResponder,Pressable,View} from 'react-native';
+import {Animated,PanResponder,Pressable,View,type LayoutRectangle} from 'react-native';
+import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
-import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid} from './components';
+import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,useLayoutSize} from './components';
 import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard} from './calendar';
@@ -101,12 +102,14 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange}:{items:readonly Goa
     })}
   </View>;
 }
+/** 순서 안내가 비추는 높이. 목표가 많아도 위쪽 카드만 비춘다 */
+const REORDER_GUIDE_MAX_HEIGHT=240;
 /**
  * 목표 목록. 목표가 하나도 없으면 탭 아래 안내 상자만 둔다(2026-09-30 A안). 만드는 동작은 `+`다.
  * 완성한 판만 있고 진행 중인 목표가 없을 때의 문구는 시안이 없어 목록 안내와 같은 결로 두었다.
  * onMove를 주면 내 목표를 꾹 눌러 끌어 옮긴다(PRD 4.1, 2026-10-30). 완성한 판은 완성 시각 순이라 옮기지 않는다.
  */
-export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettings,addTargetRef,footer,notice,onMove,onDragChange}:{/** 내 목표를 옮겼다. 보이는 순서의 자리 번호(0부터) */onMove?:(from:number,to:number)=>void;/** 끌기 시작과 끝. 앱은 진동과 탭 넘김 멈춤에 쓴다 */onDragChange?:(dragging:boolean)=>void;/** 스크롤 밖 맨 아래. 광고 배너 자리(광고 제거를 샀으면 비움, PRD 4.12) */footer?:ReactNode;/** 목록 맨 위 안내(체험 열림 카드, 2026-10-12) */notice?:ReactNode;tab:GoalListTab;onTab:(tab:GoalListTab)=>void;active:readonly GoalCardItem[];completed:readonly GoalCardItem[];onOpen:(id:string)=>void;onAdd:()=>void;onSettings?:()=>void;addTargetRef?:React.Ref<View>}) {
+export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettings,addTargetRef,footer,notice,onMove,onDragChange,onReorderGuideDone}:{/** 주면 내 목표에 순서 바꾸기 안내를 띄운다(2026-11-02 시안 B) */onReorderGuideDone?:()=>void;/** 내 목표를 옮겼다. 보이는 순서의 자리 번호(0부터) */onMove?:(from:number,to:number)=>void;/** 끌기 시작과 끝. 앱은 진동과 탭 넘김 멈춤에 쓴다 */onDragChange?:(dragging:boolean)=>void;/** 스크롤 밖 맨 아래. 광고 배너 자리(광고 제거를 샀으면 비움, PRD 4.12) */footer?:ReactNode;/** 목록 맨 위 안내(체험 열림 카드, 2026-10-12) */notice?:ReactNode;tab:GoalListTab;onTab:(tab:GoalListTab)=>void;active:readonly GoalCardItem[];completed:readonly GoalCardItem[];onOpen:(id:string)=>void;onAdd:()=>void;onSettings?:()=>void;addTargetRef?:React.Ref<View>}) {
   const shown=tab==='active'?active:completed;
   const empty=tab==='completed'
     ?<EmptyState title={t('empty.noCompletedTitle')} description={t('empty.noCompletedDescription')}/>
@@ -118,16 +121,27 @@ export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettin
   const list=tab==='active'&&onMove
     ?<ReorderableGoals items={shown} onOpen={onOpen} onMove={onMove} onDragChange={dragChange}/>
     :<View style={{gap:GOAL_GAP}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>;
+  const {ref:root,size,onLayout}=useLayoutSize();
+  const listRef=useRef<View>(null);
+  const [guideTarget,setGuideTarget]=useState<LayoutRectangle>();
+  const guideOn=!!onReorderGuideDone&&tab==='active'&&shown.length>=2;
+  useEffect(()=>{
+    if(!guideOn) return;
+    const id=setTimeout(()=>listRef.current?.measureInWindow((x,y,width,height)=>root.current?.measureInWindow((rx,ry)=>setGuideTarget({x:x-rx,y:y-ry,width,height:Math.min(height,REORDER_GUIDE_MAX_HEIGHT)}))),50);
+    return ()=>clearTimeout(id);
+  },[guideOn,shown.length,root]);
   // 앱 헤더와 탭·+ 줄을 함께 고정한다. 목표가 많아도 새 목표와 탭 전환에 바로 닿는다 (2026-09-30).
-  return <View style={{flex:1}}>
+  return <View ref={root} onLayout={onLayout} style={{flex:1}}>
     <RetroScreen style={{gap:16}} scrollEnabled={!dragging} header={<View style={{gap:16}}>
     <AppHeader onSettings={onSettings}/>
     <GoalListHeader tab={tab} onTab={onTab} onAdd={onAdd} addTargetRef={addTargetRef} counts={{active:active.length,completed:completed.length}}/>
   </View>}>
     {notice}
-    {shown.length?list:empty}
+    <View ref={listRef} collapsable={false}>{shown.length?list:empty}</View>
     </RetroScreen>
     {footer}
+    {guideOn&&guideTarget&&size.width>0&&<TutorialSpotlight step={1} target={guideTarget} width={size.width} height={size.height} onNext={onReorderGuideDone}
+      content={{step:'',title:t('guide.reorderTitle'),description:t('guide.reorder'),primaryLabel:t('guide.gotIt'),secondaryLabel:'',single:true}}/>}
   </View>;
 }
 
@@ -150,7 +164,7 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
   // 칸이 적으면 판은 내용 높이 그대로이고, 넘치면 남은 높이까지 줄어든다.
   return <View style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
     <View testID="board-panel" style={{opacity:visible?1:0,flexShrink:1}}>
-    <PixelPanel style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
+    <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>

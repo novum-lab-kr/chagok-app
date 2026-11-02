@@ -7,9 +7,10 @@ import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
-import {pixelOutline} from './geometry';
+import {pixelOutline,progressRatio} from './geometry';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 import {t} from '../i18n';
+import type {MascotBlocks} from './mascot';
 
 export function ScreenHeader({title,onBack,action}:{title:string;onBack?:()=>void;action?:ReactNode}) {
   return <View style={{flexDirection:'row',alignItems:'center',minHeight:48}}>
@@ -320,11 +321,20 @@ export function GoalSummaryCard({name,sticker,kind,status,percent,onPress,onLong
     </PixelFrame>}
   </Pressable>;
 }
-/** 판 상세 상단 한 줄: `n / nn [여백] m% 채웠어요`. 완성하면 오른쪽이 완성 스티커로 바뀐다. */
+/** 진행 표시의 차곡이 머리 위 블록: 25%마다 하나씩 (2026-11-02 시안 C). */
+export function progressBlockPose(ratio:number):MascotBlocks {
+  return ratio>=0.75?'b3':ratio>=0.5?'b2':ratio>=0.25?'b1':'b0';
+}
+const PROGRESS_MASCOT=40;
+/** 판 상세 상단 한 줄: 진행 막대와 그 위 차곡이, 오른쪽 `m%`. 완성하면 오른쪽이 완성 스티커로 바뀐다. 화면 읽기에는 칸 수까지 읽어 준다. */
 export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:StickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
-  return <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:48}}>
-    <PixelText variant="number">{value} / {total}</PixelText>
-    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{t('board.percentAchieved',percentLabel)}</PixelText>}
+  const ratio=completed?1:progressRatio(value,total);
+  return <View accessible accessibilityLabel={t('board.progressA11y',value,total,percentLabel)} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:48}}>
+    <View style={{flex:1,height:PROGRESS_MASCOT,justifyContent:'center'}}>
+      <ProgressBar value={completed?1:value} total={completed?1:total}/>
+      <View pointerEvents="none" style={{position:'absolute',top:0,left:`${ratio*100}%`,marginLeft:-ratio*PROGRESS_MASCOT}}><Mascot pose={progressBlockPose(ratio)} size={PROGRESS_MASCOT}/></View>
+    </View>
+    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel}</PixelText>}
   </View>;
 }
 /** 목록이 비었을 때의 안내 상자. */
