@@ -120,6 +120,7 @@ export const en: Messages = {
   'dialog.cameraUnavailableTitle': "Can't open the camera",
   'dialog.cameraUnavailableDescription': 'Pick a photo from your album instead. You can still write a note.',
   'dialog.saveFailedDescription': 'Give it another try in a moment. What you entered is still here.',
+  'splash.word': 'Chagok Chagok',
   'app.name': 'Chagok',
   'character.sprout': 'Sprout',
   'slot.sproutSticker': 'Sprout sticker',

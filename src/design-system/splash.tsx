@@ -74,7 +74,7 @@ function Scene({f}:{f:SplashFrame}) {
     {f.falling!==undefined&&f.dy!==undefined?<Layer name={LAYERS[f.falling]} x={f.catchX??0} y={-(f.dy)}/>:null}
   </Svg>;
 }
-/** 기기 언어의 앱 이름(차곡차곡, Chagok)을 한 자씩 친다. */
+/** 기기 언어의 스플래시 글자(차곡차곡, Chagok Chagok)를 한 자씩 친다. */
 function Typed({word,n,cursor}:{word:string;n:number;cursor:boolean}) {
   const typed=word.slice(0,n),rest=word.slice(n);
   const text={fontSize:28,lineHeight:32};
@@ -95,7 +95,8 @@ function Typed({word,n,cursor}:{word:string;n:number;cursor:boolean}) {
  * - at: 그 시점(ms)에서 멈춘 장면만 그린다(검토용).
  */
 export function SplashAnimation({onDone,reduceMotion,at}:{onDone?:()=>void;reduceMotion?:boolean;at?:number}) {
-  const word=t('app.name');
+  // 영어는 「Chagok Chagok」. 글자 수가 늘어도 전체 길이는 같다 (2026-11-02 시안에서 고름)
+  const word=t('splash.word');
   const tl=useMemo(()=>splashTimeline(S2B,word.length),[word]);
   const [deviceReduced,setDeviceReduced]=useState<boolean|null>(null);
   const reduced=reduceMotion??deviceReduced;
