@@ -8,7 +8,7 @@ import {SUPPORT_EMAIL} from '../support/contactMail';
 afterEach(cleanup);
 
 const month:SubscriptionPlanView={price:'4,900원',range:'2026.11.02 ~ 2026.12.01',next:'2026년 12월 2일'};
-const year:SubscriptionPlanView={price:'24,900원',perMonth:'2,075원',savePercent:57,saveAmount:'33,900원',range:'2026.11.02 ~ 2027.11.01',next:'2027년 11월 2일'};
+const year:SubscriptionPlanView={price:'24,900원',savePercent:57,saveAmount:'33,900원',range:'2026.11.02 ~ 2027.11.01',next:'2027년 11월 2일'};
 const open=(props:Partial<React.ComponentProps<typeof SubscriptionScreen>>={})=>{
   const handlers={onSubscribe:vi.fn(),onRestore:vi.fn(),onTerms:vi.fn(),onPrivacy:vi.fn(),onBack:vi.fn()};
   render(<SubscriptionScreen month={month} year={year} {...handlers} {...props}/>);
@@ -18,10 +18,11 @@ const open=(props:Partial<React.ComponentProps<typeof SubscriptionScreen>>={})=>
 describe('구독 화면',()=>{
   it('두 요금과 결제 전에 알릴 것을 모두 보이고, 고른 요금으로 구독한다',()=>{
     const h=open();
-    for (const text of ['4,900원','24,900원','57% 저렴','월 2,075원','월 구독보다 1년에 33,900원 저렴','(2026.11.02 ~ 2026.12.01)','2027년 11월 2일']) expect(screen.getByText(text)).toBeTruthy();
+    for (const text of ['4,900원','24,900원','57% 저렴','월 구독보다 1년에 33,900원 저렴','(2026.11.02 ~ 2026.12.01)','2027년 11월 2일']) expect(screen.getByText(text)).toBeTruthy();
     expect(screen.getByText(t('legal.subscriptionAutoRenew','apple'))).toBeTruthy();
     expect(screen.getByText(t('legal.subscriptionNoRefund','apple',SUPPORT_EMAIL))).toBeTruthy();
     expect(screen.getByText(t('sub.keepPurchases'))).toBeTruthy();
+    expect(screen.queryByText(/2,075/)).toBeNull();
     fireEvent.click(screen.getByText('연 구독하기'));
     expect(h.onSubscribe).toHaveBeenCalledWith('year');
     fireEvent.click(screen.getByText('구매 복원'));

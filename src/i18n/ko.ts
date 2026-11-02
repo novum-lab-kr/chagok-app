@@ -422,7 +422,6 @@ export const ko = {
   'sub.subscribeMonthly': '월 구독하기',
   'sub.subscribeYearly': '연 구독하기',
   'sub.save': (percent: number) => `${percent}% 저렴`,
-  'sub.perMonth': (price: string) => `월 ${price}`,
   'sub.saveAmount': (amount: string) => `월 구독보다 1년에 ${amount} 저렴`,
   'sub.period': '기간',
   'sub.oneMonth': '1개월',

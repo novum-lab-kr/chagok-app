@@ -439,7 +439,6 @@ export const en: Messages = {
   'sub.subscribeMonthly': 'Subscribe monthly',
   'sub.subscribeYearly': 'Subscribe yearly',
   'sub.save': (percent: number) => `Save ${percent}%`,
-  'sub.perMonth': (price: string) => `${price} a month`,
   'sub.saveAmount': (amount: string) => `${amount} less a year than monthly`,
   'sub.period': 'Period',
   'sub.oneMonth': '1 month',

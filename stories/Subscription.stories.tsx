@@ -10,9 +10,9 @@ const meta={title:'Screens/Subscription',parameters:{layout:'fullscreen',edgeToE
 export default meta;
 type Story=StoryObj<typeof meta>;
 
-/** 예시: 월 4,900원, 연 24,900원(월 2,075원, 57% 저렴, 1년에 33,900원 저렴) */
+/** 예시: 월 4,900원, 연 24,900원(57% 저렴, 1년에 33,900원 저렴) */
 const month:SubscriptionPlanView={price:'4,900원',range:'2026.11.02 ~ 2026.12.01',next:'2026년 12월 2일'};
-const year:SubscriptionPlanView={price:'24,900원',perMonth:'2,075원',savePercent:57,saveAmount:'33,900원',range:'2026.11.02 ~ 2027.11.01',next:'2027년 11월 2일'};
+const year:SubscriptionPlanView={price:'24,900원',savePercent:57,saveAmount:'33,900원',range:'2026.11.02 ~ 2027.11.01',next:'2027년 11월 2일'};
 const screen=(props:Partial<React.ComponentProps<typeof SubscriptionScreen>>={})=><Stage auto><SubscriptionScreen month={month} year={year} onSubscribe={noop} onRestore={noop} onTerms={noop} onPrivacy={noop} onBack={noop} {...props}/></Stage>;
 
 // 1. 구독 화면

@@ -18,8 +18,8 @@ const refundStore=():RefundStore=>Platform.OS==='android'?'google':'apple';
 export type SubscriptionPlanView={
   /** 실제 결제 금액. 화면에서 가장 크게 보인다(Apple 구독 안내) */
   price:string;
-  /** 연 구독만: 한 달로 나눈 금액, 할인율, 1년에 아끼는 금액 */
-  perMonth?:string;savePercent?:number;saveAmount?:string;
+  /** 연 구독만: 할인율과 1년에 아끼는 금액. 한 달로 나눈 금액은 보이지 않는다 (2026-11-02 사용자) */
+  savePercent?:number;saveAmount?:string;
   /** 이번 기간(예: '2026.11.02 ~ 2026.12.01')과 다음 결제일 */
   range:string;next:string;
 };
@@ -41,7 +41,6 @@ export function SubscriptionPlanCard({plan,view,busy,disabled,onPress}:{plan:Sub
       {year&&view.savePercent?<PixelBadge label={t('sub.save',view.savePercent)} tone="primary"/>:null}
     </View>
     <PixelText style={{fontSize:32,lineHeight:40}}>{view.price}</PixelText>
-    {year&&view.perMonth?<PixelText style={small}>{t('sub.perMonth',view.perMonth)}</PixelText>:null}
     {year&&view.saveAmount?<PixelText style={small}>{t('sub.saveAmount',view.saveAmount)}</PixelText>:null}
     <View style={{gap:4}}>
       <Row label={t('sub.period')} value={t(year?'sub.oneYear':'sub.oneMonth')} sub={`(${view.range})`}/>
