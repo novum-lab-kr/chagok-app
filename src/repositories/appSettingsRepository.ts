@@ -43,6 +43,8 @@ export type SettingKey =
   | 'dayTrialsClaimed'
   /** '1'이면 광고 제거를 샀다. 하루 체험 버튼이 없다 */
   | 'adFree'
+  /** 마지막으로 확인한 구독 상태 JSON {plan, expiresAt, willRenew, verifiedAt}. 없으면 구독한 적 없음 (src/domain/subscription.ts) */
+  | 'subscription'
   /** 체험 열림 카드를 ×로 닫을 때 넘긴 문턱(7, 14…). 다음 문턱까지 카드를 숨긴다 (2026-10-12) */
   | 'trialCardDismissed'
   /** 워치 성장 수(블록 수). 지금 붙어 있는 스티커 수보다 작아지지 않는다. 복원하면 지운다 (PRD 4.14) */

@@ -32,8 +32,8 @@ export type AnalyticsEvents = {
   tutorial_step: { step: number };
   tutorial_skip: { step: number };
   tutorial_finish: undefined;
-  purchase_start: { product: 'pack' | 'ad_free' };
-  purchase_result: { product: 'pack' | 'ad_free'; result: PurchaseResult };
+  purchase_start: { product: 'pack' | 'ad_free' | 'subscription' };
+  purchase_result: { product: 'pack' | 'ad_free' | 'subscription'; result: PurchaseResult };
   restore_result: { result: 'success' | 'fail' };
   ad_rewarded_start: undefined;
   ad_rewarded_result: { result: 'earned' | 'closed' | 'unavailable' };

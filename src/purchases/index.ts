@@ -2,19 +2,28 @@ import { track } from '../analytics';
 import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/catalog';
 import { t } from '../i18n';
 import { packName } from '../i18n/stickerNames';
-import { grantPurchase, setAdFree, startAdTrial } from '../repositories/packRepository';
+import { getSubscription, grantPurchase, saveSubscription, setAdFree, startAdTrial } from '../repositories/packRepository';
+import { isSubscribed, nextStoredSubscription, type SubscriptionPlan } from '../domain/subscription';
+import { notifyLocalChange } from '../sync/changes';
 import { devStore } from './devStore';
 import { priceLabel, type PriceLabels, type ProductKey, type StorePrice } from './price';
 
 /** 결제·광고 (PRD 4.12). 결제 팝업은 Apple·Google이 그린다. */
 /** pending: 보호자 승인(구입 승인 요청·가족 결제)을 기다린다. 승인되면 [구매 복원]으로 연다. */
-export type BuyResult = { ok: true } | { ok: false; reason: 'cancelled' | 'failed' | 'pending' };
+export type BuyResult = { ok: true; subscription?: SubscriptionStatus } | { ok: false; reason: 'cancelled' | 'failed' | 'pending' };
 export type AdResult = { ok: true } | { ok: false; reason: 'closed' | 'unavailable' };
+/** 스토어가 알려 준 구독 상태(RevenueCat 권한 all_access). expiresAt은 결제 유예 중이면 유예가 끝나는 시각 */
+export type SubscriptionStatus = { active: true; plan: SubscriptionPlan; expiresAt: number; willRenew: boolean } | { active: false };
 export interface Store {
   buyPack(packId: ColorStickerPackId): Promise<BuyResult>;
   buyAdFree(): Promise<BuyResult>;
-  /** 이 스토어 계정으로 산 묶음과 광고 제거 */
-  restore(): Promise<{ packs: ColorStickerPackId[]; adFree: boolean }>;
+  /** 이 스토어 계정으로 산 묶음과 광고 제거, 그리고 구독 상태(확인하지 못했으면 null) */
+  restore(): Promise<{ packs: ColorStickerPackId[]; adFree: boolean; subscription: SubscriptionStatus | null }>;
+  subscribe(plan: SubscriptionPlan): Promise<BuyResult>;
+  /** 지금 구독 상태. 확인하지 못하면(오프라인 등) null */
+  subscriptionStatus(): Promise<SubscriptionStatus | null>;
+  /** 스토어 구독 관리 화면 주소. 모르면 null — 부르는 쪽이 스토어 기본 주소를 연다 */
+  manageSubscriptionUrl(): Promise<string | null>;
   /** 스토어에 정한 가격. 못 받아 온 상품은 빠진다 */
   prices(): Promise<Partial<Record<ProductKey, StorePrice>>>;
   /** 보상형 광고. 끝까지 봤을 때만 ok */
@@ -31,8 +40,19 @@ let purchases: PurchaseStore = devStore;
 let ads: AdStore = devStore;
 export const store = (): Store => override ?? { ...purchases, showRewardedAd: ads.showRewardedAd };
 export function setActiveStore(s: PurchaseStore): void { purchases = s; }
+/** 결제 키 없이 개발용 대역으로 도는가. 설정 개발 칸의 시험 구독 버튼이 본다 */
+export const usingDevStore = (): boolean => override === null && purchases === devStore;
 export function setAdStore(s: AdStore): void { ads = s; }
 export function setStoreForTest(s: Store | null): void { override = s; }
+
+/** 결제 계정 전환(RevenueCat logIn/logOut). 결제 모듈이 있는 빌드에서 revenueCat.ts가 넣는다 — 화면이 SDK를 직접 부르지 않게 */
+let linkAccount: (userId: string | null) => Promise<void> = async () => {};
+export function setPurchaseAccountLinker(fn: (userId: string | null) => Promise<void>): void { linkAccount = fn; }
+/**
+ * 로그아웃과 계정 삭제에서 기기를 비우기 전에 부른다. 결제 계정을 익명으로 돌려,
+ * 비운 기기에 앞 계정의 구독이 다시 적히지 않게 한다 (보안 검토 2026-11-02 L1).
+ */
+export function signOutPurchases(): Promise<void> { return linkAccount(null); }
 
 /**
  * 결제는 한 번에 하나 (2026-10-13). 결제 창이 떠 있는 동안 화면을 나갔다 와서 같은 상품을 다시 누르면 그 결제를 같이 기다리고,
@@ -82,7 +102,57 @@ export function buyAdFree(): Promise<BuyResult> {
   });
 }
 
-/** 산 묶음 전부와 광고 제거를 되살린다. 결과 문구용 이름: 묶음 순서대로 「○○ 묶음」, 끝에 「광고 제거」. */
+/**
+ * 구독 상태를 스토어에 물어 기기에 맞춘다. 앱을 켤 때, 앞으로 올 때, 구독 화면과 앱 설정을 열 때 (구독 설계 4.3).
+ * 확인하지 못하면 저장한 값으로 판단한다(끝난 뒤 3일 더, src/domain/subscription.ts). 바뀌면 위젯과 워치를 다시 맞춘다.
+ */
+export async function refreshSubscription(now = Date.now()): Promise<boolean> {
+  let status: SubscriptionStatus | null;
+  try {
+    status = await store().subscriptionStatus();
+  } catch {
+    status = null;
+  }
+  return applySubscription(status, now);
+}
+
+async function applySubscription(status: SubscriptionStatus | null, now: number): Promise<boolean> {
+  const prev = await getSubscription();
+  const next = nextStoredSubscription(prev, status, now);
+  if (JSON.stringify(next) !== JSON.stringify(prev)) {
+    await saveSubscription(next);
+    notifyLocalChange();
+  }
+  return isSubscribed(next, now);
+}
+
+/** 월 또는 연 구독. 결제 전 고지는 구독 화면에 모두 있어 확인 창을 띄우지 않는다 (구독 설계 D4). */
+export function subscribe(plan: SubscriptionPlan, now = Date.now()): Promise<BuyResult> {
+  return oneAtATime(`sub-${plan}`, async () => {
+    track('purchase_start', { product: 'subscription' });
+    const r = await store().subscribe(plan);
+    // 결제 결과에 든 상태를 바로 쓴다. 없을 때만 다시 묻는다 — 다시 묻다 실패해 잠긴 채 「구독했어요」가 뜨지 않게
+    if (r.ok) await (r.subscription ? applySubscription(r.subscription, now) : refreshSubscription(now));
+    track('purchase_result', { product: 'subscription', result: purchaseResult(r) });
+    return r;
+  });
+}
+
+export async function manageSubscriptionUrl(): Promise<string | null> {
+  try {
+    return await store().manageSubscriptionUrl();
+  } catch {
+    return null;
+  }
+}
+
+/** 구독 화면에 쓸 월과 연 가격(금액과 통화). 못 받아 온 것은 빠진다 */
+export async function loadSubscriptionPrices(): Promise<Partial<Record<SubscriptionPlan, StorePrice>>> {
+  const got = await store().prices();
+  return { ...(got.month ? { month: got.month } : {}), ...(got.year ? { year: got.year } : {}) };
+}
+
+/** 산 묶음 전부와 광고 제거, 구독을 되살린다. 결과 문구용 이름: 「구독」, 묶음 순서대로 「○○ 묶음」, 끝에 「광고 제거」. */
 export async function restorePurchases(now = Date.now()): Promise<string[]> {
   let restored: Awaited<ReturnType<Store['restore']>>;
   try {
@@ -95,7 +165,9 @@ export async function restorePurchases(now = Date.now()): Promise<string[]> {
   const { packs, adFree } = restored;
   for (const id of packs) await grantPurchase(id, now);
   if (adFree) await setAdFree(true);
+  const subscribed = await applySubscription(restored.subscription, now);
   return [
+    ...(subscribed ? [t('sub.title')] : []),
     ...colorStickerPacks.filter((p) => packs.includes(p.id)).map((p) => t('shop.packTitle', packName(p.id))),
     ...(adFree ? [t('shop.adFree')] : []),
   ];
