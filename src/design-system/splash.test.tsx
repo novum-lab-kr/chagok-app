@@ -49,3 +49,9 @@ describe('스플래시 화면',()=>{
     expect(screen.queryByText('차곡차곡')).toBeNull();
   });
 });
+
+describe('스플래시 앱 이름은 기기 언어를 따른다 (2026-11-02)',()=>{
+  it('글자 수가 달라도 치는 시간 합은 같다',()=>{
+    expect(splashTimeline(undefined,6).total).toBeCloseTo(splashTimeline().total);
+  });
+});

@@ -3,6 +3,7 @@ import {AccessibilityInfo,View} from 'react-native';
 import Svg,{G,Path} from 'react-native-svg';
 import source from '../../docs/design/character/character-data.json';
 import {PixelText} from './components';
+import {t} from '../i18n';
 import {mascotPaths} from './mascot';
 import {retro} from './tokens';
 
@@ -18,7 +19,9 @@ const S2B={fillHold:200,fillStep:28,wait:120,step:28,move:40,squash:60,gap:60,ty
 /** 몸이 있는 줄(위 10 ~ 아래 22). 아래 줄부터 색이 찬다. */
 const BODY_TOP=10,BODY_BOTTOM=22;
 
-export function splashTimeline(o=S2B):SplashTimeline {
+/** letters: 앱 이름 글자 수. 언어마다 달라도 글자 치는 시간 합은 같게 둔다(한국어 4자 기준, 2026-11-02). */
+export function splashTimeline(o=S2B,letters=4):SplashTimeline {
+  const type=o.type*4/letters;
   const events:SplashFrame[]=[];let t=0,dx=0;
   events.push({t,fill:24,landed:0});t+=o.fillHold;
   for (let y=BODY_BOTTOM;y>=BODY_TOP;y--) {events.push({t,fill:y,landed:0});t+=o.fillStep;}
@@ -33,8 +36,8 @@ export function splashTimeline(o=S2B):SplashTimeline {
     events.push({t,landed:i+1,squash:true,dx});t+=o.squash;
     events.push({t,landed:i+1,dx});t+=o.gap;
   }
-  for (let n=1;n<=4;n++) {events.push({t,landed:3,text:n,cursor:true,dx});t+=o.type;}
-  for (let k=0;k<4;k++) {events.push({t,landed:3,text:4,cursor:k%2===1,dx});t+=o.blink;}
+  for (let n=1;n<=letters;n++) {events.push({t,landed:3,text:n,cursor:true,dx});t+=type;}
+  for (let k=0;k<4;k++) {events.push({t,landed:3,text:letters,cursor:k%2===1,dx});t+=o.blink;}
   return {events,total:t};
 }
 /** t(ms) 시점의 장면. 마지막 이후는 마지막 장면. */
@@ -71,9 +74,9 @@ function Scene({f}:{f:SplashFrame}) {
     {f.falling!==undefined&&f.dy!==undefined?<Layer name={LAYERS[f.falling]} x={f.catchX??0} y={-(f.dy)}/>:null}
   </Svg>;
 }
-const WORD='차곡차곡';
-function Typed({n,cursor}:{n:number;cursor:boolean}) {
-  const typed=WORD.slice(0,n),rest=WORD.slice(n);
+/** 기기 언어의 앱 이름(차곡차곡, Chagok)을 한 자씩 친다. */
+function Typed({word,n,cursor}:{word:string;n:number;cursor:boolean}) {
+  const typed=word.slice(0,n),rest=word.slice(n);
   const text={fontSize:28,lineHeight:32};
   // 왼쪽에 커서 폭만큼 비워 두면 "차곡차곡" 네 글자가 정확히 가운데에 온다(커서는 오른쪽 여백에 들어간다).
   return <View style={{flexDirection:'row',alignItems:'center'}}>
@@ -92,7 +95,8 @@ function Typed({n,cursor}:{n:number;cursor:boolean}) {
  * - at: 그 시점(ms)에서 멈춘 장면만 그린다(검토용).
  */
 export function SplashAnimation({onDone,reduceMotion,at}:{onDone?:()=>void;reduceMotion?:boolean;at?:number}) {
-  const tl=useMemo(()=>splashTimeline(),[]);
+  const word=t('app.name');
+  const tl=useMemo(()=>splashTimeline(S2B,word.length),[word]);
   const [deviceReduced,setDeviceReduced]=useState<boolean|null>(null);
   const reduced=reduceMotion??deviceReduced;
   const [index,setIndex]=useState(0);
@@ -111,12 +115,12 @@ export function SplashAnimation({onDone,reduceMotion,at}:{onDone?:()=>void;reduc
     return ()=>timers.forEach(clearTimeout);
   },[at,reduced,tl,onDone]);
   const frame=at!==undefined?splashFrameAt(tl,at):reduced?tl.events[tl.events.length-1]:tl.events[index];
-  return <View accessible accessibilityLabel="차곡차곡" style={{flex:1,backgroundColor:retro.color.screen,alignItems:'center',justifyContent:'center'}}>
+  return <View accessible accessibilityLabel={word} style={{flex:1,backgroundColor:retro.color.screen,alignItems:'center',justifyContent:'center'}}>
     {/* Svg 위쪽 12칸은 떨어지는 판 자리다. 그림 24칸의 가운데(Svg 위에서 24칸)가 화면 정가운데에 오게 옮긴다. */}
     <View style={{alignItems:'center',transform:[{translateY:-(24*CELL-(36*CELL+TEXT_H)/2)}]}}>
       <Scene f={frame}/>
       <View style={{height:TEXT_H,justifyContent:'center'}}>
-        {frame.text?<Typed n={frame.text} cursor={!!frame.cursor}/>:null}
+        {frame.text?<Typed word={word} n={frame.text} cursor={!!frame.cursor}/>:null}
       </View>
     </View>
   </View>;
