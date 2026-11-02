@@ -38,6 +38,17 @@ npm run lint
 2. push가 끝나면 묻지 않고 정리한다: 그 worktree에서 내가 띄운 Metro를 끄고, `.env.local` 링크를 지우고, `git worktree remove <폴더>`, `git branch -d <브랜치>`.
 3. 내가 띄운 다른 서버(시안 미리보기 등)도 끈다.
 
+## PR로 합칠 때 (출시 브랜치 `release/*` 포함)
+
+1. PR을 만들거나 push하는 것은 사용자가 요청할 때만 한다.
+2. PR이 합쳐진 것을 확인하면(`gh pr view <번호> --json state,baseRefName`) 위 push 뒤 정리와 똑같이 그 worktree와 로컬 브랜치를 지운다. base가 main이 아니어도 같다.
+3. 확인을 기다리느라 커밋하지 못한 변경이 남으면 지우지 말고 HANDOFF 「커밋 안 한 작업」에 적는다.
+
+## Gotchas
+
+- **`git add`에 이미 지운 파일 경로를 섞으면 add 전체가 멈춘다**(`fatal: pathspec ... did not match`). 그 상태로 `git commit`하면 미리 staged된 것만 들어간다. 지운 파일은 `git rm`으로 따로 올리고, 커밋 뒤 `git status --short`가 비었는지 본다(2026-11-02).
+- 새 worktree에는 git 밖 파일이 없어 확인 명령이 실패할 수 있다. AGENTS.md 「작업마다 새 worktree」 줄의 세 파일을 먼저 챙긴다.
+
 ## 새 worktree를 만든 직후
 
 [AGENTS.md](../../../AGENTS.md) 「새 worktree를 만들면 먼저 정리한다」 순서를 따른다. 지울 목록을 먼저 보여 주고 OK를 받은 뒤 `chore(cleanup): ...` 커밋 하나로 남긴다. 반영된 시안의 아티팩트는 지울 목록을 사용자에게 준다(에이전트는 지울 수 없다).
