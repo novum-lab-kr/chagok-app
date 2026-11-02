@@ -15,6 +15,8 @@
 - **처음 크기를 `onLayout`에만 맡기지 않는다.** 새 아키텍처(Fabric)는 뷰가 화면에 붙기 전에 처리한 layout 이벤트를 버리고 같은 크기로는 다시 보내지 않는다. 기기가 바쁠 때(빌드 직후 첫 실행) 테두리·판이 크기 0으로 남았다. 크기를 받아야 그리는 뷰는 `useLayoutSize`(`components.tsx`)를 쓴다. 확인은 CPU 부하(`yes > /dev/null`를 코어 수만큼)를 건 채 콜드 스타트를 여러 번.
 - **달력 키는 로컬 시간으로 만든다.** `toISOString()`은 자정 근처에서 하루를 민다. 칸 번호는 1부터, `slotIndex`는 0부터다.
 - **SQLite는 WAL + `busy_timeout` 5초다** (`src/db/expoDriver.ts`). expo-sqlite의 배타 트랜잭션은 새 연결을 연다. 저널이 delete이고 대기가 0이면 위젯 동기화 읽기와 판 저장이 겹칠 때 「database is locked」로 판이 「···」에서 멈췄다. 트랜잭션 연결도 첫 쿼리 전에 `busy_timeout`을 건다.
+- **로그아웃과 계정 삭제는 결제 계정을 익명으로 돌린 뒤 기기를 비운다**(보안 검토 2026-11-02 L1). 반대로 하면 비운 기기에 앞 계정의 구독이 다시 적힌다. 이 순서가 `app/(tabs)/settings.tsx`와 `app/account/delete.tsx` 두 곳에 있으니 둘 다 고친다(리팩터링 계획 1단계에서 한곳으로 모은다).
+- **위젯과 워치는 같은 계산을 따로 한다.** `src/widgets`와 `src/watch`에 앱 상태 감지, 요청 중복 제거, 달력 칸, 잠김 계산이 두 벌 있다. 한쪽만 고치면 위젯과 워치가 다르게 보인다.
 - **위젯 props에 `null`을 넣지 않는다.** UserDefaults가 못 담아 `updateTimeline`이 던진다(`syncCore`의 `withoutNulls`가 막는다).
 - RN Web의 `AccessibilityInfo.addEventListener`는 구독 객체를 돌려주지 않는다. 정리할 때 `?.remove?.()`로 부른다.
 - 복원 뒤 아직 받지 못한 사진(기기 경로 없음, 서버 경로만 있음)에 photo 항목이 생기면 서버의 하나뿐인 사본이 지워진다. 지금은 그런 경로가 없다. 사진 지우기·바꾸기를 "사진 유실" 화면에 붙일 때 `src/sync/push.ts`의 `pushPhoto` 주석을 다시 본다.
@@ -22,6 +24,7 @@
 
 ## 의존성과 빌드
 
+- **새 worktree에는 git 밖 파일이 없다.** `src/design-system/apple-siwa-logo.generated.ts`가 없으면 타입 검사(TS2307), 린트(import/no-unresolved), 컴포넌트 테스트 3개가 실패한다. 다른 체크아웃에서 복사하거나 [개발 설정](DEV-SETUP.md) 「Apple 로그인 버튼 로고」대로 만든다. `.env.local`과 `node_modules`도 링크한다.
 - **`package.json`의 `overrides: { "react-dom": "19.2.3" }`를 지우지 않는다.** 지우면 모든 설치가 ERESOLVE로 실패한다. `jest-expo`도 같은 충돌이라 `jest` + `ts-jest`를 쓴다. 의존성을 더할 때는 `package.json`·`package-lock.json`을 백업하고, 설치 뒤 `npm ls react-dom --all`이 `19.2.3` 하나인지 본다.
 - **`ios/`가 이미 있는 체크아웃에서 빌드하면 옛 네이티브 프로젝트를 그대로 쓴다.** `ios/`는 git에 없고 `expo run:ios`는 폴더가 없을 때만 prebuild한다. 2026-10-10 main 체크아웃의 옛 `ios/`(위젯 타깃 없음)로 빌드하자 앱은 떴지만 위젯 동기화가 매번 `ExponentAsset-….png doesn't exist`로 실패했다. 빌드 전에 `npx expo prebuild --platform ios --clean`, 빌드 뒤 Metro 로그에서 `widget sync failed`를 찾는다.
 - **expo-widgets를 올릴 때:** `npx expo prebuild --platform ios --clean` → iOS 빌드 → 위젯 편집 「목표」 확인. prebuild가 `widget-goal: … 자리를 못 찾았어요`로 멈추면 expo-widgets가 만드는 Swift 모양이 바뀐 것이니 `plugins/widget-goal/patch.js`와 fixture를 맞춘다.
