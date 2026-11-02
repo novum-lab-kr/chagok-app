@@ -886,8 +886,7 @@
         "label": "구독 화면",
         "tags": [
           "PRD 4.12",
-          "시안 2026-11-02",
-          "앱 연결 전"
+          "app/subscription"
         ],
         "stories": [
           {

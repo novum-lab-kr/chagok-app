@@ -30,7 +30,7 @@ function Collection(){
   const [mine,setMine]=useState(false);
   const [open,setOpen]=useState<readonly ColorStickerPackId[]>(['christmas_normal']);
   const sub=(id:ColorStickerPackId)=>colorPack(id,'trial',t('sub.active'));
-  return <StickerCollectionScreen packs={[colorPack('basic','free'),sub('christmas_normal'),sub('study_normal'),sub('food_normal')]} mine={mine} onChangeMine={setMine} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days:5,goal:7}} onOpenPack={noop}/>;
+  return <StickerCollectionScreen packs={[colorPack('basic','free'),sub('christmas_normal'),sub('study_normal'),sub('food_normal')]} mine={mine} onChangeMine={setMine} openPacks={open} onToggle={id=>setOpen(o=>togglePack(o,id))} reward={{days:5,goal:7}} onOpenPack={noop} hideReward/>;
 }
 export const StickersSubscribed:Story={name:'3 스티커 탭, 구독 중',render:()=><Stage tab="stickers"><Collection/></Stage>};
 

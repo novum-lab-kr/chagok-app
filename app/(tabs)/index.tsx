@@ -20,6 +20,7 @@ import { GoalsAdBanner } from '../../src/purchases/GoalsAdBanner';
 import { monthDayLabel, upcomingChange } from '../../src/policy/versions';
 import { subscribeWidgetApplied } from '../../src/widgets/applied';
 import { loadPackState } from '../../src/repositories/packRepository';
+import { canCreateGoal } from '../../src/domain/subscription';
 import { reachedThreshold, showTrialReadyCard } from '../../src/domain/packs';
 
 /** 홈 = 목표 탭 (PRD 4.1, 2026-10-12 하단 탭). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
@@ -39,6 +40,8 @@ export default function GoalList() {
   const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
   /** 체험 열림 카드에 보일 문턱(7, 14…). null이면 숨긴다 (2026-10-12). */
   const [trial, setTrial] = useState<number | null>(null);
+  /** 구독 중이면 목표를 개수 제한 없이 만든다 (구독 설계 4.8) */
+  const [subscribed, setSubscribed] = useState(false);
   /** 시작 화면에서 복원을 마치면 올린다. 목표 탭은 그동안 계속 보이는 중이라 포커스로는 다시 읽지 않는다 (2026-10-22). */
   const [reload, setReload] = useState(0);
   const navigation = useNavigation();
@@ -118,7 +121,9 @@ export default function GoalList() {
       if (alive) setReorderGuide(!guideDone);
       const pack = await loadPackState();
       const dismissed = Number(await getSetting('trialCardDismissed') ?? 0);
-      if (alive) setTrial(showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
+      if (alive) setSubscribed(pack.subscribed);
+      // 구독 중에는 잠긴 묶음이 없어 체험 열림 카드를 숨긴다. 붙인 날은 계속 쌓인다 (구독 설계 D8)
+      if (alive) setTrial(!pack.subscribed && showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
     })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
   // attempt와 reload는 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
@@ -186,6 +191,12 @@ export default function GoalList() {
     if (value) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
 
+  /** 구독이 아니면 목표는 5개까지(완성한 목표 포함). 넘으면 [+]가 구독 화면을 열고, 그 화면이 이유를 알린다 (2026-11-02 시안 C안) */
+  const addGoal = () => {
+    if (canCreateGoal(summaries.length, subscribed)) router.push('/goal/new');
+    else router.push({ pathname: '/subscription', params: { from: 'goals' } });
+  };
+
   const closeTrial = () => {
     if (trial === null) return;
     setTrial(null);
@@ -200,7 +211,7 @@ export default function GoalList() {
         active={cards(active)}
         completed={cards(completed)}
         onOpen={(id) => router.push({ pathname: '/goal/[id]', params: { id } })}
-        onAdd={() => router.push('/goal/new')}
+        onAdd={addGoal}
         onMove={moveGoal}
         onDragChange={dragChange}
         onReorderGuideDone={reorderGuide ? finishReorderGuide : undefined}

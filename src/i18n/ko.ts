@@ -438,6 +438,10 @@ export const ko = {
   'sub.manage': '구독 관리',
   'sub.openAllPacks': '구독하고 모든 묶음 열기',
   'sub.endedTitle': '구독이 끝났어요',
+  'sub.range': (start: string, end: string) => `${start} ~ ${end}`,
+  'sub.doneTitle': '모든 묶음을 열었어요',
+  'sub.doneDescription': '구독하는 동안 모든 묶음과 목표를 제한 없이 쓸 수 있어요.',
+  'sub.failedTitle': '구독하지 못했어요',
   'sub.restoreHint': '구독과 구매한 스티커 묶음, 광고 제거를 되살려요',
   'shop.priceWon': (amount: string) => `${amount}원`,
   'shop.trialEnd': (today: boolean, hour: number, minute: number) => {

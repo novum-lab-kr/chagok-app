@@ -5,7 +5,7 @@ import { setErrorUser } from '../../src/analytics/sentry';
 import {
   AccountBackupPanel, HelpInfoPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
   stickerShopDialogs,
-  type AccountBackupStatus,
+  type AccountBackupStatus, type SubscriptionSummary,
 } from '../../src/design-system';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
 import { signOutLocal } from '../../src/sync/account';
@@ -21,7 +21,10 @@ import { wipeDevice } from '../../src/sync/wipe';
 import { confirmWithTerms } from '../../src/policy/openPolicy';
 import { getSetting } from '../../src/repositories/appSettingsRepository';
 import { loadPackState } from '../../src/repositories/packRepository';
-import { buyAdFree, restorePurchases } from '../../src/purchases';
+import { subscriptionSummary } from '../../src/app-data/subscriptionViews';
+import { openSubscriptionManagement } from '../../src/app-data/manageSubscription';
+import { buyAdFree, restorePurchases, refreshSubscription, signOutPurchases, usingDevStore } from '../../src/purchases';
+import { devChangeSubscription } from '../../src/purchases/devStore';
 import { useDialog } from '../../src/app-data/useDialog';
 import { usePrices } from '../../src/app-data/usePrices';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
@@ -38,6 +41,7 @@ export default function AppSettings() {
   const [logout, setLogout] = useState<Logout>(null);
   /** 「구매」 블럭 (PRD 4.9·4.12). 키가 있으면 RevenueCat, 없으면 개발용 대역 (src/purchases). */
   const [adFree, setAdFree] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionSummary>({ state: 'none' });
   const prices = usePrices();
   const [buyOnce] = useState(createSingleFlight);
   /** 기다리는 동안 누른 버튼에 로딩 점 (2026-10-13) */
@@ -45,7 +49,12 @@ export default function AppSettings() {
   const { ask, dialog: purchaseDialog } = useDialog();
   useFocusEffect(useCallback(() => {
     let alive = true;
-    void loadPackState().then((p) => { if (alive) setAdFree(p.adFree); });
+    const read = () => loadPackState().then((p) => {
+      if (!alive) return;
+      setAdFree(p.adFree);
+      setSubscription(subscriptionSummary(p.subscription, Date.now()));
+    });
+    void read().then(() => refreshSubscription()).then(read);
     return () => { alive = false; };
   }, []));
   /** 사기 전에 환불 안내 확인 창을 먼저 띄운다([약관 보기]를 누르면 약관을 본 뒤 다시 묻는다). 결제 창을 닫은 취소에는 알리지 않는다. */
@@ -67,8 +76,18 @@ export default function AppSettings() {
     } finally {
       setPurchaseBusy(undefined);
     }
-    if (names.includes(t('shop.adFree'))) setAdFree(true);
+    const p = await loadPackState();
+    setAdFree(p.adFree);
+    setSubscription(subscriptionSummary(p.subscription, Date.now()));
     await ask(names.length > 0 ? stickerShopDialogs.restoreDone(names) : stickerShopDialogs.restoreNone);
+  }
+  /** 시험용 (개발 빌드, 결제 키 없을 때만): 구독 해지 예약과 끝내기 (2026-11-02) */
+  async function devSubscription(change: 'cancel' | 'expire') {
+    await devChangeSubscription(change);
+    await refreshSubscription();
+    const p = await loadPackState();
+    setAdFree(p.adFree);
+    setSubscription(subscriptionSummary(p.subscription, Date.now()));
   }
 
   const load = useCallback(async () => {
@@ -98,6 +117,8 @@ export default function AppSettings() {
       if (supabase) await signOutLocal(supabase, clearStoredSession);
       await signOutKakao();
       await signOutGoogle();
+      // 결제 계정을 먼저 익명으로 돌린다 — 비운 기기에 앞 계정의 구독이 다시 적히지 않게 (보안 검토 2026-11-02 L1)
+      await signOutPurchases();
       await wipeDevice(removeAllManagedPhotos);
     } catch {
       setLogout({ step: 'failed' });
@@ -172,7 +193,7 @@ export default function AppSettings() {
             <PixelText>{t('settings.deviceOnlyBody')}</PixelText>
           </PixelPanel>
         )}
-        <PurchasePanel adFree={adFree} price={prices.adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} />
+        <PurchasePanel adFree={adFree} price={prices.adFree} busy={purchaseBusy} onRemoveAds={() => { void buyOnce(removeAds); }} onRestore={() => { void buyOnce(restore); }} subscription={subscription} onSubscribe={() => nav.push('/subscription')} onManageSubscription={() => { void openSubscriptionManagement(); }} />
         <HelpInfoPanel
           adFree={adFree}
           version={appVersion()}
@@ -182,9 +203,11 @@ export default function AppSettings() {
           onPolicies={() => nav.push('/policies')}
           onSendInfo={() => nav.push('/send-info')}
         />
-        {__DEV__ && supabase && (
+        {__DEV__ && (supabase || usingDevStore()) && (
           <PixelPanel title="개발">
-            <SettingRow label="서버 동기화 (개발)" onPress={() => nav.push('/dev/sync')} />
+            {supabase && <SettingRow label="서버 동기화 (개발)" onPress={() => nav.push('/dev/sync')} />}
+            {usingDevStore() && <SettingRow label="시험: 구독 해지 예약" onPress={() => { void devSubscription('cancel'); }} />}
+            {usingDevStore() && <SettingRow label="시험: 구독 끝내기" onPress={() => { void devSubscription('expire'); }} />}
           </PixelPanel>
         )}
       </RetroScreen>

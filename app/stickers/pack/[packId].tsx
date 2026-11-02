@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LoadingScreen, PackScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import { endLabel, packViews, samplePlacement } from '../../../src/app-data/packViews';
 import { usePrices } from '../../../src/app-data/usePrices';
@@ -28,11 +28,18 @@ export default function Pack() {
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
   const prices = usePrices();
+  /** 구독 화면으로 갔다가 구독하고 돌아오면 산 것처럼 그 묶음을 펼친다 */
+  const subscribing = useRef(false);
 
   useFocusEffect(useCallback(() => {
     let alive = true;
     void loadPackState()
-      .then((pack) => { if (alive) setState({ pack, now: Date.now() }); })
+      .then((pack) => {
+        if (!alive) return;
+        if (subscribing.current && pack.subscribed) { subscribing.current = false; offerOpenPack(packId); goBackOrHome(); return; }
+        subscribing.current = false;
+        setState({ pack, now: Date.now() });
+      })
       .catch(() => { if (alive) fail(); });
     return () => { alive = false; };
   // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
@@ -91,6 +98,7 @@ export default function Pack() {
         onWatchAd={() => { void once(watchAd); }}
         onTrial={() => { void once(trial); }}
         onBack={goBackOrHome}
+        onSubscribe={() => { subscribing.current = true; router.push('/subscription'); }}
         busy={busy}
       />
       {dialog}

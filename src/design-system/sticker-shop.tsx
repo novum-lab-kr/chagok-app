@@ -146,12 +146,12 @@ export function togglePack(open:readonly ColorStickerPackId[],id:ColorStickerPac
 }
 
 /** 「기본 스티커」: 새 목표·목표 설정의 [바꾸기]에서 연다 (PRD 4.12). 가진 묶음·체험 중이 위, 잠긴 묶음이 아래. */
-export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,openPacks,onToggle,reward,onOpenPack,onDone,onBack}:{packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;selected:StickerId;onSelect:(id:StickerId)=>void;/** 펼친 묶음들. 처음에는 지금 고른 스티커가 든 묶음 하나 */openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void;onDone:()=>void;onBack:()=>void}) {
+export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,openPacks,onToggle,reward,onOpenPack,onDone,onBack,hideReward=false}:{/** 구독 중에는 붙인 날 체험 안내를 숨긴다 (구독 설계 D8) */hideReward?:boolean;packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;selected:StickerId;onSelect:(id:StickerId)=>void;/** 펼친 묶음들. 처음에는 지금 고른 스티커가 든 묶음 하나 */openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void;onDone:()=>void;onBack:()=>void}) {
   const order=[...packs.filter(p=>p.state!=='locked'),...(mine?[]:packs.filter(p=>p.state==='locked'))];
   const rewardReady=reward.days>=reward.goal;
   return <View style={{flex:1}}>
     <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:24}}><ScreenHeader title={t('board.basicSticker')} onBack={onBack}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
-      <RewardProgress days={reward.days} goal={reward.goal}/>
+      {!hideReward&&<RewardProgress days={reward.days} goal={reward.goal}/>}
       {order.map(p=><PackCard key={p.id} pack={p} open={openPacks.includes(p.id)} selected={selected} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={onSelect} onOpenPack={()=>onOpenPack(p.id)}/>)}
     </RetroScreen>
     <PickedStickerBar sticker={selected} onDone={onDone}/>
@@ -195,6 +195,8 @@ export const stickerShopDialogs={
   /** endLabel 예: '내일 밤 11:00' — 광고를 다 본 때부터 24시간 */
   adTrialStarted:(endLabel:string)=>({title:t('shop.adTrialTitle'),description:t('shop.adTrialDescription',endLabel),primaryLabel:t('common.ok'),single:true}),
   /** 구독으로 쓰던 묶음의 스티커를 다음에 붙이려 할 때만 띄운다. 체험이 끝났을 때와 같은 모양 (2026-11-02 구독 흐름 시안) */
+  get subscribed(){return {title:t('sub.doneTitle'),description:t('sub.doneDescription'),primaryLabel:t('common.ok'),single:true};},
+  get subscribeFailed(){return {title:t('sub.failedTitle'),description:t('shop.tryAgainLater'),primaryLabel:t('common.ok'),single:true};},
   get subscriptionEnded(){return {title:t('sub.endedTitle'),description:t('shop.trialEndedDescription'),primaryLabel:t('shop.openPack'),secondaryLabel:t('shop.otherSticker')};},
   trialEnded:(kind:'3일'|'하루')=>({title:t('shop.trialEndedTitle',kind),description:t('shop.trialEndedDescription'),primaryLabel:t('shop.openPack'),secondaryLabel:t('shop.otherSticker')}),
   restoreDone:(names:readonly string[])=>({title:t('shop.restoreDoneTitle'),description:names.join(', '),primaryLabel:t('common.ok'),single:true}),

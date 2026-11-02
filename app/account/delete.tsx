@@ -12,6 +12,7 @@ import { signOutKakao } from '../../src/sync/signIn/expoKakao';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
 import { wipeDevice } from '../../src/sync/wipe';
+import { signOutPurchases } from '../../src/purchases';
 
 type Step = 'review' | 'confirm' | 'busy' | 'failed' | 'needsLogin' | 'done';
 
@@ -63,6 +64,8 @@ export default function DeleteAccount() {
       await signOutLocal(supabase, clearStoredSession);
       await signOutKakao();
       await signOutGoogle();
+      // 결제 계정을 먼저 익명으로 돌린다 — 비운 기기에 앞 계정의 구독이 다시 적히지 않게 (보안 검토 2026-11-02 L1)
+      await signOutPurchases();
       await wipeDevice(removeAllManagedPhotos);
     } catch (error) {
       // 로그인이 풀려 있으면 다시 시도해도 같다 — 로그인을 안내한다 (2026-10-29)

@@ -263,11 +263,11 @@ export function RecordFeedScreen({posts,onBack,onOpen}:{posts:readonly FeedPostV
 // ── 스티커 탭 ────────────────────────────────────────────────────
 const noop=()=>{};
 /** 스티커 탭 (2026-10-12): 묶음 둘러보기. 고르기 줄이 없고, 카드를 누르면 묶음 화면이 열린다. */
-export function StickerCollectionScreen({packs,mine,onChangeMine,openPacks,onToggle,reward,onOpenPack}:{packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void}) {
+export function StickerCollectionScreen({packs,mine,onChangeMine,openPacks,onToggle,reward,onOpenPack,hideReward=false}:{/** 구독 중에는 붙인 날 체험 안내를 숨긴다. 붙인 날은 계속 쌓인다 (구독 설계 D8) */hideReward?:boolean;packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void}) {
   const order=[...packs.filter(p=>p.state!=='locked'),...(mine?[]:packs.filter(p=>p.state==='locked'))];
   const rewardReady=reward.days>=reward.goal;
   return <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:16}}><TabTitle title={t('tabs.stickers')}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
-    <RewardProgress days={reward.days} goal={reward.goal}/>
+    {!hideReward&&<RewardProgress days={reward.days} goal={reward.goal}/>}
     {order.map(p=><PackCard key={p.id} pack={p} selectable={false} open={openPacks.includes(p.id)} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={noop} onOpenPack={()=>onOpenPack(p.id)}/>)}
   </RetroScreen>;
 }

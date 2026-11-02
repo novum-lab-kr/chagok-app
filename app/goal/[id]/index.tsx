@@ -175,10 +175,10 @@ export default function Board() {
   async function place(slotIndex: number, at: { slot?: number; date?: string }, from: BoardData | null = data, placedAt?: number) {
     if (!from) return;
     const target = from.goal;
-    // 기본 스티커 묶음의 체험이 끝났으면 붙이지 않고 안내한다. 붙은 칸은 그대로다 (2026-10-08).
+    // 기본 스티커 묶음의 체험이나 구독이 끝났으면 붙이지 않고 안내한다. 붙은 칸은 그대로다 (2026-10-08, 구독 2026-11-02).
     const gate = await checkPlaceGate(target);
     if (!gate.ok) {
-      const choice = await ask(stickerShopDialogs.trialEnded(gate.kind));
+      const choice = await ask(gate.kind === '구독' ? stickerShopDialogs.subscriptionEnded : stickerShopDialogs.trialEnded(gate.kind));
       if (choice === 'primary') router.push({ pathname: '/stickers/pack/[packId]', params: { packId: gate.packId } });
       if (choice === 'secondary') router.push({ pathname: '/stickers/choose', params: { current: target.defaultStickerId, goalId: target.id } });
       return;

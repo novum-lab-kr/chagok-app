@@ -455,6 +455,10 @@ export const en: Messages = {
   'sub.manage': 'Manage subscription',
   'sub.openAllPacks': 'Subscribe to unlock all packs',
   'sub.endedTitle': 'Your subscription has ended',
+  'sub.range': (start: string, end: string) => `${start} to ${end}`,
+  'sub.doneTitle': 'All packs unlocked',
+  'sub.doneDescription': 'While you are subscribed, every pack and as many goals as you like are yours.',
+  'sub.failedTitle': "Couldn't subscribe",
   'sub.restoreHint': 'Brings back your subscription, sticker packs and ad removal',
   'shop.priceWon': (amount: string) => `₩${amount}`,
   'shop.trialEnd': (today: boolean, hour: number, minute: number) =>

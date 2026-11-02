@@ -77,6 +77,7 @@ export default function ChooseSticker() {
         openPacks={open}
         onToggle={(id) => setOpen((o) => togglePack(o, id))}
         reward={{ days: state.pack.days, goal: dayTrialThreshold(state.pack.claimed) }}
+        hideReward={state.pack.subscribed}
         onOpenPack={(packId) => router.push({ pathname: '/stickers/pack/[packId]', params: { packId } })}
         onDone={() => { void done(); }}
         onBack={goBackOrHome}
