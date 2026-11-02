@@ -33,7 +33,6 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 | worktree | 무엇 | 기다리는 것 |
 | --- | --- | --- |
-| `chagok-wt-packs-sub` | 구독 결제 연결 36개 파일, 설정 개발 칸 시험 버튼 | 사용자 확인. 그 뒤 커밋하고 PR #11 강제 push(허락받고) |
 | `chagok-wt-adbanner` | 목표 탭 배너가 하단 탭을 가리던 수정 한 줄(`GoalsAdBanner.tsx` `overflow: 'hidden'`) | 1.0.1에 넣기. 1.0.0 빌드 7에도 없다 |
 | `~/.athena-studio/.../feat-one-device-min-build` | 한 번에 한 기기와 최소 앱 버전 28개 파일(서버 마이그레이션 포함) | 1.0.1과 1.0.2 중 언제 넣을지 결정 |
 | `~/.athena-studio/.../docs-post-launch-db-rules` | DEV-SETUP 「운영 DB 바꾸기」 출시 뒤 절차 초안 | 운영 DB를 바꾸기 전에 커밋([1.0.1 출시 순서](RELEASE-1.0.1.md)가 가리킨다) |
