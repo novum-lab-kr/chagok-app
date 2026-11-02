@@ -20,7 +20,8 @@
       "node": "24.18.0",
       "distribution": "internal",
       "env": {
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_REVENUECAT_KEY": ""
       }
     },
     "production": {
