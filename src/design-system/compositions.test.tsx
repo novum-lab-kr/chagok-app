@@ -1,14 +1,14 @@
 import React from 'react';
+import {BoardProgressRow,GuideCard,progressBlockPose} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
 import {boardDialogs} from './board-dialogs';
-import {removeStickerAction} from './components';
+import {removeStickerAction,PixelDialog,PixelText} from './components';
 import {setLanguage} from '../i18n';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
 import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen,goalDragShift,goalDropIndex} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,goalMoveActionList} from './composition-controls';
-import {PixelDialog,PixelText} from './components';
 import {retro} from './tokens';
 afterEach(cleanup);
 /** react-native-web은 누른 채 450ms가 지나면 onLongPress를 부른다. */
@@ -280,5 +280,23 @@ describe('영어 문구 (공통 부품)',()=>{
     setLanguage('en');
     expect(boardDialogs.unsaved.title).toBe('Leave without saving?');
     expect(removeStickerAction.label).toBe('Remove sticker');
+  });
+});
+
+describe('판 진행 표시와 안내 (2026-11-02)',()=>{
+  it('차곡이 머리 위 블록은 25%마다 하나씩 늘어난다',()=>{
+    expect([0,0.24,0.25,0.49,0.5,0.74,0.75,1].map(progressBlockPose)).toEqual(['b0','b0','b1','b1','b2','b2','b3','b3']);
+  });
+  it('진행 줄은 %만 보이고 화면 읽기에는 칸 수를 함께 읽어 준다',()=>{
+    render(<BoardProgressRow value={3} total={15} percentLabel="20%" sticker="basic.sprout"/>);
+    expect(screen.getByText('20%')).toBeTruthy();
+    expect(screen.queryByText('3 / 15')).toBeNull();
+    expect(screen.getByLabelText('15칸 중 3칸, 20%')).toBeTruthy();
+  });
+  it('안내 카드는 동작과 닫기를 전달한다',()=>{
+    const onClose=vi.fn();
+    render(<GuideCard text="안내" onClose={onClose}/>);
+    fireEvent.click(screen.getByRole('button',{name:'닫기'}));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

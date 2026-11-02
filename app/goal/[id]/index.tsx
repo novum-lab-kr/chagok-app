@@ -3,7 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { track } from '../../../src/analytics';
 import { hasAnsweredAnalytics, saveAnalyticsEnabled } from '../../../src/analytics/posthog';
-import { AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, LoadingScreen, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
+import { AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, GuideCard, LoadingScreen, PixelButton, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
@@ -20,7 +20,8 @@ import {
 } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Sticker } from '../../../src/domain/types';
-import { placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
+import { getFlag, setFlag } from '../../../src/repositories/appSettingsRepository';
+import { countAllStickers, placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
 import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
 import { subscribeWidgetApplied } from '../../../src/widgets/applied';
 import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
@@ -70,6 +71,8 @@ export default function Board() {
   const completionOpen = useRef(false);
   /** 완성한 판을 [닫기]로 보관한 순간에만 보이는 「다음 판은 새 스티커로」. 닫거나 판을 나가면 다시 보이지 않는다 (2026-10-12). */
   const [nudge, setNudge] = useState(false);
+  /** 첫 스티커 안내를 띄운 스티커 */
+  const [firstGuide, setFirstGuide] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const next = await loadBoard(id, shown.year, shown.month, new Date());
@@ -182,8 +185,9 @@ export default function Board() {
     }
     const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
     if (complete && !(await confirm(boardDialogs.confirmLast(target.boardType)))) return;
+    let placedId: string | null = null;
     const ok = await saveOrNotify(ask, t('failed.placeSticker'), async () => {
-      await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt });
+      placedId = (await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt })).id;
     });
     if (!ok) return;
     track('sticker_place', { board_type: target.boardType, source: 'app' });
@@ -191,8 +195,17 @@ export default function Board() {
     setJustPlaced(at);
     if (!complete) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await reload();
+    setFirstGuide(null);
+    if (complete) return;
+    // 앱 전체의 첫 스티커에는 메모 안내만 보여 주고, 사용 기록 동의는 다음 스티커로 미룬다 (2026-11-02).
+    const first = !(await getFlag('firstStickerGuideDone').catch(() => true)) && (await countAllStickers().catch(() => 0)) === 1;
+    if (first && placedId) {
+      setFirstGuide(placedId);
+      void setFlag('firstStickerGuideDone', true);
+      return;
+    }
     // 스티커를 붙인 뒤 한 번만 묻는다. 완성 흐름과 겹치면 다음 스티커로 미룬다 (PRD 8.2).
-    if (!complete && !(await hasAnsweredAnalytics().catch(() => true))) setConsentPending(true);
+    if (!(await hasAnsweredAnalytics().catch(() => true))) setConsentPending(true);
   }
 
   /** 뗀다. 기록이 있으면 먼저 확인한다 (PRD 4.5). 완성한 판에서도 뗀다 — 완성은 그대로 (2026-10-08). */
@@ -210,7 +223,7 @@ export default function Board() {
   }
 
   function openRecord(target: Sticker | undefined) {
-    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id } });
+    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id, from: 'board' } });
   }
 
   const bySlot = (n: number) => stickers.find((s) => s.slotIndex === n - 1);
@@ -259,7 +272,13 @@ export default function Board() {
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}
         onSettings={() => router.push({ pathname: '/goal/[id]/settings', params: { id: goal.id } })}
-        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onHome={() => { setNudge(false); goHome(); }} onClose={() => setNudge(false)} /> : undefined}
+        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onHome={() => { setNudge(false); goHome(); }} onClose={() => setNudge(false)} /> : firstGuide ? (
+          <GuideCard
+            text={t('guide.firstSticker')}
+            onClose={() => setFirstGuide(null)}
+            actions={<PixelButton label={t('guide.writeMemo')} minHeight={40} onPress={() => { const target = firstGuide; setFirstGuide(null); router.push({ pathname: '/sticker/[id]', params: { id: target, from: 'board' } }); }} />}
+          />
+        ) : undefined}
         board={goal.boardType === 'tally'
           ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: (n) => openRecord(bySlot(n)) }
           : {
