@@ -4,7 +4,7 @@ import {Animated,PanResponder,Pressable,View,type LayoutRectangle} from 'react-n
 import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
-import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,useLayoutSize} from './components';
+import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard} from './calendar';
@@ -48,7 +48,7 @@ export function goalDragShift(index:number,from:number,to:number,size:number):nu
  * 화면 읽기는 카드의 「위로 옮기기」 「아래로 옮기기」 동작으로 한 칸씩 옮긴다.
  * 손이 화면 끝에 닿아도 목록을 저절로 스크롤하지 않는다. 화면 밖 자리로는 두 번에 나눠 옮긴다.
  */
-function ReorderableGoals({items,onOpen,onMove,onDragChange}:{items:readonly GoalCardItem[];onOpen:(id:string)=>void;onMove:(from:number,to:number)=>void;onDragChange:(dragging:boolean)=>void}) {
+function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순서 안내 중: 첫 카드를 끌어 한 칸 내렸다가 되돌리는 모션을 되풀이한다 (2026-11-02) */demo?:boolean;items:readonly GoalCardItem[];onOpen:(id:string)=>void;onMove:(from:number,to:number)=>void;onDragChange:(dragging:boolean)=>void}) {
   const heights=useRef(new Map<string,number>());
   const [drag,setDrag]=useState<{from:number;to:number;/** 끄는 카드 높이와 간격 */size:number}|null>(null);
   const [offset]=useState(()=>new Animated.Value(0));
@@ -82,6 +82,25 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange}:{items:readonly Goa
     setDrag({from,to:from,size});
     onDragChange(true);
   };
+  const reduced=useReducedMotion();
+  const showDemo=demo&&!reduced&&items.length>=2;
+  useEffect(()=>{
+    if(!showDemo) return;
+    let alive=true;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const glide=(toValue:number,done:()=>void)=>Animated.timing(offset,{toValue,duration:700,useNativeDriver:true}).start(({finished})=>{if(alive&&finished&&!current.current) done();});
+    const run=()=>{
+      if(!alive||current.current) return;
+      const size=(heights.current.get(items[0].id)??0)+GOAL_GAP;
+      setDrag({from:0,to:0,size});
+      glide(size,()=>{
+        setDrag({from:0,to:1,size});
+        timer=setTimeout(()=>{setDrag({from:0,to:0,size});glide(0,()=>{setDrag(null);timer=setTimeout(run,900);});},500);
+      });
+    };
+    timer=setTimeout(run,600);
+    return ()=>{alive=false;clearTimeout(timer);offset.stopAnimation();if(!current.current){offset.setValue(0);setDrag(null);}};
+  },[showDemo,items,offset]);
   // 꾹 누르고 움직이지 않은 채 떼면 그대로 내려놓는다
   const release=()=>{if(current.current&&!current.current.moving) finish(false);};
   return <View style={{gap:GOAL_GAP}}
@@ -118,13 +137,13 @@ export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettin
       :<EmptyState title={t('empty.noActiveTitle')} description={t('empty.noActiveDescription')}/>;
   const [dragging,setDragging]=useState(false);
   const dragChange=useCallback((value:boolean)=>{setDragging(value);onDragChange?.(value);},[onDragChange]);
+  const guideOn=!!onReorderGuideDone&&tab==='active'&&shown.length>=2;
   const list=tab==='active'&&onMove
-    ?<ReorderableGoals items={shown} onOpen={onOpen} onMove={onMove} onDragChange={dragChange}/>
+    ?<ReorderableGoals items={shown} onOpen={onOpen} onMove={onMove} onDragChange={dragChange} demo={guideOn}/>
     :<View style={{gap:GOAL_GAP}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>;
   const {ref:root,size,onLayout}=useLayoutSize();
   const listRef=useRef<View>(null);
   const [guideTarget,setGuideTarget]=useState<LayoutRectangle>();
-  const guideOn=!!onReorderGuideDone&&tab==='active'&&shown.length>=2;
   useEffect(()=>{
     if(!guideOn) return;
     const id=setTimeout(()=>listRef.current?.measureInWindow((x,y,width,height)=>root.current?.measureInWindow((rx,ry)=>setGuideTarget({x:x-rx,y:y-ry,width,height:Math.min(height,REORDER_GUIDE_MAX_HEIGHT)}))),50);
