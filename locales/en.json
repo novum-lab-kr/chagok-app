@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "Chagok",
+  "NSPhotoLibraryUsageDescription": "Chagok accesses your photo library when you attach a photo to a record.",
+  "NSCameraUsageDescription": "Chagok uses the camera when you take a photo for a record."
+}

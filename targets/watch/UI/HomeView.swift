@@ -18,7 +18,7 @@ struct HomeView: View {
             Button(action: openCharacter) { CharacterSprite(face: store.growth == 0 ? "sleepy" : "smile", heads: heads) }
               .buttonStyle(.plain)
               .frame(height: 54, alignment: .bottom)
-              .accessibilityLabel("차곡이, 블록 \(store.growth)개")
+              .accessibilityLabel(Language.pick("차곡이, 블록 \(store.growth)개", "Chagok, \(store.growth) blocks"))
             ForEach(store.goals) { g in
               Button { openGoal(g.id) } label: {
                 HStack(spacing: 8) {
@@ -28,7 +28,7 @@ struct HomeView: View {
               }
               .buttonStyle(PixelButtonStyle(fill: g.placedToday ? Palette.mint : Palette.ivory, leading: true))
               .frame(width: 176, height: 40)
-              .accessibilityLabel(g.placedToday ? "\(g.name), 오늘 붙였어요" : g.name)
+              .accessibilityLabel(g.placedToday ? Language.pick("\(g.name), 오늘 붙였어요", "\(g.name), placed today") : g.name)
             }
           }
           .padding(.top, 14).padding(.bottom, 36)

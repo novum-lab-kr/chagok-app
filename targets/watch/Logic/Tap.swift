@@ -3,20 +3,20 @@
 import Foundation
 
 enum Copy {
-  static let pastCell = "지난 칸은 폰에서 고칠 수 있어요"
-  static let pastDay = "지난 날은 폰에서 고칠 수 있어요"
+  static let pastCell = Language.pick("지난 칸은 폰에서 고칠 수 있어요", "Edit past slots on your phone")
+  static let pastDay = Language.pick("지난 날은 폰에서 고칠 수 있어요", "Edit past days on your phone")
   /** 기본 스티커 묶음 체험이 끝난 목표 (PRD 4.12). 폰에서는 다른 스티커를 고르거나 묶음을 연다 */
-  static let locked = "체험이 끝났어요. 폰에서 다른 스티커를 고를 수 있어요"
-  static let noSnapshot = "폰에서 차곡차곡을 열어 주세요"
-  static let noGoals = "폰에서 첫 목표를 만들어 보세요"
-  static let confirmTitle = "이 판을 완성할까요?"
-  static let confirmBody = "완성한 뒤에도 칸과 기록은 고칠 수 있어요"
-  static let boxNow = "지금 채우는 보관함이에요"
-  static let boxFull = "다 채운 보관함이에요"
-  static let stored = "세 개를 보관함에 넣었어요"
-  static func stuck(_ name: String) -> String { "\(name) 스티커를 붙였어요" }
-  static func completed(_ name: String) -> String { "\(name) 판을 완성했어요" }
-  static func grew(_ n: Int) -> String { "블록이 \(n)개 늘었어요" }
+  static let locked = Language.pick("체험이 끝났어요. 폰에서 다른 스티커를 고를 수 있어요", "Trial ended. Pick another sticker on your phone")
+  static let noSnapshot = Language.pick("폰에서 차곡차곡을 열어 주세요", "Open Chagok on your phone")
+  static let noGoals = Language.pick("폰에서 첫 목표를 만들어 보세요", "Create your first goal on your phone")
+  static let confirmTitle = Language.pick("이 판을 완성할까요?", "Complete this board?")
+  static let confirmBody = Language.pick("완성한 뒤에도 칸과 기록은 고칠 수 있어요", "You can still edit slots and records afterward")
+  static let boxNow = Language.pick("지금 채우는 보관함이에요", "You are filling this box now")
+  static let boxFull = Language.pick("다 채운 보관함이에요", "This box is full")
+  static let stored = Language.pick("세 개를 보관함에 넣었어요", "Three went into the box")
+  static func stuck(_ name: String) -> String { Language.pick("\(name) 스티커를 붙였어요", "Sticker added to \(name)") }
+  static func completed(_ name: String) -> String { Language.pick("\(name) 판을 완성했어요", "\(name) completed") }
+  static func grew(_ n: Int) -> String { Language.pick("블록이 \(n)개 늘었어요", "+\(n) blocks") }
 }
 
 enum TapResult: Equatable {

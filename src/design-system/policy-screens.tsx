@@ -34,22 +34,22 @@ function CheckRow({label,checked,onChange}:{label:string;checked:boolean;onChang
 
 /** 앱 설정 → 보내는 정보 (PRD 8.2, 2026-11-01 시안 3판). */
 export function SendInfoScreen({analyticsEnabled,errorReportEnabled,onBack,onToggleAnalytics,onToggleErrorReport}:{analyticsEnabled:boolean;errorReportEnabled:boolean;onBack:()=>void;onToggleAnalytics:()=>void;onToggleErrorReport:()=>void}) {
-  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="보내는 정보" onBack={onBack}/>}>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title={t('help.sendInfo')} onBack={onBack}/>}>
     <PixelPanel>
-      <CheckRow label="사용 기록 보내기" checked={analyticsEnabled} onChange={onToggleAnalytics}/>
-      <CheckRow label="오류 보고 보내기" checked={errorReportEnabled} onChange={onToggleErrorReport}/>
+      <CheckRow label={t('sendInfo.analytics')} checked={analyticsEnabled} onChange={onToggleAnalytics}/>
+      <CheckRow label={t('sendInfo.errors')} checked={errorReportEnabled} onChange={onToggleErrorReport}/>
     </PixelPanel>
-    <PixelText>꺼도 앱 기능은 그대로예요.</PixelText>
+    <PixelText>{t('sendInfo.unchanged')}</PixelText>
   </RetroScreen>;
 }
 
-const ANALYTICS_CONSENT_ROWS:readonly (readonly [string,string])[]=[
-  ['보내는 것','쓴 기능과 이동한 화면, 설치 ID, 로그인하면 계정 ID, 기기와 앱 정보'],
-  ['받는 곳','PostHog Inc. (privacy@posthog.com)'],
-  ['나라','독일'],
-  ['보내는 때','앱을 쓰는 동안 암호화해서 보내요'],
-  ['쓰는 곳, 기간','앱 개선, 1년 보관'],
-  ['거부하면','보내지 않아요. 앱 기능은 그대로예요'],
+const analyticsConsentRows=():readonly (readonly [string,string])[]=>[
+  [t('analyticsConsent.rowWhat'),t('analyticsConsent.rowWhatValue')],
+  [t('analyticsConsent.rowTo'),'PostHog Inc. (privacy@posthog.com)'],
+  [t('analyticsConsent.rowCountry'),t('analyticsConsent.rowCountryValue')],
+  [t('analyticsConsent.rowWhen'),t('analyticsConsent.rowWhenValue')],
+  [t('analyticsConsent.rowUse'),t('analyticsConsent.rowUseValue')],
+  [t('analyticsConsent.rowRefuse'),t('analyticsConsent.rowRefuseValue')],
 ];
 
 /**
@@ -57,7 +57,7 @@ const ANALYTICS_CONSENT_ROWS:readonly (readonly [string,string])[]=[
  * 버튼으로 동의를 표시한다(시행령 제17조 2항 4호). 나라와 받는 회사, 만 14세는 펼치지 않아도 보이게 둔다(제17조 1항 2호, 법 제22조의2).
  */
 export function AnalyticsConsentSheet({visible,onAgree,onDecline}:{visible:boolean;onAgree:()=>void;onDecline:()=>void}) {
-  return <PixelBottomSheet visible={visible} title="앱 개선을 도와주세요" onRequestClose={onDecline}>
+  return <PixelBottomSheet visible={visible} title={t('analyticsConsent.title')} onRequestClose={onDecline}>
     {visible&&<AnalyticsConsentBody onAgree={onAgree} onDecline={onDecline}/>}
   </PixelBottomSheet>;
 }
@@ -67,19 +67,19 @@ function AnalyticsConsentBody({onAgree,onDecline}:{onAgree:()=>void;onDecline:()
   const [open,setOpen]=useState(false);
   return <>
     {open
-      ?<View style={{gap:6}}>{ANALYTICS_CONSENT_ROWS.map(([label,value])=><View key={label} style={{flexDirection:'row',gap:10}}>
+      ?<View style={{gap:6}}>{analyticsConsentRows().map(([label,value])=><View key={label} style={{flexDirection:'row',gap:10}}>
         <PixelText style={{width:84,color:retro.color.ink,opacity:0.7}}>{label}</PixelText>
         <PixelText style={{flex:1}}>{value}</PixelText>
       </View>)}</View>
       :<View style={{gap:8}}>
-        <PixelText>어떤 기능을 쓰는지 기록을 독일에 있는 PostHog로 보내 앱을 고치는 데 써요.</PixelText>
-        <PixelText>목표 이름, 메모, 사진은 보내지 않아요.</PixelText>
-        <PixelText>만 14세 미만이면 동의 안 함을 눌러 주세요.</PixelText>
+        <PixelText>{t('analyticsConsent.what')}</PixelText>
+        <PixelText>{t('analyticsConsent.notSent')}</PixelText>
+        <PixelText>{t('analyticsConsent.age')}</PixelText>
       </View>}
-    <SettingRow label={open?'접기':'자세히 보기'} onPress={()=>setOpen(!open)}/>
+    <SettingRow label={t(open?'analyticsConsent.less':'analyticsConsent.more')} onPress={()=>setOpen(!open)}/>
     <View style={{flexDirection:'row',gap:10}}>
-      <PixelButton style={{flex:1}} variant="secondary" label="동의 안 함" onPress={onDecline}/>
-      <PixelButton style={{flex:1}} variant="secondary" label="동의해요" onPress={onAgree}/>
+      <PixelButton style={{flex:1}} variant="secondary" label={t('analyticsConsent.decline')} onPress={onDecline}/>
+      <PixelButton style={{flex:1}} variant="secondary" label={t('analyticsConsent.agree')} onPress={onAgree}/>
     </View>
   </>;
 }
