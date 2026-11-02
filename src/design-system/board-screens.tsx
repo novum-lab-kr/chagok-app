@@ -1,6 +1,6 @@
 import React,{memo,useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
-import {Animated,PanResponder,Pressable,View,type LayoutRectangle} from 'react-native';
+import {Animated,PanResponder,Pressable,View,type LayoutChangeEvent,type LayoutRectangle} from 'react-native';
 import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
@@ -26,21 +26,29 @@ export type GoalCardItem={id:string;name:string;sticker:StickerId;/** 배지: �
 /** 목록 카드 사이 간격. 끌어 옮길 때 자리 계산에도 쓴다. */
 const GOAL_GAP=12;
 /**
- * 끌고 있는 카드가 놓일 자리. 다른 카드의 가운데를 지나면 그 자리로 간다.
+ * 끌고 있는 카드가 놓일 자리. 내려가면 아래 끝이, 올라가면 위 끝이 다른 카드의 가운데를 넘을 때 그 자리로 간다.
+ * 카드 반쯤만 겹쳐도 옆 카드가 비켜서서 조금만 끌어도 움직이는 느낌이 난다 (2026-11-02, 전에는 가운데끼리 비교해 카드 하나만큼 끌어야 했다).
  * heights는 지금 보이는 순서의 카드 높이, dy는 누른 곳에서 손가락이 움직인 거리다.
  */
 export function goalDropIndex(heights:readonly number[],from:number,dy:number):number {
   const tops:number[]=[];
   let top=0;
   for(const height of heights){tops.push(top);top+=height+GOAL_GAP;}
-  const center=(tops[from]??0)+(heights[from]??0)/2+dy;
-  return heights.filter((height,index)=>index!==from&&(tops[index]??0)+height/2<center).length;
+  const start=(tops[from]??0)+dy,own=heights[from]??0;
+  const edge=dy>0?start+own:dy<0?start:start+own/2;
+  return heights.filter((height,index)=>index!==from&&(tops[index]??0)+height/2<edge).length;
 }
 /** 끄는 동안 다른 카드가 비켜서는 거리. 끄는 카드가 지나간 카드만 그 카드 높이(간격 포함)만큼 움직인다. */
 export function goalDragShift(index:number,from:number,to:number,size:number):number {
   if(from<to&&index>from&&index<=to) return -size;
   if(to<from&&index>=to&&index<from) return size;
   return 0;
+}
+/** 비켜서는 카드는 바로 뛰지 않고 짧게 미끄러진다. 들린 카드는 손가락을 그대로 따른다. */
+function ShiftingCard({lifted,offset,shift,onLayout,children}:{lifted:boolean;offset:Animated.Value;shift:number;onLayout:(event:LayoutChangeEvent)=>void;children:ReactNode}) {
+  const [slide]=useState(()=>new Animated.Value(shift));
+  useEffect(()=>{Animated.timing(slide,{toValue:shift,duration:140,useNativeDriver:true}).start();},[shift,slide]);
+  return <Animated.View onLayout={onLayout} style={lifted?{zIndex:1,transform:[{translateY:offset}]}:{transform:[{translateY:slide}]}}>{children}</Animated.View>;
 }
 /**
  * 내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30). 카드를 꾹 누르면 들리고, 그대로 끌면 손가락을 따라온다.
@@ -111,13 +119,12 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순
     {items.map((item,index)=>{
       const lifted=drag?.from===index;
       const shift=drag&&!lifted?goalDragShift(index,drag.from,drag.to,drag.size):0;
-      return <Animated.View key={item.id} onLayout={event=>{heights.current.set(item.id,event.nativeEvent.layout.height);}}
-        style={lifted?{zIndex:1,transform:[{translateY:offset}]}:{transform:[{translateY:shift}]}}>
+      return <ShiftingCard key={item.id} lifted={lifted} offset={offset} shift={shift} onLayout={event=>{heights.current.set(item.id,event.nativeEvent.layout.height);}}>
         <GoalSummaryCard name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} lifted={lifted}
           onPress={()=>onOpen(item.id)} onLongPress={pageY=>start(index,pageY)} onPressOut={release}
           onMoveUp={index>0?()=>onMove(index,index-1):undefined}
           onMoveDown={index<items.length-1?()=>onMove(index,index+1):undefined}/>
-      </Animated.View>;
+      </ShiftingCard>;
     })}
   </View>;
 }

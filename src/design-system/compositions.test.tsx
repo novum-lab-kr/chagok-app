@@ -221,18 +221,19 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
 
 describe('내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30)',()=>{
   const card=(id:string)=>({id,name:id,sticker:'basic.sprout' as const,kind:'적립판',percent:10,status:['10% 채웠어요']});
-  it('끄는 카드의 가운데가 다른 카드의 가운데를 지나면 그 자리로 간다',()=>{
+  it('끄는 카드의 끝이 다른 카드의 가운데를 넘으면 그 자리로 간다',()=>{
     const heights=[100,100,100,100]; // 간격 12 → 가운데 50, 162, 274, 386
     expect(goalDropIndex(heights,0,0)).toBe(0);
-    expect(goalDropIndex(heights,0,111)).toBe(0);
-    expect(goalDropIndex(heights,0,113)).toBe(1);
+    expect(goalDropIndex(heights,0,61)).toBe(0);  // 아래 끝 161 < 162
+    expect(goalDropIndex(heights,0,63)).toBe(1);  // 163 > 162
     expect(goalDropIndex(heights,0,400)).toBe(3);
-    expect(goalDropIndex(heights,3,-113)).toBe(2);
+    expect(goalDropIndex(heights,3,-61)).toBe(3); // 위 끝 275 > 274
+    expect(goalDropIndex(heights,3,-63)).toBe(2);
     expect(goalDropIndex(heights,3,-1000)).toBe(0);
   });
-  it('높이가 다른 카드도 가운데로 잰다',()=>{
-    expect(goalDropIndex([80,140,80],0,90)).toBe(0);  // 끄는 가운데 130 < 둘째 가운데 162
-    expect(goalDropIndex([80,140,80],0,140)).toBe(1); // 180 > 162
+  it('높이가 다른 카드도 끝과 가운데로 잰다',()=>{
+    expect(goalDropIndex([80,140,80],0,81)).toBe(0); // 아래 끝 161 < 둘째 가운데 162
+    expect(goalDropIndex([80,140,80],0,83)).toBe(1);
   });
   it('지나간 카드만 끄는 카드 높이만큼 비켜선다',()=>{
     expect([0,1,2,3].map(index=>goalDragShift(index,1,3,112))).toEqual([0,0,-112,-112]);
