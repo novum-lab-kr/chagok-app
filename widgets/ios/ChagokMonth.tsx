@@ -46,7 +46,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
         spacing={6}
         modifiers={[containerBackground(bg, 'widget'), widgetURL('chagok://goal/new'), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
         <Image uiImage={props.mascotSleepy} modifiers={[resizable(), frame({ width: 40, height: 40 })]} />
-        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>달력판 목표를 만들어 보세요</Text>
+        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>{props.labels?.firstCalendar ?? '달력판 목표를 만들어 보세요'}</Text>
         <Link destination="chagok://goal/new">
           <Text
             modifiers={[
@@ -55,7 +55,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
               padding({ top: 6, bottom: 6, leading: 14, trailing: 14 }),
               background('#FD855F', shapes.roundedRectangle({ cornerRadius: 10 })),
             ]}>
-            목표 만들기
+            {props.labels?.makeGoal ?? '목표 만들기'}
           </Text>
         </Link>
       </VStack>
@@ -88,7 +88,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
   const lastSlot = remaining !== null && remaining <= 1;
   // 이번 달 칸: 이 달 요청을 반영한다. 오늘 칸은 이 항목의 날짜 기준.
   const days = g.days.slice();
-  const sameMonth = g.monthLabel === `${day.getMonth() + 1}월`; // 칸이 이 항목의 달일 때만 요청을 합친다
+  const sameMonth = g.month === day.getMonth() + 1; // 칸이 이 항목의 달일 때만 요청을 합친다
   for (const r of mine) {
     if (!sameMonth || !r.dateKey.startsWith(todayKey.slice(0, 8))) continue; // 이 달 요청만
     const i = Number(r.dateKey.slice(8, 10)) - 1;

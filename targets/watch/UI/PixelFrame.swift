@@ -78,7 +78,7 @@ struct BackButton: View {
     }
     .buttonStyle(HitArea(style: PixelButtonStyle(fill: Palette.ivory, unit: 2, padding: 0), size: 30, pad: Self.pad))
     .offset(x: -Self.pad.leading, y: -Self.pad.top)
-    .accessibilityLabel("뒤로")
+    .accessibilityLabel(Language.pick("뒤로", "Back"))
   }
   /** 보이는 틀은 30이지만 손가락이 닿는 곳은 화면 안쪽으로 넓힌다. 작은 워치(40~42mm)에서는 틀이 23pt까지 줄고 둥근 모서리 옆이라 빗나갔다 (2026-10-17 실기기) */
   static let pad = EdgeInsets(top: 12, leading: 14, bottom: 18, trailing: 6)

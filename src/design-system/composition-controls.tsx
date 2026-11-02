@@ -293,9 +293,9 @@ export function GoalListHeader({tab,counts,onTab,onAdd,addTargetRef}:{tab:GoalLi
   </View>;
 }
 /** 화면 읽기로 내 목표를 한 칸씩 옮기는 동작 (PRD 4.1, 2026-10-30). 끝 자리에서는 그 방향을 빼고 단다. */
-const goalMoveActions={up:{name:'moveUp',label:'위로 옮기기'},down:{name:'moveDown',label:'아래로 옮기기'}} as const;
+const goalMoveActions={up:{name:'moveUp'},down:{name:'moveDown'}} as const;
 export function goalMoveActionList(canUp:boolean,canDown:boolean) {
-  return [...(canUp?[goalMoveActions.up]:[]),...(canDown?[goalMoveActions.down]:[])];
+  return [...(canUp?[{...goalMoveActions.up,label:t('goal.moveUp')}]:[]),...(canDown?[{...goalMoveActions.down,label:t('goal.moveDown')}]:[])];
 }
 /** 목록 카드. 모든 판이 같은 모양: 스티커, 이름(최대 2줄), [판 종류 배지] 요약 글자, 진행 막대. */
 export function GoalSummaryCard({name,sticker,kind,status,percent,onPress,onLongPress,onPressOut,lifted=false,onMoveUp,onMoveDown}:{name:string;sticker:StickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void;/** 꾹 누르면 끌어 옮기기를 시작한다. 누른 곳의 화면 세로 위치를 넘긴다 (PRD 4.1) */onLongPress?:(pageY:number)=>void;onPressOut?:()=>void;/** 끌고 있는 카드. 눌린 모양을 그대로 둔다 */lifted?:boolean;/** 화면 읽기의 위로, 아래로 옮기기. 끝 자리면 넘기지 않는다 */onMoveUp?:()=>void;onMoveDown?:()=>void}) {

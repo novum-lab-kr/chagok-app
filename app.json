@@ -37,6 +37,10 @@
         "backgroundColor": "#AFE1CB"
       }
     },
+    "locales": {
+      "ko": "./locales/ko.json",
+      "en": "./locales/en.json"
+    },
     "plugins": [
       "expo-router",
       "expo-sqlite",

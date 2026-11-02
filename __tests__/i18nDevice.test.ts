@@ -17,21 +17,11 @@ afterEach(() => {
   setLanguage('ko');
 });
 
-describe('출시 빌드 한국어 고정', () => {
+describe('기기 언어를 따른다', () => {
   beforeEach(useEnglishDevice);
 
-  it('출시 빌드(__DEV__ false)는 영어 기기에서도 한국어다', () => {
-    globals.__DEV__ = false;
-    setLanguage('en');
-    applyDeviceLanguage();
-    expect(getLanguage()).toBe('ko');
-    setLanguage('en');
-    expect(useDeviceLanguage()).toBe('ko');
-    expect(getLanguage()).toBe('ko');
-  });
-
-  it('개발 빌드(__DEV__ true)는 영어 기기에서 영어다', () => {
-    globals.__DEV__ = true;
+  it.each([true, false])('__DEV__ %s에서 영어 기기는 영어다', (dev) => {
+    globals.__DEV__ = dev;
     applyDeviceLanguage();
     expect(getLanguage()).toBe('en');
     setLanguage('ko');

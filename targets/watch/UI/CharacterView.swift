@@ -46,7 +46,7 @@ struct CharacterView: View {
       CharacterSprite(face: face, heads: heads, cell: cell)
         .scaleEffect(x: 1, y: squash ? 0.9 : 1, anchor: .bottom)
         .offset(x: charLeft + walkX, y: charTop + (bob ? -1.5 : 0))
-        .accessibilityElement().accessibilityLabel("차곡이, 블록 \(store.growth)개")
+        .accessibilityElement().accessibilityLabel(Language.pick("차곡이, 블록 \(store.growth)개", "Chagok, \(store.growth) blocks"))
       if let d = drop { PixelView(map: Sprite.blockMap(d.color), cell: cell).offset(x: d.x, y: d.y) }
       if let f = flying {
         PixelView(map: Sprite.bundleMap(), cell: boxCell).offset(x: f.arrived ? f.to.x : f.from.x, y: f.arrived ? f.to.y : f.from.y)
@@ -54,12 +54,12 @@ struct CharacterView: View {
       Text(label ?? (idx == 0 ? Copy.boxNow : Copy.boxFull)).font(.pixel(11)).foregroundStyle(Palette.ink)
         .frame(width: Layout.width).offset(y: 152)
       if flow?.auto == true {
-        Button("건너뛰기", action: done).buttonStyle(PixelButtonStyle(fill: Palette.ivory))
+        Button(Language.pick("건너뛰기", "Skip"), action: done).buttonStyle(PixelButtonStyle(fill: Palette.ivory))
           .frame(width: 104, height: 32).offset(x: 52, y: 206)
       } else {
         BackButton(action: back).offset(x: 20, y: 12)
         if deck.count > 1 {
-          Text("크라운").font(.pixel(11)).foregroundStyle(Palette.ink).padding(.horizontal, 6)
+          Text(Language.pick("크라운", "Crown")).font(.pixel(11)).foregroundStyle(Palette.ink).padding(.horizontal, 6)
             .background(Capsule().fill(Palette.ivory)).overlay(Capsule().stroke(Palette.ink, lineWidth: 1))
             .frame(width: Layout.width).offset(y: 226)
         }

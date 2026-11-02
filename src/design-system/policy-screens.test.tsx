@@ -1,3 +1,4 @@
+import {setLanguage} from '../i18n';
 import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
@@ -80,5 +81,17 @@ describe('도움말과 정보',()=>{
     render(<HelpInfoPanel adFree version={null} {...handlers()}/>);
     expect(screen.queryByRole('button',{name:'광고 신고하기'})).toBeNull();
     expect(screen.queryByText('앱 버전')).toBeNull();
+  });
+});
+
+describe('사용 기록 동의 영어 문구',()=>{
+  afterEach(()=>setLanguage('ko'));
+  it('영어 기기에서 시트와 펼친 항목이 영어다',()=>{
+    setLanguage('en');
+    render(<AnalyticsConsentSheet visible onAgree={()=>{}} onDecline={()=>{}}/>);
+    expect(screen.getByText(/PostHog in Germany/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'See details'}));
+    expect(screen.getByText('Germany')).toBeTruthy();
+    expect(screen.getByRole('button',{name:'I agree'})).toBeTruthy();
   });
 });

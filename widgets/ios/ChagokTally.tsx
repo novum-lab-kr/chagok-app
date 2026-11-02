@@ -46,7 +46,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
         spacing={6}
         modifiers={[containerBackground(bg, 'widget'), widgetURL('chagok://goal/new'), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
         <Image uiImage={props.mascotSleepy} modifiers={[resizable(), frame({ width: 40, height: 40 })]} />
-        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>적립판 목표를 만들어 보세요</Text>
+        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>{props.labels?.firstTally ?? '적립판 목표를 만들어 보세요'}</Text>
         <Link destination="chagok://goal/new">
           <Text
             modifiers={[
@@ -55,7 +55,7 @@ const ChagokTally = (props: TallyWidgetProps, env: WidgetEnvironment<Config>) =>
               padding({ top: 6, bottom: 6, leading: 14, trailing: 14 }),
               background('#FD855F', shapes.roundedRectangle({ cornerRadius: 10 })),
             ]}>
-            목표 만들기
+            {props.labels?.makeGoal ?? '목표 만들기'}
           </Text>
         </Link>
       </VStack>
