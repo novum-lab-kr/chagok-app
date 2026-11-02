@@ -97,8 +97,11 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
     :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
     :<>{rewardReady?<PixelBadge label={t('shop.threeDaysFree')} tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
   const head=<View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:36}}>
-    <PixelText accessibilityRole="header" style={{fontSize:20,lineHeight:26,color:c.buttonText}}>{pack.label}</PixelText>
-    <PixelText variant="caption" style={caption}>{t('shop.stickerCount',pack.stickers.length)}</PixelText><View style={{flex:1}}/>{right}
+    {/* 이름이 길면(영어) 개수를 다음 줄로 내려 가격과 화살표를 밀지 않는다 */}
+    <View style={{flex:1,flexDirection:'row',flexWrap:'wrap',alignItems:'center',columnGap:8}}>
+      <PixelText accessibilityRole="header" style={{fontSize:20,lineHeight:26,color:c.buttonText}}>{pack.label}</PixelText>
+      <PixelText variant="caption" style={caption}>{t('shop.stickerCount',pack.stickers.length)}</PixelText>
+    </View>{right}
     {!locked&&<FoldToggle open={open} onPress={onToggle}/>}
   </View>;
   // 카드 어디를 눌러도 묶음 화면을 연다. 머리줄의 [>]도 눌리는 것처럼 보이므로 (2026-10-09)
