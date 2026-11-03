@@ -187,13 +187,21 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
   // 달력판은 가리지 않는다. 틀은 PixelFrame이 그리기 전에 재고, 가리면 첫 layout 이벤트가 버려질 때 판이 투명한 채 남는다.
   const visible=board.kind==='calendar'||ready;
   // 판 윗부분(테두리·제목·진행 줄)은 고정한다. 적립판은 화면에 들어가는 줄만큼씩 쪽을 나눠 좌우로 넘긴다 (2026-11-03 시안 P1).
-  // 남은 높이 = 판 아래 빈 영역 높이 − (판 높이 − 칸 영역 높이). 칸 영역 바깥(테두리, 제목, 진행 줄)은 쪽 수와 상관없이 같다.
-  // 아주 작은 화면에서 최소 줄(3줄)도 넘치면 그 쪽 안에서만 스크롤한다.
-  const [zoneHeight,setZoneHeight]=useState(0),[panelHeight,setPanelHeight]=useState(0),[gridHeight,setGridHeight]=useState(0);
-  const gridMax=zoneHeight>0&&panelHeight>0&&gridHeight>0?zoneHeight-(panelHeight-gridHeight):null;
-  return <View style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
-    <View style={{flex:1}} onLayout={event=>setZoneHeight(Math.floor(event.nativeEvent.layout.height))}>
-    <View testID="board-panel" onLayout={event=>setPanelHeight(Math.ceil(event.nativeEvent.layout.height))} style={{opacity:visible?1:0,flexShrink:1}}>
+  // 칸 영역이 쓸 수 있는 높이 = 판이 내려갈 수 있는 바닥 − 판 위쪽 − (판 높이 − 칸 영역 높이).
+  // 바닥은 화면 아래에서 홈 인디케이터 여백과 RetroScreen 여백 둘(바깥, 본문)을 뺀 곳이다. 칸 영역 바깥(테두리, 제목, 진행 줄)은 쪽 수와 상관없이 같다.
+  // 아주 작은 화면에서 최소 줄(3줄)도 넘치면 그 쪽 안에서만 스크롤한다. (2026-11-03: 처음에 flex:1 영역으로 재다가 RetroScreen 본문에 높이가 없어 판이 0으로 접혔다)
+  const rootRef=useRef<View>(null),panelRef=useRef<View>(null);
+  const [frame,setFrame]=useState<{rootBottom:number;panelTop:number;panelHeight:number}|null>(null);
+  const [gridHeight,setGridHeight]=useState(0);
+  const measureFrame=useCallback(()=>{
+    rootRef.current?.measureInWindow((_x,rootY,_w,rootHeight)=>panelRef.current?.measureInWindow((_px,panelTop,_pw,panelHeight)=>{
+      const next={rootBottom:Math.floor(rootY+rootHeight),panelTop:Math.ceil(panelTop),panelHeight:Math.ceil(panelHeight)};
+      setFrame(previous=>previous&&previous.rootBottom===next.rootBottom&&previous.panelTop===next.panelTop&&previous.panelHeight===next.panelHeight?previous:next);
+    }));
+  },[]);
+  const gridMax=frame&&gridHeight>0?frame.rootBottom-bottomInset-2*SCREEN_PADDING-frame.panelTop-(frame.panelHeight-gridHeight):null;
+  return <View ref={rootRef} onLayout={measureFrame} style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
+    <View ref={panelRef} testID="board-panel" onLayout={measureFrame} style={{opacity:visible?1:0,flexShrink:1}}>
     <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
@@ -206,7 +214,6 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
       </CenteringScrollView>
       </View>
     </PixelPanel>
-    </View>
     </View>
   </RetroScreen>
   {notice&&<View style={{position:'absolute',left:SCREEN_PADDING,right:SCREEN_PADDING,bottom:bottomInset+SCREEN_PADDING}}>{notice}</View>}
