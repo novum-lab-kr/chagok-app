@@ -7,7 +7,7 @@ import {touchSlop} from './touch';
 import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,stickerCellSize,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
-import {CalendarBoard} from './calendar';
+import {CalendarBoard,MonthNavigation} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 import {getLanguage,t} from '../i18n';
 
@@ -205,10 +205,11 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
     <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
+      {board.kind==='calendar'&&<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset,marginBottom:TALLY_PAGE_NAV_HEIGHT-44}}><MonthNavigation year={board.year} month={board.month} onChange={board.onMonthChange} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext}/></View></CalendarSwipe>}
       <View style={{flexShrink:1}} onLayout={event=>setGridHeight(Math.ceil(event.nativeEvent.layout.height))}>
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>
       {board.kind==='calendar'
-        ?<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset,paddingBottom:retro.layout.boardInset}}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
+        ?<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset}}><CalendarBoard showNavigation={false} year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
           isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} poppedDate={board.justPlaced}/></View></CalendarSwipe>
         :<TallyGrid board={board} sticker={sticker} onSettled={reveal} maxHeight={gridMax}/>}
       </CenteringScrollView>
@@ -221,6 +222,8 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
 }
 /** 화면 왼쪽 끝에서 시작한 밀기는 iOS 뒤로 가기에 맡긴다. 판 밀기가 가져가면 판 화면에서 뒤로 가기가 막혔다 (2026-11-03, iOS 26 시뮬레이터) */
 const EDGE_BACK_WIDTH=24;
+/** 손가락이 처음 닿은 x. gestureState.x0은 판이 응답자가 되기 전에는 0이라 쓸 수 없다 (2026-11-03, 그래서 모든 밀기가 막혔다) */
+const startX=(g:{moveX:number;dx:number})=>g.moveX-g.dx;
 /** 달력판은 좌우 스와이프로도 달을 옮긴다 (PRD 4.3). 화살표를 숨긴 방향으로는 가지 않는다. */
 function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactNode}) {
   const {year,month,canGoPrev,canGoNext,onMonthChange}=board;
@@ -230,7 +233,7 @@ function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactN
   },[year,month,canGoPrev,canGoNext,onMonthChange]);
   // PanResponder는 첫 렌더 값을 가두지 않도록 useMemo로 만든다.
   const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponder:(_,g)=>g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponder:(_,g)=>startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48)shift(1);else if(g.dx>=48)shift(-1);},
   }),[shift]);
   return <View {...swipe.panHandlers}>{children}</View>;
@@ -308,8 +311,8 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
   },[justPlaced,next,paged,first,last]);
   // 칸(Pressable)이 손가락을 먼저 잡으면 판 밀기가 받지 못한다(2026-11-03 실기기). 가로로 분명히 움직이면 캡처 단계에서 판이 가져온다.
   const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponderCapture:(_,g)=>paged&&g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
-    onMoveShouldSetPanResponder:(_,g)=>paged&&g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponderCapture:(_,g)=>paged&&startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponder:(_,g)=>paged&&startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48&&page<pages-1) go(page+1);else if(g.dx>=48&&page>0) go(page-1);},
   }),[paged,page,pages,go]);
   const scrollToCenter=useScrollToCenter();
