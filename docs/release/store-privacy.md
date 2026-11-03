@@ -69,7 +69,7 @@
 
 - 「연결」과 「추적」 칸은 Google SDK 선언을 따랐다. Google 웹 안내는 이 두 칸을 나누어 적지 않는다.
 - **기기 ID의 추적 칸은 사용자 결정이 필요하다.** SDK 선언은 기기 ID를 「추적에 사용」으로 적는다. 그런데 앱은 ATT를 묻지 않으므로 광고 식별자가 0이고(Apple 원문 "the device's advertising identifier value will be all zeros"), Google도 ATT 동의가 없으면 "the Google Mobile Ads SDK will not send the IDFA"라고 한다. 추천안은 실제 동작대로 「아니요」로 두고 앱 전체 「추적: 하지 않음」을 유지하는 것이다. SDK 선언 그대로 「예」로 적으면 스토어에 「사용자를 추적하는 데 사용되는 데이터」가 보이고 ATT 없이 추적한다고 읽힐 수 있다.
-- 맞춤 광고로 바꾸면(RELEASE-DECISIONS 2026-10-05 「광고」) 기기 ID와 광고 데이터의 추적 칸을 다시 본다.
+- 맞춤 광고로 바꾸면([결정](decisions.md) 2026-10-05 「광고」) 기기 ID와 광고 데이터의 추적 칸을 다시 본다.
 
 **1.0.1 이벤트 기록(PostHog)과 오류 보고(Sentry)를 넣은 뒤 더할 것 (2026-10-31 초안, 사용자 확인 전)**
 

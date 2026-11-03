@@ -9,7 +9,7 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 
 ## 대상
 
-- 개발 서버만 다룬다: 프로젝트 ref `cmkmhrzvxbtuxbgixqoo`(`chagok-dev`). 운영 서버는 이 스킬로 다루지 않는다([DEV-SETUP](../../../docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 다른 프로젝트 ref가 보이면 멈추고 보고한다.
+- 개발 서버만 다룬다: 프로젝트 ref `cmkmhrzvxbtuxbgixqoo`(`chagok-dev`). 운영 서버는 이 스킬로 다루지 않는다([운영](../../../docs/OPERATIONS.md) 「운영 DB 바꾸기」). 다른 프로젝트 ref가 보이면 멈추고 보고한다.
 
 ## 토큰
 

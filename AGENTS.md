@@ -13,10 +13,12 @@
 | [docs/PITFALLS.md](docs/PITFALLS.md) | 빌드, 테스트, 기기 확인 전에. 한 번 크게 헤맨 함정 |
 | [docs/WORKING-AGREEMENT.md](docs/WORKING-AGREEMENT.md) | 작업 방식 전체와 그 이유 |
 | [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | 개발 빌드, 시뮬레이터, 개발 서버 실행 |
-| [docs/RELEASE-DECISIONS.md](docs/RELEASE-DECISIONS.md) | 식별자, 계정, 가격, 광고 같은 출시 결정 |
-| [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 스토어에 내기 직전. 출시 전 최종 점검 목록 |
-| [docs/RELEASE-1.0.1.md](docs/RELEASE-1.0.1.md) | 1.0.1을 합치거나 내보낼 때. 심사 시점별 처리, 운영 DB 반영 순서 |
-| [docs/LEGAL-REVIEW.md](docs/LEGAL-REVIEW.md) | 출시와 업데이트 때마다. 약관과 처리방침이 기대는 법령의 개정 확인과 문서 유효성 점검 |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | 운영 서버를 되살리거나, 지켜보거나, 로그를 보거나, DB와 함수를 올리거나, 업데이트할 때 |
+| [docs/release/](docs/release/README.md) | 출시 문서 모음. 아래 넷과 버전 규칙, 제출 문안, 개인정보 신고 |
+| [docs/release/decisions.md](docs/release/decisions.md) | 식별자, 계정, 가격, 광고 같은 출시 결정 |
+| [docs/release/checklist.md](docs/release/checklist.md) | 스토어에 내기 직전. 출시 전 최종 점검 목록 |
+| [docs/release/1.0.1.md](docs/release/1.0.1.md) | 1.0.1을 합치거나 내보낼 때. 심사 시점별 처리, 운영 DB 반영 순서 |
+| [docs/release/legal-review.md](docs/release/legal-review.md) | 출시와 업데이트 때마다. 약관과 처리방침이 기대는 법령의 개정 확인과 문서 유효성 점검 |
 | [docs/migration/README.md](docs/migration/README.md) | 레포를 옮긴 직후에만 |
 
 Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](https://docs.expo.dev/versions/v57.0.0/)를 확인한다. 지금 Expo ~57 / RN 0.86 / React 19.2.3.
@@ -96,8 +98,8 @@ Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](
 
 1.0.0을 심사에 낸 뒤부터 적용한다.
 
-- 올린 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 운영 DB를 통째로 지우지 않고 바뀐 파일만 올린다([DEV-SETUP](docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 기기 DB(`src/db/schema.ts`)도 버전을 올려 옮긴다.
-- 약관과 처리방침은 1.0.0 출시 전이면 1판을 고치고, 출시 뒤면 새 판을 낸다([1.0.1 출시 순서](docs/RELEASE-1.0.1.md) 「처리방침 판」).
+- 올린 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 운영 DB를 통째로 지우지 않고 바뀐 파일만 올린다([운영](docs/OPERATIONS.md) 「운영 DB 바꾸기」). 기기 DB(`src/db/schema.ts`)도 버전을 올려 옮긴다.
+- 약관과 처리방침은 1.0.0 출시 전이면 1판을 고치고, 출시 뒤면 새 판을 낸다([1.0.1 출시 순서](docs/release/1.0.1.md) 「처리방침 판」).
 
 ## 빠른 확인
 

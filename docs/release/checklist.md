@@ -1,13 +1,13 @@
 # 출시 전 최종 점검
 
 스토어에 심사를 내기 직전에 위에서부터 차례로 확인한다. 한 항목이라도 비면 내지 않는다.
-결정 내용은 [출시 준비 결정](RELEASE-DECISIONS.md), 번호 규칙은 [버전 규칙](RELEASE-VERSIONING.md)에 있다. 여기는 **확인 목록만** 둔다.
+결정 내용은 [출시 준비 결정](decisions.md), 번호 규칙은 [버전 규칙](versioning.md)에 있다. 여기는 **확인 목록만** 둔다.
 
 처음 만듦: 2026-10-11. 이미 끝난 항목은 `[x]`와 날짜. 출시 때마다 「출시할 때마다」 절은 다시 비운다.
 
 ## 1. 정해져 있어야 하는 것
 
-- [ ] [출시 준비 결정](RELEASE-DECISIONS.md)과 [PRD 11절](PRD.md#11-남은-결정)에 출시를 막는 「열림」이 없다. 특히 운영 서버, 날짜·시간대 처리, 출시 묶음 수·주제.
+- [ ] [출시 준비 결정](decisions.md)과 [PRD 11절](../PRD.md#11-남은-결정)에 출시를 막는 「열림」이 없다. 특히 운영 서버, 날짜·시간대 처리, 출시 묶음 수·주제.
 - [ ] 스토어 앱 이름이 쓸 수 있는 이름이다(KIPRIS 9류·42류 상표 확인).
 - [ ] 스티커 그림 원본 권리가 정리돼 있다.
 - [ ] 저장소 `LICENSE` 종류를 정했다.
@@ -21,21 +21,21 @@
   - RevenueCat 키가 Test Store 키(`test_`로 시작)가 아니라 iOS·Android 스토어 키다. Test Store 키로 만든 출시 빌드는 SDK가 일부러 멈춘다. 2026-10-26 iOS는 EAS `production`에 App Store 키(`appl_`)를 넣었다. Android는 아직.
   - AdMob 앱 ID(`app.json` 플러그인 `react-native-google-mobile-ads`)와 광고 단위 ID(`src/purchases/admob.ts` `adUnits`)가 Google 테스트 ID(`ca-app-pub-3940256099942544`)가 아니다. 2026-10-26 iOS는 실제 ID(출시 빌드만). Android 앱 ID와 광고 단위는 아직 테스트 ID.
   - 연결 화면의 [개발 계정으로 계속], `/dev/sync`가 출시 빌드에 보이지 않는다(`__DEV__`).
-- [ ] 이벤트 기록과 오류 수집이 켜져 있다(PRD 8.2, [개발 환경](DEV-SETUP.md)): EAS 환경 변수에 PostHog, Sentry 키가 있고, 소스맵 토큰이 있거나 없으면 `SENTRY_DISABLE_AUTO_UPLOAD=true`로 빌드한다. 저장 지역이 둘 다 독일이고, PostHog와 Sentry 프로젝트 설정에서 IP 저장을 껐다.
+- [ ] 이벤트 기록과 오류 수집이 켜져 있다(PRD 8.2, [개발 환경](../DEV-SETUP.md)): EAS 환경 변수에 PostHog, Sentry 키가 있고, 소스맵 토큰이 있거나 없으면 `SENTRY_DISABLE_AUTO_UPLOAD=true`로 빌드한다. 저장 지역이 둘 다 독일이고, PostHog와 Sentry 프로젝트 설정에서 IP 저장을 껐다.
 - [x] 다크 모드 막기·글자 크기 고정이 들어가 있다(`app.json` `userInterfaceStyle: "light"`, `allowFontScaling={false}`, PRD 6.2). 2026-10-12 실기기 확인.
-- [ ] 한 번에 한 기기, 동기화 버전·최소 앱 버전이 서버와 앱에 들어가 있다(PRD 4.8, [버전 규칙](RELEASE-VERSIONING.md) 「가끔」).
+- [ ] 한 번에 한 기기, 동기화 버전·최소 앱 버전이 서버와 앱에 들어가 있다(PRD 4.8, [버전 규칙](versioning.md) 「가끔」).
 - [ ] 오픈소스 라이선스 목록이 지금 의존성과 맞다: `npm run licenses`를 돌려 `src/policy/oss-licenses.generated.ts`가 바뀌지 않는다. 바뀌면 커밋한다. 「LICENSE 파일이 없는 패키지」로 멈추면 원래 저장소의 LICENSE를 확인해 `scripts/licenses/packages.json`에 더한다. 네이티브 라이브러리(`scripts/licenses/native.json`)는 React Native를 올렸을 때 버전을 맞춘다.
 - [ ] Android 앱 라이선스 목록에 AndroidX 등 Android 네이티브 라이브러리가 들어가 있다(아직 없음 — Android 위젯 작업 때).
 
 ## 3. 빌드 설정
 
-- [ ] `app.json` `version`을 올렸다([버전 규칙](RELEASE-VERSIONING.md)).
+- [ ] `app.json` `version`을 올렸다([버전 규칙](versioning.md)).
 - [x] 운영 서버 주소·키가 EAS 환경 변수에 있다. 클라우드 빌드는 `.env.local`을 읽지 않는다. 2026-10-26 환경별로 나눴다: `production`은 운영 서버(`https://chagok-api.novum-lab.com`)와 그 anon 키(상태 확인 200), RevenueCat App Store 키. `preview`는 개발 서버 `chagok-dev` 값과 Test Store 키(`npx eas-cli env:list --environment production`).
 - [x] Apple 로그인 로고가 빌드에 들어갔다. 2026-10-26 production 빌드 4의 「Install dependencies」 로그에 `apple-logo: 만듦`(EAS secret 파일 경로)을 확인했다. 2026-10-22 EAS production, preview, development에 secret 파일 변수 `APPLE_SIWA_LOGO_SVG`(`.secrets/apple-siwa-logo.svg`)를 올렸다. **다음 TestFlight 빌드 로그에서 `apple-logo: 만듦`을 확인한다**(사용자 결정: 따로 빌드하지 않음). 「없음」이면 EAS가 postinstall 때 이 변수를 주지 않는 것이고, Apple 기본 버튼으로 빌드된 것이다. 로고 파일을 바꾸면 `npx eas-cli env:set --name APPLE_SIWA_LOGO_SVG --type file --value .secrets/apple-siwa-logo.svg --visibility secret --environment production --environment preview --environment development`.
-- [ ] 카카오 콘솔 연결 해제 웹훅 주소가 운영 서버(`https://chagok-api.novum-lab.com/functions/v1/kakao-unlink`)이고 [사용함]이다. 운영 함수 환경에 `KAKAO_ADMIN_KEY`가 있고 콘솔 [웹훅 테스트]가 200이다([운영 서버 계획](superpowers/plans/2026-10-21-production-server.md) 4단계). 운영 서버 감시(`monitor.sh`)에 `private.kakao_unlink_failures` 줄 수가 0이 아니면 실패로 알리는 점검을 더했다.
+- [ ] 카카오 콘솔 연결 해제 웹훅 주소가 운영 서버(`https://chagok-api.novum-lab.com/functions/v1/kakao-unlink`)이고 [사용함]이다. 운영 함수 환경에 `KAKAO_ADMIN_KEY`가 있고 콘솔 [웹훅 테스트]가 200이다([운영 서버 계획](../superpowers/plans/2026-10-21-production-server.md) 4단계). 운영 서버 감시(`monitor.sh`)에 `private.kakao_unlink_failures` 줄 수가 0이 아니면 실패로 알리는 점검을 더했다.
 - [x] `ios.infoPlist.ITSAppUsesNonExemptEncryption: false`가 있다(2026-10-10).
 - [x] 개인정보 매니페스트(Privacy Manifest)가 앱과 위젯 양쪽에 있다(2026-10-15 prebuild 결과로 확인). 새 네이티브 라이브러리를 더했으면 다시 본다.
-- [ ] 로컬에서 빌드한다면 `npx expo prebuild --clean`을 먼저 했다(옛 `ios/` 문제, [PITFALLS](PITFALLS.md)).
+- [ ] 로컬에서 빌드한다면 `npx expo prebuild --clean`을 먼저 했다(옛 `ios/` 문제, [PITFALLS](../PITFALLS.md)).
 
 ## 4. 출시 빌드로 실기기 점검
 
@@ -55,29 +55,29 @@
 ## 5. 스토어 제출물
 
 - [x] 이용약관·개인정보 처리방침이 정식 주소에 게시돼 있고 앱 안 링크와 같다. 결제·광고 조항이 들어간 1판이다(정식 출시 전 변경은 모두 1판에, 2026-10-14). 2026-10-26 정책 저장소 `publish`에 게시(167382d), 2026-10-28 사이트 `/privacy/v1/`에서 RevenueCat과 AdMob 조항을 확인했다. 검색 차단(`_headers`의 `noindex`)은 아래 사업자 정보 빈칸을 채울 때 함께 푼다(그 파일 첫 줄 규칙).
-- [ ] 통신판매업 신고가 필요한지 확인했다(필요하면 신고 번호를 약관·스토어에). 면제 기준은 [법령 검토](LEGAL-REVIEW.md) 1절. 2026-10-28 고시 2조 원문 재확인: 면제는 「직전년도 거래 50회 미만」 또는 「간이과세자」. 노붐랩은 일반과세자라 두 번째는 해당하지 않고, 첫 번째는 개업 첫해 해석이 열려 있다(LEGAL-REVIEW 4절). Google Play는 신고번호가 필수다.
+- [ ] 통신판매업 신고가 필요한지 확인했다(필요하면 신고 번호를 약관·스토어에). 면제 기준은 [법령 검토](legal-review.md) 1절. 2026-10-28 고시 2조 원문 재확인: 면제는 「직전년도 거래 50회 미만」 또는 「간이과세자」. 노붐랩은 일반과세자라 두 번째는 해당하지 않고, 첫 번째는 개업 첫해 해석이 열려 있다(LEGAL-REVIEW 4절). Google Play는 신고번호가 필수다.
 - [ ] 정책 사이트 약관 끝과 첫 화면의 사업자 정보 줄에 사업장 주소, 전화번호, 통신판매업 신고번호를 넣었다(전자상거래법 제10조, 제13조). 2026-10-26 게시본은 상호, 대표, 사업자등록번호만 있다.
 - [ ] 처리방침 11절대로 운영 서버의 운영자 접속 기록(SSH)을 1년 이상 남긴다. 기본 로그 회전은 이보다 짧다.
 - [ ] 처리방침 5절 3항의 「최대 37일」이 운영 서버 백업 정리 주기(일요일마다 `restic forget --keep-daily 30 --prune`)와 맞다.
-- [ ] 판매 지역: 첫 출시는 **한국만**(2026-10-15). EU를 빼면 「EU 거래자 자격(DSA)」 입력이 필요 없다. 중국 본토는 제외한다. 넓힐 때는 [출시 준비 결정](RELEASE-DECISIONS.md) 「해외 확장 순서」(2026-10-30, 1차 7개국)와 「해외 확장」을 본다. 2026-10-26 App Store Connect에 대한민국만 설정했다.
-- [ ] App Store Connect(새 계정 앱 등록 2026-10-20, Apple ID `6824725721`): 앱 정보, 설명·키워드·스크린샷, 개인정보 라벨, 연령 등급, 인앱 상품(묶음·광고 제거)과 유료 앱 계약. 유료 앱 계약·세금·은행 정보가 빠지면 스토어가 가격을 돌려주지 않아 화면에 가격이 안 나온다(PRD 4.12). 문안과 원문 근거는 [App Store 제출 문안 초안](release-app-store-submission.md)(2026-10-28).
+- [ ] 판매 지역: 첫 출시는 **한국만**(2026-10-15). EU를 빼면 「EU 거래자 자격(DSA)」 입력이 필요 없다. 중국 본토는 제외한다. 넓힐 때는 [출시 준비 결정](decisions.md) 「해외 확장 순서」(2026-10-30, 1차 7개국)와 「해외 확장」을 본다. 2026-10-26 App Store Connect에 대한민국만 설정했다.
+- [ ] App Store Connect(새 계정 앱 등록 2026-10-20, Apple ID `6824725721`): 앱 정보, 설명·키워드·스크린샷, 개인정보 라벨, 연령 등급, 인앱 상품(묶음·광고 제거)과 유료 앱 계약. 유료 앱 계약·세금·은행 정보가 빠지면 스토어가 가격을 돌려주지 않아 화면에 가격이 안 나온다(PRD 4.12). 문안과 원문 근거는 [App Store 제출 문안 초안](app-store-submission.md)(2026-10-28).
   - [ ] 유료 앱 계약이 계약 탭에서 「활성」이다. 2026-10-28 동의 메일(「You've accepted the Paid Applications Agreement」)을 받았다. 활성이 아니면 인앱 상품을 낼 수 없다.
   - [x] 한국 법에 따른 사업자 연락처 확인(Korean Law). 2026-10-28 「Your business contact information was verified」 메일.
   - [ ] 인앱 상품 5개를 1.0.0 버전 페이지에 붙이고 상품마다 심사용 스크린샷과 메모를 넣었다(첫 상품은 앱 버전과 함께 내야 한다).
   - [ ] 스크린샷: iPhone과 **Apple Watch** 둘 다(빌드에 워치 앱이 있으면 워치 스크린샷이 필요하다).
-  - [ ] 개인정보 라벨에 RevenueCat과 AdMob 항목을 넣었다([스토어 개인정보 신고 초안](release-store-privacy-draft.md) 2절 끝).
+  - [ ] 개인정보 라벨에 RevenueCat과 AdMob 항목을 넣었다([스토어 개인정보 신고 초안](store-privacy.md) 2절 끝).
   - [ ] Google 로그인 동의 화면을 「게시」했다. 「테스트 중」이면 등록한 테스트 사용자 말고는 Google 로그인이 막혀 심사자도 막힌다(심사 지침 2.1(a)).
   - [ ] 광고 신고 경로가 앱에 있다(심사 지침 2.5.18 마지막 문장). 2026-10-28 설정 「도움말과 정보」에 「광고 신고하기」를 넣었다(브랜치 `docs/review-prep`). 출시 빌드 실기기에서 메일 쓰기 화면이 열리는지 확인한다.
 - [ ] Google Play Console: 스토어 등록정보, 데이터 보안, 콘텐츠 등급, 인앱 상품. 개인 계정이면 **테스터 12명·14일 비공개 테스트**를 마쳤다.
 - [ ] `app-ads.txt`를 개발자 웹사이트에 올렸다(AdMob). 개발자 웹사이트 도메인을 만든 뒤 그 루트에 둔다(2026-10-26 결정). 도메인은 `https://chagok.novum-lab.com`(2026-10-29). 그 루트의 `app-ads.txt`는 아직 없다(정책 저장소에 더한다).
-- [x] AdMob 콘솔에서 광고 등급 상한과 민감한 광고 분류를 정했다. 앱은 나이를 묻지 않아 모든 기기가 같은 광고를 받는다(2026-10-21, RELEASE-DECISIONS). 2026-10-26 계정 수준 등급 상한 G, 민감한 카테고리는 RELEASE-DECISIONS 「광고 등급 상한」 줄대로 막았다.
+- [x] AdMob 콘솔에서 광고 등급 상한과 민감한 광고 분류를 정했다. 앱은 나이를 묻지 않아 모든 기기가 같은 광고를 받는다(2026-10-21, [결정](decisions.md)). 2026-10-26 계정 수준 등급 상한 G, 민감한 카테고리는 [결정](decisions.md) 「광고 등급 상한」 줄대로 막았다.
 - [ ] AdMob에서 앱을 App Store에 연결했다(출시 뒤에야 할 수 있다). 연결해야 앱 검토가 시작되고 광고 게재 제한이 풀린다. AdMob 원문(2026-10-28): 계정 승인이 먼저다("apps will remain in the "Getting Ready" status until your account is verified", 보통 24시간, 최대 2주). 스토어 연결은 앱이 공개된 뒤 24~48시간(길면 1주) 지나야 되고, 연결하면 검토가 자동으로 시작돼 보통 2~3일 걸린다. 그동안은 광고가 제한된다. 앱 코드나 빌드는 바꿀 것이 없다.
-- [ ] 심사용 메모: 로그인 없이 쓸 수 있다는 설명, 필요하면 테스트 계정. 초안은 [App Store 제출 문안 초안](release-app-store-submission.md) 2절(심사 중 광고가 오지 않는 이유 포함).
+- [ ] 심사용 메모: 로그인 없이 쓸 수 있다는 설명, 필요하면 테스트 계정. 초안은 [App Store 제출 문안 초안](app-store-submission.md) 2절(심사 중 광고가 오지 않는 이유 포함).
 
 ## 6. 출시할 때마다
 
 - [ ] **서버 먼저**: 이번 출시에 새 `supabase/migrations` 파일이 있으면 앱을 제출하기 전에 운영 서버에 `db push`로 반영했다. `20261030000001_goal_sort_order.sql`은 특히 그렇다. 앱이 먼저 나가면 처음 올리는 목표 순서가 서버에 남지 않고, 다른 기기에서 지운 목표가 되살아난다.
-- [ ] **법령 검토**: [법령 검토](LEGAL-REVIEW.md) 2절대로 약관·처리방침이 기대는 법령에 개정·시행예정이 없는지 보고, 3절에 기록했다.
+- [ ] **법령 검토**: [법령 검토](legal-review.md) 2절대로 약관·처리방침이 기대는 법령에 개정·시행예정이 없는지 보고, 3절에 기록했다.
 - [ ] **약관·처리방침이 여전히 맞다**: 이번 업데이트의 새 정보 수집·외부 회사·유료 상품·가격·환불 방식이 문서에 있다(같은 문서 2절 4번). 고쳤으면 새 판을 게시하고 앱의 동의 판 번호를 올렸다.
 - [ ] 스토어 「새로운 기능」 문구(한국어, iOS·Android 각각).
 - [ ] 낸 커밋에 git 태그(`v1.0.0`).

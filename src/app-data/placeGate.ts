@@ -5,7 +5,7 @@ import { normalizeStickerId } from '../stickers/stickerIds';
 import { listPackAccess } from '../repositories/packRepository';
 
 /**
- * 이 목표의 기본 스티커를 새로 붙일 수 있는가 (RELEASE-DECISIONS 2026-10-08 「체험이 끝난 뒤」).
+ * 이 목표의 기본 스티커를 새로 붙일 수 있는가 (docs/release/decisions.md 2026-10-08 「체험이 끝난 뒤」).
  * 막히면 「n일 체험이 끝났어요」로 안내한다. 이미 붙은 칸은 그대로 보인다 — 여기서는 새로 붙이기만 막는다.
  * 체험 기록 없이 잠긴 묶음(앱을 지우고 다시 설치 등)은 3일 체험 문구로 안내한다.
  */

@@ -39,7 +39,7 @@ export type WidgetGoal = WidgetGoalView & {
   remaining: number | null;
   placed: number;
   total: number;
-  /** 기본 스티커 묶음의 체험이 끝났다 — 위젯은 붙이지 않고 앱을 열어 안내한다 (RELEASE-DECISIONS 2026-10-08) */
+  /** 기본 스티커 묶음의 체험이 끝났다 — 위젯은 붙이지 않고 앱을 열어 안내한다 (docs/release/decisions.md 2026-10-08) */
   locked: boolean;
 };
 export type WidgetSnapshot = { today: DateKey; goals: WidgetGoal[]; defaultGoalId: string | null };

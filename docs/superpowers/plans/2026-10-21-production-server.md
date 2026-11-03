@@ -6,7 +6,7 @@
 
 **목표:** 출시 빌드(`production`)가 운영 서버에 로그인하고, 백업하고, 다른 기기에서 복원하고, 계정을 지울 수 있다. 서버가 통째로 사라져도 하루 전 상태로 되살릴 수 있다.
 
-**근거 문서:** [계정과 백업 설계](../specs/2026-09-30-account-backup-design.md), PRD 4.8과 11절, [출시 점검](../../RELEASE-CHECKLIST.md), [개발 설정](../../DEV-SETUP.md) 「개발 서버」.
+**근거 문서:** [계정과 백업 설계](../specs/2026-09-30-account-backup-design.md), PRD 4.8과 11절, [출시 점검](../../release/checklist.md), [개발 설정](../../DEV-SETUP.md) 「개발 서버」.
 
 ## 정한 것 (2026-10-21)
 
@@ -166,7 +166,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - `/auth/v1/settings`의 `external`은 `apple`, `google`, `kakao`만 true. **실제 로그인은 운영 빌드의 TestFlight에서 확인한다.**
 - Google Client ID에는 웹, iOS, Android 디버그만 있다. Android 출시 서명의 Client ID는 첫 Android 운영 빌드 뒤에 더한다.
 - 운영 DB: 적용 기록의 마이그레이션 4개가 main과 같고, 마이그레이션 파일은 10-12 뒤로 바뀌지 않아 지우지 않았다.
-- 함수: `_shared/kakao.ts`가 없고 `delete-account`가 옛 판(카카오 연결 끊기 전)이라 main으로 다시 복사했다. 바꾸기 전 폴더는 `volumes/functions.bak-20261026`. 방법은 [개발 설정](../../DEV-SETUP.md) 「운영 서버 함수 올리기」.
+- 함수: `_shared/kakao.ts`가 없고 `delete-account`가 옛 판(카카오 연결 끊기 전)이라 main으로 다시 복사했다. 바꾸기 전 폴더는 `volumes/functions.bak-20261026`. 방법은 [운영](../../OPERATIONS.md) 「운영 서버 함수 올리기」.
 - 서버 테스트 32개 통과. 이메일 로그인은 바로 다시 껐고 남은 사용자, 사진, 행 0. **카카오 연결 끊기는 서버 테스트가 다루지 않아 TestFlight에서 계정 삭제로 확인한다.**
 - 출시 뒤에는 운영에서 서버 테스트를 돌리지 않는다(로그인이 몇 초씩 끊기고 가입 창구가 잠깐 열린다). 이유와 대신 할 확인은 DEV-SETUP 같은 절.
 
@@ -208,7 +208,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 - R2에서 다시 받은 덤프를 `pg_restore -l`로 읽어 테이블 데이터 항목 57개(`auth`, `public` 포함)를 확인했다. 실제로 되살리는 것은 복구 연습에서 한다.
 - DB 계정과 권한(`pg_dumpall --globals-only`)은 넣지 않았다. 새 Supabase 이미지가 계정을 다시 만든다고 보았고, 복구 연습에서 확인한다.
 
-- [x] **복구 연습 (절차):** 2026-10-22 이 맥에서 읽기 전용 토큰 `chagok-prod-backup-restore-mac`(`.secrets/prod/r2-restore.env`)으로 R2에서 받아 운영과 같은 Postgres 이미지에 되살렸다. 이 맥에 Docker가 없어 Colima를 설치했다. 테이블 목록, 행 수, 버킷, RLS 정책이 운영과 같았다. 절차와 결과, 함정(`--no-lock`)은 [DEV-SETUP](../../DEV-SETUP.md) 「운영 서버 복구」.
+- [x] **복구 연습 (절차):** 2026-10-22 이 맥에서 읽기 전용 토큰 `chagok-prod-backup-restore-mac`(`.secrets/prod/r2-restore.env`)으로 R2에서 받아 운영과 같은 Postgres 이미지에 되살렸다. 이 맥에 Docker가 없어 Colima를 설치했다. 테이블 목록, 행 수, 버킷, RLS 정책이 운영과 같았다. 절차와 결과, 함정(`--no-lock`)은 [운영](../../OPERATIONS.md) 「운영 서버 복구」.
 - [ ] **복구 연습 (실제 데이터):** 운영에 아직 사용자, 기록, 사진이 없어 비교하지 못했다. 첫 실사용 데이터가 생기면 사용자 수, 기록 행 수, 사진 한 장을 다시 비교한다. 그때 Supabase 전체를 띄워 `supabase_realtime_admin`, `supabase_functions_admin` 관련 오류 38개가 사라지는지도 본다.
 
 ## 6단계: 지켜보기
@@ -241,7 +241,7 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 
 - 설치한 뒤 감시와 백업을 한 번씩 직접 돌려 6개가 모두 up이 됐다. 신호에 담긴 값: API `http 200`, 컨테이너 `running 11`, 디스크 `disk 59%`, 메모리 `available 9403MB`, 백업 `ok`, R2 용량 `restic 501683 bytes`.
 - 신호가 한 번도 오지 않은 점검(`new`)은 알림을 보내지 않는다. 점검을 새로 만들면 첫 신호까지 확인한다.
-- [x] **업데이트 절차:** [DEV-SETUP](../../DEV-SETUP.md) 「운영 서버 업데이트」. `update.sh`는 설정만 합치고 DB와 사진은 백업하지 않으므로 올리기 전에 5단계 백업을 손으로 돌리고, 이미지 태그를 섞지 않는다. 아직 실제로 해 보지 않았다. 서버의 `.supabase-version`에는 `ref=` 없이 `self-hosted/v0.8.3`만 들어 있어(손으로 설치했기 때문) `update.sh`가 읽지 못하면 `--from self-hosted/v0.8.3`을 붙인다.
+- [x] **업데이트 절차:** [운영](../../OPERATIONS.md) 「운영 서버 업데이트」. `update.sh`는 설정만 합치고 DB와 사진은 백업하지 않으므로 올리기 전에 5단계 백업을 손으로 돌리고, 이미지 태그를 섞지 않는다. 아직 실제로 해 보지 않았다. 서버의 `.supabase-version`에는 `ref=` 없이 `self-hosted/v0.8.3`만 들어 있어(손으로 설치했기 때문) `update.sh`가 읽지 못하면 `--from self-hosted/v0.8.3`을 붙인다.
 
 ## 7단계: 앱 빌드 연결
 
@@ -252,13 +252,13 @@ Supabase 공식 권장 사양은 RAM 8GB, CPU 4코어, 디스크 80GB 이상이�
 ## 8단계: 문서와 처리방침
 
 - [ ] **처리방침**(별도 저장소 `chagok-app-policy`, 1판에 넣는다): 5절 수탁자와 국외 이전 항목. 제28조의8 제2항의 다섯 가지(항목, 나라와 시기와 방법, 이전받는 자와 연락처, 목적과 보유 기간, 거부 방법과 효과)를 Hostinger(말레이시아)와 Cloudflare(미국) 각각 적는다. 거부 방법은 "로그인하지 않고 이 기기에서만 쓰기"다. 결제와 광고(별도 작업)의 국외 이전 항목(RevenueCat, Google)과 함께 한 번에 써서 게시한다.
-- [ ] **법 확인:** 개인정보 보호법은 2027-03-09와 2027-07-01 시행 개정이 예정돼 있다. 제28조의8과 안전성 확보조치(접근 통제, 접속기록 보관 등)가 바뀌는지 [법 검토](../../LEGAL-REVIEW.md) 절차로 확인한다.
-- [ ] **출시 뒤 규칙:** 1.0.0을 심사에 낸 뒤부터 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 규칙과 순서는 AGENTS.md 「서버와 약관 규칙」과 [DEV-SETUP](../../DEV-SETUP.md) 「운영 DB 바꾸기」에 적어 두었다(2026-10-29).
-- [ ] PRD 「서버」 절과 11절, RELEASE-DECISIONS, RELEASE-CHECKLIST, HANDOFF, DEV-SETUP(운영 서버 접속과 복구)을 맞춘다.
+- [ ] **법 확인:** 개인정보 보호법은 2027-03-09와 2027-07-01 시행 개정이 예정돼 있다. 제28조의8과 안전성 확보조치(접근 통제, 접속기록 보관 등)가 바뀌는지 [법 검토](../../release/legal-review.md) 절차로 확인한다.
+- [ ] **출시 뒤 규칙:** 1.0.0을 심사에 낸 뒤부터 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 규칙과 순서는 AGENTS.md 「서버와 약관 규칙」과 [운영](../../OPERATIONS.md) 「운영 DB 바꾸기」에 적어 두었다(2026-10-29).
+- [ ] PRD 「서버」 절과 11절, release/decisions.md, release/checklist.md, HANDOFF, DEV-SETUP(운영 서버 접속과 복구)을 맞춘다.
 
 ## 9단계: 출시 전에 서버와 함께 필요한 기능
 
-- [ ] **최소 앱 버전과 동기화 버전.** RELEASE-CHECKLIST 25줄 항목인데 `supabase/`와 `src/`에서 관련 코드를 찾지 못했다. 운영 서버를 열기 전에 넣어야 나중에 옛 앱을 막을 수 있다. 별도 계획으로 쓴다.
+- [ ] **최소 앱 버전과 동기화 버전.** release/checklist.md 25줄 항목인데 `supabase/`와 `src/`에서 관련 코드를 찾지 못했다. 운영 서버를 열기 전에 넣어야 나중에 옛 앱을 막을 수 있다. 별도 계획으로 쓴다.
 
 ## 확인하지 못한 것 (단계에서 확인)
 

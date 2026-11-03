@@ -45,7 +45,7 @@ export const devStore: Store = {
     return s && isSubscribed(s, Date.now()) ? { active: true, plan: s.plan, expiresAt: s.expiresAt, willRenew: s.willRenew } : { active: false };
   },
   async manageSubscriptionUrl() { return null; },
-  /** RELEASE-DECISIONS의 가격: 묶음 2,200원, 광고 제거 5,500원, 구독 월 4,900원과 연 24,900원 */
+  /** docs/release/decisions.md의 가격: 묶음 2,200원, 광고 제거 5,500원, 구독 월 4,900원과 연 24,900원 */
   async prices() {
     const won = (amount: number) => ({ amount, currency: 'KRW', text: `₩${amount.toLocaleString('en-US')}` });
     return { ...Object.fromEntries(colorStickerPacks.filter((p) => !p.free).map((p) => [p.id, won(2200)])), adFree: won(5500), month: won(4900), year: won(24900) };
