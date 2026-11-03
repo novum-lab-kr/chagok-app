@@ -232,11 +232,15 @@ export function useContentWidth(measured:number|null) {
 }
 
 /** Shared three-column board spacing. Slots inside use width/height 100%. */
+/** StickerGrid 3열 칸 하나의 크기. 판 쪽 넘기기(PRD 4.2)가 한 쪽에 들어갈 줄 수를 셀 때도 쓴다. */
+export function stickerCellSize(width:number):{width:number;height:number} {
+  const cellWidth=Math.max(0,Math.floor((width-2*retro.layout.boardInset-2*retro.layout.boardGap)/3));
+  return {width:cellWidth,height:Math.round(cellWidth*64/84)};
+}
 export function StickerGrid({children}: {children:ReactNode}) {
   const [measured,setWidth]=useState<number|null>(null);
   const width=useContentWidth(measured);
-  const cellWidth=Math.max(0,Math.floor((width-2*retro.layout.boardInset-2*retro.layout.boardGap)/3));
-  const cellHeight=Math.round(cellWidth*64/84);
+  const {width:cellWidth,height:cellHeight}=stickerCellSize(width);
   return <View onLayout={e=>setWidth(Math.round(e.nativeEvent.layout.width))}
     style={{flexDirection:'row',flexWrap:'wrap',paddingHorizontal:retro.layout.boardInset,columnGap:retro.layout.boardGap,rowGap:retro.layout.boardRowGap}}>
     {React.Children.map(children,child=><View style={{width:cellWidth,height:cellHeight}}>{child}</View>)}

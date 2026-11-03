@@ -108,6 +108,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | TrialReadyCard / CompletionNudge | 목표 탭 맨 위 체험 열림 카드 / 판 완성 뒤 판 아래에 뜨는 「다음 판은 새 스티커로」. 둘 다 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 ×(44pt, 모서리에서 4pt 안쪽, 2026-11-02, 글자 폭을 빼앗지 않게 겹쳐 둔다) |
 | GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대. 내 목표 탭에서는 꾹 누르면 눌린 모양(`lifted`)으로 들어 올려 끌어 옮기고, 화면 읽기 동작 「위로 옮기기」 「아래로 옮기기」를 단다(2026-10-30, PRD 4.1). 옮기는 동안 목록 스크롤과 탭 넘김을 멈춘다 |
 | BoardProgressRow | 판 상세 진행 줄: `ProgressBar`와 그 위 차곡이(크기 40, 25%마다 블록 `b0`~`b3`), 오른쪽 `m%`, 완성하면 완성 스티커. 판 패널은 `titleRule={false}`로 제목 아래 줄을 뺀다 |
+| TallyPageNavigation | 적립판 쪽 넘김 줄(`board-screens.tsx` 안). `MonthNavigation`과 같은 44pt 버튼 둘과 가운데 제목 20/28, 아래 간격 8. 한 쪽 칸 수는 `tallyPageSize`가 칸 영역 높이로 정한다 |
 | GuideCard | 한 번짜리 안내 카드. 체험 카드와 같은 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 ×. 첫 스티커 안내, 기록 저장 뒤 안내 |
 | EmptyState | 목록이 비었을 때의 안내 상자 |
 | OptionButtons | 둘 이상 중 하나를 고르는 버튼 줄 |
