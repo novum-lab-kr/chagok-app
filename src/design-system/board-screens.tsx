@@ -219,6 +219,8 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
   {notice&&<View style={{position:'absolute',left:SCREEN_PADDING,right:SCREEN_PADDING,bottom:bottomInset+SCREEN_PADDING}}>{notice}</View>}
   </View>;
 }
+/** 화면 왼쪽 끝에서 시작한 밀기는 iOS 뒤로 가기에 맡긴다. 판 밀기가 가져가면 판 화면에서 뒤로 가기가 막혔다 (2026-11-03, iOS 26 시뮬레이터) */
+const EDGE_BACK_WIDTH=24;
 /** 달력판은 좌우 스와이프로도 달을 옮긴다 (PRD 4.3). 화살표를 숨긴 방향으로는 가지 않는다. */
 function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactNode}) {
   const {year,month,canGoPrev,canGoNext,onMonthChange}=board;
@@ -228,7 +230,7 @@ function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactN
   },[year,month,canGoPrev,canGoNext,onMonthChange]);
   // PanResponder는 첫 렌더 값을 가두지 않도록 useMemo로 만든다.
   const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponder:(_,g)=>g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48)shift(1);else if(g.dx>=48)shift(-1);},
   }),[shift]);
   return <View {...swipe.panHandlers}>{children}</View>;
@@ -305,7 +307,7 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
     return ()=>clearTimeout(id);
   },[justPlaced,next,paged,first,last]);
   const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponder:(_,g)=>paged&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponder:(_,g)=>paged&&g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48&&page<pages-1) go(page+1);else if(g.dx>=48&&page>0) go(page-1);},
   }),[paged,page,pages,go]);
   const scrollToCenter=useScrollToCenter();
