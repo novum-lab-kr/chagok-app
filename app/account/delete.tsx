@@ -1,23 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import { router, useNavigation } from 'expo-router';
-import { resetUser, track } from '../../src/analytics';
-import { setErrorUser } from '../../src/analytics/sentry';
+import { track } from '../../src/analytics';
 import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDialogs } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
-import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
-import { deleteAccountOnServer, NeedsLoginError, signOutLocal } from '../../src/sync/account';
-import { revokeGoogle, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
-import { signOutKakao } from '../../src/sync/signIn/expoKakao';
-import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
+import { DISMISS_FALLBACK_MS } from '../../src/app-data/useDialog';
+import { signOutAndWipe } from '../../src/app-data/signOut';
+import { afterSignedOut, signOutDeps } from '../../src/app-data/signOutDeps';
+import { deleteAccountOnServer, NeedsLoginError } from '../../src/sync/account';
+import { revokeGoogle } from '../../src/sync/signIn/expoGoogle';
+import { getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
-import { wipeDevice } from '../../src/sync/wipe';
-import { signOutPurchases } from '../../src/purchases';
 
 type Step = 'review' | 'confirm' | 'busy' | 'failed' | 'needsLogin' | 'done';
-
-/** 닫히는 애니메이션(fade)보다 넉넉하게 (useDialog와 같은 값) */
-const DISMISS_FALLBACK_MS = 700;
 
 /**
  * 계정 삭제 (시안 6A, 계정·백업 설계 ①). 내용 확인 → 최종 확인 → 삭제 중 → 완료.
@@ -61,21 +56,14 @@ export default function DeleteAccount() {
         await revokeGoogle();
       }
       // 지운 계정의 토큰은 갱신되지 않아 로그아웃이 오류를 돌려줄 수 있다 — 저장된 세션을 직접 지운다
-      await signOutLocal(supabase, clearStoredSession);
-      await signOutKakao();
-      await signOutGoogle();
-      // 결제 계정을 먼저 익명으로 돌린다 — 비운 기기에 앞 계정의 구독이 다시 적히지 않게 (보안 검토 2026-11-02 L1)
-      await signOutPurchases();
-      await wipeDevice(removeAllManagedPhotos);
+      await signOutAndWipe(signOutDeps(supabase));
     } catch (error) {
       // 로그인이 풀려 있으면 다시 시도해도 같다 — 로그인을 안내한다 (2026-10-29)
       setStep(error instanceof NeedsLoginError ? 'needsLogin' : 'failed');
       return;
     }
     track('account_delete');
-    resetUser();
-    setErrorUser(null).catch(() => {});
-    resumeSync();
+    afterSignedOut();
     setStep('done');
   };
 

@@ -15,7 +15,7 @@
 - **처음 크기를 `onLayout`에만 맡기지 않는다.** 새 아키텍처(Fabric)는 뷰가 화면에 붙기 전에 처리한 layout 이벤트를 버리고 같은 크기로는 다시 보내지 않는다. 기기가 바쁠 때(빌드 직후 첫 실행) 테두리·판이 크기 0으로 남았다. 크기를 받아야 그리는 뷰는 `useLayoutSize`(`components.tsx`)를 쓴다. 확인은 CPU 부하(`yes > /dev/null`를 코어 수만큼)를 건 채 콜드 스타트를 여러 번.
 - **달력 키는 로컬 시간으로 만든다.** `toISOString()`은 자정 근처에서 하루를 민다. 칸 번호는 1부터, `slotIndex`는 0부터다.
 - **SQLite는 WAL + `busy_timeout` 5초다** (`src/db/expoDriver.ts`). expo-sqlite의 배타 트랜잭션은 새 연결을 연다. 저널이 delete이고 대기가 0이면 위젯 동기화 읽기와 판 저장이 겹칠 때 「database is locked」로 판이 「···」에서 멈췄다. 트랜잭션 연결도 첫 쿼리 전에 `busy_timeout`을 건다.
-- **로그아웃과 계정 삭제는 결제 계정을 익명으로 돌린 뒤 기기를 비운다**(보안 검토 2026-11-02 L1). 반대로 하면 비운 기기에 앞 계정의 구독이 다시 적힌다. 이 순서가 `app/(tabs)/settings.tsx`와 `app/account/delete.tsx` 두 곳에 있으니 둘 다 고친다(리팩터링 계획 1단계에서 한곳으로 모은다).
+- **로그아웃과 계정 삭제는 결제 계정을 익명으로 돌린 뒤 기기를 비운다**(보안 검토 2026-11-02 L1). 반대로 하면 비운 기기에 앞 계정의 구독이 다시 적힌다. 순서는 `src/app-data/signOut.ts`의 `signOutAndWipe` 한곳에만 있고 `__tests__/signOut.test.ts`가 지킨다. 화면에서 단계를 따로 부르지 않는다.
 - **위젯과 워치는 같은 계산을 따로 한다.** `src/widgets`와 `src/watch`에 앱 상태 감지, 요청 중복 제거, 달력 칸, 잠김 계산이 두 벌 있다. 한쪽만 고치면 위젯과 워치가 다르게 보인다.
 - **위젯 props에 `null`을 넣지 않는다.** UserDefaults가 못 담아 `updateTimeline`이 던진다(`syncCore`의 `withoutNulls`가 막는다).
 - RN Web의 `AccessibilityInfo.addEventListener`는 구독 객체를 돌려주지 않는다. 정리할 때 `?.remove?.()`로 부른다.

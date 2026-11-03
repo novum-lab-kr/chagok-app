@@ -1,30 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect, useRouter } from 'expo-router';
-import { resetUser, track } from '../../src/analytics';
-import { setErrorUser } from '../../src/analytics/sentry';
+import { track } from '../../src/analytics';
 import {
   AccountBackupPanel, HelpInfoPanel, PixelDialogModal, PixelPanel, PixelText, PurchasePanel, RetroScreen, SettingRow, TabSafeArea, TabTitle, accountDialogs,
   stickerShopDialogs,
   type AccountBackupStatus, type SubscriptionSummary,
 } from '../../src/design-system';
-import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
-import { signOutLocal } from '../../src/sync/account';
-import { signOutGoogle } from '../../src/sync/signIn/expoGoogle';
-import { signOutKakao } from '../../src/sync/signIn/expoKakao';
+import { signOutAndWipe } from '../../src/app-data/signOut';
+import { afterSignedOut, signOutDeps } from '../../src/app-data/signOutDeps';
 import { formatBackedUpAt, localOnlyCount, readAccountState } from '../../src/sync/accountStatus';
 import { syncDepsFor } from '../../src/sync/appSync';
 import { pendingCount } from '../../src/sync/outbox';
 import { pushOnce } from '../../src/sync/push';
-import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
+import { getSupabase } from '../../src/sync/supabaseClient';
 import { pauseSync, resumeSync, subscribeSyncStatus } from '../../src/sync/syncGate';
-import { wipeDevice } from '../../src/sync/wipe';
 import { confirmWithTerms } from '../../src/policy/openPolicy';
 import { getSetting } from '../../src/repositories/appSettingsRepository';
 import { loadPackState } from '../../src/repositories/packRepository';
 import { subscriptionSummary } from '../../src/app-data/subscriptionViews';
 import { openSubscriptionManagement } from '../../src/app-data/manageSubscription';
-import { buyAdFree, restorePurchases, refreshSubscription, signOutPurchases, usingDevStore } from '../../src/purchases';
+import { buyAdFree, refreshSubscription, usingDevStore } from '../../src/purchases';
 import { devChangeSubscription } from '../../src/purchases/devStore';
+import { notifyBuyFailure, restoreWithDialog } from '../../src/app-data/purchaseDialogs';
 import { useDialog } from '../../src/app-data/useDialog';
 import { usePrices } from '../../src/app-data/usePrices';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
@@ -63,23 +60,15 @@ export default function AppSettings() {
     setPurchaseBusy('adFree');
     const r = await buyAdFree().finally(() => setPurchaseBusy(undefined));
     if (r.ok) setAdFree(true);
-    else if (r.reason !== 'cancelled') await ask(r.reason === 'pending' ? stickerShopDialogs.purchasePending : stickerShopDialogs.adFreeFailed);
+    else await notifyBuyFailure(ask, r, stickerShopDialogs.adFreeFailed);
   }
   async function restore() {
     setPurchaseBusy('restore');
-    let names: string[];
-    try {
-      names = await restorePurchases();
-    } catch {
-      await ask(stickerShopDialogs.restoreFailed);
-      return;
-    } finally {
-      setPurchaseBusy(undefined);
-    }
-    const p = await loadPackState();
-    setAdFree(p.adFree);
-    setSubscription(subscriptionSummary(p.subscription, Date.now()));
-    await ask(names.length > 0 ? stickerShopDialogs.restoreDone(names) : stickerShopDialogs.restoreNone);
+    await restoreWithDialog(ask, () => setPurchaseBusy(undefined), async () => {
+      const p = await loadPackState();
+      setAdFree(p.adFree);
+      setSubscription(subscriptionSummary(p.subscription, Date.now()));
+    });
   }
   /** 시험용 (개발 빌드, 결제 키 없을 때만): 구독 해지 예약과 끝내기 (2026-11-02) */
   async function devSubscription(change: 'cancel' | 'expire') {
@@ -113,22 +102,13 @@ export default function AppSettings() {
   /** 서버 쪽 일이 끝난 뒤에만 기기를 비운다 (계정·백업 설계 ①). */
   const finishLogout = async () => {
     try {
-      // 이 기기의 세션만 지우고, 로그아웃이 실패해도 저장된 세션을 지운다 (signOutLocal)
-      if (supabase) await signOutLocal(supabase, clearStoredSession);
-      await signOutKakao();
-      await signOutGoogle();
-      // 결제 계정을 먼저 익명으로 돌린다 — 비운 기기에 앞 계정의 구독이 다시 적히지 않게 (보안 검토 2026-11-02 L1)
-      await signOutPurchases();
-      await wipeDevice(removeAllManagedPhotos);
+      await signOutAndWipe(signOutDeps(supabase));
     } catch {
       setLogout({ step: 'failed' });
       return;
     }
     track('logout');
-    // 로그아웃 신호가 오지 않는 경우에도 계정 ID를 남기지 않는다
-    resetUser();
-    setErrorUser(null).catch(() => {});
-    resumeSync();
+    afterSignedOut();
     setLogout(null);
     router.replace('/');
   };
