@@ -1,4 +1,5 @@
-// Edge Function 공용: JSON 응답과 로그인 사용자 확인.
+// Edge Function 공용: JSON 응답, 로그인 사용자 확인, 관리자 클라이언트.
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { createRemoteJWKSet, jwtVerify } from 'npm:jose@5';
 
 export const json = (body: unknown, status = 200) =>
@@ -27,4 +28,11 @@ export async function userIdFrom(req: Request): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** 서비스 키로 만든 관리자 클라이언트. 세션을 저장하거나 갱신하지 않는다 */
+export function adminClient() {
+  return createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }

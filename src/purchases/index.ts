@@ -3,7 +3,7 @@ import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/ca
 import { t } from '../i18n';
 import { packName } from '../i18n/stickerNames';
 import { getSubscription, grantPurchase, saveSubscription, setAdFree, startAdTrial } from '../repositories/packRepository';
-import { isSubscribed, nextStoredSubscription, type SubscriptionPlan } from '../domain/subscription';
+import { isSubscribed, nextStoredSubscription, type SubscriptionPlan, type SubscriptionStatus } from '../domain/subscription';
 import { notifyLocalChange } from '../sync/changes';
 import { devStore } from './devStore';
 import { priceLabel, type PriceLabels, type ProductKey, type StorePrice } from './price';
@@ -12,8 +12,7 @@ import { priceLabel, type PriceLabels, type ProductKey, type StorePrice } from '
 /** pending: 보호자 승인(구입 승인 요청·가족 결제)을 기다린다. 승인되면 [구매 복원]으로 연다. */
 export type BuyResult = { ok: true; subscription?: SubscriptionStatus } | { ok: false; reason: 'cancelled' | 'failed' | 'pending' };
 export type AdResult = { ok: true } | { ok: false; reason: 'closed' | 'unavailable' };
-/** 스토어가 알려 준 구독 상태(RevenueCat 권한 all_access). expiresAt은 결제 유예 중이면 유예가 끝나는 시각 */
-export type SubscriptionStatus = { active: true; plan: SubscriptionPlan; expiresAt: number; willRenew: boolean } | { active: false };
+export type { SubscriptionStatus } from '../domain/subscription';
 export interface Store {
   buyPack(packId: ColorStickerPackId): Promise<BuyResult>;
   buyAdFree(): Promise<BuyResult>;

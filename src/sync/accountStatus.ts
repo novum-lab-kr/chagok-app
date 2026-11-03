@@ -3,6 +3,7 @@ import { getSetting, setSetting } from '../repositories/appSettingsRepository';
 import { pendingCount } from './outbox';
 import { notifySyncStatus } from './syncGate';
 import { t } from '../i18n';
+import { daysInclusive, localDateKey } from '../domain/dates';
 
 export type AccountState =
   | { state: 'local' }
@@ -59,8 +60,7 @@ const hm = (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0
 /** 앱 설정 "오늘 9:20에 모두 백업했어요"의 앞부분. */
 export function formatBackedUpAt(ms: number, now: Date): string {
   const d = new Date(ms);
-  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((day(now) - day(d)) / 86_400_000);
+  const diff = daysInclusive(localDateKey(ms), localDateKey(now.getTime())) - 1;
   if (diff === 0) return t('date.todayAt', hm(d));
   if (diff === 1) return t('date.yesterdayAt', hm(d));
   return t('date.monthDay', d.getMonth() + 1, d.getDate());

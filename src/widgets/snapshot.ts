@@ -1,6 +1,6 @@
 import type { Goal } from '../domain/types';
 import type { DateKey } from '../domain/dates';
-import { dateKeyOf, daysInclusive, daysInMonth, localDateKey } from '../domain/dates';
+import { dateKeyOf, daysInclusive, daysInMonth, localDateKey, monthKeyOf } from '../domain/dates';
 import { inPeriod, mostRecentGoal, orderGoals, progressBasis, progressOf, startDate } from '../domain/board';
 import { kindLabel, percentLabel } from '../app-data/pocketAdapter';
 import { normalizeStickerId } from '../stickers/stickerIds';
@@ -91,7 +91,7 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
     const basis = progressBasis(goal, now);
     const placed = basis.kind === 'all'
       ? input.placedAll
-      : input.placedDates.filter((d) => d.startsWith(`${basis.year}-${String(basis.month).padStart(2, '0')}-`)).length;
+      : input.placedDates.filter((d) => d.startsWith(`${monthKeyOf(basis.year, basis.month)}-`)).length;
     const progress = progressOf(goal, placed, now);
     const placedToday = input.todaySticker?.dateKey === localDateKey(now.getTime());
     const todaySlots = input.todaySlots?.dateKey === localDateKey(now.getTime()) ? input.todaySlots : null;
