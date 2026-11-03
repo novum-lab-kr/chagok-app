@@ -290,17 +290,20 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
   const numbers=paged?all.slice(first-1,last):all;
   const go=useCallback((to:number)=>{if(perPage) setAnchor(to*perPage+1);},[perPage]);
   // 방금 붙인 칸이 다른 쪽이면(위젯 링크) 그 쪽으로 간다. 이 쪽 마지막 칸을 붙였고 다음 빈칸이 다음 쪽이면 붙는 모션 뒤에 넘긴다.
+  // 판 화면은 붙인 칸(justPlaced)을 먼저 알리고 칸 상태(next)는 다시 읽은 뒤에 바뀐다. 둘 다 보고, 붙인 칸마다 한 번만 그 쪽으로 맞춘다.
   const {justPlaced}=board;
+  const shownFor=useRef<number|undefined>(undefined);
   useEffect(()=>{
     if(!paged||justPlaced===undefined) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 붙인 칸이 보이도록 쪽을 맞춘다
-    if(justPlaced<first||justPlaced>last){setAnchor(justPlaced);return;}
+    if(shownFor.current!==justPlaced){
+      shownFor.current=justPlaced;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 붙인 칸이 보이도록 쪽을 맞춘다
+      if(justPlaced<first||justPlaced>last){setAnchor(justPlaced);return;}
+    }
     if(justPlaced!==last||next===undefined||next<=last) return;
     const id=setTimeout(()=>setAnchor(next),TALLY_PAGE_TURN_DELAY_MS);
     return ()=>clearTimeout(id);
-  // 붙인 칸이 바뀔 때만 본다
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[justPlaced,paged]);
+  },[justPlaced,next,paged,first,last]);
   const swipe=useMemo(()=>PanResponder.create({
     onMoveShouldSetPanResponder:(_,g)=>paged&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48&&page<pages-1) go(page+1);else if(g.dx>=48&&page>0) go(page-1);},
