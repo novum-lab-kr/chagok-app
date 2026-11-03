@@ -166,7 +166,12 @@ function useCenteringScroll() {
  */
 export function CenteringScrollView({children,style,testID}:{children:ReactNode;style?:StyleProp<ViewStyle>;testID?:string}) {
   const {content,scrollProps,scrollToCenter}=useCenteringScroll();
-  return <ScrollView testID={testID} {...scrollProps} style={style}>
+  // 내용이 영역보다 클 때만 스크롤한다. 다 들어가는데도 끌리면 실기기에서 달력 머리가 위로 밀려 사라졌다 (2026-11-03 녹화).
+  const [sizes,setSizes]=useState({viewport:0,content:0});
+  const overflow=sizes.viewport>0&&sizes.content>sizes.viewport+1;
+  return <ScrollView testID={testID} {...scrollProps} style={style} scrollEnabled={overflow} bounces={overflow}
+    onLayout={event=>{scrollProps.onLayout(event);const viewport=event.nativeEvent.layout.height;setSizes(previous=>previous.viewport===viewport?previous:{...previous,viewport});}}
+    onContentSizeChange={(width,height)=>{scrollProps.onContentSizeChange(width,height);setSizes(previous=>previous.content===height?previous:{...previous,content:height});}}>
     <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider></View>
   </ScrollView>;
 }

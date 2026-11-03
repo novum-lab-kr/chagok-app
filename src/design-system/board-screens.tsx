@@ -208,8 +208,8 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
       <View style={{flexShrink:1}} onLayout={event=>setGridHeight(Math.ceil(event.nativeEvent.layout.height))}>
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>
       {board.kind==='calendar'
-        ?<CalendarSwipe board={board}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
-          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} poppedDate={board.justPlaced}/></CalendarSwipe>
+        ?<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset,paddingBottom:retro.layout.boardInset}}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
+          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} poppedDate={board.justPlaced}/></View></CalendarSwipe>
         :<TallyGrid board={board} sticker={sticker} onSettled={reveal} maxHeight={gridMax}/>}
       </CenteringScrollView>
       </View>
@@ -306,7 +306,9 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
     const id=setTimeout(()=>setAnchor(next),TALLY_PAGE_TURN_DELAY_MS);
     return ()=>clearTimeout(id);
   },[justPlaced,next,paged,first,last]);
+  // 칸(Pressable)이 손가락을 먼저 잡으면 판 밀기가 받지 못한다(2026-11-03 실기기). 가로로 분명히 움직이면 캡처 단계에서 판이 가져온다.
   const swipe=useMemo(()=>PanResponder.create({
+    onMoveShouldSetPanResponderCapture:(_,g)=>paged&&g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onMoveShouldSetPanResponder:(_,g)=>paged&&g.x0>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48&&page<pages-1) go(page+1);else if(g.dx>=48&&page>0) go(page-1);},
   }),[paged,page,pages,go]);
