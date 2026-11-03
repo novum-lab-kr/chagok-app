@@ -4,17 +4,17 @@ import { LoadingScreen, PackScreen, stickerShopDialogs, useLoadRetry } from '../
 import { endLabel, packViews, samplePlacement } from '../../../src/app-data/packViews';
 import { usePrices } from '../../../src/app-data/usePrices';
 import { offerOpenPack } from '../../../src/app-data/stickerChoice';
+import { notifyBuyFailure } from '../../../src/app-data/purchaseDialogs';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { AD_TRIAL_MS, dayTrialThreshold } from '../../../src/domain/packs';
-import { loadPackState, startDayTrial } from '../../../src/repositories/packRepository';
+import { loadPackState, type LoadedPackState, startDayTrial } from '../../../src/repositories/packRepository';
 import { buyPack, watchAdForPack } from '../../../src/purchases';
 import { confirmWithTerms } from '../../../src/policy/openPolicy';
 import type { ColorStickerPackId } from '../../../src/stickers/color/catalog';
 import { t } from '../../../src/i18n';
 
-type PackState = Awaited<ReturnType<typeof loadPackState>>;
 
 /**
  * 묶음 화면 (PRD 4.12). 「기본 스티커」의 잠긴 묶음, 판 화면 「체험이 끝났어요」의 [묶음 열기]에서 연다.
@@ -22,7 +22,7 @@ type PackState = Awaited<ReturnType<typeof loadPackState>>;
  */
 export default function Pack() {
   const { packId } = useLocalSearchParams<{ packId: ColorStickerPackId }>();
-  const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
+  const [state, setState] = useState<{ pack: LoadedPackState; now: number } | null>(null);
   const [once] = useState(createSingleFlight);
   const [busy, setBusy] = useState<'buy' | 'ad'>();
   const { ask, dialog } = useDialog();
@@ -63,7 +63,7 @@ export default function Pack() {
     setBusy('buy');
     const r = await buyPack(packId).finally(() => setBusy(undefined));
     if (!r.ok) {
-      if (r.reason !== 'cancelled') await ask(r.reason === 'pending' ? stickerShopDialogs.purchasePending : stickerShopDialogs.buyFailed);
+      await notifyBuyFailure(ask, r, stickerShopDialogs.buyFailed);
       return;
     }
     await ask(stickerShopDialogs.bought(view!.label));
