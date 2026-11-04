@@ -1,14 +1,15 @@
+import * as Application from 'expo-application';
 import { initializeKakaoSDK } from '@react-native-kakao/core';
 import { login, logout, me } from '@react-native-kakao/user';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { KakaoSignInDeps } from './kakao';
-import { KAKAO_NATIVE_APP_KEY } from './kakaoKey';
+import { kakaoNativeAppKey } from './kakaoKey';
 import { makeNonce } from './nonce';
 
 let initialized = false;
 function ensureInitialized() {
   if (initialized) return;
-  void initializeKakaoSDK(KAKAO_NATIVE_APP_KEY);
+  void initializeKakaoSDK(kakaoNativeAppKey(Application.applicationId));
   initialized = true;
 }
 
