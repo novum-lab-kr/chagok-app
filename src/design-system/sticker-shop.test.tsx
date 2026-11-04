@@ -117,6 +117,10 @@ describe('묶음 화면',()=>{
     expect(actions()).toEqual(['2,200원에 열기','광고 보고 하루 써 보기','3일 무료로 써 보기']);
     expect(screen.getByText('6')).toBeTruthy();
   });
+  it('광고를 아직 못 불러왔으면 [광고 보고 하루]를 숨긴다 (2026-11-04)',()=>{
+    render(<PackScreen {...base} adReady={false}/>);
+    expect(actions()).toEqual(['2,200원에 열기','3일 무료로 써 보기']);
+  });
   it('붙인 날이 모자라면 3일 무료는 누를 수 없고 아래에 남은 날을 적는다',()=>{
     const trial=vi.fn();render(<PackScreen {...base} onTrial={trial}/>);
     fireEvent.click(screen.getByRole('button',{name:'3일 무료로 써 보기'}));expect(trial).not.toHaveBeenCalled();

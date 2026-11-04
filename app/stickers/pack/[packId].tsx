@@ -3,6 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LoadingScreen, PackScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import { endLabel, packViews, samplePlacement } from '../../../src/app-data/packViews';
 import { usePrices } from '../../../src/app-data/usePrices';
+import { useRewardedReady } from '../../../src/app-data/useRewardedReady';
 import { offerOpenPack } from '../../../src/app-data/stickerChoice';
 import { notifyBuyFailure } from '../../../src/app-data/purchaseDialogs';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
@@ -27,6 +28,8 @@ export default function Pack() {
   const [busy, setBusy] = useState<'buy' | 'ad'>();
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
+  // 광고 제거를 샀으면 하루 체험이 없어 광고를 불러 두지 않는다
+  const adReady = useRewardedReady(state?.pack.adFree === false);
   const prices = usePrices();
   /** 구독 화면으로 갔다가 구독하고 돌아오면 산 것처럼 그 묶음을 펼친다 */
   const subscribing = useRef(false);
@@ -93,6 +96,7 @@ export default function Pack() {
         pack={view}
         sample={samplePlacement(view)}
         adFree={state.pack.adFree}
+        adReady={adReady}
         reward={{ days: state.pack.days, goal: dayTrialThreshold(state.pack.claimed) }}
         onBuy={() => { void once(buy); }}
         onWatchAd={() => { void once(watchAd); }}

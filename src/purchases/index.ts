@@ -7,6 +7,7 @@ import { isSubscribed, nextStoredSubscription, type SubscriptionPlan, type Subsc
 import { notifyLocalChange } from '../sync/changes';
 import { devStore } from './devStore';
 import { priceLabel, type PriceLabels, type ProductKey, type StorePrice } from './price';
+import type { RewardedPreloader } from './rewardedAd';
 
 /** 결제·광고 (PRD 4.12). 결제 팝업은 Apple·Google이 그린다. */
 /** pending: 보호자 승인(구입 승인 요청·가족 결제)을 기다린다. 승인되면 [구매 복원]으로 연다. */
@@ -43,6 +44,16 @@ export function setActiveStore(s: PurchaseStore): void { purchases = s; }
 export const usingDevStore = (): boolean => override === null && purchases === devStore;
 export function setAdStore(s: AdStore): void { ads = s; }
 export function setStoreForTest(s: Store | null): void { override = s; }
+
+/**
+ * 보상형 광고를 지금 띄울 수 있는가. 광고 모듈이 든 빌드면 admob.ts가 미리 불러오기(createRewardedPreloader)로 바꾼다.
+ * 없으면 개발용 대역이라 늘 준비됨 — [광고 보고 하루]를 누르면 바로 성공한다.
+ */
+export type RewardedReadiness = Pick<RewardedPreloader, 'ready' | 'preload' | 'subscribe'>;
+const alwaysReady: RewardedReadiness = { ready: () => true, preload: () => {}, subscribe: () => () => {} };
+let rewarded: RewardedReadiness = alwaysReady;
+export function setRewardedReadiness(r: RewardedReadiness): void { rewarded = r; }
+export const rewardedReadiness = (): RewardedReadiness => (override ? alwaysReady : rewarded);
 
 /** 결제 계정 전환(RevenueCat logIn/logOut). 결제 모듈이 있는 빌드에서 revenueCat.ts가 넣는다 — 화면이 SDK를 직접 부르지 않게 */
 let linkAccount: (userId: string | null) => Promise<void> = async () => {};

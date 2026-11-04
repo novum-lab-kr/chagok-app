@@ -1,6 +1,6 @@
 import { Platform, TurboModuleRegistry } from 'react-native';
-import { setAdStore } from './index';
-import { playRewardedAd, type RewardedAdLike } from './rewardedAd';
+import { setAdStore, setRewardedReadiness } from './index';
+import { createRewardedPreloader, type RewardedAdLike } from './rewardedAd';
 
 type AdsLib = typeof import('react-native-google-mobile-ads');
 
@@ -44,11 +44,12 @@ export async function configureAds(): Promise<boolean> {
   const ads = adsLib();
   if (!ads) return false;
   configured = true;
-  setAdStore({
-    showRewardedAd: () => playRewardedAd(
-      ads.RewardedAd.createForAdRequest(adUnits(ads).rewarded, AD_REQUEST) as unknown as RewardedAdLike,
-    ),
-  });
+  // 광고는 미리 불러 둔다 — 못 불러오면 묶음 화면이 [광고 보고 하루]를 숨긴다 (2026-11-04)
+  const preloader = createRewardedPreloader(
+    () => ads.RewardedAd.createForAdRequest(adUnits(ads).rewarded, AD_REQUEST) as unknown as RewardedAdLike,
+  );
+  setAdStore({ showRewardedAd: () => preloader.play() });
+  setRewardedReadiness(preloader);
   try {
     await ads.default().initialize();
   } catch {
