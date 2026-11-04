@@ -1,8 +1,10 @@
 import { getDb } from '../db/client';
 import type { DbDriver } from '../db/driver';
+import { ME } from '../repositories/ids';
 import { notifyLocalChange } from './changes';
 
-export type OutboxEntity = 'goal' | 'sticker' | 'record' | 'photo';
+/** member의 row_id는 목표 id다 — 이 기기에서 올리는 멤버 행은 내 것 하나뿐이다. */
+export type OutboxEntity = 'goal' | 'member' | 'sticker' | 'record' | 'photo';
 
 export type OutboxEntry = {
   entity: OutboxEntity;
@@ -32,7 +34,7 @@ export async function enqueue(tx: DbDriver, entity: OutboxEntity, rowId: string,
 }
 
 /**
- * 보류하지 않은 항목을 부모부터(목표 → 스티커 → 기록 → 사진), 같은 종류 안에서는 오래된 순서로.
+ * 보류하지 않은 항목을 부모부터(목표 → 멤버 → 스티커 → 기록 → 사진), 같은 종류 안에서는 오래된 순서로.
  * 묶음이 나뉘어도 자식이 부모보다 먼저 서버에 가지 않게 한다 — 서버에 외래키가 있으면 자식이 영구 보류된다.
  * excludePhotos: 사진 전송이 네트워크로 실패한 회차에서 행만 계속 보낼 때.
  */
@@ -40,7 +42,7 @@ export async function takeBatch(limit: number, options: { excludePhotos?: boolea
   const db = await getDb();
   const rows = await db.all<Row>(
     `SELECT * FROM outbox WHERE last_error IS NULL ${options.excludePhotos ? "AND entity != 'photo'" : ''}
-      ORDER BY CASE entity WHEN 'goal' THEN 0 WHEN 'sticker' THEN 1 WHEN 'record' THEN 2 ELSE 3 END, queued_at ASC
+      ORDER BY CASE entity WHEN 'goal' THEN 0 WHEN 'member' THEN 1 WHEN 'sticker' THEN 2 WHEN 'record' THEN 3 ELSE 4 END, queued_at ASC
       LIMIT ?`,
     limit,
   );
@@ -82,6 +84,7 @@ export async function enqueueAll(now = Date.now()): Promise<void> {
   await db.transaction(async (tx) => {
     const sets: [OutboxEntity, string][] = [
       ['goal', 'SELECT id FROM goals'],
+      ['member', `SELECT goal_id AS id FROM goal_members WHERE user_id = '${ME}'`],
       ['sticker', 'SELECT id FROM stickers'],
       ['record', 'SELECT id FROM records'],
       ['photo', 'SELECT id FROM records WHERE photo_uri IS NOT NULL'],

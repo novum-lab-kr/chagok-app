@@ -28,7 +28,7 @@ describe('pushOnce', () => {
     await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
     deps.server.failNext = 1;
     await expect(pushOnce(deps)).rejects.toThrow('network');
-    expect((await pendingCount()).pending).toBe(1);
+    expect((await pendingCount()).pending).toBe(2); // 목표와 내 멤버 행
   });
 
   it('서버는 반영했는데 응답을 잃으면, 다시 보내도 결과가 같다', async () => {
@@ -84,15 +84,15 @@ describe('pushOnce', () => {
     deps.server.reject.add(a.id);
     const result = await pushOnce(deps);
     expect(deps.server.live('goal')).toEqual([b.id]);
-    expect(result.held).toBe(1);
-    expect(await pendingCount()).toEqual({ pending: 0, held: 1 });
+    expect(result.held).toBe(2); // 목표와 내 멤버 행 둘 다 같은 목표 행으로 가서 둘 다 거부된다
+    expect(await pendingCount()).toEqual({ pending: 0, held: 2 });
   });
 
   it('묶음 크기로 나눠 보낸다', async () => {
     const deps = setup();
     for (let i = 0; i < 5; i++) await createGoal({ name: `g${i}`, boardType: 'tally', totalSlots: 1 });
     await pushOnce({ ...deps, batchSize: 2 });
-    expect(deps.server.pushes).toBe(3);
+    expect(deps.server.pushes).toBe(5); // 목표 5개와 멤버 5개, 2개씩
     expect(deps.server.live('goal')).toHaveLength(5);
   });
 
@@ -175,6 +175,6 @@ describe('사진과 기록이 한 묶음일 때 (리뷰 #4)', () => {
     await upsertRecord(s.id, { photoUri: 'record-photo:a.jpg', memo: null });
     const result = await pushOnce(deps);
     expect(deps.server.pushes).toBe(1);
-    expect(result.sent).toBe(3); // 목표·스티커·기록
+    expect(result.sent).toBe(4); // 목표, 멤버, 스티커, 기록
   });
 });

@@ -79,7 +79,7 @@ describe('복원', () => {
     server.failNext = 1;
     await expect(replaceServerWithDevice(server, 'd1')).rejects.toThrow();
     expect(server.live('goal')).toEqual([g.id]);
-    expect((await takeBatch(10)).map((e) => e.rowId)).toEqual([mine.id]);
+    expect((await takeBatch(10)).map((e) => e.rowId)).toEqual([mine.id, mine.id]); // 목표와 내 멤버 행
   });
 
   it('기기에 기록이 있는지', async () => {
@@ -164,7 +164,7 @@ describe('내 목표 순서 복원 (PRD 4.1, 2026-10-30)', () => {
     expect(await shown()).toEqual(['placed', 'fresh', 'old']);
     const db = await getDb();
     expect((await db.all<{ id: string; sort_order: number; updated_at: number }>(
-      'SELECT id, sort_order, updated_at FROM goals ORDER BY sort_order',
+      `SELECT goal_id AS id, sort_order, updated_at FROM goal_members ORDER BY sort_order`,
     ))).toEqual([
       { id: 'placed', sort_order: 0, updated_at: 9 },
       { id: 'fresh', sort_order: 1, updated_at: 9 },

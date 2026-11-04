@@ -1,5 +1,7 @@
 import { getDb } from '../db/client';
+import { DEFAULT_STICKER_ID } from '../domain/types';
 import { setSetting } from '../repositories/appSettingsRepository';
+import { ME } from '../repositories/ids';
 import { notifyLocalChange } from './changes';
 import { enqueue } from './outbox';
 import type { GoalRow, PhotoStore, RecordRow, StickerRow, SyncServer } from './contract';
@@ -71,20 +73,25 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
   const oldPhotoUris = (await db.all<{ photo_uri: string }>('SELECT photo_uri FROM records WHERE photo_uri IS NOT NULL'))
     .map((r) => r.photo_uri);
   await db.transaction(async (tx) => {
-    await tx.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox;');
+    await tx.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goal_members; DELETE FROM goals; DELETE FROM outbox;');
     const { goals, filled } = fillSortOrder(snap.goals);
     for (const g of goals) {
       await tx.run(
-        `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at,
-           completion_seen, last_placed_at, initial_slots, updated_at, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        g.id, g.name, g.board_type, g.total_slots, g.default_sticker_id, g.created_at, g.end_date, g.completed_at,
-        g.completion_seen, g.last_placed_at, g.initial_slots, g.updated_at, g.sort_order ?? null,
+        `INSERT INTO goals (id, mode, name, board_type, total_slots, initial_slots, end_date, max_members, created_at, updated_at)
+         VALUES (?, 'solo', ?, ?, ?, ?, ?, 1, ?, ?)`,
+        g.id, g.name, g.board_type, g.total_slots, g.initial_slots, g.end_date, g.created_at, g.updated_at,
+      );
+      await tx.run(
+        `INSERT INTO goal_members (goal_id, user_id, role, sticker_id, sort_order, completed_at, completion_seen, last_placed_at, joined_at, updated_at)
+         VALUES (?, ?, 'owner', ?, ?, ?, ?, ?, ?, ?)`,
+        g.id, ME, g.default_sticker_id, g.sort_order ?? null, g.completed_at, g.completion_seen, g.last_placed_at, g.created_at, g.updated_at,
       );
     }
     for (const s of snap.stickers) {
       await tx.run(
-        'INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        s.id, s.goal_id, s.placed_at, s.slot_index, s.sticker_type, s.updated_at, s.date_key, s.tz_offset_min,
+        `INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min, board_user_id, placed_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        s.id, s.goal_id, s.placed_at, s.slot_index, s.sticker_type, s.updated_at, s.date_key, s.tz_offset_min, ME, ME,
       );
     }
     for (const r of snap.records) {
@@ -167,8 +174,9 @@ export async function downloadRestoredPhotos(photos: PhotoStore, list: PhotoToFe
 export async function replaceServerWithDevice(server: SyncServer, deviceId: string): Promise<void> {
   const db = await getDb();
   const goals = await db.all<GoalRow>(
-    `SELECT id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at, completion_seen,
-            last_placed_at, initial_slots, updated_at, sort_order FROM goals`,
+    `SELECT g.id, g.name, g.board_type, g.total_slots, COALESCE(m.sticker_id, '${DEFAULT_STICKER_ID}') AS default_sticker_id,
+            g.created_at, g.end_date, m.completed_at, m.completion_seen, m.last_placed_at, g.initial_slots, g.updated_at, m.sort_order
+       FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}'`,
   );
   const stickers = await db.all<StickerRow>('SELECT id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min FROM stickers');
   const records = await db.all<RecordRow>(

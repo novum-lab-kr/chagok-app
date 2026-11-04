@@ -13,7 +13,7 @@ export const TODAY = localDateKey(NOW.getTime());
 const at = (month: number, day: number, hour = 9) => new Date(2026, month - 1, day, hour).getTime();
 
 type Fields = Pick<Goal, 'id' | 'name' | 'defaultStickerId' | 'createdAt'> & Partial<Goal>;
-const base = {totalSlots: null, endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, initialSlots: null, sortOrder: null};
+const base = {mode: 'solo' as const, role: 'owner' as const, totalSlots: null, endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, initialSlots: null, sortOrder: null};
 const tally = (g: Fields & {totalSlots: number}): Goal => ({...base, boardType: 'tally', initialSlots: g.totalSlots, ...g});
 const calendar = (g: Fields): Goal => ({...base, boardType: 'calendar', ...g});
 
@@ -27,7 +27,7 @@ export const goals = {
 export type GoalKey = keyof typeof goals;
 
 function sticker(goal: Goal, slotIndex: number, dateKey: string): Sticker {
-  return {id: `${goal.id}-${slotIndex}`, goalId: goal.id, placedAt: NOW.getTime(), slotIndex, stickerType: goal.defaultStickerId, dateKey, tzOffsetMin: 540};
+  return {id: `${goal.id}-${slotIndex}`, goalId: goal.id, placedAt: NOW.getTime(), slotIndex, stickerType: goal.defaultStickerId, dateKey, tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me'};
 }
 /** 적립판: 앞에서부터 count칸 */
 export const slots = (goal: Goal, count: number): Sticker[] => Array.from({length: count}, (_, i) => sticker(goal, i, TODAY));

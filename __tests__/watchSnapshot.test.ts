@@ -5,7 +5,7 @@ import { blockColorOf } from '../src/watch/blockColor';
 
 const t = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m - 1, d, h, min).getTime();
 const goal = (over: Partial<Goal> = {}): Goal => ({
-  id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sports_normal.walk',
+  id: 'g', mode: 'solo', role: 'owner', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sports_normal.walk',
   createdAt: t(2026, 10, 3), endDate: null, completedAt: null, completionSeen: false,
   lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });

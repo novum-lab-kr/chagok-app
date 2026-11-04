@@ -3,18 +3,18 @@ import type { Goal, Sticker } from '../src/domain/types';
 import { localDateKey } from '../src/domain/dates';
 
 const tally: Goal = {
-  id: 'g1', name: '러닝', boardType: 'tally', totalSlots: 20,
+  id: 'g1', mode: 'solo', role: 'owner', name: '러닝', boardType: 'tally', totalSlots: 20,
   defaultStickerId: 'shoe', createdAt: 0,
   endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: 20, sortOrder: null,
 };
 const cal: Goal = {
-  id: 'g2', name: '독서', boardType: 'calendar', totalSlots: null,
+  id: 'g2', mode: 'solo', role: 'owner', name: '독서', boardType: 'calendar', totalSlots: null,
   defaultStickerId: 'book', createdAt: 0,
   endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: null, sortOrder: null,
 };
 const stk = (over: Partial<Sticker>): Sticker => {
   const placedAt = over.placedAt ?? 0;
-  return { id: 's', goalId: 'g1', placedAt, slotIndex: 0, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, ...over };
+  return { id: 's', goalId: 'g1', placedAt, slotIndex: 0, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me', ...over };
 };
 
 describe('toPocketGoal - 적립판', () => {

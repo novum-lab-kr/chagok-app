@@ -5,13 +5,13 @@ import { localDateKey } from '../src/domain/dates';
 
 const t = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m - 1, d, h, min).getTime();
 const goal = (over: Partial<Goal> = {}): Goal => ({
-  id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sprout',
+  id: 'g', mode: 'solo', role: 'owner', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sprout',
   createdAt: t(2026, 10, 1), endDate: null, completedAt: null, completionSeen: false,
   lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });
 const tally = (over: Partial<Goal> = {}) => goal({ boardType: 'tally', totalSlots: 5, ...over });
 const st = (id: string, placedAt: number, slotIndex: number): Sticker =>
-  ({ id, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
+  ({ id, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me' });
 const req = (over: Partial<WidgetRequest> = {}): WidgetRequest =>
   ({ id: 'r1', goalId: 'g', kind: 'add', at: t(2026, 10, 6, 9), dateKey: '2026-10-06', ...over });
 const none = new Set<string>();

@@ -17,6 +17,7 @@ it('기록·outbox·설정을 지우고 deviceId만 남긴 뒤 사진 파일을 
   await wipeDevice(() => { removed += 1; });
   const db = await getDb();
   expect((await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM goals'))?.n).toBe(0);
+  expect((await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM goal_members'))?.n).toBe(0);
   expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
   expect(await getSetting('accountUserId')).toBeNull();
   expect(await getFlag('tutorialDone')).toBe(false);

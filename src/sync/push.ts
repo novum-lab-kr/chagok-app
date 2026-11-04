@@ -1,26 +1,29 @@
 import { getDb } from '../db/client';
 import { ack, enqueue, hold, takeBatch } from './outbox';
 import type { OutboxEntry } from './outbox';
+import { DEFAULT_STICKER_ID } from '../domain/types';
+import { ME } from '../repositories/ids';
 import { PhotoRejected, SyncRejected } from './contract';
 import type { Change, GoalRow, PhotoStore, RecordRow, RowEntity, StickerRow, SyncServer } from './contract';
 
-const TABLE: Record<RowEntity, string> = { goal: 'goals', sticker: 'stickers', record: 'records' };
-const COLUMNS: Record<RowEntity, string> = {
-  goal: 'id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at, completion_seen, last_placed_at, initial_slots, updated_at, sort_order',
-  sticker: 'id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min',
+// v1 계약의 목표 행은 기기의 goals와 내 goal_members를 합친 모양이다. 2판 계약으로 바꿀 때 이 부분이 바뀐다.
+const SELECT_ROW: Record<RowEntity, string> = {
+  goal: `SELECT g.id, g.name, g.board_type, g.total_slots, COALESCE(m.sticker_id, '${DEFAULT_STICKER_ID}') AS default_sticker_id,
+            g.created_at, g.end_date, m.completed_at, m.completion_seen, m.last_placed_at, g.initial_slots, g.updated_at, m.sort_order
+       FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}' WHERE g.id = ?`,
+  sticker: 'SELECT id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min FROM stickers WHERE id = ?',
   // 기기 경로 photo_uri는 보내지 않는다
-  record: 'id, sticker_id, memo, photo_remote_path, created_at, updated_at',
+  record: 'SELECT id, sticker_id, memo, photo_remote_path, created_at, updated_at FROM records WHERE id = ?',
 };
 
 export type PushDeps = { server: SyncServer; photos: PhotoStore; deviceId: string; batchSize?: number; now?: () => number };
 
 /** 지금 행 상태로 바꾼다. 행이 없으면 삭제다 — 쪽지에 내용을 담지 않아 쪽지와 DB가 어긋나지 않는다. */
 async function toChange(e: OutboxEntry, now: number): Promise<Change> {
-  const entity = e.entity as RowEntity;
+  // 멤버 항목은 v1에서 목표 행에 합쳐 보낸다(row_id가 목표 id).
+  const entity: RowEntity = e.entity === 'member' ? 'goal' : (e.entity as RowEntity);
   const db = await getDb();
-  const row = await db.first<GoalRow | StickerRow | RecordRow>(
-    `SELECT ${COLUMNS[entity]} FROM ${TABLE[entity]} WHERE id = ?`, e.rowId,
-  );
+  const row = await db.first<GoalRow | StickerRow | RecordRow>(SELECT_ROW[entity], e.rowId);
   if (!row) return { entity, op: 'delete', id: e.rowId, deletedAt: now };
   return { entity, op: 'upsert', row } as Change;
 }

@@ -12,11 +12,11 @@ withFreshDb();
 
 const t = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).getTime();
 const goal = (over: Partial<Goal> = {}): Goal => ({
-  id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sprout',
+  id: 'g', mode: 'solo', role: 'owner', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'sprout',
   createdAt: t(2026, 10, 1), endDate: null, completedAt: null, completionSeen: false,
   lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });
-const st = (id: string, placedAt: number, slotIndex: number): Sticker => ({ id, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
+const st = (id: string, placedAt: number, slotIndex: number): Sticker => ({ id, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me' });
 const now = new Date(2026, 9, 6, 9);
 
 describe('placementFromWidgetLink (위젯 링크로 열렸을 때 붙일 곳)', () => {

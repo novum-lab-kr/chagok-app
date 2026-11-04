@@ -1,5 +1,6 @@
 import { getDb } from '../db/client';
-import { newId } from './ids';
+import { ME, newId } from './ids';
+import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { RecordNote } from '../domain/types';
 import { enqueue } from '../sync/outbox';
 
@@ -39,6 +40,9 @@ export async function upsertRecord(
   const db = await getDb();
   const now = Date.now();
   return db.transaction(async (tx) => {
+    // 기록은 내가 붙인 칸에만 남긴다 (친구 칸에는 남기지 않는다).
+    const owner = await tx.first<{ placed_by: string | null }>('SELECT placed_by FROM stickers WHERE id = ?', stickerId);
+    if (owner?.placed_by !== ME) throw new Error('내가 붙인 칸에만 기록할 수 있습니다.');
     const row = await tx.first<RecordRow>('SELECT * FROM records WHERE sticker_id = ?', stickerId);
     if (row) {
       await tx.run(
@@ -51,7 +55,7 @@ export async function upsertRecord(
     }
     const record: RecordNote = { id: newId(), stickerId, photoUri: data.photoUri, memo: data.memo, createdAt: now };
     await tx.run(
-      'INSERT INTO records (id, sticker_id, photo_uri, memo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      "INSERT INTO records (id, sticker_id, photo_uri, memo, created_at, updated_at, visibility) VALUES (?, ?, ?, ?, ?, ?, 'self')",
       record.id, record.stickerId, record.photoUri, record.memo, record.createdAt, now,
     );
     await enqueue(tx, 'record', record.id, now);
@@ -93,11 +97,12 @@ export type TimelineEntry = {
  */
 export async function listRecordTimeline(): Promise<TimelineEntry[]> {
   const db = await getDb();
-  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; default_sticker_id: string; sticker_type: string; placed_at: number; date_key: string; memo: string | null; photo_uri: string | null }>(
-    `SELECT r.sticker_id, s.goal_id, g.name, g.default_sticker_id, s.sticker_type, s.placed_at, s.date_key, r.memo, r.photo_uri
+  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; default_sticker_id: string | null; sticker_type: string; placed_at: number; date_key: string; memo: string | null; photo_uri: string | null }>(
+    `SELECT r.sticker_id, s.goal_id, g.name, m.sticker_id AS default_sticker_id, s.sticker_type, s.placed_at, s.date_key, r.memo, r.photo_uri
      FROM records r
      JOIN stickers s ON s.id = r.sticker_id
      JOIN goals g ON g.id = s.goal_id
+     JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}'
      WHERE NULLIF(TRIM(r.memo), '') IS NOT NULL OR NULLIF(TRIM(r.photo_uri), '') IS NOT NULL
      ORDER BY s.placed_at DESC, s.id`,
   );
@@ -105,7 +110,7 @@ export async function listRecordTimeline(): Promise<TimelineEntry[]> {
     stickerId: r.sticker_id,
     goalId: r.goal_id,
     goalName: r.name,
-    goalSticker: r.default_sticker_id,
+    goalSticker: r.default_sticker_id ?? DEFAULT_STICKER_ID,
     sticker: r.sticker_type,
     placedAt: r.placed_at,
     dateKey: r.date_key,

@@ -34,7 +34,7 @@ describe('계정 상태', () => {
     await recordSyncSuccess(1000);
     expect((await readAccountState('u1')).state).toBe('pending');
     expect(await getSetting('lastSyncedAt')).toBe('500');
-    expect(await localOnlyCount()).toBe(1);
+    expect(await localOnlyCount()).toBe(2); // 목표와 내 멤버 행
   });
   it('로그인 방식 표시', () => {
     expect(providerFromAuth('apple')).toBe('Apple');

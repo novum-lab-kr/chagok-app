@@ -1,7 +1,15 @@
 export type BoardType = 'calendar' | 'tally';
 
+/** solo 혼자, each 각자 판, one 한 판, show 보여주기 */
+export type GoalMode = 'solo' | 'each' | 'one' | 'show';
+export type MemberRole = 'owner' | 'member' | 'viewer';
+
 export type Goal = {
   id: string;
+  /** 함께 목표 방식. 혼자 목표는 solo */
+  mode: GoalMode;
+  /** 내가 이 목표에서 맡은 역할 */
+  role: MemberRole;
   name: string;
   boardType: BoardType;
   /** tally일 때만 값, calendar는 null */
@@ -34,6 +42,17 @@ export type Goal = {
 /** 새 목표와 스티커의 기본 그림 (2026-11-04 새싹에서 네잎클로버로) */
 export const DEFAULT_STICKER_ID = 'basic.clover';
 
+/** 함께 목표의 멤버 한 줄. isMe는 이 기기 사용자 본인. */
+export type GoalMember = {
+  goalId: string;
+  userId: string;
+  isMe: boolean;
+  role: MemberRole;
+  displayName: string | null;
+  stickerId: string | null;
+  joinedAt: number | null;
+};
+
 export type Sticker = {
   id: string;
   goalId: string;
@@ -44,6 +63,10 @@ export type Sticker = {
   dateKey: string;
   /** 붙일 때 기기 시간대. UTC보다 몇 분 빠른가(한국 540). 붙인 곳의 시각을 보여 줄 때 쓴다 */
   tzOffsetMin: number;
+  /** 어느 판에 붙었는가. 내 판은 'me', 한 판은 null, 친구 판은 그 사람 id */
+  boardUserId: string | null;
+  /** 붙인 사람. 'me' 또는 그 사람 id, 차단으로 가려지면 null */
+  placedBy: string | null;
 };
 
 export type RecordNote = {

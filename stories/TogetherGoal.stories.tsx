@@ -33,7 +33,7 @@ function Note({children}: {children: ReactNode}) {
 }
 
 // ── 예시 값 ───────────────────────────────────────────────────────
-const walk: Goal = {id: 'walk30', name: '11월 만 보 걷기', boardType: 'tally', totalSlots: 30, initialSlots: 30, defaultStickerId: 'basic.shoe',
+const walk: Goal = {id: 'walk30', mode: 'each', role: 'owner', name: '11월 만 보 걷기', boardType: 'tally', totalSlots: 30, initialSlots: 30, defaultStickerId: 'basic.shoe',
   createdAt: new Date(2026, 8, 1).getTime(), endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, sortOrder: null};
 const ME = {name: '은주', sticker: 'basic.shoe' as StickerId};
 const MAX = 6;

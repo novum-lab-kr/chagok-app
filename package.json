@@ -93,6 +93,9 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^expo-crypto$": "<rootDir>/__tests__/support/expoCrypto.ts"
+    },
     "testMatch": [
       "**/__tests__/**/*.test.ts"
     ]

@@ -88,7 +88,8 @@ const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
           const now = new Date();
           const p2 = (n: number) => String(n).padStart(2, '0');
           const req = {
-            id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+            // 요청 id는 스티커 id가 되고 서버는 uuid만 받는다. 위젯 실행 환경에는 crypto가 없어 Math.random으로 v4 모양을 채운다.
+            id: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r % 4) + 8).toString(16); }),
             goalId: g.id,
             kind,
             at: now.getTime(),

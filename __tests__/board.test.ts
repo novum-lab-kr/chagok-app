@@ -15,7 +15,7 @@ const at = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m -
 const NOW = new Date(2026, 8, 29, 10); // 2026-09-29 10:00
 
 const base: Goal = {
-  id: 'g', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
+  id: 'g', mode: 'solo', role: 'owner', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
   createdAt: at(2026, 9, 10), endDate: null, completedAt: null, completionSeen: false,
   lastPlacedAt: null, initialSlots: 15, sortOrder: null,
 };
@@ -23,7 +23,7 @@ const tally = (over: Partial<Goal> = {}): Goal => ({ ...base, ...over });
 const calendar = (over: Partial<Goal> = {}): Goal =>
   ({ ...base, boardType: 'calendar', totalSlots: null, initialSlots: null, ...over });
 const stk = (slotIndex: number, placedAt = at(2026, 9, 20)): Sticker =>
-  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
+  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me' });
 const onDay = (d: number, m = 9) => stk(d - 1, at(2026, m, d));
 
 describe('dates', () => {
