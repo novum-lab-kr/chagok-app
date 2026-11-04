@@ -96,3 +96,23 @@ describe('혼자 적립판 한 줄 칸 수 (2026-11-05 4칸, 큰 폰 5칸)',()=>
     expect(cellWidth()).toBe('54px');
   });
 });
+
+describe('한 판 가려진 칸 (PRD 4.15, 차단)',()=>{
+  const Small=({b}:{b:TallyBoardView})=><BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:b.total,percentLabel:''}} board={b}
+    hideProgress boardRows={4} onBack={()=>{}} onSettings={()=>{}}/>;
+  it('hidden 칸은 누를 수 없고 「가려진 칸」으로 읽힌다',()=>{
+    const pressed:number[]=[];
+    render(<Small b={board(12,2,{hidden:new Set([3]),justPlaced:undefined,onPress:n=>pressed.push(n)})}/>);
+    const hidden=screen.getByLabelText('가려진 칸');
+    expect(hidden.querySelector('button, [role="button"]')).toBeNull();
+    fireEvent.click(hidden);
+    expect(pressed).toEqual([]);
+    expect(screen.getByRole('button',{name:/^4번 칸/})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:/^3번 칸/})).toBeNull();
+  });
+  it('hidden이 없으면 그 칸은 지금처럼 빈칸이다',()=>{
+    render(<Small b={board(12,2,{justPlaced:undefined})}/>);
+    expect(screen.queryByLabelText('가려진 칸')).toBeNull();
+    expect(screen.getByRole('button',{name:/^3번 칸/})).toBeTruthy();
+  });
+});

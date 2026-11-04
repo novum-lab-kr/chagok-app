@@ -91,22 +91,26 @@ export function FriendBoardStrip({name,sticker,board,onPress}:{name:string;stick
     :<View accessible accessibilityLabel={t('together.boardOf',name)}>{row}</View>;
 }
 /** 친구를 기다리는 자리: 차곡이 + 안내 + [링크 다시 보내기]. */
-function WaitingForFriends({onResend}:{onResend:()=>void}) {
+function WaitingForFriends({onResend}:{/** 만든 사람만. 없으면 버튼을 그리지 않는다 */onResend?:()=>void}) {
   return <PixelFrame variant="thin"><View style={{alignItems:'center',gap:10,paddingVertical:18,paddingHorizontal:10}}>
     <Mascot pose="curious" size={64}/>
     <PixelText style={{textAlign:'center'}}>{t('together.waiting')}</PixelText>
     <Small center>{t('together.waitingDetail')}</Small>
-    <PixelButton label={t('together.resendLink')} variant="secondary" minHeight={40} onPress={onResend}/>
+    {onResend&&<PixelButton label={t('together.resendLink')} variant="secondary" minHeight={40} onPress={onResend}/>}
   </View></PixelFrame>;
 }
 /** 판 아래 「함께하는 사람 n」과 친구 판 줄 목록(나는 빼고). 친구가 없으면 기다리는 자리. */
-export function FriendBoardList({friends,onOpen,onResend}:{friends:readonly FriendBoardItem[];/** 줄을 누르면 그 친구 판 크게 */onOpen:(id:string)=>void;onResend:()=>void}) {
+export function FriendBoardList({friends,onOpen,onResend}:{friends:readonly FriendBoardItem[];/** 줄을 누르면 그 친구 판 크게 */onOpen:(id:string)=>void;/** [링크 다시 보내기]. 초대 코드는 만든 사람만 읽으므로 만든 사람에게만 준다 */onResend?:()=>void}) {
   return <View style={{gap:8}}>
     <PixelText accessibilityRole="header" style={sectionTitle}>{friends.length?t('together.peopleCount',friends.length):t('together.people')}</PixelText>
     {friends.length
       ?<View style={{gap:10}}>{friends.map(friend=><FriendBoardStrip key={friend.id} name={friend.name} sticker={friend.sticker} board={friend.board} onPress={()=>onOpen(friend.id)}/>)}</View>
       :<WaitingForFriends onResend={onResend}/>}
   </View>;
+}
+/** 한 판 아래 안내 글: 칸마다 붙인 사람의 스티커이고, 친구 칸을 누르면 누가 언제 붙였는지 보인다. */
+export function OneBoardNote() {
+  return <Small>{t('together.oneBoardNote')}</Small>;
 }
 const BIG_CELL=44;
 /** 친구 판 전체(적립판 모든 칸, 달력판 그 달)를 얇은 판에 크게. 보기만 한다. */
@@ -338,5 +342,15 @@ export function BlockedPeopleScreen({people,onUnblock,onBack}:{people:readonly B
 export const togetherDialogs={
   /** + 시트 [친구와 함께], 친구와 함께 만들기에서 로그인 전. [로그인]은 계정 연결로 간다. */
   get login(){return {title:t('together.loginTitle'),description:t('together.loginDescription'),primaryLabel:t('account.login'),secondaryLabel:t('common.close')};},
+  /** 한 판 친구 칸을 눌렀을 때: 누가 언제 붙였는지. when은 「9월 3일 15:05」. */
+  placedBy:(name:string,when:string)=>({title:t('together.placedBy',name),description:t('together.placedAt',when),primaryLabel:t('common.ok')}),
+  /** 한 판 달력판에서 친구가 붙인 날을 눌렀을 때. 내가 더 붙일 수 있으면 [나도 붙이기]. lines는 「지우 9월 3일 15:05」처럼 붙인 순서. */
+  placedOnDay:(names:string,lines:readonly string[],canPlaceToo:boolean)=>canPlaceToo
+    ?{title:t('together.placedBy',names),description:lines.join('\n'),secondaryLabel:t('common.close'),primaryLabel:t('together.placeToo')}
+    :{title:t('together.placedBy',names),description:lines.join('\n'),primaryLabel:t('common.ok')},
+  /** 한 판에 연결 없이 붙이려 할 때. 붙이지 않는다. */
+  get offlineOne(){return {title:t('together.offlineOne'),description:t('together.offlineOneDescription'),primaryLabel:t('common.ok')};},
+  /** 한 판에서 내가 붙인 칸을 다른 사람이 먼저 붙였다(slot_taken). 칸은 이미 지워졌다. */
+  get slotTaken(){return {title:t('together.slotTaken'),description:t('together.slotTakenDescription'),primaryLabel:t('common.ok')};},
   blockConfirm:(name:string)=>({title:t('block.confirmTitle',name),description:t('block.confirmDescription',name),secondaryLabel:t('common.cancel'),primaryLabel:t('block.confirm')}),
 };

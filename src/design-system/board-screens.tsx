@@ -173,7 +173,7 @@ export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettin
 }
 
 // ── 판 상세 ──────────────────────────────────────────────────────
-export type TallyBoardView={kind:'tally';total:number;/** 방금 붙인 칸 번호: 붙이기 모션 */justPlaced?:number;/** 붙인 칸 번호(1부터) → 그 칸의 스티커 */filled:Readonly<Record<number,StickerId>>;/** 사진 또는 메모가 있는 칸 */recorded?:ReadonlySet<number>;onPress:(n:number)=>void;onOpenRecord:(n:number)=>void;/** 튜토리얼이 잴 칸: 다음 빈칸, 마지막 붙인 칸 */nextSlotRef?:React.Ref<View>;recordSlotRef?:React.Ref<View>};
+export type TallyBoardView={kind:'tally';total:number;/** 방금 붙인 칸 번호: 붙이기 모션 */justPlaced?:number;/** 붙인 칸 번호(1부터) → 그 칸의 스티커 */filled:Readonly<Record<number,StickerId>>;/** 사진 또는 메모가 있는 칸 */recorded?:ReadonlySet<number>;onPress:(n:number)=>void;onOpenRecord:(n:number)=>void;/** 튜토리얼이 잴 칸: 다음 빈칸, 마지막 붙인 칸 */nextSlotRef?:React.Ref<View>;recordSlotRef?:React.Ref<View>;/** 가려진 칸(차단한 사람이 붙인 한 판 칸). 작은 판만 그린다: 이름과 스티커 없이 흐리게, 누를 수 없다 */hidden?:ReadonlySet<number>};
 export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방금 붙인 날 */justPlaced?:string;records:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;/** 오늘 칸 강조. 완성한 판은 두지 않는다 */selectedDate?:string;isDateEnabled:(date:string)=>boolean;canGoPrev:boolean;canGoNext:boolean;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;onOpenRecord:(date:string)=>void};
 /**
  * 판 상세. 판 조작: 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기 (PRD 4.5).
@@ -419,7 +419,7 @@ function CompactTally({board,sticker,label,rows,readOnly}:{board:TallyBoardView;
   const [measured,setMeasured]=useState<number|null>(null);
   const width=useContentWidth(measured);
   const columns=boardColumns(width),cell=boardCellSize(width,columns,COMPACT_GAP),perPage=columns*rows;
-  const next=Array.from({length:board.total},(_,i)=>i+1).find(n=>!board.filled[n]);
+  const next=Array.from({length:board.total},(_,i)=>i+1).find(n=>!board.filled[n]&&!board.hidden?.has(n));
   const lastFilled=Math.max(0,...Object.keys(board.filled).map(Number));
   const [anchor,setAnchor]=useState(()=>next??Math.max(1,lastFilled));
   const first=pageFirst(Math.min(anchor,Math.max(1,board.total)),perPage),last=Math.min(board.total,first+perPage-1);
@@ -444,12 +444,19 @@ function CompactTally({board,sticker,label,rows,readOnly}:{board:TallyBoardView;
     <CompactBoardHeader label={label} range={t('board.pageRange',first,last,board.total)} onPrev={prev} onNext={after} prevLabel={t('board.previousPage')} nextLabel={t('board.nextPage')}/>
     <View {...swipe.panHandlers} onLayout={event=>setMeasured(Math.round(event.nativeEvent.layout.width))} style={{flexDirection:'row',flexWrap:'wrap',gap:COMPACT_GAP,justifyContent:'center'}}>
       {numbers.map(n=>{const filled=board.filled[n];return <View key={n} style={{width:cell,height:cell}}>
-        <GoalStickerCell number={n} sticker={filled??sticker} state={filled?'filled':!readOnly&&n===next?'available':'empty'} enabled={!readOnly}
-          hasRecord={board.recorded?.has(n)??false} popIn={n===justPlaced} onPress={()=>board.onPress(n)} onOpenRecord={filled&&!readOnly?()=>board.onOpenRecord(n):undefined}/>
+        {board.hidden?.has(n)?<HiddenCell/>:<GoalStickerCell number={n} sticker={filled??sticker} state={filled?'filled':!readOnly&&n===next?'available':'empty'} enabled={!readOnly}
+          hasRecord={board.recorded?.has(n)??false} popIn={n===justPlaced} onPress={()=>board.onPress(n)} onOpenRecord={filled&&!readOnly?()=>board.onOpenRecord(n):undefined}/>}
       </View>;})}
     </View>
   </View>;
 }
+/** 가려진 칸: 붙은 칸 바탕만 흐리게. 누를 수 없고 「가려진 칸」으로 읽힌다 (PRD 4.15, 차단). */
+function HiddenCell() {
+  return <View accessible accessibilityLabel={t('together.hiddenCell')} style={{width:'100%',height:'100%',opacity:HIDDEN_OPACITY}}>
+    <PixelFrame variant="slot" style={{height:'100%'}} contentStyle={{height:'100%'}}/>
+  </View>;
+}
+const HIDDEN_OPACITY=0.4;
 /** 작은 달력판의 날짜 한 칸. 판 상세 달력과 같이 빈 날 한 번 = 붙이기, 붙은 날 한 번 = 기록 열기, 꾹 = 떼기. */
 function WeekDay({date,sticker,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
   const month=Number(date.slice(5,7)),day=Number(date.slice(8,10));

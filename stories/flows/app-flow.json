@@ -1075,6 +1075,10 @@
           {
             "id": "screens-함께-목표--shared-calendar-board",
             "label": "달력판 두 주"
+          },
+          {
+            "id": "screens-함께-목표--shared-waiting-member",
+            "label": "친구를 기다릴 때 만든 사람 아님"
           }
         ],
         "scenarios": [
@@ -1094,6 +1098,22 @@
           {
             "id": "screens-함께-목표--one-board-screen",
             "label": "한 판에 같이"
+          },
+          {
+            "id": "screens-함께-목표--one-board-hidden",
+            "label": "가려진 칸"
+          },
+          {
+            "id": "screens-함께-목표--one-board-placed-by",
+            "label": "누가 언제"
+          },
+          {
+            "id": "screens-함께-목표--slot-taken-dialog",
+            "label": "이미 누가 붙였어요"
+          },
+          {
+            "id": "screens-함께-목표--one-board-offline",
+            "label": "연결 없을 때"
           }
         ],
         "scenarios": [
@@ -2247,6 +2267,17 @@
       "source": "together-board",
       "target": "friend-board",
       "label": "친구 줄 누르기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-board-share-sheet",
+      "source": "together-board",
+      "target": "share-sheet",
+      "label": "링크 다시 보내기",
       "data": {
         "scenarios": [
           "together"

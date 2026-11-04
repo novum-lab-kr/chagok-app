@@ -1,8 +1,9 @@
 import { getGoal, settleExpiredPeriods } from '../repositories/goalRepository';
-import { countStickers, listStickers, listStickersInMonth } from '../repositories/stickerRepository';
+import { countStickers, listBoardStickers, listStickers, listStickersInMonth } from '../repositories/stickerRepository';
+import { listMembers } from '../repositories/memberRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
 import { progressBasis } from '../domain/board';
-import type { Goal, Sticker } from '../domain/types';
+import type { Goal, GoalMember, Sticker } from '../domain/types';
 
 export type BoardData = {
   goal: Goal;
@@ -14,6 +15,10 @@ export type BoardData = {
   placedInBasis: number;
   /** 사진 또는 비어 있지 않은 메모가 있는 스티커 */
   recordedIds: ReadonlySet<string>;
+  /** 함께 목표의 사람(나 포함, 보기만 하는 사람 빼고, 들어온 순서). 혼자 목표는 빈 배열 */
+  members: GoalMember[];
+  /** 각자 판만: 친구 userId → 그 사람 판의 칸. 그 밖에는 빈 객체 */
+  friendStickers: Record<string, Sticker[]>;
 };
 
 /**
@@ -33,5 +38,10 @@ export async function loadBoard(goalId: string, year: number, month: number, now
     ? placedAll
     : (await listStickersInMonth(goal.id, basis.year, basis.month)).length;
   const recordedIds = await listRecordedStickerIds(goal.id);
-  return { goal, stickers, placedAll, placedInBasis, recordedIds };
+  const members = goal.mode === 'solo' ? [] : (await listMembers(goal.id)).filter((m) => m.role !== 'viewer');
+  const friendStickers: Record<string, Sticker[]> = {};
+  if (goal.mode === 'each') {
+    for (const m of members) if (!m.isMe) friendStickers[m.userId] = await listBoardStickers(goal.id, m.userId);
+  }
+  return { goal, stickers, placedAll, placedInBasis, recordedIds, members, friendStickers };
 }

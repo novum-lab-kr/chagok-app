@@ -66,6 +66,10 @@ describe('친구 판 줄 (PRD 4.15)',()=>{
     expect(screen.getByText('친구를 기다리고 있어요')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'링크 다시 보내기'}));
     expect(resent).toBe(1);
+  });  it('onResend가 없으면(만든 사람이 아니면) [링크 다시 보내기]가 없다',()=>{
+    render(<FriendBoardList friends={[]} onOpen={()=>{}}/>);
+    expect(screen.getByText('친구를 기다리고 있어요')).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'링크 다시 보내기'})).toBeNull();
   });
 });
 

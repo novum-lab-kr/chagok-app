@@ -3,7 +3,7 @@ import {View} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {
   AddGoalSheet, BlockPickSheet, BlockedPeopleScreen, BoardDetailScreen, FriendBoardList, FriendBoardModal, GoalListScreen, GoogleLoginButton,
-  InviteJoinScreen, InviteLoginPrompt, InviteProblemScreen, KakaoLoginButton, MemberBadgeRow, MemberList, PixelDialogModal, PixelText,
+  InviteJoinScreen, InviteLoginPrompt, InviteProblemScreen, KakaoLoginButton, MemberBadgeRow, MemberList, OneBoardNote, PixelDialogModal, PixelText,
   TogetherGoalScreen, TogetherSettingsScreen, retro, togetherDialogs,
   type BoardKind, type FriendBoard, type FriendBoardItem, type GoalCardItem, type MemberRow, type StickerId, type TogetherMode,
 } from '../src/design-system';
@@ -56,9 +56,9 @@ const CALENDAR_FRIENDS: readonly FriendBoardItem[] = [
 
 // ── 판 화면 ───────────────────────────────────────────────────────
 /** 각자 판: 진행 막대 없이 내 판 두 줄, 아래 친구 판 줄 목록 */
-function SharedBoard({friends = FRIENDS}: {friends?: readonly FriendBoardItem[]}) {
+function SharedBoard({friends = FRIENDS, owner = true}: {friends?: readonly FriendBoardItem[]; /** [링크 다시 보내기]는 만든 사람만 */owner?: boolean}) {
   return <BoardDetailScreen {...boardOf(walk, slots(walk, 11), {recorded: new Set([10])})} title={walk.name} name={t('together.myBoard')} hideProgress boardRows={2}
-    below={<FriendBoardList friends={friends} onOpen={noop} onResend={noop}/>} onBack={noop} onSettings={noop}/>;
+    below={<FriendBoardList friends={friends} onOpen={noop} onResend={owner ? noop : undefined}/>} onBack={noop} onSettings={noop}/>;
 }
 /** 각자 판, 달력판: 내 판도 두 주 */
 function SharedCalendar() {
@@ -68,12 +68,17 @@ function SharedCalendar() {
 /** 한 판: 칸마다 붙인 사람의 스티커 */
 const ONE_FILLED: Record<number, StickerId> = {1: 'basic.shoe', 2: 'basic.flower', 3: 'basic.flower', 4: 'basic.star', 5: 'basic.shoe', 6: 'basic.cat', 7: 'basic.flower',
   8: 'basic.shoe', 9: 'basic.star', 10: 'basic.star', 11: 'basic.shoe', 12: 'basic.flower', 13: 'basic.cat'};
-function OneBoard() {
+function OneBoard({hidden}: {/** 가려진 칸(차단한 사람이 붙인 칸) */hidden?: ReadonlySet<number>}) {
   const base = boardOf(walk, []);
-  const board = base.board.kind === 'tally' ? {...base.board, filled: ONE_FILLED, recorded: new Set([1, 5])} : base.board;
+  const filled = Object.fromEntries(Object.entries(ONE_FILLED).filter(([n]) => !hidden?.has(Number(n))));
+  const board = base.board.kind === 'tally' ? {...base.board, filled, hidden, recorded: new Set([1, 5])} : base.board;
   return <BoardDetailScreen {...base} board={board} title={walk.name} name={t('together.ourBoard')} hideProgress boardRows={4}
     members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 3)]}/>}
-    below={<Note>{t('together.oneBoardNote')}</Note>} onBack={noop} onSettings={noop}/>;
+    below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
+}
+/** 앱(app/goal/[id]/index.tsx)이 띄우는 한 판 창. 문구는 togetherDialogs 그대로 */
+function OneBoardWith({dialog}: {dialog: {title: string; description: string; primaryLabel: string; secondaryLabel?: string}}) {
+  return <Stage><OneBoard/><PixelDialogModal visible {...dialog} single={!dialog.secondaryLabel} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/></Stage>;
 }
 /** 보여주기를 받은 판: 톱니 없이 보기만 */
 function ShowBoard() {
@@ -89,12 +94,22 @@ function Wide({children}: {children: ReactNode}) {
 export const SharedBoard390: Story = {name: '각자 판 390 폭', render: () => <Stage><SharedBoard/></Stage>};
 export const SharedBoard440: Story = {name: '각자 판 440 폭', render: () => <Wide><SharedBoard/></Wide>};
 export const SharedWaiting: Story = {name: '각자 판 친구를 기다릴 때', render: () => <Stage><SharedBoard friends={[]}/></Stage>};
+/** 초대 코드는 만든 사람만 읽는다. 함께하는 사람에게는 [링크 다시 보내기]가 없다 */
+export const SharedWaitingMember: Story = {name: '각자 판 친구를 기다릴 때 만든 사람 아님', render: () => <Stage><SharedBoard friends={[]} owner={false}/></Stage>};
 export const SharedCalendarBoard: Story = {name: '각자 판 달력판 두 주', render: () => <Stage><SharedCalendar/></Stage>};
 export const FriendDialog: Story = {name: '친구 판 크게', render: () => <Stage><SharedBoard/>
   <FriendBoardModal visible name="지우" sticker="basic.flower" board={tally(18)} onRequestClose={noop}/></Stage>};
 export const FriendDialogCalendar: Story = {name: '친구 판 크게 달력판', render: () => <Stage><SharedCalendar/>
   <FriendBoardModal visible name="지우" sticker="basic.star" board={calendarOf([10, 11, 13, 15, 16, 17, 20, 21, 22, 24, 25, 27, 28, 29])} onRequestClose={noop}/></Stage>};
 export const OneBoardScreen: Story = {name: '한 판에 같이', render: () => <Stage><OneBoard/></Stage>};
+/** 새 조립(사용자 확인 전): 차단한 사람이 붙인 칸은 이름과 스티커 없이 흐리게(투명도 0.4), 누를 수 없다. 판 칸 수에는 든다 */
+export const OneBoardHidden: Story = {name: '한 판에 같이 가려진 칸', render: () => <Stage><OneBoard hidden={new Set([4, 9])}/></Stage>};
+/** 새 문구(사용자 확인 전): 친구 칸을 한 번 누르면 누가 언제 붙였는지 */
+export const OneBoardPlacedBy: Story = {name: '한 판 누가 언제', render: () => <OneBoardWith dialog={togetherDialogs.placedBy('지우', '9월 28일 21:05')}/>};
+/** 새 문구(사용자 확인 전): 내가 붙인 칸을 다른 사람이 먼저 붙였다. 칸은 이미 떼어졌다 */
+export const SlotTakenDialog: Story = {name: '한 판 이미 누가 붙였어요', render: () => <OneBoardWith dialog={togetherDialogs.slotTaken}/>};
+/** 새 문구(사용자 확인 전): 연결 없이 빈칸을 눌렀다. 붙이지 않는다 */
+export const OneBoardOffline: Story = {name: '한 판 연결 없을 때', render: () => <OneBoardWith dialog={togetherDialogs.offlineOne}/>};
 export const ShowBoardReadOnly: Story = {name: '보여주기 받은 판 보기만', render: () => <Stage><ShowBoard/></Stage>};
 
 // ── 만들기 ─────────────────────────────────────────────────────────

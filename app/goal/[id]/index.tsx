@@ -3,11 +3,17 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { track } from '../../../src/analytics';
 import { hasAnsweredAnalytics, saveAnalyticsEnabled } from '../../../src/analytics/posthog';
-import { AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, GuideCard, LoadingScreen, PixelButton, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
+import {
+  AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, FriendBoardList, FriendBoardModal, GuideCard, LoadingScreen, MemberBadgeRow, OneBoardNote, PixelButton,
+  boardDialogs, stickerShopDialogs, togetherDialogs, useLoadRetry,
+} from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
 import { percentLabel } from '../../../src/app-data/pocketAdapter';
+import { friendBoardsOf, memberBadgesOf, oneBoardCells, oneBoardDay, oneBoardShown, placedWhen } from '../../../src/app-data/sharedBoardView';
+import { actionDeps, shareInvite } from '../../../src/app-data/sharedGoalActions';
+import { isOnline } from '../../../src/app-data/online';
 import { normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
@@ -23,6 +29,10 @@ import type { Sticker } from '../../../src/domain/types';
 import { getFlag, setFlag } from '../../../src/repositories/appSettingsRepository';
 import { countAllStickers, placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
 import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
+import { ME } from '../../../src/repositories/ids';
+import { subscribeLocalChange } from '../../../src/sync/changes';
+import { subscribeSlotTaken } from '../../../src/sync/slotTaken';
+import { requestSync } from '../../../src/sync/syncGate';
 import { subscribeWidgetApplied } from '../../../src/widgets/applied';
 import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
 import { syncWidgetsNow } from '../../../src/widgets/syncWidgets';
@@ -30,11 +40,15 @@ import { t } from '../../../src/i18n';
 
 /** [완성] 스티커 붙이기 모션이 끝나고 다이얼로그를 띄우기까지 */
 const COMPLETION_DIALOG_DELAY_MS = 700;
+/** 함께 목표: 기기가 바뀌었다는 신호는 커밋 전에 올 수 있어 모았다가 다시 읽는다(목표 탭과 같음, changes.ts) */
+const LOCAL_CHANGE_DELAY_MS = 1000;
 
 /**
  * 판 상세 (PRD 4.1–4.7). 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기.
  * 완성했고 아직 닫기/계속하기를 고르지 않은 판은 열 때 완성 흐름을 보여준다
  * (마지막 칸, 종료일 지남, 수동 완성이 모두 같은 규칙 · DEV-DESIGN 5절).
+ * 함께 목표(PRD 4.15): 각자 판(each)은 내 판 두 줄 + 아래 친구 판 줄, 한 판(one)은 사람 줄 + 판 네 줄.
+ * 한 판의 친구 칸은 누르면 누가 언제 붙였는지 보이고 뗄 수 없다. 가려진 칸(차단)은 누를 수 없다. 한 판은 연결이 있을 때만 붙인다.
  */
 export default function Board() {
   const { id, place: placeParam } = useLocalSearchParams<{ id: string; place?: string }>();
@@ -73,6 +87,8 @@ export default function Board() {
   const [nudge, setNudge] = useState(false);
   /** 첫 스티커 안내를 띄운 스티커 */
   const [firstGuide, setFirstGuide] = useState<string | null>(null);
+  /** 크게 보고 있는 친구 판(각자 판) */
+  const [friendOpen, setFriendOpen] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const next = await loadBoard(id, shown.year, shown.month, new Date());
@@ -95,6 +111,31 @@ export default function Board() {
 
   // 앱이 앞으로 올 때 위젯 탭이 기록에 반영되면, 이미 열려 있던 이 화면도 다시 읽는다 — 이전 목록으로 같은 칸에 또 붙지 않게.
   useEffect(() => subscribeWidgetApplied(() => { void reload(); }), [reload]);
+
+  // 함께 목표: 볼 때 서버 것을 바로 받고, 회차가 기기를 바꾸면 다시 읽는다(친구 칸). 혼자 목표는 지금과 같다.
+  // 한 판에서 내 칸이 slot_taken으로 지워지면 「이미 누가 붙였어요」를 한 번 보인다 — 같은 회차에 여러 칸이어도 모아서 한 번.
+  const shared = data ? data.goal.mode === 'each' || data.goal.mode === 'one' : false;
+  const latestReload = useRef(reload);
+  useEffect(() => { latestReload.current = reload; }, [reload]);
+  useFocusEffect(useCallback(() => {
+    if (!shared) return;
+    requestSync();
+    let changed: ReturnType<typeof setTimeout> | undefined;
+    let taken: ReturnType<typeof setTimeout> | undefined;
+    const offChange = subscribeLocalChange(() => {
+      clearTimeout(changed);
+      changed = setTimeout(() => { void latestReload.current().catch(() => {}); }, LOCAL_CHANGE_DELAY_MS);
+    });
+    const offTaken = subscribeSlotTaken((goalId) => {
+      if (goalId !== id || taken) return;
+      taken = setTimeout(() => {
+        taken = undefined;
+        void latestReload.current().catch(() => {});
+        void ask(togetherDialogs.slotTaken);
+      }, LOCAL_CHANGE_DELAY_MS);
+    });
+    return () => { offChange(); offTaken(); clearTimeout(changed); clearTimeout(taken); };
+  }, [shared, id, ask]));
 
   const goal = data?.goal;
   const pending = goal ? pendingCompletion(goal) : false;
@@ -160,7 +201,7 @@ export default function Board() {
   if (!data || !goal) {
     return <LoadingScreen failed={failed} kind="records" onRetry={retry} onHome={goHome} />;
   }
-  const { stickers, placedInBasis, recordedIds } = data;
+  const { stickers, placedInBasis, recordedIds, members } = data;
   const done = isCompleted(goal);
   const sticker = normalizeStickerId(goal.defaultStickerId);
   const now = new Date();
@@ -177,6 +218,8 @@ export default function Board() {
     // 첫 스티커 안내가 보이는 채로 다음 칸을 붙이면 본 것으로 친다. 안 닫고 계속 붙여도 매번 다시 뜨지 않게 한다.
     if (firstGuide && !dialogOpen) void setFlag('firstStickerGuideDone', true);
     const target = from.goal;
+    // 한 판은 여럿이 같은 칸을 다투므로 연결이 있을 때만 붙인다. 기기에도 쓰지 않는다 (PRD 4.15).
+    if (target.mode === 'one' && !(await isOnline())) { await ask(togetherDialogs.offlineOne); return; }
     // 기본 스티커 묶음의 체험이나 구독이 끝났으면 붙이지 않고 안내한다. 붙은 칸은 그대로다 (2026-10-08, 구독 2026-11-02).
     const gate = await checkPlaceGate(target);
     if (!gate.ok) {
@@ -194,6 +237,7 @@ export default function Board() {
     if (!ok) return;
     track('sticker_place', { board_type: target.boardType, source: 'app' });
     if (complete) track('goal_complete', { source: 'app' });
+    if (target.mode === 'one') requestSync(); // 같은 칸을 다른 사람이 먼저 붙였는지 바로 확인한다
     setJustPlaced(at);
     if (!complete) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await reload();
@@ -230,13 +274,18 @@ export default function Board() {
     if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id, from: 'board' } });
   }
 
+  const one = goal.mode === 'one';
+  // 한 판 달력판은 하루에 두 장까지다. 판에 보이는 것은 그날 먼저 붙인 한 장이다(sharedBoardView).
+  const oneShown = one && goal.boardType === 'calendar' ? oneBoardShown(stickers) : null;
   const bySlot = (n: number) => stickers.find((s) => s.slotIndex === n - 1);
-  const byDate = (date: string) => stickers.find((s) => stickerDate(s) === date);
+  const byDate = (date: string) => (oneShown ? oneShown[date] : stickers.find((s) => stickerDate(s) === date));
+  /** 뗄 수 있는 칸: 내가 붙인 칸만. 혼자 판과 각자 판은 모두 내 칸이다. */
+  const mine = (s: Sticker | undefined) => (s && (!one || s.placedBy === ME) ? s : undefined);
 
   function onSlotPress(n: number) {
     void actOnce(async () => {
       const placed = bySlot(n);
-      if (placed) { await remove(placed); return; }
+      if (placed) { const own = mine(placed); if (own) await remove(own); return; }
       if (goal && canPlace(goal, stickers, { slot: n - 1 }, new Date())) await place(n - 1, { slot: n });
     });
   }
@@ -245,19 +294,60 @@ export default function Board() {
   function onDateSelect(date: string) {
     void actOnce(async () => {
       const placed = byDate(date);
-      if (placed) { await remove(placed); return; }
+      if (placed) { const own = mine(placed); if (own) await remove(own); return; }
       if (goal && canPlace(goal, stickers, { date }, new Date())) await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
     });
   }
 
-  const filled: Record<number, StickerId> = {};
+  /** 한 판 친구 칸: 누가 언제 붙였는지. 내 칸은 기록을 연다. */
+  function onOneSlotOpen(n: number) {
+    const by = oneCells?.placedBy[n];
+    if (by) void ask(togetherDialogs.placedBy(by.name, placedWhen(by.at)));
+    else openRecord(bySlot(n));
+  }
+
+  /**
+   * 한 판 달력판의 붙은 날: 친구가 붙인 날이면 그날 붙인 사람을 모두 보이고, 내가 더 붙일 수 있으면 [나도 붙이기].
+   * 나만 붙인 날은 기록을 연다 (계획 「아침에 물을 것」 1의 A).
+   */
+  function onOneDateOpen(date: string) {
+    if (!goal) return;
+    const day = oneBoardDay(stickers, members, date);
+    if (!day.people.some((p) => !p.me)) { openRecord(byDate(date)); return; }
+    const names = day.people.map((p) => (p.me ? t('together.meName', p.name) : p.name));
+    const canPlaceToo = day.canPlaceToo && isDateEnabled(goal, date, false);
+    void actOnce(async () => {
+      const choice = await ask(togetherDialogs.placedOnDay(names.join(', '), day.people.map((p, i) => `${names[i]} ${placedWhen(p.at)}`), canPlaceToo));
+      if (canPlaceToo && choice === 'primary') await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
+    });
+  }
+
+  /** 각자 판 [링크 다시 보내기]: 만든 사람만. 초대 코드는 그때그때 서버에서 읽는다. */
+  function onResend() {
+    if (!goal) return;
+    void actOnce(async () => {
+      const d = await actionDeps().catch(() => null);
+      if (!d) {
+        if ((await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
+        return;
+      }
+      await saveOrNotify(ask, t('failed.shareLink'), async () => {
+        // 코드가 없으면 그사이 만든 사람이 바뀌었다. 다시 받아 버튼이 사라지게 한다
+        if (!(await shareInvite(d, goal.id, goal.name))) requestSync();
+      });
+    });
+  }
+
+  // 한 판 적립판은 칸마다 붙인 사람의 스티커와 가려진 칸(sharedBoardView). 기록 표시는 내 칸만이다.
+  const oneCells = one && goal.boardType === 'tally' ? oneBoardCells(stickers, members) : null;
+  const filled: Record<number, StickerId> = oneCells ? oneCells.filled : {};
   const records: Record<string, StickerId> = {};
   const recordedSlots = new Set<number>();
   const recordedDates = new Set<string>();
-  for (const s of stickers) {
+  for (const s of oneShown ? Object.values(oneShown) : stickers) {
     const type = normalizeStickerId(s.stickerType);
     if (goal.boardType === 'tally') {
-      filled[s.slotIndex + 1] = type;
+      if (!oneCells) filled[s.slotIndex + 1] = type;
       if (recordedIds.has(s.id)) recordedSlots.add(s.slotIndex + 1);
     } else {
       records[stickerDate(s)] = type;
@@ -265,11 +355,20 @@ export default function Board() {
     }
   }
   const nav = monthNav(goal, shown.year, shown.month);
+  const friends = goal.mode === 'each' ? friendBoardsOf(goal, members, data.friendStickers, localDateKey(now.getTime())) : [];
+  const openFriend = friends.find((f) => f.id === friendOpen);
+  const sharedView = goal.mode === 'each'
+    ? { title: goal.name, name: t('together.myBoard'), hideProgress: true, boardRows: 2,
+      below: <FriendBoardList friends={friends} onOpen={setFriendOpen} onResend={goal.role === 'owner' ? onResend : undefined} /> }
+    : one
+      ? { title: goal.name, name: t('together.ourBoard'), hideProgress: true, boardRows: 4,
+        members: <MemberBadgeRow people={memberBadgesOf(members)} />, below: <OneBoardNote /> }
+      : { name: goal.name };
 
   return (
     <>
       <BoardDetailScreen
-        name={goal.name}
+        {...sharedView}
         sticker={sticker}
         completed={done}
         animateCompletion={pending}
@@ -284,7 +383,7 @@ export default function Board() {
           />
         ) : undefined}
         board={goal.boardType === 'tally'
-          ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: (n) => openRecord(bySlot(n)) }
+          ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: oneCells ? onOneSlotOpen : (n) => openRecord(bySlot(n)), hidden: oneCells?.hidden }
           : {
             kind: 'calendar', year: shown.year, month: shown.month, records, recordedDates, justPlaced: justPlaced.date,
             selectedDate: done ? undefined : localDateKey(now.getTime()),
@@ -292,9 +391,10 @@ export default function Board() {
             canGoPrev: nav.canGoPrev, canGoNext: nav.canGoNext,
             onSelect: onDateSelect,
             onMonthChange: (year, month) => { setJustPlaced({}); setShown({ year, month }); },
-            onOpenRecord: (date) => openRecord(byDate(date)),
+            onOpenRecord: one ? onOneDateOpen : (date) => openRecord(byDate(date)),
           }}
       />
+      {openFriend && <FriendBoardModal visible name={openFriend.name} sticker={openFriend.sticker} board={openFriend.board} onRequestClose={() => setFriendOpen(null)} />}
       {dialog}
       <AnalyticsConsentSheet visible={consentVisible} onAgree={() => answerConsent(true)} onDecline={() => answerConsent(false)} />
     </>
