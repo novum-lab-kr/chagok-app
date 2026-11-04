@@ -82,12 +82,14 @@ export async function pendingCount(): Promise<{ pending: number; held: number }>
 export async function enqueueAll(now = Date.now()): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {
+    // 내 것만 넣는다: 혼자 목표, 내 멤버 행, 내가 붙인 칸과 그 기록. 함께 목표의 목표 행과 친구 칸은 올릴 수 없다.
+    const mine = `SELECT r.id FROM records r JOIN stickers s ON s.id = r.sticker_id WHERE s.placed_by = '${ME}'`;
     const sets: [OutboxEntity, string][] = [
-      ['goal', 'SELECT id FROM goals'],
+      ['goal', "SELECT id FROM goals WHERE mode = 'solo'"],
       ['member', `SELECT goal_id AS id FROM goal_members WHERE user_id = '${ME}'`],
-      ['sticker', 'SELECT id FROM stickers'],
-      ['record', 'SELECT id FROM records'],
-      ['photo', 'SELECT id FROM records WHERE photo_uri IS NOT NULL'],
+      ['sticker', `SELECT id FROM stickers WHERE placed_by = '${ME}'`],
+      ['record', mine],
+      ['photo', `${mine} AND r.photo_uri IS NOT NULL`],
     ];
     for (const [entity, sql] of sets) {
       for (const { id } of await tx.all<{ id: string }>(sql)) await enqueue(tx, entity, id, now);

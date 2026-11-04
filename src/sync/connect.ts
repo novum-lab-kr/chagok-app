@@ -1,11 +1,15 @@
+import { getSetting } from '../repositories/appSettingsRepository';
 import { pullOnce } from './pull';
 import { pushOnce, type PushDeps } from './push';
+import { downloadRestoredPhotos, type PhotoToFetch } from './restore';
 import { createSyncScheduler } from './scheduler';
 
 export type ConnectDeps = {
   /** 로그인한 사용자 id(없으면 null)를 알려준다. 구독 해제 함수를 돌려준다. */
   onAuthChange(fn: (userId: string | null) => void): () => void;
   onAppActive(fn: (active: boolean) => void): () => void;
+  /** 지금 앞에 있는지. 뒤에서 켜졌으면 앞으로 올 때까지 주기를 걸지 않는다. 없으면 앞에 있다고 본다 */
+  isAppActive?: () => boolean;
   onLocalChange(fn: () => void): () => void;
   /** 이 사용자로 도는 한 회차(syncRound)를 만든다. */
   makeRun(userId: string): () => Promise<void>;
@@ -50,7 +54,7 @@ export function connectSync(deps: ConnectDeps): () => void {
   });
   const offLocal = deps.onLocalChange(() => scheduler?.poke());
   const offResume = deps.onResume?.(() => scheduler?.foreground()) ?? (() => {});
-  startPoll(); // 켜질 때는 앞에 있다
+  if (deps.isAppActive?.() ?? true) startPoll();
 
   return () => { offAuth(); offApp(); offLocal(); offResume(); stopPoll(); scheduler?.stop(); };
 }
@@ -65,4 +69,10 @@ export async function syncRound(deps: PushDeps, userId: string, removePhoto: (ur
   for (const uri of removedPhotoUris) {
     try { removePhoto(uri); } catch { /* 고아 파일로 남는다. 기록은 이미 지워졌다 */ }
   }
+  // 다른 기기와 친구가 올린 기록 사진을 받는다. 못 받은 것은 목록에 남아 다음 회차가 다시 받는다(회차는 실패가 아니다)
+  const pending = await getSetting('pendingPhotoDownloads');
+  if (!pending) return;
+  try {
+    await downloadRestoredPhotos(deps.photos, JSON.parse(pending) as PhotoToFetch[]);
+  } catch { /* 다음 회차 */ }
 }

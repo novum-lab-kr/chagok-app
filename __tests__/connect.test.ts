@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { createGoal, listGoals } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
-import { upsertRecord } from '../src/repositories/recordRepository';
+import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
+import { getSetting } from '../src/repositories/appSettingsRepository';
 import { connectSync, syncRound } from '../src/sync/connect';
 import { pushOnce } from '../src/sync/push';
 import { requestSync, subscribeResume } from '../src/sync/syncGate';
@@ -92,7 +93,7 @@ describe('30초 주기와 회차 요청', () => {
   afterEach(() => { jest.useRealTimers(); });
   const tick = async (ms: number) => { jest.advanceTimersByTime(ms); for (let i = 0; i < 5; i++) await Promise.resolve(); };
 
-  function polled(paused = { value: false }) {
+  function polled(paused = { value: false }, startActive = true) {
     let appFn: (active: boolean) => void = () => {};
     let resumeFn: () => void = () => {};
     const runs: number[] = [];
@@ -105,6 +106,7 @@ describe('30초 주기와 회차 요청', () => {
       isPaused: () => paused.value,
       onResume: (fn) => { resumeFn = fn; return () => {}; },
       pollMs: 30_000,
+      isAppActive: () => startActive,
     });
     return { stop, runs, app: (active: boolean) => appFn(active), resume: () => resumeFn() };
   }
@@ -126,6 +128,20 @@ describe('30초 주기와 회차 요청', () => {
     h.stop();
     await tick(60_000);
     expect(h.runs).toHaveLength(4);
+  });
+
+  it('뒤에서 켜졌으면 앞으로 올 때까지 주기를 걸지 않는다', async () => {
+    const h = polled({ value: false }, false);
+    await tick(0);
+    expect(h.runs).toHaveLength(1); // 로그인 직후 한 번(원래 동작)
+    await tick(90_000);
+    expect(h.runs).toHaveLength(1);
+    h.app(true);
+    await tick(0);
+    expect(h.runs).toHaveLength(2); // 앞으로 와서 바로
+    await tick(30_000);
+    expect(h.runs).toHaveLength(3); // 30초 뒤 주기
+    h.stop();
   });
 
   it('잠금 중에는 주기가 와도 돌지 않는다', async () => {
@@ -214,5 +230,24 @@ describe('한 회차 (syncRound)', () => {
     const removed: string[] = [];
     await syncRound(deps(server, photos), server.userId, (uri) => { removed.push(uri); });
     expect(removed).toEqual(['record-photo:a.jpg']);
+  });
+
+  it('다른 기기가 올린 기록 사진을 받고, 못 받으면 남겨 두었다가 다음 회차에 받는다', async () => {
+    const server = new FakeServer();
+    const photos = new FakePhotos();
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    await pushOnce(deps(server, photos));
+    const recordId = randomUUID();
+    const later = Date.now() + 1000;
+    await server.push('tablet', [{ entity: 'record', op: 'upsert', row: { id: recordId, sticker_id: s.id, memo: null, photo_remote_path: 'u/x.jpg', created_at: 1, updated_at: later } }]);
+    photos.failDownload.add(recordId);
+    await syncRound(deps(server, photos), server.userId, () => {}); // 받기 실패는 회차 실패가 아니다
+    expect((await getRecord(s.id))?.photoUri).toBeNull();
+    expect(JSON.parse((await getSetting('pendingPhotoDownloads'))!)).toEqual([{ recordId, remotePath: 'u/x.jpg' }]);
+    photos.failDownload.clear();
+    await syncRound(deps(server, photos), server.userId, () => {});
+    expect((await getRecord(s.id))?.photoUri).toBe(`record-photo:${recordId}-restored.jpg`);
+    expect(await getSetting('pendingPhotoDownloads')).toBeNull();
   });
 });

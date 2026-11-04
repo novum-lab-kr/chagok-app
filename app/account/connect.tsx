@@ -23,7 +23,7 @@ import { decideConnection } from '../../src/sync/connectAccount';
 import { enqueueAll } from '../../src/sync/outbox';
 import type { PushDeps } from '../../src/sync/push';
 import {
-  applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, summarizeDevice, summarizeSnapshot,
+  applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, resetForNewAccount, summarizeDevice, summarizeSnapshot,
   type RecordSummary, type ServerSnapshot,
 } from '../../src/sync/restore';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
@@ -316,6 +316,11 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         const deviceHasData = await hasLocalData();
         check();
         const plan = decideConnection({ previousUserId: previous.current, userId: user.id, deviceHasData, serverHasData });
+        if (plan === 'linkOnly' || plan === 'firstBackup') {
+          // 다른 계정이다. 지난 계정의 커서와 함께 목표를 비워 이 계정으로 처음부터 받는다
+          const { removedPhotoUris } = await resetForNewAccount();
+          removedPhotoUris.forEach(removeManagedRecordPhoto);
+        }
         if (plan === 'same' || plan === 'linkOnly') {
           await link(user.id);
           await finish(false);

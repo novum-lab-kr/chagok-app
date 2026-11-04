@@ -1,4 +1,5 @@
 import { getDb } from '../db/client';
+import type { DbDriver } from '../db/driver';
 import { DEFAULT_STICKER_ID } from '../domain/types';
 import { setSetting } from '../repositories/appSettingsRepository';
 import { deleteGoalRows } from '../repositories/goalRepository';
@@ -11,9 +12,31 @@ import { pullOnce, writeGoalSnapshot, type PullDeps } from './pull';
 
 export type PhotoToFetch = { recordId: string; remotePath: string };
 
+/** 이 기기에 올릴 내 기록(내 혼자 목표)이 있는지. 복원 충돌 카드(summarizeDevice)와 같은 기준이다. */
 export async function hasLocalData(): Promise<boolean> {
   const db = await getDb();
-  return ((await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM goals'))?.n ?? 0) > 0;
+  return (await db.first(`SELECT 1 AS x FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}' WHERE g.mode = 'solo'`)) !== null;
+}
+
+/**
+ * 지난 계정의 동기화 상태를 비운다: outbox, 함께 목표(다른 사람 멤버 행과 칸 포함), 커서, pendingGoalSync.
+ * 다음 받아 오기가 지금 계정으로 0부터 받아 함께 목표를 다시 채운다. 지운 기기 사진 경로를 돌려준다(커밋 뒤 호출자가 지운다).
+ */
+async function resetSyncState(tx: DbDriver): Promise<string[]> {
+  await tx.exec('DELETE FROM outbox;');
+  const photoUris: string[] = [];
+  for (const { id } of await tx.all<{ id: string }>("SELECT id FROM goals WHERE mode != 'solo'")) {
+    for (const r of await deleteGoalRows(tx, id)) if (r.photoUri) photoUris.push(r.photoUri);
+  }
+  await setSetting('syncCursor', '0', tx);
+  await setSetting('pendingGoalSync', null, tx);
+  return photoUris;
+}
+
+/** 다른 계정으로 연결할 때(연결만, 첫 백업) 기기의 혼자 목표는 두고 지난 계정의 동기화 상태만 비운다. */
+export async function resetForNewAccount(): Promise<{ removedPhotoUris: string[] }> {
+  const db = await getDb();
+  return { removedPhotoUris: await db.transaction(resetSyncState) };
 }
 
 /**
@@ -208,17 +231,11 @@ export async function replaceServerWithDevice(deps: PullDeps, deviceId: string):
   await deps.server.replaceAll(deviceId, { goals, stickers, records });
   const now = Date.now();
   const removed = await db.transaction(async (tx) => {
-    await tx.exec('DELETE FROM outbox;');
-    const photoUris: string[] = [];
-    for (const { id } of await tx.all<{ id: string }>("SELECT id FROM goals WHERE mode != 'solo'")) {
-      for (const r of await deleteGoalRows(tx, id)) if (r.photoUri) photoUris.push(r.photoUri);
-    }
+    const photoUris = await resetSyncState(tx);
     await tx.run('UPDATE records SET photo_remote_path = NULL');
     for (const { id } of await tx.all<{ id: string }>('SELECT id FROM records WHERE photo_uri IS NOT NULL')) {
       await enqueue(tx, 'photo', id, now);
     }
-    await setSetting('syncCursor', '0', tx);
-    await setSetting('pendingGoalSync', null, tx);
     return photoUris;
   });
   const { removedPhotoUris } = await pullOnce(deps);

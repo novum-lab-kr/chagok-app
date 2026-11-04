@@ -169,6 +169,7 @@ function RootLayout() {
           const sub = AppState.addEventListener('change', (state) => fn(state === 'active'));
           return () => sub.remove();
         },
+        isAppActive: () => AppState.currentState === 'active',
         onLocalChange: subscribeLocalChange,
         makeRun: (userId) => async () => {
           try {

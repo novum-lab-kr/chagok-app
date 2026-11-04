@@ -8,10 +8,10 @@ import { listMembers } from '../src/repositories/memberRepository';
 import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
 import { getSetting } from '../src/repositories/appSettingsRepository';
 import { subscribeLocalChange } from '../src/sync/changes';
-import { pendingCount, takeBatch } from '../src/sync/outbox';
+import { enqueueAll, pendingCount, takeBatch } from '../src/sync/outbox';
 import { pullOnce } from '../src/sync/pull';
 import { pushOnce } from '../src/sync/push';
-import { applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, restoreAll, summarizeDevice, summarizeSnapshot } from '../src/sync/restore';
+import { applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, resetForNewAccount, restoreAll, summarizeDevice, summarizeSnapshot } from '../src/sync/restore';
 import { wipeDevice } from '../src/sync/wipe';
 import { FakePhotos, FakeServer } from './support/fakeServer';
 import { withFreshDb } from './support/setup';
@@ -103,7 +103,11 @@ describe('복원', () => {
     expect((await takeBatch(10)).map((e) => e.rowId)).toEqual([mine.id, mine.id]); // 목표와 내 멤버 행
   });
 
-  it('기기에 기록이 있는지', async () => {
+  it('기기에 기록이 있는지: 내 혼자 목표만 센다', async () => {
+    expect(await hasLocalData()).toBe(false);
+    const server = new FakeServer();
+    await seedShared(server);
+    await restoreAll(depsOf(server)); // 함께 목표만 있다
     expect(await hasLocalData()).toBe(false);
     await createGoal({ name: 'x', boardType: 'tally', totalSlots: 1 });
     expect(await hasLocalData()).toBe(true);
@@ -184,6 +188,68 @@ describe('함께 목표 복원', () => {
     expect(await listBoardStickers(goalId, FRIEND)).toHaveLength(1);
     expect(server.live('goal')).toEqual([goalId, mine.id].sort()); // replace_all은 혼자 목표만 바꾸고 함께 목표는 그대로 둔다
     expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+  });
+
+  it('이 기기 기록 유지 중 받아 오기가 실패해도 다시 하면 같은 결과다', async () => {
+    const server = new FakeServer();
+    const goalId = await seedShared(server);
+    const mine = await createGoal({ name: '기기 목표', boardType: 'tally', totalSlots: 2 });
+    const st = await placeSticker(mine.id, 0);
+    const r = await upsertRecord(st.id, { photoUri: 'record-photo:b.jpg', memo: null });
+    const real = server.pull.bind(server);
+    let fail = true;
+    server.pull = async (since, limit) => { if (fail) { fail = false; throw new Error('network'); } return real(since, limit); };
+    await expect(replaceServerWithDevice(depsOf(server), 'd1')).rejects.toThrow('network');
+    expect(await getSetting('syncCursor')).toBe('0');
+    await replaceServerWithDevice(depsOf(server), 'd1');
+    expect((await listGoals()).map((x) => x.id).sort()).toEqual([goalId, mine.id].sort());
+    expect((await takeBatch(10)).map((e) => `${e.entity}:${e.rowId}`)).toEqual([`photo:${r.id}`]);
+  });
+
+  describe('다른 계정으로 연결만 하거나 첫 백업할 때', () => {
+    /** 지난 계정(A)의 함께 목표와 커서가 남은 기기. 이 기기 혼자 목표도 하나 있다 */
+    async function leftover() {
+      const a = new FakeServer('user-a');
+      const staleId = await seedShared(a);
+      await restoreAll(depsOf(a));
+      const stale = await placeSticker(staleId, 1);
+      await upsertRecord(stale.id, { photoUri: 'record-photo:stale.jpg', memo: null });
+      return { staleId, cursor: await getSetting('syncCursor') };
+    }
+
+    it('첫 백업: 지난 계정의 함께 목표와 친구 칸은 지우고 올리지 않는다. 커서는 0이다', async () => {
+      const { staleId, cursor } = await leftover();
+      expect(Number(cursor)).toBeGreaterThan(0);
+      const mine = await createGoal({ name: '기기 목표', boardType: 'tally', totalSlots: 2 });
+      const { removedPhotoUris } = await resetForNewAccount();
+      await enqueueAll();
+      expect(removedPhotoUris).toEqual(['record-photo:stale.jpg']);
+      expect(await getSetting('syncCursor')).toBe('0');
+      expect(await getSetting('pendingGoalSync')).toBeNull();
+      expect((await listGoals()).map((x) => x.id)).toEqual([mine.id]);
+      const queued = (await takeBatch(100)).map((e) => e.rowId);
+      expect(queued).not.toContain(staleId);
+      expect(new Set(queued)).toEqual(new Set([mine.id]));
+      // B로 올리고 받으면 B 것만 남고 보류가 없다
+      const b = new FakeServer('user-b');
+      const sharedB = await seedShared(b);
+      await pushOnce({ server: b, photos: new FakePhotos(), deviceId: 'phone' });
+      await pullOnce(depsOf(b));
+      expect((await listGoals()).map((x) => x.id).sort()).toEqual([mine.id, sharedB].sort());
+      expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+    });
+
+    it('연결만: 지난 계정의 함께 목표가 지워지고 이 계정 것을 처음부터 받는다', async () => {
+      const { staleId } = await leftover();
+      expect(await hasLocalData()).toBe(false); // 그래서 연결만(linkOnly)으로 간다
+      await resetForNewAccount();
+      expect(await getGoal(staleId)).toBeNull();
+      const b = new FakeServer('user-b');
+      const sharedB = await seedShared(b);
+      await pullOnce(depsOf(b));
+      expect((await listGoals()).map((x) => x.id)).toEqual([sharedB]);
+      expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+    });
   });
 
   it('로그아웃(wipe) 뒤에는 다른 사람 멤버 행과 칸이 남지 않는다', async () => {
