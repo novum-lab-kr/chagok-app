@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../src/db/client';
-import { createGoal, getGoal, listGoals, updateGoal } from '../src/repositories/goalRepository';
+import { createGoal, getGoal, listGoals, reorderGoals, updateGoal } from '../src/repositories/goalRepository';
 import { listMembers } from '../src/repositories/memberRepository';
 import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
 import { listBoardStickers, listStickers, placeSticker } from '../src/repositories/stickerRepository';
@@ -186,6 +186,52 @@ describe('pullOnce', () => {
     await pullOnce(depsOf(server));
     expect((await listMembers(goalId)).map((m) => m.userId)).toEqual([FRIEND, 'me']);
     expect(await listBoardStickers(goalId, FRIEND)).toHaveLength(1);
+  });
+  it('내보내진 뒤 붙여 보류된 칸과 멤버 항목은 그 목표를 지울 때 outbox에서도 사라진다', async () => {
+    const server = new FakeServer();
+    const { friend, goalId } = joinShared(server, 'one');
+    await pullOnce(depsOf(server));
+    await placeSticker(goalId, 1);
+    friend.kick(goalId, server.userId); // 올리기 전에 내보내졌다
+    expect((await push(server)).held).toBe(2); // 칸과 내 멤버 행이 not_allowed
+    await pullOnce(depsOf(server));
+    expect(await getGoal(goalId)).toBeNull();
+    expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+  });
+
+  it('각자 판에서 나갈 때 아직 올리지 않은 내 칸도 새 혼자 목표로 따라가 기록 사진이 남는다', async () => {
+    const server = new FakeServer();
+    const { friend, goalId } = joinShared(server, 'each');
+    await pullOnce(depsOf(server));
+    const s = await placeSticker(goalId, 0);
+    await upsertRecord(s.id, { photoUri: 'record-photo:a.jpg', memo: null });
+    await push(server);
+    // 서버에는 있지만 다시 올릴 칸(연결 직후 enqueueAll, ack를 받기 전에 끊김 등)
+    await (await getDb()).run("INSERT INTO outbox (entity, row_id, queued_at) VALUES ('sticker', ?, 1)", s.id);
+    friend.kick(goalId, server.userId);
+    const result = await pullOnce(depsOf(server));
+    const [solo] = await listGoals();
+    expect(solo.mode).toBe('solo');
+    expect((await listStickers(solo.id)).map((x) => x.id)).toEqual([s.id]);
+    expect((await getRecord(s.id))?.photoUri).toBe('record-photo:a.jpg');
+    expect(result.removedPhotoUris).toEqual([]);
+    await push(server);
+    expect(server.live('sticker')).toEqual([s.id]); // 올려도 서버 칸이 지워지지 않는다
+    expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+  });
+
+  it('outbox에 남은 내 멤버 행 변경(순서)은 다른 기기 값으로 덮지 않는다', async () => {
+    const server = new FakeServer();
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 3 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 3 });
+    await push(server);
+    await reorderGoals([a.id, b.id]); // a 0, b 1 — 아직 올리지 않았다
+    await server.push('tablet', [{ entity: 'member', op: 'upsert', row: {
+      goal_id: b.id, sort_order: 9, completed_at: null, completion_seen: 0, last_placed_at: null, updated_at: Date.now() + 1000,
+    } }]);
+    await pullOnce(depsOf(server));
+    expect((await getGoal(b.id))?.sortOrder).toBe(1);
+    expect((await pendingCount()).pending).toBe(1);
   });
 });
 

@@ -15,7 +15,7 @@ type G = {
 type M = {
   goal_id: string; user_id: string; role: MemberRole; display_name: string | null; sticker_id: string | null;
   sort_order: number | null; completed_at: number | null; completion_seen: number; last_placed_at: number | null;
-  joined_at: number | null; left_at: number | null; left_reason: 'left' | 'kicked' | null; updated_at: number; seq: number;
+  joined_at: number | null; left_at: number | null; left_reason: 'left' | 'kicked' | null; updated_at: number; deleted_at: number | null; seq: number;
 };
 type S = {
   id: string; goal_id: string; board_user_id: string | null; placed_by: string; slot_index: number; date_key: string;
@@ -261,7 +261,7 @@ export class FakeServer implements SyncServer {
     }
     for (const m of this.t.members.values()) {
       if (m.seq <= since) continue;
-      if (m.user_id === uid) changed.push({ seq: m.seq, row: { entity: 'member', row: this.memberJson(m), deletedAt: null } });
+      if (m.user_id === uid) changed.push({ seq: m.seq, row: { entity: 'member', row: this.memberJson(m), deletedAt: m.deleted_at } });
       else if (mine.has(m.goal_id)) {
         const visible = m.left_at === null && !this.blocked(uid, m.user_id);
         const row = visible ? this.memberJson(m) : { goal_id: m.goal_id, user_id: m.user_id, gone: true as const };
@@ -490,7 +490,7 @@ export class FakeServer implements SyncServer {
   private newMember(goalId: string, userId: string, role: MemberRole, joinedAt: number, over: Partial<M>): M {
     return {
       goal_id: goalId, user_id: userId, role, display_name: null, sticker_id: null, sort_order: null, completed_at: null,
-      completion_seen: 0, last_placed_at: null, joined_at: joinedAt, left_at: null, left_reason: null, updated_at: joinedAt,
+      completion_seen: 0, last_placed_at: null, joined_at: joinedAt, left_at: null, left_reason: null, updated_at: joinedAt, deleted_at: null,
       seq: this.world.next(), ...over,
     };
   }

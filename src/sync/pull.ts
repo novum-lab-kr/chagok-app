@@ -146,7 +146,10 @@ async function applyMember(ctx: Ctx, m: V2MemberRow): Promise<boolean> {
 
 async function applySticker(ctx: Ctx, s: V2StickerRow, deletedAt: number | null): Promise<boolean> {
   const { tx } = ctx;
-  if (await queued(tx, 'sticker', s.id)) return false;
+  if (await queued(tx, 'sticker', s.id)) {
+    if (deletedAt === null) await followMove(tx, s);
+    return false;
+  }
   if (deletedAt !== null) {
     collect(ctx, await deleteStickerRow(tx, s.id));
     return true;
@@ -179,9 +182,35 @@ async function removeMember(ctx: Ctx, goalId: string, userId: string): Promise<b
 async function removeGoal(ctx: Ctx, goalId: string): Promise<boolean> {
   ctx.pending.refetch.delete(goalId);
   ctx.pending.drop.delete(goalId);
-  if (await queued(ctx.tx, 'goal', goalId)) return false;
-  for (const r of await deleteGoalRows(ctx.tx, goalId)) collect(ctx, r);
+  const { tx } = ctx;
+  if (await queued(tx, 'goal', goalId)) return false;
+  const stickers = await tx.all<{ id: string }>('SELECT id FROM stickers WHERE goal_id = ?', goalId);
+  const records = await deleteGoalRows(tx, goalId);
+  for (const r of records) collect(ctx, r);
+  // 서버에 없는 목표라 그 목표의 올리지 못한 행은 다시 보낼 곳이 없다(내보내진 뒤 붙인 칸은 not_allowed로 보류된 채 남는다)
+  await forget(tx, 'member', [goalId]);
+  await forget(tx, 'sticker', stickers.map((s) => s.id));
+  await forget(tx, 'record', records.map((r) => r.recordId));
   return true;
+}
+
+/**
+ * 받아 오기가 지운 행의 outbox 항목을 지운다. 만들지는 않는다.
+ * photo 항목은 남긴다: 기록이 없으면 pushPhoto가 서버 사진만 지우므로, 서버에 남은 사진 파일을 치우는 일이 된다.
+ */
+async function forget(tx: DbDriver, entity: 'member' | 'sticker' | 'record', ids: string[]): Promise<void> {
+  for (const id of ids) await tx.run('DELETE FROM outbox WHERE entity = ? AND row_id = ?', entity, id);
+}
+
+/**
+ * 아직 올리지 않은 내 칸이 서버에서 다른 목표로 옮겨졌다(각자 판에서 나감, remove_member). 내용은 기기 것을 두고
+ * 목표만 따라 옮긴다. 옛 목표를 지울 때 함께 지워지지 않게 하고, 올릴 때도 새 목표로 간다.
+ */
+async function followMove(tx: DbDriver, s: V2StickerRow): Promise<void> {
+  await tx.run(
+    'UPDATE stickers SET goal_id = ? WHERE id = ? AND goal_id != ? AND EXISTS (SELECT 1 FROM goals WHERE id = ?)',
+    s.goal_id, s.id, s.goal_id, s.goal_id,
+  );
 }
 
 /** pull_goal 결과로 목표를 통째로 바꾼다. 스냅숏에 없는 멤버, 칸, 내 기록은 지운다. 아직 올리지 않은 내 변경은 남긴다. */
@@ -204,7 +233,10 @@ async function replaceGoal(ctx: Ctx, snap: GoalSnapshot): Promise<void> {
     if (!stickers.has(id) && !(await queued(tx, 'sticker', id))) collect(ctx, await deleteStickerRow(tx, id));
   }
   // 다른 목표에 있던 같은 id의 칸은 이 목표로 옮겨진다(각자 판에서 나간 칸). 기록과 기기 사진은 그대로 따라온다.
-  for (const s of snap.stickers) if (!(await queued(tx, 'sticker', s.id))) await writeSticker(ctx, s, true);
+  for (const s of snap.stickers) {
+    if (await queued(tx, 'sticker', s.id)) await followMove(tx, s);
+    else await writeSticker(ctx, s, true);
+  }
 
   const records = new Set(snap.records.map((r) => r.id));
   const local = await tx.all<{ id: string }>(
