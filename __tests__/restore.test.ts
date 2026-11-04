@@ -6,7 +6,7 @@ import type { GoalSnapshot } from '../src/sync/contract';
 import { listBoardStickers, listStickers, placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { listMembers } from '../src/repositories/memberRepository';
 import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
-import { getSetting } from '../src/repositories/appSettingsRepository';
+import { getSetting, setSetting } from '../src/repositories/appSettingsRepository';
 import { subscribeLocalChange } from '../src/sync/changes';
 import { enqueueAll, pendingCount, takeBatch } from '../src/sync/outbox';
 import { pullOnce } from '../src/sync/pull';
@@ -220,12 +220,14 @@ describe('함께 목표 복원', () => {
     it('첫 백업: 지난 계정의 함께 목표와 친구 칸은 지우고 올리지 않는다. 커서는 0이다', async () => {
       const { staleId, cursor } = await leftover();
       expect(Number(cursor)).toBeGreaterThan(0);
+      await setSetting('pendingPhotoDownloads', JSON.stringify([{ recordId: 'old', remotePath: 'a/x.jpg' }]));
       const mine = await createGoal({ name: '기기 목표', boardType: 'tally', totalSlots: 2 });
       const { removedPhotoUris } = await resetForNewAccount();
       await enqueueAll();
       expect(removedPhotoUris).toEqual(['record-photo:stale.jpg']);
       expect(await getSetting('syncCursor')).toBe('0');
       expect(await getSetting('pendingGoalSync')).toBeNull();
+      expect(await getSetting('pendingPhotoDownloads')).toBeNull();
       expect((await listGoals()).map((x) => x.id)).toEqual([mine.id]);
       const queued = (await takeBatch(100)).map((e) => e.rowId);
       expect(queued).not.toContain(staleId);

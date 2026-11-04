@@ -19,7 +19,7 @@ export async function hasLocalData(): Promise<boolean> {
 }
 
 /**
- * 지난 계정의 동기화 상태를 비운다: outbox, 함께 목표(다른 사람 멤버 행과 칸 포함), 커서, pendingGoalSync.
+ * 지난 계정의 동기화 상태를 비운다: outbox, 함께 목표(다른 사람 멤버 행과 칸 포함), 커서, pendingGoalSync, pendingPhotoDownloads.
  * 다음 받아 오기가 지금 계정으로 0부터 받아 함께 목표를 다시 채운다. 지운 기기 사진 경로를 돌려준다(커밋 뒤 호출자가 지운다).
  */
 async function resetSyncState(tx: DbDriver): Promise<string[]> {
@@ -30,6 +30,7 @@ async function resetSyncState(tx: DbDriver): Promise<string[]> {
   }
   await setSetting('syncCursor', '0', tx);
   await setSetting('pendingGoalSync', null, tx);
+  await setSetting('pendingPhotoDownloads', null, tx); // 지난 계정 사진 목록을 새 계정에서 계속 받으려 하지 않게
   return photoUris;
 }
 

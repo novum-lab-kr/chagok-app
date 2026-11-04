@@ -14,12 +14,13 @@ export function resumeSync(): void {
   for (const fn of [...resumeListeners]) fn();
   notifySyncStatus();
 }
-/** 잠금은 그대로 두고 지금 보낼 수 있으면 보내게 깨운다 (되돌리기를 다시 해서 성공했을 때). */
-export function kickSync(): void {
+/**
+ * 잠금은 그대로 두고 지금 회차를 바로 돌리게 깨운다. 보낼 것이 막혀 있다가 풀렸을 때(되돌리기를 다시 해서 성공했을 때)와
+ * 화면이 서버 것을 바로 받고 싶을 때(목표 탭, 판 화면 포커스. 화면 연결은 2단계) 쓴다.
+ */
+export function requestSync(): void {
   for (const fn of [...resumeListeners]) fn();
 }
-/** 화면이 서버 것을 바로 받고 싶다(목표 탭, 판 화면 포커스. 화면 연결은 2단계). 깨우는 일은 kickSync와 같다. */
-export const requestSync = kickSync;
 export function subscribeResume(fn: () => void): () => void {
   resumeListeners.add(fn);
   return () => { resumeListeners.delete(fn); };

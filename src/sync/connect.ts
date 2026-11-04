@@ -17,7 +17,7 @@ export type ConnectDeps = {
   rememberUser(userId: string): Promise<void>;
   /** 참이면 이번 회차를 건너뛴다(연결·로그아웃·삭제 중). 풀리면 다음 기록·앞으로 오기에 보낸다. */
   isPaused?: () => boolean;
-  /** 잠금이 풀렸거나 화면이 회차를 청했다(syncGate kickSync, requestSync). 바로 돈다. */
+  /** 잠금이 풀렸거나 화면이 회차를 청했다(syncGate requestSync). 바로 돈다. */
   onResume?: (fn: () => void) => () => void;
   debounceMs?: number;
   /** 앱이 앞에 있는 동안 이 간격으로 받아 온다. 기본 30초 */

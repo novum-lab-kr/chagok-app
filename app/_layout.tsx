@@ -22,7 +22,7 @@ import { subscribeLocalChange } from '../src/sync/changes';
 import { connectSync, syncRound } from '../src/sync/connect';
 import { recoverInterruptedConnect, rememberAccount } from '../src/sync/connectMarker';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
-import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
+import { isSyncPaused, requestSync, subscribeResume } from '../src/sync/syncGate';
 import { startWidgetSync } from '../src/widgets/syncWidgets';
 import { startWatchSync } from '../src/watch/syncWatch';
 
@@ -150,7 +150,7 @@ function RootLayout() {
       .then(() => {
         const wasFailed = recoveryFailed;
         recoveryFailed = false;
-        if (wasFailed) kickSync(); // 잠긴 동안 미룬 전송을 보낸다
+        if (wasFailed) requestSync(); // 잠긴 동안 미룬 전송을 보낸다
       })
       .catch(() => { recoveryFailed = true; });
     // 되돌리지 못했으면 앱이 앞으로 올 때 다시 되돌려 본다. 사용자가 연결하는 중이면(잠금) 그 연결을 건드리지 않는다.

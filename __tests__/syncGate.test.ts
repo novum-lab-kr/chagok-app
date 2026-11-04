@@ -1,4 +1,4 @@
-import { isSyncPaused, kickSync, notifySyncStatus, pauseSync, resumeSync, subscribeResume, subscribeSyncStatus } from '../src/sync/syncGate';
+import { isSyncPaused, requestSync, notifySyncStatus, pauseSync, resumeSync, subscribeResume, subscribeSyncStatus } from '../src/sync/syncGate';
 
 describe('syncGate', () => {
   afterEach(() => resumeSync());
@@ -28,7 +28,7 @@ describe('syncGate', () => {
     let kicked = 0;
     const off = subscribeResume(() => { kicked += 1; });
     pauseSync();
-    kickSync();
+    requestSync();
     expect(kicked).toBe(1);
     expect(isSyncPaused()).toBe(true);
     off();
