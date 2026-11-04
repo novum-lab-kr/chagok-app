@@ -311,11 +311,17 @@ supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함�
 supabase functions deploy kakao-unlink --use-api   # 카카오 연결 해제 웹훅 (토큰 없이 받는다, config.toml verify_jwt = false)
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
-npm run server:dev-friend -- setup                 # 두 번째 개발 계정 dev2@chagok.test 만들기 (비밀번호는 .env.local EXPO_PUBLIC_DEV2_PASSWORD)
+npm run server:dev-friend -- setup                 # 두 번째 개발 계정 dev2@chagok.test 만들기 (비밀번호는 .env.local DEV2_PASSWORD)
 npm run server:dev-friend -- --help                # 함께 목표의 친구 쪽 시험 도구(들어오기, 붙이기, 이름 바꾸기, 나가기, 차단, 정리)
 ```
 
-**두 번째 개발 계정 (2026-11-05~):** 함께 목표는 두 사람이 있어야 시험할 수 있고 초대 받기 화면은 아직 없다. `scripts/dev-friend.mjs`가 `dev2@chagok.test`로 로그인해 앱이 쓰는 공개 RPC(`join_goal`, `sync_push`, `update_member`, `leave_goal`, `block_user`, `unblock_user`)만 부른다. 앱에서 만든 함께 목표의 초대 코드를 공유 창 본문에서 읽어(`xcrun simctl pbpaste <UDID>`) `join <코드> <이름> <스티커>`로 들어온다. 비밀번호는 `.env.local`의 `EXPO_PUBLIC_DEV2_PASSWORD`(저장소에 넣지 않는다)에 두고 `setup`이 service 키로 계정을 한 번 만든다. 시험이 끝나면 `cleanup`(dev2가 든 함께 목표에서 나가고 차단을 모두 푼다). 목표 자체와 dev 계정 쪽 데이터는 `cleanup`이 지우지 않는다.
+**두 번째 개발 계정 (2026-11-05~):** 함께 목표는 두 사람이 있어야 시험할 수 있고 초대 받기 화면은 아직 없다. `scripts/dev-friend.mjs`가 `dev2@chagok.test`로 로그인해 앱이 쓰는 공개 RPC(`join_goal`, `sync_push`, `update_member`, `leave_goal`, `block_user`, `unblock_user`, `pull_goal`, `sync_pull`, `my_blocks`)만 부른다. 비밀번호는 `.env.local`의 `DEV2_PASSWORD`(저장소에 넣지 않는다. `EXPO_PUBLIC_`이 아니라 앱 번들에 들어가지 않는다)에 두고 `setup`이 service 키로 계정을 한 번 만든다. 시험이 끝나면 `cleanup`(dev2가 든 함께 목표에서 나가고 차단을 모두 푼다). 목표 자체와 dev 계정 쪽 데이터는 `cleanup`이 지우지 않고, 각자 판에서 나가면 dev2 쪽에 그 판을 옮긴 혼자 목표가 남는다.
+
+- **초대 코드**는 시뮬레이터 클립보드로 못 받는 일이 많다. 서버 `invites`(`goal_id`가 그 목표, `revoked_at is null`)에서 읽어 `join <코드> <이름> <스티커>`로 들어온다. 스티커는 `basic.cat`처럼 `basic.<이름>`.
+- **`place <goalId> <칸 번호|YYYY-MM-DD> [스티커]`:** 칸 번호는 화면 번호(1부터)다. 스티커는 세 번째 인자(기본 `basic.clover`)이고 멤버 스티커를 쓰지 않는다. 한 판은 칸의 스티커를 그리므로 친구 스티커로 보이게 하려면 그 값을 넘긴다.
+- **dev(A)를 「함께하는 사람」으로 넣기:** 같은 스크립트를 셸 환경 `EXPO_PUBLIC_DEV2_EMAIL=dev@chagok.test DEV2_PASSWORD=<.env.local의 dev 비밀번호>`로 돌리면 dev@로 `join`과 `leave`가 된다(셸 값이 파일 값보다 먼저다).
+- **내보내진 사람(`kicked`)은 새 링크로도 그 목표에 돌아오지 못한다.** 만든 사람이 차단하면 그 사람은 내 모든 함께 목표에서 `kicked`된다. 내보내기 시험은 차단보다 먼저 하거나 새 목표에서 한다.
+- **무료 목표 5개 한도에 함께 목표도 든다.** 개발 계정에 혼자 목표가 있으면 새로 만들 수 있는 수가 그만큼 준다.
 
 **서버 구조 바꾸기:** 올린 마이그레이션 파일을 고치지 않고 새 파일을 더해 `db push`로 올린다. 기기 DB도 `src/db/schema.ts` `MIGRATIONS` 끝에 새 판을 더한다. **서버를 비우고 처음부터 다시 만드는 일은 2026-11-05(서버 2판, 운영 사용자 0명)가 마지막이다.** 앞으로는 운영 데이터를 옮기는 마이그레이션으로 바꾼다. 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
 

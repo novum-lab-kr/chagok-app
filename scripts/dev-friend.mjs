@@ -9,7 +9,9 @@ const HELP = `사용: node scripts/dev-friend.mjs <명령> [인자]   (npm run s
 
   setup                                  dev2 계정이 없으면 만든다(service 키 사용, 이 명령에서만)
   join <코드> <이름> <스티커>             join_goal. 실패하면 {"error": 낱말}
-  place <goalId> <칸 번호|YYYY-MM-DD>     sync_push로 스티커 한 장(날짜면 달력판, slot_index 0)
+  place <goalId> <칸 번호|YYYY-MM-DD> [스티커]
+                                         sync_push로 스티커 한 장. 칸 번호는 화면 번호(1부터), 날짜면 달력판.
+                                         스티커는 basic.cat 같은 값(기본 basic.clover, 멤버 스티커를 쓰지 않는다)
   rename <goalId> <이름> [스티커]         update_member
   leave <goalId>                         leave_goal
   block <userId> / unblock <userId>      block_user / unblock_user
@@ -19,7 +21,7 @@ const HELP = `사용: node scripts/dev-friend.mjs <명령> [인자]   (npm run s
 
 환경(.secrets/server-test.env, .env.local 또는 셸):
   SUPABASE_TEST_URL, SUPABASE_TEST_ANON_KEY(없으면 EXPO_PUBLIC_SUPABASE_ANON_KEY)
-  EXPO_PUBLIC_DEV2_PASSWORD (dev2 비밀번호, 저장소에 넣지 않는다)
+  DEV2_PASSWORD (dev2 비밀번호, 저장소에 넣지 않는다. EXPO_PUBLIC_이 아니라 앱 번들에 들어가지 않는다)
   EXPO_PUBLIC_DEV2_EMAIL (선택, 기본 dev2@chagok.test)
   SUPABASE_TEST_SERVICE_KEY (setup에서만)
 `;
@@ -42,12 +44,12 @@ const env = { ...fileEnv, ...process.env };
 const url = env.SUPABASE_TEST_URL ?? env.EXPO_PUBLIC_SUPABASE_URL;
 const anon = env.SUPABASE_TEST_ANON_KEY ?? env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const email = env.EXPO_PUBLIC_DEV2_EMAIL ?? 'dev2@chagok.test';
-const password = env.EXPO_PUBLIC_DEV2_PASSWORD;
+const password = env.DEV2_PASSWORD;
 
 const fail = (message) => { console.error(message); process.exit(1); };
 const out = (value) => console.log(JSON.stringify(value, null, 2));
 if (!url || !anon) fail('서버 주소와 anon 키가 필요합니다(.secrets/server-test.env).');
-if (!password) fail('EXPO_PUBLIC_DEV2_PASSWORD가 필요합니다(.env.local 또는 셸). dev2 계정을 먼저 만들어야 하면 비밀번호를 정해 넣고 setup을 돌리세요.');
+if (!password) fail('DEV2_PASSWORD가 필요합니다(.env.local 또는 셸). dev2 계정을 먼저 만들어야 하면 비밀번호를 정해 넣고 setup을 돌리세요.');
 
 if (cmd === 'setup') {
   const key = env.SUPABASE_TEST_SERVICE_KEY;
@@ -96,9 +98,12 @@ switch (cmd) {
     need(2);
     const [goalId, where] = args;
     const isDate = /^\d{4}-\d{2}-\d{2}$/.test(where);
+    // 앱과 같은 slot_index: 적립판은 화면 번호 - 1, 달력판은 그 날짜의 일 - 1
+    const slotIndex = isDate ? Number(where.slice(8, 10)) - 1 : Number(where) - 1;
+    if (!Number.isInteger(slotIndex) || slotIndex < 0) fail(`칸 번호는 1부터입니다: ${where}`);
     const now = Date.now();
     const row = {
-      id: randomUUID(), goal_id: goalId, placed_at: now, slot_index: isDate ? 0 : Number(where),
+      id: randomUUID(), goal_id: goalId, placed_at: now, slot_index: slotIndex,
       sticker_type: args[2] ?? 'basic.clover', updated_at: now, date_key: isDate ? where : today(), tz_offset_min: 540,
     };
     const r = await rpc('sync_push', { p_device_id: 'dev-friend', p_changes: [{ entity: 'sticker', op: 'upsert', row }] });
