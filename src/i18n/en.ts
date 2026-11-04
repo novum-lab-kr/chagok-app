@@ -524,6 +524,7 @@ export const en: Messages = {
   'together.placedBy': (name: string) => `${name} placed this`,
   'together.placedAt': (when: string) => `Placed ${when}`,
   'together.placeToo': 'Place mine too',
+  'together.myRecord': 'See my record',
   'together.hiddenCell': 'Hidden spot',
   'invite.title': 'Invitation',
   'invite.invitedBy': (owner: string) => `Invited by ${owner}`,

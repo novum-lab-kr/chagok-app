@@ -3,7 +3,7 @@ import {
 } from '../src/domain/dates';
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
-  canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
+  canPlace, completesBoard, filledCount, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
   endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount, SHARED_SLOTS_MAX,
   GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, shownGoalNameError,
   MEMBER_NAME_MAX, memberNameError, shownMemberNameError,
@@ -345,3 +345,22 @@ describe('함께 목표 내 이름 (2026-11-04)', () => {
     expect(shownMemberNameError(' ', false)).toBe('이름을 적어 주세요.');
   });
 });
+
+describe('filledCount (완성과 남은 칸을 셀 때 찬 칸 수)', () => {
+  const g = (over: Partial<Goal>): Goal => ({
+    id: 'g', mode: 'solo', role: 'owner', name: '걷기', boardType: 'calendar', totalSlots: null, initialSlots: null, defaultStickerId: 'basic.shoe',
+    createdAt: 0, endDate: '2026-09-30', completedAt: null, completionSeen: true, lastPlacedAt: null, sortOrder: null, ...over,
+  });
+  const on = (id: string, dateKey: string, placedBy = 'me'): Sticker =>
+    ({ id, goalId: 'g', placedAt: 0, slotIndex: 0, stickerType: 'basic.shoe', dateKey, tzOffsetMin: 540, boardUserId: null, placedBy });
+  const list = [on('a', '2026-09-03'), on('b', '2026-09-03', 'u-min'), on('c', '2026-09-04', 'u-gone')];
+  it('한 판 달력판은 스티커가 있는 날 수(가려진 칸 포함)', () => {
+    expect(filledCount(g({ mode: 'one' }), list)).toBe(2);
+  });
+  it('그 밖의 판은 스티커 수', () => {
+    expect(filledCount(g({}), list)).toBe(3);
+    expect(filledCount(g({ mode: 'each' }), list)).toBe(3);
+    expect(filledCount(g({ mode: 'one', boardType: 'tally', totalSlots: 10, endDate: null }), list)).toBe(3);
+  });
+});
+

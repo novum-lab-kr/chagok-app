@@ -1,5 +1,5 @@
 import { createGoal, getGoal } from '../src/repositories/goalRepository';
-import { placeSticker, listStickers, listStickersInMonth, listBoardStickers, countStickers, countAllStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
+import { placeSticker, listStickers, listStickersInMonth, listBoardStickers, countAllStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { withFreshDb } from './support/setup';
 import { getDb } from '../src/db/client';
 import { localDateKey } from '../src/domain/dates';
@@ -112,33 +112,6 @@ describe('이미 붙인 칸 (위젯 요청과 겹칠 때)', () => {
     expect(await listStickers(g.id)).toHaveLength(1);
     // 다른 날은 붙는다 (다음 날 0시, 같은 달 다른 날짜)
     await expect(placeSticker(g.id, 6, 'sprout', { placedAt: new Date(2026, 9, 7, 0).getTime() })).resolves.toMatchObject({ slotIndex: 6 });
-  });
-});
-
-describe('누적 총계 (PRD 4.3)', () => {
-  it('그 목표에 현재 붙어 있는 스티커 수를 센다', async () => {
-    const g = await goal();
-    await placeSticker(g.id, 0, 'sprout');
-    await placeSticker(g.id, 1, 'star');
-    const { countStickers } = await import('../src/repositories/stickerRepository');
-    expect(await countStickers(g.id)).toBe(2);
-  });
-
-  it('뗀 스티커는 총계에서 빠진다', async () => {
-    const g = await goal();
-    const s = await placeSticker(g.id, 0);
-    await placeSticker(g.id, 1);
-    const { countStickers, removeSticker: rm } = await import('../src/repositories/stickerRepository');
-    await rm(s.id);
-    expect(await countStickers(g.id)).toBe(1);
-  });
-
-  it('다른 목표 스티커는 세지 않는다', async () => {
-    const a = await goal();
-    const b = await goal();
-    await placeSticker(a.id, 0);
-    const { countStickers } = await import('../src/repositories/stickerRepository');
-    expect(await countStickers(b.id)).toBe(0);
   });
 });
 
@@ -260,13 +233,12 @@ describe('stickerRepository: 판 주인과 붙인 사람', () => {
     expect((await db.all<{ entity: string }>('SELECT entity FROM outbox ORDER BY entity')).map((r) => r.entity)).toEqual(['goal', 'member', 'sticker']);
   });
 
-  it('listStickers, listStickersInMonth, countStickers는 친구 판의 칸을 뺀다', async () => {
+  it('listStickers, listStickersInMonth는 친구 판의 칸을 뺀다', async () => {
     const g = await goal();
     const mine = await placeSticker(g.id, 0, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() });
     await friendSticker(g.id);
     expect((await listStickers(g.id)).map((s) => s.id)).toEqual([mine.id]);
     expect((await listStickersInMonth(g.id, 2026, 10)).map((s) => s.id)).toEqual([mine.id]);
-    expect(await countStickers(g.id)).toBe(1);
   });
 
   it('친구 판에 같은 칸 번호가 있어도 내 판에는 붙는다 (적립판)', async () => {

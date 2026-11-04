@@ -509,6 +509,7 @@ export const ko = {
   'together.placedBy': (name: string) => `${name}님이 붙였어요`,
   'together.placedAt': (when: string) => `${when}에 붙였어요`,
   'together.placeToo': '나도 붙이기',
+  'together.myRecord': '내 기록 보기',
   'together.hiddenCell': '가려진 칸',
   'invite.title': '함께하기 초대',
   'invite.invitedBy': (owner: string) => `${owner}님이 초대했어요`,

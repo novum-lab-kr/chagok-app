@@ -1,5 +1,6 @@
 import type { FriendBoardItem, MemberBadge, StickerId } from '../design-system';
-import { stickerDate } from '../domain/board';
+import { canPlace, completesBoard, isDateEnabled, stickerDate } from '../domain/board';
+import type { PlaceTarget } from '../domain/board';
 import { localDateKey } from '../domain/dates';
 import type { DateKey } from '../domain/dates';
 import { DEFAULT_STICKER_ID } from '../domain/types';
@@ -53,7 +54,9 @@ export function oneBoardCells(stickers: readonly Sticker[], members: readonly Go
     const n = s.slotIndex + 1;
     if (isHidden(s)) { hidden.add(n); continue; }
     filled[n] = normalizeStickerId(s.stickerType);
-    if (s.placedBy !== ME) placedBy[n] = { name: nameOf(memberOf(members, s.placedBy)), at: s.placedAt };
+    // 멤버 행을 아직 받지 못한 사람의 칸은 이름이 없어 창을 띄우지 않는다
+    const by = s.placedBy === ME ? undefined : memberOf(members, s.placedBy);
+    if (by) placedBy[n] = { name: nameOf(by), at: s.placedAt };
   }
   return { filled, hidden, placedBy };
 }
@@ -70,18 +73,35 @@ export function oneBoardShown(stickers: readonly Sticker[]): Record<DateKey, Sti
   return shown;
 }
 
-/**
- * 한 판 달력판의 하루: 그날 붙인 사람(먼저 붙인 순서, 가려진 칸 빼고)과 내가 더 붙일 수 있는지.
- * 하루에 두 장까지, 한 사람은 한 장이다(stickerRepository placeSticker, 서버 트리거와 같은 규칙). 가려진 칸도 두 장에 든다.
- */
+const dayOf = (stickers: readonly Sticker[], date: DateKey) => stickers.filter((s) => stickerDate(s) === date).sort((a, b) => a.placedAt - b.placedAt);
+/** 그날 내가 더 붙일 수 있는가: 하루 두 장까지(가려진 칸도 센다), 한 사람은 한 장(서버 트리거, stickerRepository placeSticker와 같은 규칙). */
+const dayOpen = (day: readonly Sticker[]) => day.length < 2 && !day.some((s) => s.placedBy === ME);
+
+/** 그날 붙인 사람(먼저 붙인 순서, 가려진 칸 빼고)과 그날 내 스티커. 한 판 달력판의 하루 창에 쓴다. */
 export function oneBoardDay(stickers: readonly Sticker[], members: readonly GoalMember[], date: DateKey): {
-  people: { name: string; at: number; me: boolean }[]; canPlaceToo: boolean;
+  people: { name: string; at: number; me: boolean }[]; mine: Sticker | undefined;
 } {
-  const day = stickers.filter((s) => stickerDate(s) === date).sort((a, b) => a.placedAt - b.placedAt);
+  const day = dayOf(stickers, date);
   const people = day.filter((s) => !isHidden(s)).map((s) => ({
     name: nameOf(memberOf(members, s.placedBy)), at: s.placedAt, me: s.placedBy === ME,
   }));
-  return { people, canPlaceToo: day.length < 2 && !day.some((s) => s.placedBy === ME) };
+  return { people, mine: day.find((s) => s.placedBy === ME) };
+}
+
+/**
+ * 붙일 수 있는가. 한 판 달력판은 그날 다른 사람 스티커가 있어도(가려진 칸만 있어도) 두 장 미만이고 내 것이 없으면 붙인다.
+ * 그 밖의 판은 canPlace 그대로.
+ */
+export function canPlaceOn(goal: Goal, stickers: readonly Sticker[], target: PlaceTarget, now: Date): boolean {
+  if (goal.mode !== 'one' || goal.boardType !== 'calendar' || !('date' in target)) return canPlace(goal, stickers, target, now);
+  const { date } = target;
+  return date <= localDateKey(now.getTime()) && isDateEnabled(goal, date, false) && dayOpen(dayOf(stickers, date));
+}
+
+/** 이번에 붙이면 완성되는가. 한 판 달력판에서 이미 스티커가 있는 날에 붙이면 찬 날 수(filledCount)가 늘지 않아 완성하지 않는다. */
+export function placeCompletes(goal: Goal, placedAll: number, stickers: readonly Sticker[], date?: DateKey): boolean {
+  if (goal.mode === 'one' && date !== undefined && stickers.some((s) => stickerDate(s) === date)) return false;
+  return completesBoard(goal, placedAll);
 }
 
 /** 「9월 3일 15:05」. 누가 언제 붙였는지 창에 쓴다. */

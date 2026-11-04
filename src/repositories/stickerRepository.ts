@@ -175,16 +175,6 @@ export async function deleteStickerRow(tx: DbDriver, id: string): Promise<Remove
   return record;
 }
 
-/** 그 목표에 **현재 붙어 있는** 스티커 수(내가 보는 판). 뗀 스티커는 행이 지워지므로 빠진다. */
-export async function countStickers(goalId: string): Promise<number> {
-  const db = await getDb();
-  const row = await db.first<{ n: number }>(
-    `SELECT COUNT(*) AS n FROM stickers WHERE goal_id = ? AND ${MY_BOARD}`,
-    goalId,
-  );
-  return row?.n ?? 0;
-}
-
 /** 앱 전체에 내가 붙인 스티커 수(함께 목표에서 내가 붙인 칸 포함, 친구가 붙인 칸 제외). 첫 스티커 안내와 워치 성장 수에 쓴다. */
 export async function countAllStickers(): Promise<number> {
   const db = await getDb();

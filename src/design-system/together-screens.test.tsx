@@ -3,7 +3,7 @@ import {afterEach,beforeEach,describe,expect,it} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {PixelFrame,PixelText} from './components';
 import {BoardDetailScreen,type TallyBoardView} from './board-screens';
-import {FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,type FriendBoard} from './together-screens';
+import {FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,togetherDialogs,type FriendBoard} from './together-screens';
 afterEach(cleanup);
 
 /** jsdom은 창 폭이 0이다. RN Web의 Dimensions는 documentElement 폭을 읽는다(board-entry.test.tsx와 같은 방법). */
@@ -66,7 +66,8 @@ describe('친구 판 줄 (PRD 4.15)',()=>{
     expect(screen.getByText('친구를 기다리고 있어요')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'링크 다시 보내기'}));
     expect(resent).toBe(1);
-  });  it('onResend가 없으면(만든 사람이 아니면) [링크 다시 보내기]가 없다',()=>{
+  });
+  it('onResend가 없으면(만든 사람이 아니면) [링크 다시 보내기]가 없다',()=>{
     render(<FriendBoardList friends={[]} onOpen={()=>{}}/>);
     expect(screen.getByText('친구를 기다리고 있어요')).toBeTruthy();
     expect(screen.queryByRole('button',{name:'링크 다시 보내기'})).toBeNull();
@@ -125,5 +126,18 @@ describe('초대 문제',()=>{
     render(<InviteProblemScreen problem="closed" max={6} onHome={()=>{}} onBack={()=>{}}/>);
     expect(screen.getByText('이 목표에는 들어갈 수 없어요')).toBeTruthy();
     expect(document.body.textContent).not.toContain('차단');
+  });
+});
+
+describe('한 판 창 문구 (판 화면이 띄운다)',()=>{
+  it('연결 없음과 이미 누가 붙였어요는 버튼 하나 [확인]',()=>{
+    expect(togetherDialogs.offlineOne).toMatchObject({title:'연결되면 붙일 수 있어요',primaryLabel:'확인'});
+    expect(togetherDialogs.offlineOne).not.toHaveProperty('secondaryLabel');
+    expect(togetherDialogs.slotTaken).toMatchObject({title:'이미 누가 붙였어요',primaryLabel:'확인'});
+  });
+  it('하루 창: 붙일 수 있으면 [나도 붙이기], 나도 붙였으면 [내 기록 보기], 아니면 [확인]만',()=>{
+    expect(togetherDialogs.placedOnDay('지우',['지우 9월 3일 7:00'],'placeToo')).toMatchObject({primaryLabel:'나도 붙이기',secondaryLabel:'닫기'});
+    expect(togetherDialogs.placedOnDay('지우, 소라(나)',[],'myRecord')).toMatchObject({primaryLabel:'내 기록 보기',secondaryLabel:'닫기'});
+    expect(togetherDialogs.placedOnDay('지우',[],null)).not.toHaveProperty('secondaryLabel');
   });
 });

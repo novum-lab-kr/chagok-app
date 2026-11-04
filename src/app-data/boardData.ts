@@ -1,15 +1,15 @@
 import { getGoal, settleExpiredPeriods } from '../repositories/goalRepository';
-import { countStickers, listBoardStickers, listStickers, listStickersInMonth } from '../repositories/stickerRepository';
+import { listBoardStickers, listStickers, listStickersInMonth } from '../repositories/stickerRepository';
 import { listMembers } from '../repositories/memberRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
-import { progressBasis } from '../domain/board';
+import { filledCount, progressBasis } from '../domain/board';
 import type { Goal, GoalMember, Sticker } from '../domain/types';
 
 export type BoardData = {
   goal: Goal;
   /** 적립판은 전부, 달력판은 보고 있는 달의 스티커 */
   stickers: Sticker[];
-  /** 지금 붙어 있는 전체 수. 마지막 칸 판정에 쓴다 */
+  /** 지금 판에 찬 칸 수(filledCount). 마지막 칸 판정에 쓴다. 한 판 달력판은 스티커가 있는 날 수 */
   placedAll: number;
   /** 진행률 기준 안의 수. 기간 없는 달력판만 전체와 다르다 */
   placedInBasis: number;
@@ -32,7 +32,7 @@ export async function loadBoard(goalId: string, year: number, month: number, now
   const stickers = goal.boardType === 'tally'
     ? await listStickers(goal.id)
     : await listStickersInMonth(goal.id, year, month);
-  const placedAll = await countStickers(goal.id);
+  const placedAll = filledCount(goal, goal.boardType === 'tally' ? stickers : await listStickers(goal.id));
   const basis = progressBasis(goal, now);
   const placedInBasis = basis.kind === 'all'
     ? placedAll

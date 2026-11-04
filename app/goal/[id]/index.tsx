@@ -11,9 +11,9 @@ import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
 import { percentLabel } from '../../../src/app-data/pocketAdapter';
-import { friendBoardsOf, memberBadgesOf, oneBoardCells, oneBoardDay, oneBoardShown, placedWhen } from '../../../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, oneBoardCells, oneBoardDay, oneBoardShown, placeCompletes, placedWhen } from '../../../src/app-data/sharedBoardView';
+import { oneBoardOnline, watchSlotTaken } from '../../../src/app-data/sharedBoardGuards';
 import { actionDeps, shareInvite } from '../../../src/app-data/sharedGoalActions';
-import { isOnline } from '../../../src/app-data/online';
 import { normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
@@ -21,7 +21,7 @@ import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { checkPlaceGate } from '../../../src/app-data/placeGate';
 import {
-  canPlace, completesBoard, isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, placedAtFor,
+  isCompleted, isDateEnabled, monthNav, needsRemoveConfirm, placedAtFor,
   pendingCompletion, progressOf, stickerDate,
 } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
@@ -31,7 +31,6 @@ import { countAllStickers, placeSticker, removeSticker } from '../../../src/repo
 import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
 import { ME } from '../../../src/repositories/ids';
 import { subscribeLocalChange } from '../../../src/sync/changes';
-import { subscribeSlotTaken } from '../../../src/sync/slotTaken';
 import { requestSync } from '../../../src/sync/syncGate';
 import { subscribeWidgetApplied } from '../../../src/widgets/applied';
 import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
@@ -121,20 +120,15 @@ export default function Board() {
     if (!shared) return;
     requestSync();
     let changed: ReturnType<typeof setTimeout> | undefined;
-    let taken: ReturnType<typeof setTimeout> | undefined;
     const offChange = subscribeLocalChange(() => {
       clearTimeout(changed);
       changed = setTimeout(() => { void latestReload.current().catch(() => {}); }, LOCAL_CHANGE_DELAY_MS);
     });
-    const offTaken = subscribeSlotTaken((goalId) => {
-      if (goalId !== id || taken) return;
-      taken = setTimeout(() => {
-        taken = undefined;
-        void latestReload.current().catch(() => {});
-        void ask(togetherDialogs.slotTaken);
-      }, LOCAL_CHANGE_DELAY_MS);
+    const offTaken = watchSlotTaken(id, () => {
+      void latestReload.current().catch(() => {});
+      void ask(togetherDialogs.slotTaken);
     });
-    return () => { offChange(); offTaken(); clearTimeout(changed); clearTimeout(taken); };
+    return () => { offChange(); offTaken(); clearTimeout(changed); };
   }, [shared, id, ask]));
 
   const goal = data?.goal;
@@ -219,7 +213,7 @@ export default function Board() {
     if (firstGuide && !dialogOpen) void setFlag('firstStickerGuideDone', true);
     const target = from.goal;
     // 한 판은 여럿이 같은 칸을 다투므로 연결이 있을 때만 붙인다. 기기에도 쓰지 않는다 (PRD 4.15).
-    if (target.mode === 'one' && !(await isOnline())) { await ask(togetherDialogs.offlineOne); return; }
+    if (!(await oneBoardOnline(target, () => ask(togetherDialogs.offlineOne)))) return;
     // 기본 스티커 묶음의 체험이나 구독이 끝났으면 붙이지 않고 안내한다. 붙은 칸은 그대로다 (2026-10-08, 구독 2026-11-02).
     const gate = await checkPlaceGate(target);
     if (!gate.ok) {
@@ -228,7 +222,7 @@ export default function Board() {
       if (choice === 'secondary') router.push({ pathname: '/stickers/choose', params: { current: target.defaultStickerId, goalId: target.id } });
       return;
     }
-    const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
+    const complete = !isCompleted(target) && placeCompletes(target, from.placedAll, from.stickers, at.date);
     if (complete && !(await confirm(boardDialogs.confirmLast(target.boardType)))) return;
     let placedId: string | null = null;
     const ok = await saveOrNotify(ask, t('failed.placeSticker'), async () => {
@@ -279,23 +273,24 @@ export default function Board() {
   const oneShown = one && goal.boardType === 'calendar' ? oneBoardShown(stickers) : null;
   const bySlot = (n: number) => stickers.find((s) => s.slotIndex === n - 1);
   const byDate = (date: string) => (oneShown ? oneShown[date] : stickers.find((s) => stickerDate(s) === date));
-  /** 뗄 수 있는 칸: 내가 붙인 칸만. 혼자 판과 각자 판은 모두 내 칸이다. */
-  const mine = (s: Sticker | undefined) => (s && (!one || s.placedBy === ME) ? s : undefined);
-
+  /** 적립판: 빈칸 = 붙이기, 붙인 칸 꾹 = 떼기. 한 판은 내가 붙인 칸만 뗀다. */
   function onSlotPress(n: number) {
     void actOnce(async () => {
       const placed = bySlot(n);
-      if (placed) { const own = mine(placed); if (own) await remove(own); return; }
-      if (goal && canPlace(goal, stickers, { slot: n - 1 }, new Date())) await place(n - 1, { slot: n });
+      if (placed) { if (!one || placed.placedBy === ME) await remove(placed); return; }
+      if (goal && canPlaceOn(goal, stickers, { slot: n - 1 }, new Date())) await place(n - 1, { slot: n });
     });
   }
 
-  /** 달력판: 시작일부터 오늘까지의 빈 날에 붙는다 — 미래는 안 된다 (PRD 4.3, 2026-10-08). 붙인 날을 한 번 누르면 뗀다. */
+  /**
+   * 달력판: 시작일부터 오늘까지의 빈 날에 붙는다 — 미래는 안 된다 (PRD 4.3, 2026-10-08). 붙인 날을 꾹 누르면 뗀다.
+   * 한 판은 그날 내 스티커를 뗀다(친구가 먼저 붙인 날이어도). 친구 것만 있거나 가려진 칸만 있는 날은 두 장 규칙 안에서 붙인다.
+   */
   function onDateSelect(date: string) {
     void actOnce(async () => {
       const placed = byDate(date);
-      if (placed) { const own = mine(placed); if (own) await remove(own); return; }
-      if (goal && canPlace(goal, stickers, { date }, new Date())) await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
+      if (placed) { const own = one ? oneBoardDay(stickers, members, date).mine : placed; if (own) await remove(own); return; }
+      if (goal && canPlaceOn(goal, stickers, { date }, new Date())) await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
     });
   }
 
@@ -313,12 +308,14 @@ export default function Board() {
   function onOneDateOpen(date: string) {
     if (!goal) return;
     const day = oneBoardDay(stickers, members, date);
-    if (!day.people.some((p) => !p.me)) { openRecord(byDate(date)); return; }
+    if (!day.people.some((p) => !p.me)) { openRecord(day.mine); return; }
     const names = day.people.map((p) => (p.me ? t('together.meName', p.name) : p.name));
-    const canPlaceToo = day.canPlaceToo && isDateEnabled(goal, date, false);
+    const action = canPlaceOn(goal, stickers, { date }, new Date()) ? 'placeToo' : day.mine ? 'myRecord' : null;
     void actOnce(async () => {
-      const choice = await ask(togetherDialogs.placedOnDay(names.join(', '), day.people.map((p, i) => `${names[i]} ${placedWhen(p.at)}`), canPlaceToo));
-      if (canPlaceToo && choice === 'primary') await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
+      const choice = await ask(togetherDialogs.placedOnDay(names.join(', '), day.people.map((p, i) => `${names[i]} ${placedWhen(p.at)}`), action));
+      if (choice !== 'primary') return;
+      if (action === 'placeToo') await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
+      else if (action === 'myRecord') openRecord(day.mine);
     });
   }
 
@@ -344,16 +341,18 @@ export default function Board() {
   const records: Record<string, StickerId> = {};
   const recordedSlots = new Set<number>();
   const recordedDates = new Set<string>();
-  for (const s of oneShown ? Object.values(oneShown) : stickers) {
+  for (const s of stickers) {
     const type = normalizeStickerId(s.stickerType);
     if (goal.boardType === 'tally') {
       if (!oneCells) filled[s.slotIndex + 1] = type;
       if (recordedIds.has(s.id)) recordedSlots.add(s.slotIndex + 1);
     } else {
-      records[stickerDate(s)] = type;
+      if (!oneShown) records[stickerDate(s)] = type;
+      // 한 판은 그날 내가 둘째로 붙여 남긴 기록도 표시한다
       if (recordedIds.has(s.id)) recordedDates.add(stickerDate(s));
     }
   }
+  if (oneShown) for (const [date, s] of Object.entries(oneShown)) records[date] = normalizeStickerId(s.stickerType);
   const nav = monthNav(goal, shown.year, shown.month);
   const friends = goal.mode === 'each' ? friendBoardsOf(goal, members, data.friendStickers, localDateKey(now.getTime())) : [];
   const openFriend = friends.find((f) => f.id === friendOpen);

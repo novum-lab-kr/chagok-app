@@ -17,6 +17,16 @@ const req = (over: Partial<WidgetRequest> = {}): WidgetRequest =>
 const none = new Set<string>();
 
 describe('planRequest · 붙이기', () => {
+  it('한 판 기간 달력판은 같은 날 두 장을 하루로 세어 마지막 날을 판단한다 (2026-11-05)', () => {
+    // 10월 1~7일 = 7일. 6일이 찼지만 스티커는 7장(1일에 두 장)이다. 남은 7일째가 마지막이다
+    const one = goal({ mode: 'one', endDate: '2026-10-07' });
+    const placed = [1, 1, 2, 3, 4, 5, 6].map((d, i) => ({ ...st(`s${i}`, t(2026, 10, d, 8 + i), d - 1), boardUserId: null, placedBy: i === 1 ? 'u-min' : 'me' }));
+    const r = req({ at: t(2026, 10, 7, 9), dateKey: '2026-10-07' });
+    expect(planRequest(one, placed, none, r)).toEqual({ action: 'skip', reason: 'last' });
+    expect(planRequest(one, placed.slice(1), none, r)).toEqual({ action: 'skip', reason: 'last' });
+    expect(planRequest(one, placed.slice(2), none, r)).toEqual({ action: 'place', slotIndex: 6, placedAt: t(2026, 10, 7, 9) });
+  });
+
   it('달력판은 요청 날짜 칸에 누른 시각으로 붙인다', () => {
     expect(planRequest(goal(), [], none, req())).toEqual({ action: 'place', slotIndex: 5, placedAt: t(2026, 10, 6, 9) });
   });

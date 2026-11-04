@@ -344,9 +344,12 @@ export const togetherDialogs={
   get login(){return {title:t('together.loginTitle'),description:t('together.loginDescription'),primaryLabel:t('account.login'),secondaryLabel:t('common.close')};},
   /** 한 판 친구 칸을 눌렀을 때: 누가 언제 붙였는지. when은 「9월 3일 15:05」. */
   placedBy:(name:string,when:string)=>({title:t('together.placedBy',name),description:t('together.placedAt',when),primaryLabel:t('common.ok')}),
-  /** 한 판 달력판에서 친구가 붙인 날을 눌렀을 때. 내가 더 붙일 수 있으면 [나도 붙이기]. lines는 「지우 9월 3일 15:05」처럼 붙인 순서. */
-  placedOnDay:(names:string,lines:readonly string[],canPlaceToo:boolean)=>canPlaceToo
-    ?{title:t('together.placedBy',names),description:lines.join('\n'),secondaryLabel:t('common.close'),primaryLabel:t('together.placeToo')}
+  /**
+   * 한 판 달력판에서 친구가 붙인 날을 눌렀을 때. lines는 「지우 9월 3일 15:05」처럼 붙인 순서.
+   * action: 내가 더 붙일 수 있으면 [나도 붙이기], 그날 나도 붙였으면 [내 기록 보기], 아니면 [확인]만.
+   */
+  placedOnDay:(names:string,lines:readonly string[],action:'placeToo'|'myRecord'|null)=>action
+    ?{title:t('together.placedBy',names),description:lines.join('\n'),secondaryLabel:t('common.close'),primaryLabel:action==='placeToo'?t('together.placeToo'):t('together.myRecord')}
     :{title:t('together.placedBy',names),description:lines.join('\n'),primaryLabel:t('common.ok')},
   /** 한 판에 연결 없이 붙이려 할 때. 붙이지 않는다. */
   get offlineOne(){return {title:t('together.offlineOne'),description:t('together.offlineOneDescription'),primaryLabel:t('common.ok')};},

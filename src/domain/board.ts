@@ -114,6 +114,14 @@ export function placedAtFor(date: DateKey, now: number): number {
 }
 
 /**
+ * 완성과 남은 칸을 셀 때 판에 찬 칸 수. 한 판 달력판은 하루에 두 장까지 붙으므로 스티커가 있는 날 수로 센다
+ * (가려진 칸 포함, 2026-11-05 판정). 그 밖의 판은 스티커 수다.
+ */
+export function filledCount(goal: Goal, stickers: readonly Sticker[]): number {
+  return goal.mode === 'one' && goal.boardType === 'calendar' ? new Set(stickers.map(stickerDate)).size : stickers.length;
+}
+
+/**
  * 이번에 붙이면 판이 다 차는가. placedTotal은 붙이기 전 그 목표에 붙어 있는 전체 스티커 수다.
  * 기간 없는 달력판은 붙여서 완성되지 않는다 (목표 설정에서 수동 완성, PRD 4.3).
  */

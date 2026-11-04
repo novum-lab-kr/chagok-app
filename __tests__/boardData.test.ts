@@ -93,5 +93,19 @@ describe('loadBoard', () => {
       expect(board?.stickers.map((s) => [s.id, s.stickerType])).toEqual([['a', 'basic.star'], ['hid', '']]);
       expect(board).toMatchObject({ placedAll: 2, friendStickers: {} });
     });
+
+    it('한 판 달력판의 placedAll은 스티커가 있는 날 수다(같은 날 두 장은 하루, 가려진 칸 포함)', async () => {
+      const g = await sharedGoal('one');
+      const db = await getDb();
+      await db.run("UPDATE goals SET board_type = 'calendar', total_slots = NULL WHERE id = ?", g.id);
+      await boardSticker(g.id, 'a', null, 'u-min', 2);
+      await boardSticker(g.id, 'b', null, 'me', 2);
+      await db.run(
+        "INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, date_key, tz_offset_min, board_user_id, placed_by) VALUES ('hid', ?, 5, 3, NULL, '2026-09-04', 540, NULL, 'u-gone')", g.id,
+      );
+      const board = await loadBoard(g.id, 2026, 9, new Date(2026, 8, 10));
+      expect(board?.stickers).toHaveLength(3);
+      expect(board?.placedAll).toBe(2);
+    });
   });
 });
