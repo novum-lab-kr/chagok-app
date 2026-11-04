@@ -38,14 +38,22 @@ export function useLayoutSize() {
   return { ref, size, onLayout };
 }
 
-export type FrameVariant = 'panel' | 'button' | 'input' | 'dialog' | 'slot' | 'selection';
-export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed = false, focused = false, style, contentStyle }:
-  { children?: ReactNode; variant?: FrameVariant; fill?: string; pressed?: boolean; focused?: boolean; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle> }) {
+export type FrameVariant = 'panel' | 'button' | 'input' | 'dialog' | 'slot' | 'selection' | 'thin' | 'thinSlot';
+/**
+ * `thin`: 판(panel)과 같은 겹을 얇게 그린 틀 (함께 목표 친구 판, 2026-11-04 시안 배치 A).
+ * 바깥 잉크 2, 틈 1(바탕색), 반투명 띠 1, 안쪽 잉크 1, 계단 3. 안쪽 여백 7.
+ */
+const THIN_FRAME = { outer: 2, gap: 1, band: 1, inner: 1, padding: 7 } as const;
+/** `thinSlot`: 칸(slot)과 같은 모양에 테두리만 2로 (함께하는 판의 두 주 달력 날짜 칸, 2026-11-04 사용자 요청). */
+const THIN_SLOT_BORDER = 2;
+export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed = false, focused = false, stroke = c.ink, style, contentStyle }:
+  { children?: ReactNode; variant?: FrameVariant; fill?: string; pressed?: boolean; focused?: boolean; /** 테두리 색. 입력칸 검사 실패에 `retro.color.invalid`. panel은 바깥 테두리는 두고 안쪽 얇은 선만 이 색 (2026-11-04, 메모 2안) */stroke?: string; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle> }) {
   const { ref: box, size, onLayout } = useLayoutSize();
   const raised = variant === 'button' || variant === 'dialog';
   const depth = raised ? retro.shape.shadow : 0;
-  const border = variant === 'selection' ? 0 : variant === 'slot' ? retro.shape.cellBorder : variant === 'panel' || variant === 'dialog' ? retro.shape.panelBorder : retro.shape.border;
-  const padding = variant === 'panel' ? 10 : border;
+  const border = variant === 'selection' ? 0 : variant === 'thinSlot' ? THIN_SLOT_BORDER : variant === 'slot' ? retro.shape.cellBorder : variant === 'panel' || variant === 'dialog' ? retro.shape.panelBorder : retro.shape.border;
+  const thin = variant === 'thin';
+  const padding = variant === 'panel' ? 10 : thin ? THIN_FRAME.padding : border;
   const unit = variant === 'panel' || variant === 'dialog' ? retro.shape.panelUnit : variant === 'button' || variant === 'input' ? retro.shape.controlUnit : retro.shape.unit;
   const w = Math.round(size.width - (raised ? 1 : 0)), h = Math.round(size.height - depth);
   const outline = (inset = 0) => pixelOutline(w, h, inset, unit);
@@ -56,11 +64,17 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
         다시 그리지 않아, 판 상세 → 목표 설정에서 틀이 통째로 빠졌다(2026-10-04 실기기, 시뮬레이터에서 재현·확인). */}
     <Svg key={`${size.width}x${size.height}`} width={size.width} height={size.height} style={StyleSheet.absoluteFill} pointerEvents="none" {...decorativeSvg}>{w > 0 && h > 0 && <>
       {raised && <Path d={surfaceOutline} fill={c.ink} stroke={c.ink} strokeWidth={border} strokeLinejoin="miter" transform={`translate(1,${depth})`} />}
-      {variant === 'panel' || variant === 'selection' ? <>
+      {thin ? <>
+        <Path d={outline()} fill={c.ink}/>
+        <Path d={outline(THIN_FRAME.outer)} fill={c.screen}/>
+        <Path d={outline(THIN_FRAME.outer + THIN_FRAME.gap)} fill={c.ink} opacity={0.62}/>
+        <Path d={outline(THIN_FRAME.outer + THIN_FRAME.gap + THIN_FRAME.band)} fill={c.ink}/>
+        <Path d={outline(THIN_FRAME.outer + THIN_FRAME.gap + THIN_FRAME.band + THIN_FRAME.inner)} fill={fill}/>
+      </> : variant === 'panel' || variant === 'selection' ? <>
         <Path d={outline()} fill={variant === 'selection' ? fill : c.ink}/>
         <Path d={outline(border)} fill={variant === 'panel' ? c.screen : fill}/>
-      </> : <Path d={surfaceOutline} fill={fill} stroke={c.ink} strokeWidth={border} strokeLinejoin="miter" transform={`translate(0,${pressed ? retro.shape.pressed : 0})`}/> }
-      {variant === 'panel' && <><Path d={outline(border)} fill={c.ink} opacity={0.62}/><Path d={outline(retro.shape.panelInnerInset)} fill={c.ink}/><Path d={outline(retro.shape.panelInnerInset+4)} fill={fill}/></>}
+      </> : <Path d={surfaceOutline} fill={fill} stroke={stroke} strokeWidth={border} strokeLinejoin="miter" transform={`translate(0,${pressed ? retro.shape.pressed : 0})`}/> }
+      {variant === 'panel' && <><Path d={outline(border)} fill={c.ink} opacity={0.62}/><Path d={outline(retro.shape.panelInnerInset)} fill={stroke}/><Path d={outline(retro.shape.panelInnerInset+4)} fill={fill}/></>}
       {(variant === 'button' || variant === 'dialog') && <Path d={`M${2*unit+border+2} ${border+2} H${w-2*unit-border-2} M${border+2} ${2*unit+border+2} V${h-2*unit-border-2}`} stroke={c.secondary} strokeWidth={2} transform={`translate(0,${pressed ? retro.shape.pressed : 0})`}/>}
       {focused && <Path d={outline(border+3)} fill="none" stroke={c.ink} strokeWidth={1} strokeDasharray="2 2"/>}
     </>}</Svg>
@@ -134,9 +148,9 @@ export function PixelButton({ label, variant = 'primary', disabled = false, load
 const PANEL_CONTENT_INSET = retro.shape.panelInnerInset + 4 + retro.layout.panelPadding;
 /** 화면 콘텐츠 폭에서 바깥 판들이 이미 차지한 가로 여백. 측정 전 첫 프레임 추정에 쓴다. */
 const ContentInsetContext = createContext(0);
-export function PixelPanel({ children, title, action, style, contentStyle, titleRule = true }: {/** 제목 아래 줄. 바로 아래 진행 막대와 겹쳐 보이는 판 상세에서 뺀다 */titleRule?: boolean; children: ReactNode; title?: string; action?: ReactNode; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle>}) {
+export function PixelPanel({ children, title, action, style, contentStyle, titleRule = true, invalid = false }: {/** 제목 아래 줄. 바로 아래 진행 막대와 겹쳐 보이는 판 상세에서 뺀다 */titleRule?: boolean; /** 검사 실패: 안쪽 얇은 선을 `invalid` 색으로 (2026-11-04, 메모) */invalid?: boolean; children: ReactNode; title?: string; action?: ReactNode; style?: StyleProp<ViewStyle>; contentStyle?: StyleProp<ViewStyle>}) {
   const inset = useContext(ContentInsetContext) + 2 * PANEL_CONTENT_INSET;
-  return <PixelFrame style={style} contentStyle={[{padding: PANEL_CONTENT_INSET}, contentStyle]}>
+  return <PixelFrame style={style} stroke={invalid ? c.invalid : c.ink} contentStyle={[{padding: PANEL_CONTENT_INSET}, contentStyle]}>
     {title && <View style={{borderBottomWidth: titleRule ? retro.shape.panelTitleBorder : 0,borderColor:c.ink,paddingBottom:8,marginBottom:0,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><PixelText variant="title" style={{fontSize:32,lineHeight:40,flexShrink:1}}>{title}</PixelText>{action}</View>}
     <ContentInsetContext.Provider value={inset}>{children}</ContentInsetContext.Provider>
   </PixelFrame>;
@@ -149,7 +163,7 @@ const singleLineText = Platform.OS === 'web'
 /** 입력칸 아래 검사 문구: 한도·빈 값 (2026-10-08). 칸 수 오류 문구와 같은 작은 글자. */
 export function FieldError({message}: {message?: string}) {
   if (!message) return null;
-  return <View accessible accessibilityRole="alert"><PixelText variant="caption" style={{color:c.buttonText}}>{message}</PixelText></View>;
+  return <View accessible accessibilityRole="alert"><PixelText variant="caption" style={{color:retro.color.invalid}}>{message}</PixelText></View>;
 }
 /**
  * 한도를 넘긴 글자를 자른다. iOS는 한글을 조합하는 중인 글자에는 maxLength를 적용하지 않아 (2026-10-08)
@@ -165,7 +179,7 @@ const placeholderInk=(()=>{const h=c.ink.replace('#','');const n=(i:number)=>par
 export function PixelInput({label, error, style, onFocus, onBlur, onChangeText, ...props}: TextInputProps & {label: string; /** 입력칸 아래 검사 문구 */error?: string}) {
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
-    <PixelFrame variant="input" fill={c.secondary} focused={focused}>
+    <PixelFrame variant="input" fill={c.secondary} focused={focused} stroke={error?retro.color.invalid:c.ink}>
       <TextInput allowFontScaling={false} {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={placeholderInk}
         returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
@@ -193,7 +207,8 @@ export function SproutSticker({size=48}: {size?:number}) {
  * Transparent and pointer-inert; the host owns keyboard focus and semantics.
  * Corner dimensions stay fixed as the parent grows; only the straight lines extend.
  */
-export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
+/** `cornersOnly`: 네 모서리만, 사이 선 없이 (함께하는 판의 좁은 두 주 달력 칸, 2026-11-04 사용자 요청). */
+export function PixelFocusRing({style,cornersOnly=false}: {style?:StyleProp<ViewStyle>;cornersOnly?:boolean}) {
   const {ref,size,onLayout}=useLayoutSize();
   const w=Math.round(size.width), h=Math.round(size.height);
   const f=retro.focus;
@@ -206,7 +221,7 @@ export function PixelFocusRing({style}: {style?:StyleProp<ViewStyle>}) {
   const corner=`M${cut} 0H${arm}V${thickness}H${thickness}V${arm}H0V${cut}H${cut}Z`;
   return <View ref={ref} pointerEvents="none" style={[StyleSheet.absoluteFill,style]} onLayout={onLayout}>
     {w>0&&h>0&&<Svg key={`${w}x${h}`} width={w} height={h} {...decorativeSvg}>
-      <Path d={`M${start} ${inset}H${w-start} M${start} ${h-inset}H${w-start} M${inset} ${start}V${h-start} M${w-inset} ${start}V${h-start}`} stroke={c.ink} strokeWidth={f.lineWidth} fill="none"/>
+      {!cornersOnly&&<Path d={`M${start} ${inset}H${w-start} M${start} ${h-inset}H${w-start} M${inset} ${start}V${h-start} M${w-inset} ${start}V${h-start}`} stroke={c.ink} strokeWidth={f.lineWidth} fill="none"/>}
       <Path d={corner} fill={c.ink}/>
       <Path d={corner} fill={c.ink} transform={`translate(${w},0) scale(-1,1)`}/>
       <Path d={corner} fill={c.ink} transform={`translate(0,${h}) scale(1,-1)`}/>
@@ -314,7 +329,19 @@ export function PixelBusyDialog({title,description}:{title:string;description:st
   </PixelFrame>;
 }
 
-function ModalHost({visible,onRequestClose,onDismiss,children}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;children:ReactNode}) {
+/** 화면 가운데 다이얼로그 호스트: 배경 막기, 긴 문구 스크롤. PixelDialogModal과 함께 목표 친구 판 크게 보기가 쓴다. */
+/**
+ * true면 Modal 대신 둘러싼 화면 안에 겹쳐 그린다. Storybook 문서 페이지와 흐름도에서만 켠다
+ * (Modal은 페이지 전체에 떠서 흐름도 노드마다 시트가 화면을 덮었다, 2026-11-04). 앱은 쓰지 않는다.
+ */
+export const InlineModalContext = createContext(false);
+/** InlineModalContext가 켜졌을 때 Modal 자리: 화면 안을 덮는 겹. */
+export function InlineModalLayer({visible,children}:{visible:boolean;children:ReactNode}) {
+  if (!visible) return null;
+  return <View style={[StyleSheet.absoluteFill,{zIndex:10}]}>{children}</View>;
+}
+export function ModalHost({visible,onRequestClose,onDismiss,children}:{visible:boolean;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;children:ReactNode}) {
+  if (useContext(InlineModalContext)) return <InlineModalLayer visible={visible}><View style={{flex:1,justifyContent:'center',paddingHorizontal:16}}><View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.scrim}]}/>{children}</View></InlineModalLayer>;
   return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
     <View style={{flex:1}}>
       <View style={[StyleSheet.absoluteFill,{backgroundColor:c.ink,opacity:retro.opacity.scrim}]}/>

@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {ExtendSlotsScreen, GoalSettingsScreen, NewGoalScreen, RecordScreen, type PocketGoal} from '../src/design-system';
-import {GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, parseSlotCount} from '../src/domain/board';
+import {ExtendSlotsScreen, GoalSettingsScreen, InviteJoinScreen, NewGoalScreen, RecordScreen, TogetherGoalScreen, type BoardKind, type FriendBoard, type PocketGoal, type StickerId, type TogetherMode} from '../src/design-system';
+import {GOAL_NAME_MAX, MEMBER_NAME_MAX, MEMO_MAX, goalNameError, memberNameError, memoError, parseSlotCount, shownMemberNameError} from '../src/domain/board';
+import {t} from '../src/i18n';
 import {Stage, noop} from './support/frame';
 
 /**
@@ -67,3 +68,30 @@ function Extend({initialAdd}: {initialAdd: string}) {
 }
 export const ExtendTyping: Story = {name: '칸 수 · 칸 늘리기 · 쓰는 중', render: () => <Extend initialAdd="15"/>};
 export const ExtendEmpty: Story = {name: '칸 수 · 칸 늘리기 · 비움', render: () => <Extend initialAdd=""/>};
+
+// ── 함께 목표 (PRD 4.15, 2026-11-04) ─────────────────────────────────
+// 내 이름은 1~10자(memberNameError). 금칙어와 스티커 겹침은 서버가 거르고, 앱은 받은 문구를 그 칸 아래에 그대로 보인다.
+const tally = (filled: number): FriendBoard => ({kind: 'tally', total: 30, filled: new Set(Array.from({length: filled}, (_, i) => i + 1))});
+/** 앱 app/invite/[code].tsx와 같은 값. serverError는 서버 응답(금칙어)이 왔을 때 */
+function Join({initialName, touched = false, serverError, sticker = 'basic.sprout', stickerError}: {initialName: string; touched?: boolean; serverError?: string; sticker?: StickerId; stickerError?: string}) {
+  const [name, setName] = useState(initialName), [edited, setEdited] = useState(touched);
+  const nameError = name === initialName && serverError ? serverError : shownMemberNameError(name, edited);
+  return <Stage><InviteJoinScreen goalName="11월 만 보 걷기" kind="tally" total={30} ownerName="은주"
+    members={[{id: 'eunju', name: '은주', sticker: 'basic.shoe', board: tally(11)}, {id: 'jiwoo', name: '지우', sticker: 'basic.flower', board: tally(18)}]}
+    myName={name} onChangeMyName={value => {setName(value); setEdited(true);}} myNameMaxLength={MEMBER_NAME_MAX} myNameError={nameError}
+    sticker={sticker} onChooseSticker={noop} stickerError={stickerError} onJoin={noop} joinDisabled={name.trim() === ''} onBack={noop}/></Stage>;
+}
+/** 앱 app/goal/together.tsx와 같은 값 */
+function Together({initialName}: {initialName: string}) {
+  const [mode, setMode] = useState<TogetherMode>('each'), [name, setName] = useState(initialName), [kind, setKind] = useState<BoardKind>('tally'), [count, setCount] = useState('30');
+  const [myName, setMyName] = useState('은주');
+  return <Stage><TogetherGoalScreen mode={mode} onChangeMode={setMode} name={name} onChangeName={setName} nameMaxLength={GOAL_NAME_MAX} nameError={goalNameError(name)}
+    kind={kind} onChangeKind={setKind} count={count} onChangeCount={setCount} myName={myName} onChangeMyName={setMyName} myNameMaxLength={MEMBER_NAME_MAX} myNameError={memberNameError(myName)}
+    sticker="basic.shoe" onChooseSticker={noop} maxFriends={6} onSubmit={noop} onBack={noop}/></Stage>;
+}
+export const MemberNameTyping: Story = {name: '내 이름, 함께하기, 쓰는 중', render: () => <Join initialName="소라"/>};
+export const MemberNameFull: Story = {name: '내 이름, 함께하기, 10자', render: () => <Join initialName="산책하는 은주 언니"/>};
+export const MemberNameBlank: Story = {name: '내 이름, 함께하기, 비움', render: () => <Join initialName="" touched/>};
+export const MemberNameBanned: Story = {name: '내 이름, 함께하기, 금칙어 (서버)', render: () => <Join initialName="바보" serverError={t('validation.nameNotAllowed')}/>};
+export const StickerTaken: Story = {name: '내 스티커, 함께하기, 이미 쓰는 스티커 (서버)', render: () => <Join initialName="소라" sticker="basic.flower" stickerError={t('validation.stickerTaken')}/>};
+export const NameTogetherFull: Story = {name: '목표 이름, 친구와 함께, 20자', render: () => <Together initialName={NAME_20}/>};

@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Dimensions, Modal, StyleSheet,type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
-import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
+import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,InlineModalContext,InlineModalLayer} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
@@ -93,7 +93,7 @@ export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,on
   </View>;
 }
 export function MemoEditor({value,onChange,maxLength,error}:{value:string;onChange:(value:string)=>void;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
-  return <View style={{gap:8}}><PixelPanel title={t('memo.title')}><TextInput allowFontScaling={false} accessibilityLabel={t('memo.title')} value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder={t('memo.placeholder')} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
+  return <View style={{gap:8}}><PixelPanel title={t('memo.title')} invalid={!!error}><TextInput allowFontScaling={false} accessibilityLabel={t('memo.title')} value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder={t('memo.placeholder')} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={touchSlop({height:retro.layout.touch})} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
@@ -104,6 +104,13 @@ export function SettingRow({label,value,onPress,navigates=true,disabled=false}:{
     {value&&<PixelText style={{fontSize:14,lineHeight:20}}>{value}</PixelText>}
     {navigates&&<PixelIcon name="chevron" size={14}/>}
   </Pressable>;
+}
+/** 아래에 설명 한 줄이 붙는 SettingRow. 누르면 무슨 일이 생기는지 미리 알린다 (함께 목표 「문제가 있을 때」, 2026-11-04). */
+export function SettingHint({label,hint,onPress}:{label:string;hint:string;onPress:()=>void}) {
+  return <View>
+    <SettingRow label={label} onPress={onPress}/>
+    <View style={{marginTop:-10,paddingBottom:6}}><PixelText variant="caption" style={caption}>{hint}</PixelText></View>
+  </View>;
 }
 /** 누를 수 없는 「항목 · 값」 줄. SettingRow와 같은 높이 (앱 설정 계정과 백업, 2026-10-08). */
 export function InfoRow({label,value}:{label:string;value:string}) {
@@ -263,7 +270,8 @@ export function SheetSafeArea({children}:{children:ReactNode}) {
  */
 export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay,children}:{visible:boolean;title:string;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;/** 시트 위에 띄울 다이얼로그. iOS는 떠 있는 Modal 옆에 둔 Modal을 띄우지 못해서 시트 Modal 안에 그린다 */overlay?:ReactNode;children:ReactNode}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
-  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
+  const inline=useContext(InlineModalContext);
+  const body=<>
     <View style={{flex:1,justifyContent:'flex-end',alignItems:'center',paddingHorizontal:12,paddingBottom:Math.max(insets.bottom,12)}}>
       <Pressable testID="sheet-scrim" accessibilityLabel={t('common.close')} onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
       <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>
@@ -274,7 +282,8 @@ export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay
       </View>
     </View>
     {overlay}
-  </Modal>;
+  </>;
+  return inline?<InlineModalLayer visible={visible}>{body}</InlineModalLayer>:<Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>{body}</Modal>;
 }
 
 export function SelectionBadge() {

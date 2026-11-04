@@ -30,6 +30,10 @@
     {
       "id": "sticker",
       "label": "스티커 묶음·구매"
+    },
+    {
+      "id": "together",
+      "label": "함께 목표"
     }
   ],
   "nodes": [
@@ -908,6 +912,301 @@
           "info"
         ]
       }
+    },
+    {
+      "id": "together-sheet",
+      "data": {
+        "label": "더하기 시트",
+        "tags": [
+          "PRD 4.15",
+          "app/(tabs)/index"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--add-sheet",
+            "label": "혼자 채우기, 친구와 함께"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-new",
+      "data": {
+        "label": "친구와 함께",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/together"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--together-each",
+            "label": "각자 판에"
+          },
+          {
+            "id": "screens-함께-목표--together-one",
+            "label": "한 판에 같이"
+          },
+          {
+            "id": "rules-입력-검사--name-together-full",
+            "label": "목표 이름 20자"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "share-sheet",
+      "data": {
+        "label": "공유 창",
+        "tags": [
+          "PRD 4.15",
+          "OS",
+          "https://chagok.novum-lab.com/invite/<코드>"
+        ],
+        "coverage": "external",
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-login",
+      "data": {
+        "label": "초대 로그인",
+        "tags": [
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--invite-login",
+            "label": "로그인 전"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-join",
+      "data": {
+        "label": "함께하기",
+        "tags": [
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--invite-join-default",
+            "label": "함께하기"
+          },
+          {
+            "id": "rules-입력-검사--member-name-full",
+            "label": "내 이름 10자"
+          },
+          {
+            "id": "rules-입력-검사--member-name-banned",
+            "label": "금칙어 (서버)"
+          },
+          {
+            "id": "rules-입력-검사--sticker-taken",
+            "label": "이미 쓰는 스티커 (서버)"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-problem",
+      "data": {
+        "label": "초대 문제",
+        "tags": [
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--invite-full",
+            "label": "자리가 다 참"
+          },
+          {
+            "id": "screens-함께-목표--invite-closed",
+            "label": "들어갈 수 없음"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-board",
+      "data": {
+        "label": "함께 판 (각자 판에)",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--shared-board-390",
+            "label": "390 폭"
+          },
+          {
+            "id": "screens-함께-목표--shared-board-440",
+            "label": "440 폭"
+          },
+          {
+            "id": "screens-함께-목표--shared-waiting",
+            "label": "친구를 기다릴 때"
+          },
+          {
+            "id": "screens-함께-목표--shared-calendar-board",
+            "label": "달력판 두 주"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "one-board",
+      "data": {
+        "label": "한 판",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--one-board-screen",
+            "label": "한 판에 같이"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "friend-board",
+      "data": {
+        "label": "친구 판 크게",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--friend-dialog",
+            "label": "적립판"
+          },
+          {
+            "id": "screens-함께-목표--friend-dialog-calendar",
+            "label": "달력판"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-settings",
+      "data": {
+        "label": "함께 목표 설정",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--settings-owner",
+            "label": "만든 사람"
+          },
+          {
+            "id": "screens-함께-목표--settings-member",
+            "label": "함께하는 사람"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "block-pick",
+      "data": {
+        "label": "차단 고르기",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--block-sheet",
+            "label": "누구를 차단할까요"
+          },
+          {
+            "id": "screens-함께-목표--block-confirm",
+            "label": "차단 확인"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "blocked",
+      "data": {
+        "label": "차단한 사람",
+        "tags": [
+          "PRD 4.15",
+          "app/settings/blocked"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--blocked-people",
+            "label": "차단한 사람"
+          },
+          {
+            "id": "screens-함께-목표--blocked-people-empty",
+            "label": "없을 때"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "show-board",
+      "data": {
+        "label": "보여주기 판",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--show-board-read-only",
+            "label": "보기만"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
     }
   ],
   "edges": [
@@ -1760,6 +2059,248 @@
         "scenarios": [
           "sticker",
           "info"
+        ]
+      }
+    },
+    {
+      "id": "list-together-sheet",
+      "source": "list",
+      "target": "together-sheet",
+      "label": "+",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-sheet-new",
+      "source": "together-sheet",
+      "target": "new",
+      "label": "혼자 채우기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-sheet-together-new",
+      "source": "together-sheet",
+      "target": "together-new",
+      "label": "친구와 함께",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-new-share-sheet",
+      "source": "together-new",
+      "target": "share-sheet",
+      "label": "만들고 초대하기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "share-sheet-together-board",
+      "source": "share-sheet",
+      "target": "together-board",
+      "label": "보낸 뒤 (각자 판에)",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "share-sheet-one-board",
+      "source": "share-sheet",
+      "target": "one-board",
+      "label": "보낸 뒤 (한 판에 같이)",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "share-sheet-invite-login",
+      "source": "share-sheet",
+      "target": "invite-login",
+      "label": "친구가 링크를 열면 (로그인 전)",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "share-sheet-invite-join",
+      "source": "share-sheet",
+      "target": "invite-join",
+      "label": "친구가 링크를 열면",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "share-sheet-invite-problem",
+      "source": "share-sheet",
+      "target": "invite-problem",
+      "label": "자리가 다 찼거나 들어갈 수 없을 때",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-login-invite-join",
+      "source": "invite-login",
+      "target": "invite-join",
+      "label": "로그인",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-join-together-board",
+      "source": "invite-join",
+      "target": "together-board",
+      "label": "함께하기 (각자 판에)",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-join-one-board",
+      "source": "invite-join",
+      "target": "one-board",
+      "label": "함께하기 (한 판에 같이)",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "list-together-board",
+      "source": "list",
+      "target": "together-board",
+      "label": "함께 목표 누르기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "list-show-board",
+      "source": "list",
+      "target": "show-board",
+      "label": "보기만 목표 누르기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-board-friend-board",
+      "source": "together-board",
+      "target": "friend-board",
+      "label": "친구 줄 누르기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-board-record",
+      "source": "together-board",
+      "target": "record",
+      "label": "붙인 스티커",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-board-together-settings",
+      "source": "together-board",
+      "target": "together-settings",
+      "label": "톱니바퀴",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "one-board-together-settings",
+      "source": "one-board",
+      "target": "together-settings",
+      "label": "톱니바퀴",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-settings-share-sheet",
+      "source": "together-settings",
+      "target": "share-sheet",
+      "label": "친구 초대하기, 링크 다시 보내기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-settings-block-pick",
+      "source": "together-settings",
+      "target": "block-pick",
+      "label": "사람 차단하기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-settings-detail",
+      "source": "together-settings",
+      "target": "detail",
+      "label": "이 목표에서 나가기 (각자 판은 내 목표로 남음)",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-blocked",
+      "source": "app-settings",
+      "target": "blocked",
+      "label": "차단한 사람",
+      "data": {
+        "scenarios": [
+          "together"
         ]
       }
     }

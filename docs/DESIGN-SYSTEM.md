@@ -60,6 +60,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | Viewport background | `#AFE1CB` |
 | Main frame / LCD background | `#C7DE94` |
 | Primary button | `#FD855F` |
+| Invalid (입력 검사 실패: 입력칸 테두리와 검사 문구, 2026-11-04) | `#A61E1E` |
 | Secondary button / dialog / input | `#FEF1D1` |
 | Main text / frame / sticker ink | `#06261C` |
 | Button text | `#01241C` |

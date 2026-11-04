@@ -4,12 +4,13 @@ import {Animated,PanResponder,Pressable,View,type LayoutChangeEvent,type LayoutR
 import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
-import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,stickerCellSize,useLayoutSize,useReducedMotion} from './components';
-import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
+import {CompletionSticker,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickMotion,StickerGrid,removeStickerAction,stickerCellSize,useContentWidth,useLayoutSize,useReducedMotion} from './components';
+import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
-import {CalendarBoard,MonthNavigation} from './calendar';
+import {CalendarBoard,MonthNavigation,calendarDateKey} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 import {getLanguage,t} from '../i18n';
+import {boardCellSize,boardColumns,pageFirst,weekWindow} from './board-shape';
 
 /**
  * 홈 목록·판 상세·목표 설정 화면 (PRD 4.1–4.7, 2026-09-29 Storybook 확정 시안).
@@ -177,15 +178,21 @@ export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방�
 /**
  * 판 상세. 판 조작: 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기 (PRD 4.5).
  * 완성한 판도 진행 중인 판처럼 붙이고 뗀다(2026-10-08) — 완성 표시는 그대로 (4.7).
+ *
+ * 함께 목표 (PRD 4.15, 2026-11-04 시안 배치 A)는 선택 prop으로 같은 화면을 쓴다. 아무것도 주지 않으면 지금 화면 그대로다.
+ * boardRows를 주면 칸을 그 줄 수만큼만 보이는 작은 판이 된다: 판 제목 대신 칸 위에 이름 줄(name)과 ‹ ›,
+ * 적립판은 4칸(판 안 폭 330 이상이면 5칸), 달력판은 그 주 수만큼(지난주, 이번 주). 톱니는 머리말 오른쪽으로 옮긴다.
  */
-export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false,notice}:{/** 판 아래에 떠 있는 안내(완성 뒤 권하기, 2026-10-12) */notice?:ReactNode;/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:StickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
+export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false,notice,title,readOnly=false,hideProgress=false,members,below,boardRows}:{/** 머리말 제목. 없으면 「내 목표」(완성하면 「완성한 판」) */title?:string;/** 보기만: 톱니를 숨긴다. 작은 판(boardRows)은 칸도 누를 수 없다(보여주기 받은 판) */readOnly?:boolean;/** 진행 막대 숨기기(함께하는 판은 비교로 읽히지 않게 막대를 두지 않는다) */hideProgress?:boolean;/** 판 패널 안, 칸 위. 한 판의 사람 줄(MemberBadgeRow) */members?:ReactNode;/** 판 패널 아래(친구 판 목록, 안내 글) */below?:ReactNode;/** 보이는 줄 수. 주면 작은 판이 되고 화면 전체가 스크롤한다(함께하는 판 2, 한 판 4) */boardRows?:number;/** 판 아래에 떠 있는 안내(완성 뒤 권하기, 2026-10-12) */notice?:ReactNode;/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:StickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
   // 판은 칸 크기를 재고 다음 빈칸으로 스크롤한 뒤에 보인다. 재기 전 프레임은 픽셀 테두리가 빠져 있어,
   // 칸이 많은 판을 열 때 화면이 넘어오는 동안 그대로 보였다 (2026-09-30 실기기 녹화).
   const [ready,setReady]=useState(false);
   const reveal=useCallback(()=>setReady(true),[]);
   const bottomInset=useContext(SafeAreaInsetsContext)?.bottom??0;
+  const compact=boardRows!==undefined;
   // 달력판은 가리지 않는다. 틀은 PixelFrame이 그리기 전에 재고, 가리면 첫 layout 이벤트가 버려질 때 판이 투명한 채 남는다.
-  const visible=board.kind==='calendar'||ready;
+  // 작은 판은 쪽 크기를 폭으로만 정해 가릴 까닭이 없다.
+  const visible=board.kind==='calendar'||compact||ready;
   // 판 윗부분(테두리·제목·진행 줄)은 고정한다. 적립판은 화면에 들어가는 줄만큼씩 쪽을 나눠 좌우로 넘긴다 (2026-11-03 시안 P1).
   // 칸 영역이 쓸 수 있는 높이 = 판이 내려갈 수 있는 바닥 − 판 위쪽 − (판 높이 − 칸 영역 높이).
   // 바닥은 화면 아래에서 홈 인디케이터 여백과 RetroScreen 여백 둘(바깥, 본문)을 뺀 곳이다. 칸 영역 바깥(테두리, 제목, 진행 줄)은 쪽 수와 상관없이 같다.
@@ -200,10 +207,22 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
     }));
   },[]);
   const gridMax=frame&&gridHeight>0?frame.rootBottom-bottomInset-2*SCREEN_PADDING-frame.panelTop-(frame.panelHeight-gridHeight):null;
-  return <View ref={rootRef} onLayout={measureFrame} style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
+  const gear=readOnly?undefined:compact
+    ?<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={32}/></Pressable>
+    :<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>;
+  return <View ref={rootRef} onLayout={measureFrame} style={{flex:1}}><RetroScreen scrollable={compact} style={{gap:compact?14:12}} header={<ScreenHeader title={title??(completed?t('goal.completedBoard'):t('goal.myGoal'))} onBack={onBack} action={compact?gear:undefined}/>}>
     <View ref={panelRef} testID="board-panel" onLayout={measureFrame} style={{opacity:visible?1:0,flexShrink:1}}>
-    <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
-      <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
+    <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={compact?undefined:name} action={compact?undefined:gear}>
+      {!hideProgress&&<BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>}
+      {compact
+        ?<View style={{paddingTop:4,gap:8}}>
+          {members}
+          {board.kind==='calendar'
+            ?<CompactCalendar board={board} label={name} weeks={boardRows} readOnly={readOnly}/>
+            :<CompactTally board={board} sticker={sticker} label={name} rows={boardRows} readOnly={readOnly}/>}
+        </View>
+        :<>
+      {members}
       <View style={{height:retro.layout.progressGridGap}}/>
       {board.kind==='calendar'&&<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset,marginBottom:TALLY_PAGE_NAV_HEIGHT-44}}><MonthNavigation year={board.year} month={board.month} onChange={board.onMonthChange} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext}/></View></CalendarSwipe>}
       <View style={{flexShrink:1}} onLayout={event=>setGridHeight(Math.ceil(event.nativeEvent.layout.height))}>
@@ -214,8 +233,10 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
         :<TallyGrid board={board} sticker={sticker} onSettled={reveal} maxHeight={gridMax}/>}
       </CenteringScrollView>
       </View>
+        </>}
     </PixelPanel>
     </View>
+    {below}
   </RetroScreen>
   {notice&&<View style={{position:'absolute',left:SCREEN_PADDING,right:SCREEN_PADDING,bottom:bottomInset+SCREEN_PADDING}}>{notice}</View>}
   </View>;
@@ -357,6 +378,120 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
     if(filled&&n===lastFilled) return <View key={n} ref={board.recordSlotRef} style={{width:'100%',height:'100%'}}>{cell}</View>;
     return cell;
   })}</StickerGrid></View>;
+}
+
+// ── 작은 판 (함께 목표, PRD 4.15) ──────────────────────────────────
+/** 작은 판 칸 사이 */
+const COMPACT_GAP=6;
+/** 작은 판 위 이름 줄: [이름][범위 글자][‹][›]. 끝 쪽에서는 그 방향 버튼 자리를 비운다. */
+function CompactBoardHeader({label,range,onPrev,onNext,prevLabel,nextLabel}:{label:string;range:string;onPrev?:()=>void;onNext?:()=>void;prevLabel:string;nextLabel:string}) {
+  const slot={width:24,height:24,alignItems:'center' as const,justifyContent:'center' as const};
+  return <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+    <PixelText numberOfLines={1} style={{flex:1,fontSize:16,lineHeight:22}}>{label}</PixelText>
+    <PixelText variant="caption" style={caption}>{range}</PixelText>
+    {onPrev?<Pressable accessibilityRole="button" accessibilityLabel={prevLabel} onPress={onPrev} hitSlop={touchSlop({width:24,height:24})} style={slot}><ActionSymbol name="back" size={12}/></Pressable>:<View style={slot}/>}
+    {onNext?<Pressable accessibilityRole="button" accessibilityLabel={nextLabel} onPress={onNext} hitSlop={touchSlop({width:24,height:24})} style={slot}><PixelIcon name="chevron" size={12}/></Pressable>:<View style={slot}/>}
+  </View>;
+}
+/** 가로로 분명히 밀면 쪽을 넘긴다. 화면 왼쪽 끝은 뒤로 가기에 맡긴다(판 상세와 같은 규칙). 친구 판 줄도 쓴다. */
+export function useSwipePages(onPrev?:()=>void,onNext?:()=>void) {
+  return useMemo(()=>PanResponder.create({
+    onMoveShouldSetPanResponderCapture:(_,g)=>startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onPanResponderRelease:(_,g)=>{if(g.dx<=-48) onNext?.();else if(g.dx>=48) onPrev?.();},
+  }),[onPrev,onNext]);
+}
+/**
+ * 작은 적립판: 4칸(판 안 폭 330 이상이면 5칸) × rows줄씩 쪽을 나눠 ‹ ›와 밀기로 넘긴다.
+ * 처음에는 다음 빈칸이 든 쪽. 방금 붙인 칸이 다른 쪽이면 그 쪽으로, 쪽 마지막 칸을 붙이면 모션 뒤 다음 쪽으로 간다.
+ */
+function CompactTally({board,sticker,label,rows,readOnly}:{board:TallyBoardView;sticker:StickerId;label:string;rows:number;readOnly:boolean}) {
+  const [measured,setMeasured]=useState<number|null>(null);
+  const width=useContentWidth(measured);
+  const columns=boardColumns(width),cell=boardCellSize(width,columns,COMPACT_GAP),perPage=columns*rows;
+  const next=Array.from({length:board.total},(_,i)=>i+1).find(n=>!board.filled[n]);
+  const lastFilled=Math.max(0,...Object.keys(board.filled).map(Number));
+  const [anchor,setAnchor]=useState(()=>next??Math.max(1,lastFilled));
+  const first=pageFirst(Math.min(anchor,Math.max(1,board.total)),perPage),last=Math.min(board.total,first+perPage-1);
+  const {justPlaced}=board;
+  const shownFor=useRef<number|undefined>(undefined);
+  useEffect(()=>{
+    if(justPlaced===undefined) return;
+    if(shownFor.current!==justPlaced){
+      shownFor.current=justPlaced;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 붙인 칸이 보이도록 쪽을 맞춘다
+      if(justPlaced<first||justPlaced>last){setAnchor(justPlaced);return;}
+    }
+    if(justPlaced!==last||next===undefined||next<=last) return;
+    const id=setTimeout(()=>setAnchor(next),TALLY_PAGE_TURN_DELAY_MS);
+    return ()=>clearTimeout(id);
+  },[justPlaced,next,first,last]);
+  const prev=first>1?()=>setAnchor(first-perPage):undefined;
+  const after=last<board.total?()=>setAnchor(last+1):undefined;
+  const swipe=useSwipePages(prev,after);
+  const numbers=Array.from({length:Math.max(0,last-first+1)},(_,i)=>first+i);
+  return <View style={{gap:8}}>
+    <CompactBoardHeader label={label} range={t('board.pageRange',first,last,board.total)} onPrev={prev} onNext={after} prevLabel={t('board.previousPage')} nextLabel={t('board.nextPage')}/>
+    <View {...swipe.panHandlers} onLayout={event=>setMeasured(Math.round(event.nativeEvent.layout.width))} style={{flexDirection:'row',flexWrap:'wrap',gap:COMPACT_GAP,justifyContent:'center'}}>
+      {numbers.map(n=>{const filled=board.filled[n];return <View key={n} style={{width:cell,height:cell}}>
+        <GoalStickerCell number={n} sticker={filled??sticker} state={filled?'filled':!readOnly&&n===next?'available':'empty'} enabled={!readOnly}
+          hasRecord={board.recorded?.has(n)??false} popIn={n===justPlaced} onPress={()=>board.onPress(n)} onOpenRecord={filled&&!readOnly?()=>board.onOpenRecord(n):undefined}/>
+      </View>;})}
+    </View>
+  </View>;
+}
+/** 작은 달력판의 날짜 한 칸. 판 상세 달력과 같이 빈 날 한 번 = 붙이기, 붙은 날 한 번 = 기록 열기, 꾹 = 떼기. */
+function WeekDay({date,sticker,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
+  const month=Number(date.slice(5,7)),day=Number(date.slice(8,10));
+  const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
+  const select=()=>onSelect(date);
+  const glyph=sticker&&<StickerGlyph id={sticker} size={24}/>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${t('date.monthDay',month,day)}${sticker?`, ${t('calendar.hasSticker')}`:''}${sticker&&recorded?`, ${t('calendar.hasRecord')}`:''}`}
+    accessibilityState={{selected,disabled:!enabled}} disabled={!enabled} onPress={open??select} onLongPress={open?select:ignoreLongPress}
+    accessibilityActions={open?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(open&&e.nativeEvent.actionName===removeStickerAction.name) select();}}
+    style={{flex:1,height,opacity:enabled||sticker?1:retro.opacity.disabled}}>
+    <PixelFrame variant="thinSlot" style={{height:'100%'}} contentStyle={{height:'100%',alignItems:'center',paddingTop:3,gap:1}}>
+      <PixelText style={{fontSize:12,lineHeight:14}}>{day}</PixelText>
+      {glyph&&(popIn?<StickMotion>{glyph}</StickMotion>:glyph)}
+    </PixelFrame>
+    {sticker&&recorded&&<View pointerEvents="none" accessibilityLabel={t('calendar.hasRecord')} style={{position:'absolute',right:3,top:3,width:8,height:8,backgroundColor:retro.color.primary,borderColor:retro.color.ink,borderWidth:2}}/>}
+    {selected&&<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0}}><PixelFocusRing cornersOnly/></View>}
+  </Pressable>;
+}
+/** 길게 누르기 처리기는 빈 날에도 둔다(달력판과 같은 까닭: 떼자마자 빈칸으로 바뀐 칸에서 손을 떼면 붙이기로 처리됐다). */
+const ignoreLongPress=()=>{};
+/**
+ * 작은 달력판: 일요일부터 weeks주(지난주, 이번 주). 마지막 주가 오늘(selectedDate)이 든 주다. 오늘이 없으면(완성한 판) 그 달 마지막 날.
+ * ‹ ›와 밀기로 그 주 수만큼 앞뒤로 옮긴다. 이번 주보다 뒤로는 가지 않고, 앞으로는 붙일 수 있거나 붙은 날이 있는 동안 간다.
+ * 보는 주가 다른 달로 넘어가면 onMonthChange로 그 달 기록을 알린다.
+ */
+function CompactCalendar({board,label,weeks,readOnly}:{board:CalendarBoardView;label:string;weeks:number;readOnly:boolean}) {
+  const anchor=board.selectedDate??calendarDateKey(board.year,board.month,new Date(board.year,board.month,0).getDate());
+  const [offset,setOffset]=useState(0);
+  const dates=weekWindow(anchor,weeks,offset);
+  const usable=(list:readonly string[])=>list.some(date=>board.records[date]||board.isDateEnabled(date));
+  const move=(delta:number)=>{
+    const shown=weekWindow(anchor,weeks,offset+delta);
+    const end=shown[shown.length-1];
+    const year=Number(end.slice(0,4)),month=Number(end.slice(5,7));
+    setOffset(offset+delta);
+    if(year!==board.year||month!==board.month) board.onMonthChange(year,month);
+  };
+  const prev=usable(weekWindow(anchor,weeks,offset-1))?()=>move(-1):undefined;
+  const after=offset<0?()=>move(1):undefined;
+  const swipe=useSwipePages(prev,after);
+  const from=dates[0],to=dates[dates.length-1];
+  const range=t('board.weekRange',Number(from.slice(5,7)),Number(from.slice(8,10)),Number(to.slice(5,7)),Number(to.slice(8,10)));
+  return <View style={{gap:8}}>
+    <CompactBoardHeader label={label} range={range} onPrev={prev} onNext={after} prevLabel={t('board.previousWeeks')} nextLabel={t('board.nextWeeks')}/>
+    <View {...swipe.panHandlers} style={{gap:4}}>
+      <View style={{flexDirection:'row',gap:3}}>{[0,1,2,3,4,5,6].map(day=><PixelText key={day} variant="caption" style={[caption,{flex:1,textAlign:'center'}]}>{t('date.weekdayShort',day)}</PixelText>)}</View>
+      {Array.from({length:weeks},(_,row)=><View key={row} style={{flexDirection:'row',gap:3}}>
+        {dates.slice(row*7,row*7+7).map(date=><WeekDay key={date} date={date} sticker={board.records[date]} recorded={board.recordedDates?.has(date)??false}
+          selected={!readOnly&&date===board.selectedDate} enabled={!readOnly&&board.isDateEnabled(date)} popIn={date===board.justPlaced} height={52}
+          onSelect={board.onSelect} onOpenRecord={readOnly?undefined:board.onOpenRecord}/>)}
+      </View>)}
+    </View>
+  </View>;
 }
 
 // ── 기본 스티커 선택 ────────────────────────────────────────────────

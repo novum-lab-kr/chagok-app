@@ -10,6 +10,8 @@ export const retro = {
     ink: primitive.ink.$value,
     buttonText: primitive.buttonInk.$value,
     primary: primitive.apricot.$value,
+    /** 입력 검사 실패: 입력칸 테두리와 검사 문구 (2026-11-04) */
+    invalid: primitive.invalid.$value,
     secondary: primitive.ivory.$value,
     dialog: primitive.ivory.$value,
     transparent: 'transparent',
