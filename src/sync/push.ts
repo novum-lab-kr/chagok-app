@@ -8,10 +8,15 @@ import { deleteStickerRow } from '../repositories/stickerRepository';
 import { PhotoRejected, SyncRejected } from './contract';
 import type { GoalRow, MemberChangeRow, PhotoStore, PushRejection, RecordRow, StickerRow, SyncServer, V2Change } from './contract';
 
-// 혼자 목표 한 줄은 기기의 goals와 내 goal_members를 합친 모양이다(api_v1.sql upsert_solo_goal). mode는 보내지 않는다.
-const GOAL_SQL = `SELECT g.mode, g.id, g.name, g.board_type, g.total_slots, COALESCE(m.sticker_id, '${DEFAULT_STICKER_ID}') AS default_sticker_id,
+/**
+ * 혼자 목표 한 줄의 열과 FROM. 기기의 goals와 내 goal_members를 합친 모양이다(api_v1.sql upsert_solo_goal, replace_all).
+ * 올리기와 「이 기기 기록 유지」(restore.ts)가 같이 쓰고, 쓰는 곳이 WHERE를 붙인다.
+ */
+export const SOLO_GOAL_ROW = `g.id, g.name, g.board_type, g.total_slots, COALESCE(m.sticker_id, '${DEFAULT_STICKER_ID}') AS default_sticker_id,
         g.created_at, g.end_date, m.completed_at, m.completion_seen, m.last_placed_at, g.initial_slots, g.updated_at, m.sort_order
-   FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}' WHERE g.id = ?`;
+   FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}'`;
+// mode는 보내지 않는다. 함께 목표의 목표 행을 거르는 데만 쓴다.
+const GOAL_SQL = `SELECT g.mode, ${SOLO_GOAL_ROW} WHERE g.id = ?`;
 // 내 멤버 행(api_v2.sql sync_push의 member). 기본 스티커는 혼자 목표만 보낸다.
 const MEMBER_SQL = `SELECT g.mode, m.goal_id, m.sort_order, m.completed_at, m.completion_seen, m.last_placed_at, m.updated_at, m.sticker_id
    FROM goal_members m JOIN goals g ON g.id = m.goal_id WHERE m.goal_id = ? AND m.user_id = '${ME}'`;

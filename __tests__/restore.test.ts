@@ -241,6 +241,24 @@ describe('함께 목표 복원', () => {
       expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
     });
 
+    it('첫 백업: 지난 계정 저장소의 사진 경로를 비워 새 계정에 보내지 않고, 사진은 새 계정으로 다시 올린다', async () => {
+      const mine = await createGoal({ name: '기기 목표', boardType: 'tally', totalSlots: 2 });
+      const st = await placeSticker(mine.id, 0);
+      const r = await upsertRecord(st.id, { photoUri: 'record-photo:a.jpg', memo: null });
+      const db = await getDb();
+      await db.run("UPDATE records SET photo_remote_path = 'user-a/old.jpg' WHERE id = ?", r.id); // 지난 계정으로 올린 경로
+      await resetForNewAccount();
+      await enqueueAll();
+      expect(await db.first('SELECT photo_remote_path FROM records WHERE id = ?', r.id)).toEqual({ photo_remote_path: null });
+      const b = new FakeServer('user-b');
+      const sent: unknown[] = [];
+      const real = b.push.bind(b);
+      b.push = async (d, changes) => { sent.push(...changes); return real(d, changes); };
+      await pushOnce({ server: b, photos: new FakePhotos(), deviceId: 'phone' });
+      expect(JSON.stringify(sent)).not.toContain('user-a/old.jpg');
+      expect(await db.first('SELECT photo_remote_path FROM records WHERE id = ?', r.id)).toEqual({ photo_remote_path: `u/${r.id}.jpg` });
+    });
+
     it('연결만: 지난 계정의 함께 목표가 지워지고 이 계정 것을 처음부터 받는다', async () => {
       const { staleId } = await leftover();
       expect(await hasLocalData()).toBe(false); // 그래서 연결만(linkOnly)으로 간다
@@ -272,6 +290,24 @@ describe('누른 날 기록 (placed_days)', () => {
     const db = await getDb();
     await db.exec('DELETE FROM placed_days;');
     await restoreAll(depsOf(server));
+    const days = (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days')).map((r) => r.date_key);
+    const { localDateKey } = await import('../src/domain/dates');
+    expect(days).toEqual([localDateKey(Date.now())]);
+  });
+
+  it('함께 목표에서 친구가 붙인 칸의 날짜는 넣지 않는다', async () => {
+    const { server } = await seedServer();
+    const goalId = await seedShared(server);
+    await server.as(FRIEND).push('d', [{
+      entity: 'sticker', op: 'upsert', row: {
+        id: randomUUID(), goal_id: goalId, placed_at: 1, slot_index: 1, sticker_type: 'basic.clover', updated_at: 1,
+        date_key: '2026-10-01', tz_offset_min: 540,
+      },
+    }]);
+    const db = await getDb();
+    await db.exec('DELETE FROM placed_days;');
+    await restoreAll(depsOf(server));
+    expect(await listBoardStickers(goalId, FRIEND)).toHaveLength(2);
     const days = (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days')).map((r) => r.date_key);
     const { localDateKey } = await import('../src/domain/dates');
     expect(days).toEqual([localDateKey(Date.now())]);

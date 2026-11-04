@@ -16,7 +16,7 @@
 export const MIGRATIONS: readonly (readonly string[])[] = [
   // goals: 목표 자체의 값. 사람마다 다른 값은 goal_members에 있다.
   //   mode: solo(혼자), each(각자 판), one(한 판), show(보여주기).
-  //   owner_id: 만든 사람. 로그인 전 혼자 목표는 null이다.
+  //   owner_id: 내가 만든 목표만 'me'다. 로그인 전 혼자 목표와 다른 사람이 만든 목표는 null이다(다른 사람 id를 남기지 않는다).
   //   end_date: 달력판 종료일. 'YYYY-MM-DD' 로컬 날짜라 시간대 변환 없이 localDateKey와 비교한다.
   //   initial_slots: 적립판을 만들 때의 칸 수. 칸 늘리기의 기본값이다.
   //   max_members: 함께 목표 정원. 혼자 목표는 1.

@@ -171,6 +171,31 @@ describe('옛 구조 기기 (함께 목표 이전, 2026-11-05)', () => {
     ]);
   });
 
+  it('새로 만들다 실패하면 옛 DB가 그대로 남고, 다음 실행에서 남길 설정을 지킨 채 다시 만든다', async () => {
+    const base = await legacyDb(2);
+    let failOnce = true;
+    const flaky: DbDriver = {
+      ...base,
+      async exec(sql) {
+        if (failOnce && sql.includes('goal_members')) { failOnce = false; throw new Error('앱 종료'); }
+        return base.exec(sql);
+      },
+    };
+    setDriverFactory(async () => flaky);
+    await expect(getDb()).rejects.toThrow('앱 종료');
+    expect((await base.first<{ user_version: number }>('PRAGMA user_version'))?.user_version).toBe(2);
+    expect(await base.all('SELECT id FROM goals')).toEqual([{ id: 'old' }]);
+    expect(await base.all("SELECT value FROM app_settings WHERE key = 'errorReportOff'")).toEqual([{ value: '1' }]);
+    setDriverFactory(async () => flaky);
+    const db = await getDb();
+    expect(await currentSchemaVersion()).toBe(SCHEMA_VERSION);
+    expect(await db.all('SELECT key, value FROM app_settings ORDER BY key')).toEqual([
+      { key: 'analyticsOff', value: '1' },
+      { key: 'deviceId', value: 'dev-1' },
+      { key: 'errorReportOff', value: '1' },
+    ]);
+  });
+
   it('새 구조 기기는 다시 열어도 지우지 않는다', async () => {
     const driver = createNodeDriver();
     setDriverFactory(async () => driver);

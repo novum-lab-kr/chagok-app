@@ -1,6 +1,5 @@
 import { getDb } from '../db/client';
 import type { DbDriver } from '../db/driver';
-import { DEFAULT_STICKER_ID } from '../domain/types';
 import { setSetting } from '../repositories/appSettingsRepository';
 import { deleteGoalRows } from '../repositories/goalRepository';
 import { ME } from '../repositories/ids';
@@ -9,6 +8,7 @@ import { NotMember } from './contract';
 import type { GoalRow, GoalSnapshot, PhotoStore, RecordRow, StickerRow, V2GoalRow, V2MemberRow, V2RecordRow, V2StickerRow } from './contract';
 import { enqueue } from './outbox';
 import { pullOnce, writeGoalSnapshot, type PullDeps } from './pull';
+import { SOLO_GOAL_ROW } from './push';
 
 export type PhotoToFetch = { recordId: string; remotePath: string };
 
@@ -19,11 +19,13 @@ export async function hasLocalData(): Promise<boolean> {
 }
 
 /**
- * 지난 계정의 동기화 상태를 비운다: outbox, 함께 목표(다른 사람 멤버 행과 칸 포함), 커서, pendingGoalSync, pendingPhotoDownloads.
+ * 지난 계정의 동기화 상태를 비운다: outbox, 함께 목표(다른 사람 멤버 행과 칸 포함), 커서, pendingGoalSync, pendingPhotoDownloads,
+ * 기록의 서버 사진 경로(지난 계정 저장소 경로라 새 계정에 올리면 안 된다. 사진은 새 계정으로 다시 올린다).
  * 다음 받아 오기가 지금 계정으로 0부터 받아 함께 목표를 다시 채운다. 지운 기기 사진 경로를 돌려준다(커밋 뒤 호출자가 지운다).
  */
 async function resetSyncState(tx: DbDriver): Promise<string[]> {
   await tx.exec('DELETE FROM outbox;');
+  await tx.run('UPDATE records SET photo_remote_path = NULL');
   const photoUris: string[] = [];
   for (const { id } of await tx.all<{ id: string }>("SELECT id FROM goals WHERE mode != 'solo'")) {
     for (const r of await deleteGoalRows(tx, id)) if (r.photoUri) photoUris.push(r.photoUri);
@@ -138,8 +140,8 @@ export async function applyRestore(snap: ServerSnapshot): Promise<{ photos: Phot
     await tx.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goal_members; DELETE FROM goals; DELETE FROM outbox;');
     await setSetting('pendingGoalSync', null, tx);
     for (const g of [...solo, ...snap.shared]) await writeGoalSnapshot(tx, snap.userId, g.goal.id, g);
-    // 누른 날은 서버에 없다 — 받은 스티커의 붙인 날짜로 채운다. 이 기기 기록은 남긴다.
-    await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key) SELECT DISTINCT date_key FROM stickers;`);
+    // 누른 날은 서버에 없다 — 받은 스티커 가운데 내가 붙인 칸의 날짜로 채운다(친구 칸은 내 붙인 날이 아니다). 이 기기 기록은 남긴다.
+    await tx.exec(`INSERT OR IGNORE INTO placed_days (date_key) SELECT DISTINCT date_key FROM stickers WHERE placed_by = '${ME}';`);
     // 워치 성장 수는 복원된 스티커 수부터 다시 센다 (PRD 4.14). 같은 트랜잭션이라 사이에 예전 최고치가 끼지 않는다.
     await tx.run("DELETE FROM app_settings WHERE key = 'watchGrowth'");
     // 채운 순서를 서버에 올린다. updated_at은 그대로 둔다 — 서버는 같으면 받아들이고, 다른 기기의 더 최근 수정은 덮지 않는다.
@@ -217,11 +219,7 @@ export async function downloadRestoredPhotos(photos: PhotoStore, list: PhotoToFe
  */
 export async function replaceServerWithDevice(deps: PullDeps, deviceId: string): Promise<{ removedPhotoUris: string[] }> {
   const db = await getDb();
-  const goals = await db.all<GoalRow>(
-    `SELECT g.id, g.name, g.board_type, g.total_slots, COALESCE(m.sticker_id, '${DEFAULT_STICKER_ID}') AS default_sticker_id,
-            g.created_at, g.end_date, m.completed_at, m.completion_seen, m.last_placed_at, g.initial_slots, g.updated_at, m.sort_order
-       FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}' WHERE g.mode = 'solo'`,
-  );
+  const goals = await db.all<GoalRow>(`SELECT ${SOLO_GOAL_ROW} WHERE g.mode = 'solo'`);
   const stickers = await db.all<StickerRow>(
     `SELECT s.id, s.goal_id, s.placed_at, s.slot_index, s.sticker_type, s.updated_at, s.date_key, s.tz_offset_min FROM stickers s ${SOLO}`,
   );
@@ -233,7 +231,6 @@ export async function replaceServerWithDevice(deps: PullDeps, deviceId: string):
   const now = Date.now();
   const removed = await db.transaction(async (tx) => {
     const photoUris = await resetSyncState(tx);
-    await tx.run('UPDATE records SET photo_remote_path = NULL');
     for (const { id } of await tx.all<{ id: string }>('SELECT id FROM records WHERE photo_uri IS NOT NULL')) {
       await enqueue(tx, 'photo', id, now);
     }

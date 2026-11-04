@@ -1,5 +1,5 @@
 import { getSetting } from '../repositories/appSettingsRepository';
-import { pullOnce } from './pull';
+import { ensureSameAccount, pullOnce, type PullDeps } from './pull';
 import { pushOnce, type PushDeps } from './push';
 import { downloadRestoredPhotos, type PhotoToFetch } from './restore';
 import { createSyncScheduler } from './scheduler';
@@ -62,16 +62,20 @@ export function connectSync(deps: ConnectDeps): () => void {
 /**
  * 한 회차: 올리기 → 받아 오기 (api_v2.sql 머리 주석 「동기화 규칙」). 올리기가 실패하면 던져서 받아 오기도 하지 않는다.
  * 받아 오기가 기기에서 지운 기록의 사진 파일은 그 뒤에 지운다.
+ * 도는 사이 로그인한 계정이 바뀌면(currentUserId) 기기에 쓰지 않고 AccountChanged를 던진다.
  */
-export async function syncRound(deps: PushDeps, userId: string, removePhoto: (uri: string) => void): Promise<void> {
+export async function syncRound(
+  deps: PushDeps & Pick<PullDeps, 'currentUserId'>, userId: string, removePhoto: (uri: string) => void,
+): Promise<void> {
   await pushOnce(deps);
-  const { removedPhotoUris } = await pullOnce({ server: deps.server, userId });
+  const { removedPhotoUris } = await pullOnce({ server: deps.server, userId, currentUserId: deps.currentUserId });
   for (const uri of removedPhotoUris) {
     try { removePhoto(uri); } catch { /* 고아 파일로 남는다. 기록은 이미 지워졌다 */ }
   }
-  // 다른 기기와 친구가 올린 기록 사진을 받는다. 못 받은 것은 목록에 남아 다음 회차가 다시 받는다(회차는 실패가 아니다)
+  // 다른 기기에서 올린 내 기록 사진을 받는다(친구 기록은 기기에 오지 않는다). 못 받은 것은 목록에 남아 다음 회차가 다시 받는다(회차는 실패가 아니다)
   const pending = await getSetting('pendingPhotoDownloads');
   if (!pending) return;
+  await ensureSameAccount({ userId, currentUserId: deps.currentUserId });
   try {
     await downloadRestoredPhotos(deps.photos, JSON.parse(pending) as PhotoToFetch[]);
   } catch { /* 다음 회차 */ }

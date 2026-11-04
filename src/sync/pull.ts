@@ -22,7 +22,24 @@ import type { PhotoToFetch } from './restore';
  *   각자 판에서 나가면 서버가 내 칸을 새 혼자 목표로 옮긴다(remove_member). 옮겨 간 칸이 새 목표로 먼저 넘어가야
  *   옛 목표를 지울 때 그 칸의 기록과 사진 파일이 함께 지워지지 않는다.
  */
-export type PullDeps = { server: SyncServer; userId: string; pageSize?: number };
+export type PullDeps = {
+  server: SyncServer; userId: string; pageSize?: number;
+  /**
+   * 지금 로그인한 사용자 id. 있으면 받은 것을 기기에 쓰기 직전마다 userId와 같은지 다시 본다. 회차가 도는 사이 연결 화면이
+   * 계정을 바꾸면 새 계정의 행을 지난 계정 기준으로 쓰고 커서까지 저장하게 되므로, 그때는 쓰지 않고 AccountChanged를 던진다.
+   */
+  currentUserId?: () => Promise<string | null>;
+};
+
+/** 회차가 도는 사이 로그인한 계정이 바뀌었다. 기기에 아무것도 쓰지 않고 멈췄다(다음 회차가 새 계정으로 다시 받는다). */
+export class AccountChanged extends Error {
+  constructor() { super('account changed'); this.name = 'AccountChanged'; }
+}
+
+/** 계정이 바뀌었으면 던진다. 기기에 쓰기 직전마다 부른다. */
+export async function ensureSameAccount(deps: Pick<PullDeps, 'userId' | 'currentUserId'>): Promise<void> {
+  if (deps.currentUserId && (await deps.currentUserId()) !== deps.userId) throw new AccountChanged();
+}
 
 type Pending = { refetch: Set<string>; drop: Set<string> };
 /** 한 트랜잭션 안의 반영 상태. removed는 지운 기기 사진 경로, downloads는 새로 받을 사진(기록 id → 서버 경로). */
@@ -36,6 +53,7 @@ export async function pullOnce(deps: PullDeps): Promise<{ applied: number; refet
   for (;;) {
     const since = Number((await getSetting('syncCursor')) ?? 0);
     const page = await deps.server.pull(since, deps.pageSize ?? 500);
+    await ensureSameAccount(deps); // 반영과 커서 저장은 아래 한 트랜잭션이다
     const ctx = await db.transaction(async (tx) => {
       const c = await openCtx(tx, deps.userId);
       for (const p of page.rows) if (await applyRow(c, p)) applied += 1;
@@ -56,6 +74,7 @@ export async function pullOnce(deps: PullDeps): Promise<{ applied: number; refet
     await writePending(db, pending);
   }
   for (const goalId of pending.drop) {
+    await ensureSameAccount(deps);
     const ctx = await db.transaction(async (tx) => {
       const c: Ctx = { tx, userId: deps.userId, pending, removed: [], downloads: new Map() };
       await removeGoal(c, goalId);
@@ -85,6 +104,7 @@ async function applySnapshot(deps: PullDeps, goalId: string): Promise<string[]> 
   } catch (error) {
     if (!(error instanceof NotMember)) throw error;
   }
+  await ensureSameAccount(deps);
   const db = await getDb();
   return db.transaction((tx) => writeGoalSnapshot(tx, deps.userId, goalId, snap));
 }
@@ -183,16 +203,21 @@ async function removeMember(ctx: Ctx, goalId: string, userId: string): Promise<b
   return true;
 }
 
-/** 목표를 기기에서 지운다. 아직 올리지 않은 목표 변경이 있으면 그대로 둔다(올리면 서버에서 되살아난다). */
+/**
+ * 목표를 기기에서 지운다. 혼자 목표에 아직 올리지 않은 목표 변경이 있으면 그대로 둔다(올리면 서버에서 되살아난다).
+ * 함께 목표는 목표 행을 올리지 않으므로(toChange가 null) 그 항목이 남아 있어도 지운다.
+ */
 async function removeGoal(ctx: Ctx, goalId: string): Promise<boolean> {
   ctx.pending.refetch.delete(goalId);
   ctx.pending.drop.delete(goalId);
   const { tx } = ctx;
-  if (await queued(tx, 'goal', goalId)) return false;
+  const solo = await exists(tx, "SELECT 1 AS x FROM goals WHERE id = ? AND mode = 'solo'", goalId);
+  if (solo && await queued(tx, 'goal', goalId)) return false;
   const stickers = await tx.all<{ id: string }>('SELECT id FROM stickers WHERE goal_id = ?', goalId);
   const records = await deleteGoalRows(tx, goalId);
   for (const r of records) collect(ctx, r);
   // 서버에 없는 목표라 그 목표의 올리지 못한 행은 다시 보낼 곳이 없다(내보내진 뒤 붙인 칸은 not_allowed로 보류된 채 남는다)
+  await forget(tx, 'goal', [goalId]); // 함께 목표에 남은 목표 항목. 남기면 행이 없어 목표 지우기로 올라간다
   await forget(tx, 'member', [goalId]);
   await forget(tx, 'sticker', stickers.map((s) => s.id));
   await forget(tx, 'record', records.map((r) => r.recordId));
@@ -203,7 +228,7 @@ async function removeGoal(ctx: Ctx, goalId: string): Promise<boolean> {
  * 받아 오기가 지운 행의 outbox 항목을 지운다. 만들지는 않는다.
  * photo 항목은 남긴다: 기록이 없으면 pushPhoto가 서버 사진만 지우므로, 서버에 남은 사진 파일을 치우는 일이 된다.
  */
-async function forget(tx: DbDriver, entity: 'member' | 'sticker' | 'record', ids: string[]): Promise<void> {
+async function forget(tx: DbDriver, entity: 'goal' | 'member' | 'sticker' | 'record', ids: string[]): Promise<void> {
   for (const id of ids) await tx.run('DELETE FROM outbox WHERE entity = ? AND row_id = ?', entity, id);
 }
 
@@ -255,6 +280,8 @@ async function replaceGoal(ctx: Ctx, snap: GoalSnapshot): Promise<void> {
 
 // ───────────── 쓰기 ─────────────
 // force가 아니면 updated_at이 크거나 같을 때만 쓴다. pull_goal 결과(지금 상태 전체)는 force로 쓴다.
+// 목표의 owner_id는 내가 만든 목표만 ME로 적고 나머지는 비운다. 다른 사람(차단한 사람일 수도 있다) id를 기기에 남기지 않는다.
+// 만든 사람인지는 멤버 행의 role로 안다.
 
 async function writeGoal(ctx: Ctx, g: V2GoalRow, force: boolean): Promise<void> {
   await ctx.tx.run(
@@ -264,7 +291,7 @@ async function writeGoal(ctx: Ctx, g: V2GoalRow, force: boolean): Promise<void> 
        board_type = excluded.board_type, total_slots = excluded.total_slots, initial_slots = excluded.initial_slots,
        end_date = excluded.end_date, max_members = excluded.max_members, created_at = excluded.created_at, updated_at = excluded.updated_at
      WHERE ? OR excluded.updated_at >= goals.updated_at`,
-    g.id, g.mode, toLocal(ctx, g.owner_id), g.name, g.board_type, g.total_slots, g.initial_slots, g.end_date, g.max_members,
+    g.id, g.mode, g.owner_id === ctx.userId ? ME : null, g.name, g.board_type, g.total_slots, g.initial_slots, g.end_date, g.max_members,
     g.created_at, g.updated_at, force ? 1 : 0,
   );
 }

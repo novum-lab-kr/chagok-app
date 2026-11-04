@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { createGoal, listGoals } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
 import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
-import { getSetting } from '../src/repositories/appSettingsRepository';
+import { getSetting, setSetting } from '../src/repositories/appSettingsRepository';
 import { connectSync, syncRound } from '../src/sync/connect';
+import { AccountChanged } from '../src/sync/pull';
 import { pushOnce } from '../src/sync/push';
 import { requestSync, subscribeResume } from '../src/sync/syncGate';
 import { FakePhotos, FakeServer } from './support/fakeServer';
@@ -249,5 +250,37 @@ describe('한 회차 (syncRound)', () => {
     await syncRound(deps(server, photos), server.userId, () => {});
     expect((await getRecord(s.id))?.photoUri).toBe(`record-photo:${recordId}-restored.jpg`);
     expect(await getSetting('pendingPhotoDownloads')).toBeNull();
+  });
+
+  it('받는 사이 계정이 바뀌면 기기에 쓰지 않고 AccountChanged로 멈춘다', async () => {
+    const server = new FakeServer();
+    const photos = new FakePhotos();
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const s = await placeSticker(g.id, 0);
+    await pushOnce(deps(server, photos));
+    const recordId = randomUUID();
+    await server.push('tablet', [{ entity: 'record', op: 'upsert', row: { id: recordId, sticker_id: s.id, memo: null, photo_remote_path: 'u/x.jpg', created_at: 1, updated_at: Date.now() + 1000 } }]);
+    const cursor = await getSetting('syncCursor');
+    let current: string | null = server.userId;
+    const pull = server.pull.bind(server);
+    server.pull = async (since, limit) => { const page = await pull(since, limit); current = 'user-b'; return page; }; // 받는 사이 연결 화면이 계정을 바꿨다
+    await expect(syncRound({ ...deps(server, photos), currentUserId: async () => current }, server.userId, () => {}))
+      .rejects.toBeInstanceOf(AccountChanged);
+    expect(await getRecord(s.id)).toBeNull();
+    expect(await getSetting('syncCursor')).toBe(cursor);
+  });
+
+  it('받아 오기 뒤 계정이 바뀌면 사진을 받지 않는다', async () => {
+    const server = new FakeServer();
+    const photos = new FakePhotos();
+    await setSetting('pendingPhotoDownloads', JSON.stringify([{ recordId: 'r1', remotePath: 'u/r1.jpg' }]));
+    let downloads = 0;
+    photos.download = async () => { downloads += 1; return 'record-photo:x.jpg'; };
+    let calls = 0;
+    // 받아 오기의 확인은 지나고(첫 확인), 사진 받기 직전 확인에서 바뀌었다
+    const currentUserId = async () => (++calls > 1 ? 'user-b' : server.userId);
+    await expect(syncRound({ ...deps(server, photos), currentUserId }, server.userId, () => {})).rejects.toBeInstanceOf(AccountChanged);
+    expect(downloads).toBe(0);
+    expect(await getSetting('pendingPhotoDownloads')).not.toBeNull();
   });
 });

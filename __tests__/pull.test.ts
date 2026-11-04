@@ -6,7 +6,7 @@ import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
 import { listBoardStickers, listStickers, placeSticker } from '../src/repositories/stickerRepository';
 import { getSetting } from '../src/repositories/appSettingsRepository';
 import { pendingCount } from '../src/sync/outbox';
-import { pullOnce, refetchGoal } from '../src/sync/pull';
+import { AccountChanged, pullOnce, refetchGoal } from '../src/sync/pull';
 import { pushOnce } from '../src/sync/push';
 import { FakePhotos, FakeServer } from './support/fakeServer';
 import { goal } from './support/syncServerContract';
@@ -220,6 +220,47 @@ describe('pullOnce', () => {
     expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
   });
 
+  it('다른 사람이 만든 목표의 만든 사람 id는 기기에 남기지 않는다(내가 만든 목표만 me)', async () => {
+    const server = new FakeServer();
+    const { goalId } = joinShared(server, 'each');
+    await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    await push(server);
+    await pullOnce(depsOf(server));
+    const db = await getDb();
+    expect(await db.first('SELECT owner_id FROM goals WHERE id = ?', goalId)).toEqual({ owner_id: null });
+    expect(JSON.stringify(await db.all('SELECT * FROM goals'))).not.toContain(FRIEND);
+    expect((await getGoal(goalId))?.role).toBe('member'); // 만든 사람인지는 멤버 행의 role로 안다
+  });
+
+  it('함께 목표에 목표 항목이 outbox에 남아 있어도 내보내지면 기기에서 지운다', async () => {
+    const server = new FakeServer();
+    const { friend, goalId } = joinShared(server, 'one');
+    await pullOnce(depsOf(server));
+    await (await getDb()).run("INSERT INTO outbox (entity, row_id, queued_at) VALUES ('goal', ?, 1)", goalId);
+    friend.kick(goalId, server.userId);
+    await pullOnce(depsOf(server));
+    expect(await getGoal(goalId)).toBeNull();
+    expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+  });
+
+  it('도는 사이 로그인한 계정이 바뀌면 받은 행을 쓰지 않고 커서도 그대로 둔다', async () => {
+    const server = new FakeServer();
+    await server.push('tablet', [{ entity: 'goal', op: 'upsert', row: goal(randomUUID(), 1, '다른 계정 목표') }]);
+    let current: string | null = server.userId;
+    const real = server.pull.bind(server);
+    server.pull = async (since, limit) => { const page = await real(since, limit); current = 'user-b'; return page; };
+    await expect(pullOnce({ ...depsOf(server), currentUserId: async () => current })).rejects.toBeInstanceOf(AccountChanged);
+    expect(await listGoals()).toEqual([]);
+    expect(await getSetting('syncCursor')).toBeNull();
+  });
+
+  it('계정이 그대로면 확인을 거쳐도 평소처럼 받는다', async () => {
+    const server = new FakeServer();
+    await server.push('tablet', [{ entity: 'goal', op: 'upsert', row: goal(randomUUID(), 1, '독서') }]);
+    await pullOnce({ ...depsOf(server), currentUserId: async () => server.userId });
+    expect((await listGoals()).map((g) => g.name)).toEqual(['독서']);
+  });
+
   it('outbox에 남은 내 멤버 행 변경(순서)은 다른 기기 값으로 덮지 않는다', async () => {
     const server = new FakeServer();
     const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 3 });
@@ -236,6 +277,16 @@ describe('pullOnce', () => {
 });
 
 describe('refetchGoal', () => {
+  it('목표를 받는 사이 계정이 바뀌면 기기에 쓰지 않는다', async () => {
+    const server = new FakeServer();
+    const { goalId } = joinShared(server, 'each');
+    let current: string | null = server.userId;
+    const real = server.pullGoal.bind(server);
+    server.pullGoal = async (id) => { const snap = await real(id); current = 'user-b'; return snap; };
+    await expect(refetchGoal({ ...depsOf(server), currentUserId: async () => current }, goalId)).rejects.toBeInstanceOf(AccountChanged);
+    expect(await getGoal(goalId)).toBeNull();
+  });
+
   it('멤버가 아니면(not_member) 그 목표를 기기에서 지운다', async () => {
     const server = new FakeServer();
     const { friend, goalId } = joinShared(server, 'one');

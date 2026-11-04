@@ -8,7 +8,7 @@
 - 기준: `origin/release/1.1.0`(f1126da, 서버 2판 포함) + `docs/friends-goal`(기획, 시안, 디자인 시스템, 스토리) 병합 `e5c611e`
 - 링크해 둔 것: `node_modules`(1.1.0 패키지가 있는 `test-1.0.1-integration` 것), `.env.local`, `.secrets`(main 체크아웃). git이 무시하는 `src/design-system/apple-siwa-logo.generated.ts`를 복사해 둠
 - 확인: `npm run typecheck` 오류 없음, `npm test` 709 통과(서버 시험 68 건너뜀)
-- 버전: 함께 목표는 1.1.0 다음 버전. 버전 이름은 `docs/RELEASE-VERSIONING.md`로 정한다(기능 추가라 MINOR, 1.2.0 후보). 사용자에게 확인
+- 버전: 함께 목표는 1.1.0에 같이 넣는다. 버전은 `1.1.0` 그대로(2026-11-05 사용자 결정)
 
 ## 정본 문서
 
@@ -34,11 +34,13 @@
 ## 개발 목록 (빠짐없이, 순서대로)
 
 ### A. 데이터와 동기화
-1. 로컬 DB 새 판(`src/db/schema.ts` 끝에 더하기): goals(목표 자체), goal_members(사람마다 값: 순서, 기본 스티커, 완성, 마지막 붙인 시각, 이름, 역할), stickers(판 주인, 붙인 사람), records(공개 범위). 기존 기기 데이터 옮기기(내 목표마다 멤버 행 하나). 마이그레이션 시험(`__tests__/migrations.test.ts`)
-2. 리포지토리와 도메인 타입(`Goal`, `GoalShare`/멤버, 판 주인)을 새 표로. 위젯, 워치, 기록 탭, 완성, 목표 순서가 그대로 도는지
-3. 2판 동기화로 바꾸기: 올리기 `sync_push`(행별 거절 `slot_taken`, `not_allowed` 처리: 한 판 칸 되돌리기), 받아 오기 `sync_pull(since)` 주기 실행(앱 시작, 포그라운드, 목표 탭, 판 화면, 30초), 새로 들어간 목표는 `pull_goal`. 멤버 행 `gone: true`면 그 사람 판 지우기, 목표 행이 오면 `pull_goal`로 다시 받기, 차단한 쪽은 상대를 직접 지우고 풀면 `pull_goal`
-4. 1.1.0 호환 길(push_changes, pull_changes, replace_all)에서 새 길로 넘어가는 기기 처리(첫 실행 때 커서 정하기, 복원 흐름 `restore.ts`, 계정 연결 `connectAccount.ts`)
-5. 로그아웃과 계정 삭제 때 기기에 남은 다른 사람 이름과 칸, 함께 목표 캐시 지우기
+1~5는 `feat/friends-goal`에서 끝냈다(계획 `docs/superpowers/plans/2026-11-05-friends-goal-data-sync.md`). 1의 기존 기기 데이터는 옮기지 않고 지운다(1.0.0 사용자 0명, RELEASE-1.1.0 「1.0.0 기기 DB 관문」).
+
+1. (끝남) 로컬 DB 새 판(`src/db/schema.ts` 끝에 더하기): goals(목표 자체), goal_members(사람마다 값: 순서, 기본 스티커, 완성, 마지막 붙인 시각, 이름, 역할), stickers(판 주인, 붙인 사람), records(공개 범위). 기존 기기 데이터 옮기기(내 목표마다 멤버 행 하나). 마이그레이션 시험(`__tests__/migrations.test.ts`)
+2. (끝남) 리포지토리와 도메인 타입(`Goal`, `GoalShare`/멤버, 판 주인)을 새 표로. 위젯, 워치, 기록 탭, 완성, 목표 순서가 그대로 도는지
+3. (끝남) 2판 동기화로 바꾸기: 올리기 `sync_push`(행별 거절 `slot_taken`, `not_allowed` 처리: 한 판 칸 되돌리기), 받아 오기 `sync_pull(since)` 주기 실행(앱 시작, 포그라운드, 목표 탭, 판 화면, 30초), 새로 들어간 목표는 `pull_goal`. 멤버 행 `gone: true`면 그 사람 판 지우기, 목표 행이 오면 `pull_goal`로 다시 받기, 차단한 쪽은 상대를 직접 지우고 풀면 `pull_goal`
+4. (끝남) 1.1.0 호환 길(push_changes, pull_changes, replace_all)에서 새 길로 넘어가는 기기 처리(첫 실행 때 커서 정하기, 복원 흐름 `restore.ts`, 계정 연결 `connectAccount.ts`)
+5. (끝남) 로그아웃과 계정 삭제 때 기기에 남은 다른 사람 이름과 칸, 함께 목표 캐시 지우기
 6. 오프라인: 각자 판은 지금처럼 붙이고 나중에 올림, 한 판은 연결 없으면 「연결되면 붙일 수 있어요」
 
 ### B. 화면 연결 (`stories/TogetherGoal.stories.tsx`와 시안 9판 기준)

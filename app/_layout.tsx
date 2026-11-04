@@ -20,6 +20,7 @@ import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus'
 import { syncDepsFor } from '../src/sync/appSync';
 import { subscribeLocalChange } from '../src/sync/changes';
 import { connectSync, syncRound } from '../src/sync/connect';
+import { AccountChanged } from '../src/sync/pull';
 import { recoverInterruptedConnect, rememberAccount } from '../src/sync/connectMarker';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { isSyncPaused, requestSync, subscribeResume } from '../src/sync/syncGate';
@@ -178,8 +179,12 @@ function RootLayout() {
             if (error) throw error;
             // 로그아웃이 실패해 세션 정리만 했으면 이 스케줄러는 지난 사용자 것이다 — 보내지 않는다
             if (data.session?.user.id !== userId) return;
-            await syncRound(await syncDepsFor(supabase, userId), userId, removeManagedRecordPhoto);
+            // 도는 사이 연결 화면이 계정을 바꾸면 받은 것을 쓰기 전에 멈춘다(AccountChanged)
+            const currentUserId = async () => (await supabase.auth.getSession()).data.session?.user.id ?? null;
+            await syncRound({ ...await syncDepsFor(supabase, userId), currentUserId }, userId, removeManagedRecordPhoto);
           } catch (error) {
+            // 지난 계정의 회차다. 실패도 성공도 남기지 않는다 — 새 계정 스케줄러가 다시 돈다
+            if (error instanceof AccountChanged) return;
             await recordSyncFailure();
             throw error; // 스케줄러가 다시 시도한다
           }
