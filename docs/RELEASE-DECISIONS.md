@@ -8,11 +8,11 @@
 
 | 날짜 | 항목 | 결정 |
 |---|---|---|
-| 2026-10-29 | 정책 사이트 주소 | **`https://chagok.novum-lab.com` 하나로 운영 VPS에 올렸다**(Netlify에서 옮김). `/`는 랜딩, `/support/` 지원, `/terms/` `/privacy/` `/delete-account/` `/versions.json`은 예전 경로 그대로. 정책 저장소 `main`에 push하면 GitHub Actions가 배포한다. 앱 안 약관과 처리방침 링크는 이 주소를 본다(`src/policy/urls.ts`). 스토어에 적을 주소: 지원 URL `https://chagok.novum-lab.com/support/`, 처리방침 URL `https://chagok.novum-lab.com/privacy/`, 계정 삭제 `https://chagok.novum-lab.com/delete-account/`, 개발자 웹사이트 `https://chagok.novum-lab.com`. `app-ads.txt`는 아직 이 사이트에 없다(AdMob 한 줄을 받아 정책 저장소에 더한다). Netlify 옛 주소는 이 주소가 든 앱 빌드가 깔린 뒤 내린다 |
+| 2026-10-29 | 정책 사이트 주소 | **`https://chagok.novum-lab.com` 하나로 운영 VPS에 올렸다**(Netlify에서 옮김). `/`는 랜딩, `/support/` 지원, `/terms/` `/privacy/` `/delete-account/` `/versions.json`은 예전 경로 그대로. 원본은 `novum-web` 레포 `chagok/`이고, 그 레포 `main`에 합치면 GitHub Actions가 배포한다. 앱 안 약관과 처리방침 링크는 이 주소를 본다(`src/policy/urls.ts`). 스토어에 적을 주소: 지원 URL `https://chagok.novum-lab.com/support/`, 처리방침 URL `https://chagok.novum-lab.com/privacy/`, 계정 삭제 `https://chagok.novum-lab.com/delete-account/`, 개발자 웹사이트 `https://chagok.novum-lab.com`. `app-ads.txt`는 이 사이트 루트에 있다(`chagok/app-ads.txt`). |
 | 2026-10-26 | 결제 연결(iOS) | RevenueCat에 App Store 앱(번들 `com.novumlab.chagok`, 앱 내 구입 키 연결)과 상품 5개를 붙이고 권한 `ad_free`, `pack_<묶음 ID>`에 연결했다. EAS `production`의 `EXPO_PUBLIC_REVENUECAT_KEY`는 App Store 키, `preview`와 개발은 Test Store 키. Test Store 상품도 `com.novumlab.chagok.*`로 다시 만들고, 옛 `com.novum.chagok.*` 상품과 무료가 된 동물, 감정 권한은 Inactive로 돌렸다. 앱은 오퍼링을 쓰지 않는다(`default`는 맞춰만 둠) |
 | 2026-10-26 | 광고 연결(iOS) | AdMob 앱 「차곡차곡」(iOS) 등록, 광고 단위 `home_banner`(배너)와 `pack_trial_rewarded`(보상형). **출시 빌드의 iOS만 실제 ID**, 개발 빌드(`__DEV__`)와 Android는 Google 테스트 ID(개발 중 실제 광고는 무효 트래픽으로 계정이 제한될 수 있다). Android는 AdMob에 앱을 등록할 때 바꾼다 |
 | 2026-10-26 | 광고 등급 상한 | **AdMob 계정 수준 G(일반 잠재고객)**. App Store 4+ 예정과 맞춘다(심사 지침 2.5.18: 광고는 앱 연령 등급에 맞아야 한다). PG와의 예상 수익 차이는 5%p 안팎(콘솔 추정). 콘솔 설정이라 앱 업데이트 없이 바꿀 수 있고, 맞춤 광고로 바꿀 때(출시 뒤 계획) 다시 본다. 민감한 표준 카테고리는 **데이트, 선정성, 「성, 임신 및 출산 관련 건강」, 성에 대한 언급, 소셜 카지노 게임** 5개를 막고 나머지 6개는 허용. 제한된 카테고리(도박 및 베팅, 주류)는 기본값대로 막힘 |
-| 2026-10-26 | `app-ads.txt` 위치 | **개발자 웹사이트 도메인을 만든 뒤 그 루트에 둔다.** AdMob 안내상 App Store에 적는 개발자 웹사이트와 같은 도메인이어야 한다. 아래 10-13 「정책 저장소 루트」를 바꿈. 내용은 AdMob 콘솔 「앱 → app-ads.txt 설정하기」의 한 줄 |
+| 2026-10-26 | `app-ads.txt` 위치 | **개발자 웹사이트 도메인을 만든 뒤 그 루트에 둔다.** AdMob 안내상 App Store에 적는 개발자 웹사이트와 같은 도메인이어야 한다. 아래 10-13 결정을 바꿈. 내용은 AdMob 콘솔 「앱 → app-ads.txt 설정하기」의 한 줄 |
 | 2026-10-20 | 앱 식별자 | **`com.novumlab.chagok`** — iOS 번들 ID와 Android 패키지 이름 공통(Android와 인앱 상품 ID는 하이픈을 못 써서 `novum-lab` 대신 `novumlab`). 출시 뒤 바꿀 수 없다. iOS 위젯 `com.novumlab.chagok.ExpoWidgetsTarget`과 App Group `group.com.novumlab.chagok`(expo-widgets가 앱 ID로 만든다), Apple Watch `com.novumlab.chagok.watch`, 워치 위젯 `com.novumlab.chagok.watch.widgets`, 워치 App Group `group.com.novumlab.chagok.watch`. Wear OS는 같은 패키지 이름. 커스텀 스킴 `chagok://`는 별개. 이전: `com.novum.chagok`(옛 Apple 계정, 2026-10-04) |
 | 2026-10-04 | 스토어 빌드 | EAS Build. 빌드 번호는 EAS 원격 자동 증가(`appVersionSource: remote`, `autoIncrement`) |
 | 2026-10-04 | 버전 규칙 | 사용자 버전 `MAJOR.MINOR.PATCH`는 사람이 올리고, 첫 출시 `1.0.0`. 출시마다 버전·스토어 문구·git 태그. Wear OS `versionCode`는 `1000001`부터 직접 — [버전 규칙](RELEASE-VERSIONING.md) |
@@ -47,7 +47,7 @@
 | 2026-10-13 | 상품 ID | 묶음 ID는 `<주제>_<세부>`, 첫 묶음은 `normal` — `sports_normal` `snack_normal` `objects_normal` `animals_normal` `emotions_normal` `weather_normal`(무료 `basic`은 그대로). 상품 ID는 `com.novumlab.chagok.pack.<묶음 ID>`, 광고 제거는 `com.novumlab.chagok.adfree`. 실제 스토어 ID는 지운 뒤에도 다시 못 쓰므로 한 번 쓴 묶음 ID는 재사용하지 않는다. 규칙은 `src/stickers/color/README.md` |
 | 2026-10-13 | 광고 SDK | **AdMob, 테스트 광고 ID로 지금 개발**한다. `react-native-google-mobile-ads`는 버전을 고정하고, 17.1~17.2의 Android 설정 플러그인 오류(#903)가 고쳐진 버전인지 도입 때 확인한다. → 2026-10-13 **17.0.0으로 고정**(#903은 10-01에 고쳐졌지만 17.2.0 뒤로 새 판이 없다. 17.1에서 더해진 Android 광고 엔진 고르기는 쓰지 않는다). 고친 판이 나오면 올린다 |
 | 2026-10-20 | AdMob 명의 | **김은주** — Apple 계정과 같게. 사업자등록이 나오면 그 정보로 가입한다. 이전: 남편 명의(노붐, 2026-10-13) |
-| 2026-10-13 | `app-ads.txt` | **정책 저장소(`chagok-app-policy`) 루트에 둔다.** 개발자 웹사이트는 우선 `https://chagok-app-terms.netlify.app`. 파일 내용은 AdMob 가입 뒤 받는 한 줄. 그 사이트 첫 화면을 지원 URL로도 쓰려면 **문의 이메일이 첫 화면에 보여야 한다**(App Review 1.5, Support URL은 실제 연락처로 이어져야 함) — 지금은 처리방침 안에만 있다 |
+| 2026-10-13 | `app-ads.txt` | **(10-26에 바뀜) 처음 정책 사이트 루트에 둔다.** 파일 내용은 AdMob 가입 뒤 받는 한 줄. 그 사이트 첫 화면을 지원 URL로도 쓰려면 **문의 이메일이 첫 화면에 보여야 한다**(App Review 1.5, Support URL은 실제 연락처로 이어져야 함) — 지금은 처리방침 안에만 있다 |
 | 2026-10-13 | 만 14세 미만 광고 | **나이를 모르면 일반 비맞춤, 만 14세 미만이라고 답한 사람만 아동 처리(AdMob CHILD).** 계정 연결 때 받은 응답을 기기에 저장해 그 기기의 광고 요청에 붙인다. Play 대상 연령은 13세 이상으로 신고. 남는 위험(결정 시안에 적음): 로그인하지 않은 어린이는 걸러지지 않아 Android 광고 ID가 그대로 간다. → **2026-10-21 뺐다**(아래) |
 | 2026-10-21 | 만 14세 미만 링크 | **동의 화면의 「만 14세 미만이에요」 링크와 광고 아동 처리를 뺀다.** 만 14세 이상 체크는 남겨 미만은 계정을 연결하지 않는다. 광고는 모든 기기에 비맞춤 하나로 요청한다(AdMob `ageRestrictedTreatment`를 설정하지 않음). Play 대상 연령 13세 이상 신고는 그대로. 남는 위험: 아이가 쓰는 기기도 아동 처리 없이 광고를 받는다. AdMob 콘솔의 광고 등급 상한은 출시 전 점검에서 정한다 |
 | 2026-10-14 | 서비스 종료 때 구매 복원 | **종료를 알린 날부터 종료일까지만 [구매 복원]을 보장한다(약관 8조 4항).** 종료해도 기록·산 상품은 기기에 있어 그 앱에서 계속 쓴다. 종료 절차: 30일 전 공지 → 종료일까지 RevenueCat 유지 → 종료일 뒤 닫는다. 종료일 뒤 새 설치·기기 변경은 복원되지 않을 수 있다 |
@@ -70,7 +70,7 @@
 - **같은 묶음을 붙인 날 보상으로 다시 체험할 수 있는지.** 컬러 자산은 `src/stickers/color/`(Storybook `Stickers / Color Assets`). 구독 가격·출시 시점(나중).
 - **약관 운영자:** 김은주 명의 사업자로 한다. 사업자등록 승인 뒤 상호와 번호를 받아 약관, 처리방침, 정책 사이트 첫 화면에 넣는다(2026-10-20).
 - 통신판매업 신고 필요 여부(새 사업자가 간이과세자인지, 스토어 인앱 판매가 해당하는지 — 구청·세무사 확인). 신고 대상이면 정책 사이트에 사업자 정보 표시. Google Play 계정 유형(위).
-- **참고 — 정책 사이트 주소 옮기기.** → 2026-10-29 `https://chagok.novum-lab.com`로 옮겼다(위 확정 표). 앱 안 링크는 바꿨고, 남은 것은 두 스토어에 적는 주소와 `app-ads.txt`. 이전 기록: 배포된 Netlify 화면에서 「Powered by Netlify」 표시가 약관 내용을 가린다(사용자 확인, 2026-10-13). 자체 도메인으로 옮길지 고민 중이다. 구현은 지금 주소로 끝내고, 옮기면 바꿀 곳: 두 스토어의 개발자 웹사이트·지원 URL·처리방침 URL, 앱 안의 약관·처리방침 링크, `app-ads.txt` 위치(AdMob이 다시 확인할 때까지 며칠 걸릴 수 있다).
+- **참고 — 정책 사이트 주소 옮기기.** → 2026-10-29 `https://chagok.novum-lab.com`로 옮겼다(위 확정 표). 앱 안 링크와 `app-ads.txt`는 옮겼고, 남은 것은 두 스토어에 적는 주소다.
 
 ## 해외 확장 — 나중에 (2026-10-05 기록)
 

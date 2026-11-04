@@ -5,7 +5,7 @@
 
 ## 0. 어떤 이전인지에 따라 할 일이 다르다
 
-- **GitHub에서 저장소만 옮기는 경우(예: Org `nol-meok`으로 transfer)** — 이 컴퓨터의 폴더는 그대로라 다시 clone할 필요가 없다. `git remote set-url origin <새 주소>`만 바꾸면 된다(GitHub가 예전 주소를 한동안 넘겨 주지만 바꿔 두는 것이 맞다). git이 무시하는 파일(`.omc/`, `.env.local`, `.secrets/`, `node_modules/`)과 에이전트 메모리도 폴더 경로가 같으니 그대로 쓴다. 정책 저장소가 이미 이렇게 옮겨졌다.
+- **GitHub에서 저장소만 옮기는 경우(예: Org `nol-meok`으로 transfer)** — 이 컴퓨터의 폴더는 그대로라 다시 clone할 필요가 없다. `git remote set-url origin <새 주소>`만 바꾸면 된다(GitHub가 예전 주소를 한동안 넘겨 주지만 바꿔 두는 것이 맞다). git이 무시하는 파일(`.omc/`, `.env.local`, `.secrets/`, `node_modules/`)과 에이전트 메모리도 폴더 경로가 같으니 그대로 쓴다.
 - **새로 clone하거나 폴더 위치를 바꾸는 경우** — 아래 1~3절을 모두 한다. git이 무시하는 파일은 따라오지 않고, 메모리는 폴더 경로 기준이라 새 경로에서 비어 보인다.
 
 ## 1. git에 없어서 손으로 옮겨야 하는 것
@@ -21,7 +21,7 @@
 
 ## 2. 원격 주소
 
-두 저장소는 2026-10-04 GitHub Org `nol-meok`을 거쳐 2026-10-17 `novum-lab-kr`로 옮겼다. `origin`은 `https://eunjukkkkim@github.com/novum-lab-kr/chagok-app.git`, `https://eunjukkkkim@github.com/novum-lab-kr/chagok-app-policy.git`이다. 앞의 `eunjukkkkim@`은 로그인 계정을 고르는 용도라, 빼면 「Repository not found」가 난다.
+저장소는 2026-10-04 GitHub Org `nol-meok`을 거쳐 2026-10-17 `novum-lab-kr`로 옮겼다. `origin`은 `https://eunjukkkkim@github.com/novum-lab-kr/chagok-app.git`이다. 앞의 `eunjukkkkim@`은 로그인 계정을 고르는 용도라, 빼면 「Repository not found」가 난다.
 
 **저장소 밖에 있던 근거 문서:** PRD 12절이 가리키던 원 인터뷰는 2026-10-04 [archive/](../archive/deep-interview-chamjal-sticker-app.md)로 옮겼다.
 
@@ -33,8 +33,7 @@
 
 1. 위 1절 파일 복사, `npm install` (react-dom override 유지 — `npm ls react-dom --all`이 `19.2.3` 하나인지).
 2. 확인: `npm test`, `npm run test:components`, `npm run typecheck`, `npm run lint`, `npm run test:server`(관리자 키 필요).
-3. 원격 주소가 바뀌면 `git remote set-url origin <새 주소>`. 정책 사이트는 정책 저장소 `main`에 push하면 GitHub Actions가 운영 VPS로 올린다(2026-10-29~). 정책 저장소를 옮기면 Actions secret(배포 키와 서버 주소)도 새 저장소에 다시 넣는다.
-   - 정책 저장소는 이미 `nol-meok`을 거쳐 2026-10-17 `novum-lab-kr`로 옮겼다. (2026-10-29 전 Netlify 시절 기록) Netlify의 GitHub 앱이 `novum-lab-kr` Org 저장소에 접근할 수 있는지, 사이트 설정(Build & deploy → Repository)이 새 주소를 가리키는지 확인한다. 사이트는 2026-10-04에도 열렸지만(200), 다음 `publish` push가 배포되는지는 확인 전이다.
+3. 원격 주소가 바뀌면 `git remote set-url origin <새 주소>`. 약관과 처리방침 사이트는 `novum-web` 레포 `chagok/`에 있고 배포도 그 레포가 맡는다.
 4. 같은 방식으로 작업되는지 확인: 새 세션의 첫 응답이 한국어인지, 시안을 아티팩트로 내는지.
 
 ## 4. 외부에 걸린 것 (레포와 별개로 계속 쓰임)

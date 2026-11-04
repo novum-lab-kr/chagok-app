@@ -2,7 +2,7 @@ import type { DateKey } from '../domain/dates';
 
 export type PolicyKind = 'terms' | 'privacy';
 
-/** chagok-app-policy/versions.json의 한 판. 날짜는 로컬 'YYYY-MM-DD'. */
+/** novum-web 레포 chagok/versions.json의 한 판. 날짜는 로컬 'YYYY-MM-DD'. */
 export type PolicyVersion = {
   version: number;
   postedAt: DateKey;
