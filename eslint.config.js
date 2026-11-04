@@ -14,6 +14,18 @@ module.exports = [
     },
   },
   {
+    // 디자인 시스템은 Storybook에서 혼자 그린다. 앱 데이터 층을 가져다 쓰지 않는다 (AGENTS.md 「코드를 쓰기 전에 찾는 곳」, 2026-11-02)
+    files: ['src/design-system/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/domain', '**/domain/*', '**/repositories', '**/repositories/*', '**/app-data', '**/app-data/*', '**/db', '**/db/*', '**/purchases', '**/purchases/*'],
+          message: 'src/design-system은 앱 데이터 층을 가져다 쓰지 않는다. 화면(app/)에서 값으로 넘긴다.',
+        }],
+      }],
+    },
+  },
+  {
     ignores: [
       'node_modules/**',
       'dist/**',

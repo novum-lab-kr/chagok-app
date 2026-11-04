@@ -13,6 +13,8 @@
 
 ## 지금 상태
 
+**1.0.1 출시 진행은 [1.0.1 출시 순서](RELEASE-1.0.1.md)가 원본이다.** 1.0.0은 빌드 7로 심사 중이고, 1.0.1 작업은 `release/1.0.1`에 모은다. 이 문서의 아래 내용은 2026-10-28 기준이라 1.0.1 진행과 다를 수 있다.
+
 PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드로 실행, 개발 서버 `chagok-dev`). PRD와 다른 곳은 아래뿐이다.
 
 | 기능 | 지금 | PRD |
@@ -24,6 +26,22 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 | 앱 설정 | 하단 「설정」 탭(2026-10-12). 계정, 구매, 도움말과 정보(사용법 다시 보기, 문의하기, 광고 신고하기, 약관과 라이선스, 앱 버전, 2026-10-28 브랜치 `docs/review-prep`, 사용자 확인 전). 구역은 판(`PixelPanel`) 배치 | 4.9 |
 | 위젯 미리보기 | Storybook에 없다(예전 링 위젯 미리보기는 2026-10-10 지움). 흐름도 위젯 노드는 스토리 없이 둔다 | 4.10 |
 | `/dev/sync` | 개발 전용 동기화 화면(`__DEV__`). 계정 화면이 붙은 뒤에도 동기화를 손으로 확인할 때 쓰려고 남겨 둔다(2026-10-18 사용자 결정) | — |
+
+## 커밋 안 한 작업
+
+확인을 기다리느라 커밋하지 못한 채 세션을 끝냈으면 여기 적는다. 커밋하거나 버리면 줄을 지운다(AGENTS.md 「사용자와 일하는 규칙」). 2026-11-02 기준이다.
+
+| worktree | 무엇 | 기다리는 것 |
+| --- | --- | --- |
+| `chagok-wt-adbanner` | 목표 탭 배너가 하단 탭을 가리던 수정 한 줄(`GoalsAdBanner.tsx` `overflow: 'hidden'`) | 1.0.1에 넣기. 1.0.0 빌드 7에도 없다 |
+| `~/.athena-studio/.../feat-one-device-min-build` | 한 번에 한 기기와 최소 앱 버전 28개 파일(서버 마이그레이션 포함) | 1.0.1과 1.0.2 중 언제 넣을지 결정 |
+| `~/.athena-studio/.../docs-post-launch-db-rules` | DEV-SETUP 「운영 DB 바꾸기」 출시 뒤 절차 초안 | 운영 DB를 바꾸기 전에 커밋([1.0.1 출시 순서](RELEASE-1.0.1.md)가 가리킨다) |
+| `~/.athena-studio/.../docs-release-docs-cleanup` | 출시 문서를 `docs/release/`로 옮기는 정리 27개 파일 | 할지 결정. 이 브랜치의 정리와 겹친다 |
+| `chagok-wt-ads` | 맞춤 광고 동의 시안(아직 앱에 반영 안 함) | 시안 결정 |
+| `chagok-wt-notif-spike` | 알림 위젯 시험 구현 | 계속할지 결정 |
+| `chagok-wt-store-shots` | 스토어 스크린샷 생성 스크립트(`gen*.mjs`, `slides.json`). 확정본 그림은 main에 있다 | 다시 찍을 일(영어 스크린샷 등)이 있으면 커밋, 없으면 버리기 |
+| `chagok-wt-launch-video` | 출시 영상 프로젝트(`videos/chagok-launch/`) | 계속할지 결정 |
+| `chagok-wt-landing` | 랜딩 초안(`docs/landing/index.html`). 랜딩은 novum-web으로 옮겨 갔다 | 버려도 되는지 확인 |
 
 ## 진행 중인 브랜치와 worktree
 
@@ -50,7 +68,7 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 - **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
 - **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다(둘 다 2026-10-26에 했다, 아래). **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. → 2026-10-26 `production`에 App Store 키를 넣었고, Supabase 두 값도 `production` 전용 변수로 나눠 운영 서버 값을 넣었다(`preview`는 개발 서버 그대로). App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, 2026-10-20 새 계정 Apple ID `6824725721` — `eas.json` `submit.production.ios.ascAppId`). 옛 계정에는 2026-10-18 빌드 7(1.0.0)을 TestFlight에 올렸다(그래서 옛 번들 ID는 다시 못 쓴다). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드의 로그인은 카카오, Google, Apple이다(2026-10-22 앱에 합침, 2026-10-26 운영 서버에 켬. 실제 로그인은 운영 빌드의 TestFlight에서 확인).
 - **Google 로그인** — 2026-10-22 main에 합침. 무료 라이브러리 16.1.5, 서버 함수 변경 없음(계정 삭제 때 앱이 `revokeAccess`, 앱을 다시 켠 뒤면 저장된 로그인을 되살린 뒤 끊음). 시뮬레이터에서 로그인과 로그아웃 뒤 복원을 사용자가 확인했다. 버튼 순서는 카카오 → Google → Apple(DESIGN-SYSTEM). Apple이 이유 없이 실패를 돌려주면(`ERR_REQUEST_UNKNOWN`) 「연결하지 못했어요 / 다시 시도해 주세요.」. 남은 것: 계정 삭제 뒤 Google 계정 「서드파티 연결」에서 빠지는지(앱을 다시 켠 뒤 삭제 포함), Android 에뮬레이터(Google Play 이미지), Google이 넘기는 이름과 사진 주소가 `auth.identities`에 남는지(처리방침 1판에 적음), 출시 전 동의 화면 게시와 브랜드 확인.
-- **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`, 계획 `docs/superpowers/plans/2026-10-15-social-login.md`. 로그인 버튼은 회사 표준 버튼을 쓴다(2026-10-21, 동그라미 아이콘 `LoginCircles`는 지웠다). `src/design-system/apple-logo.ts`는 Storybook의 Apple 버튼 미리보기만 쓴다.
+- **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`. 로그인 버튼은 회사 표준 버튼을 쓴다(2026-10-21, 동그라미 아이콘 `LoginCircles`는 지웠다). `src/design-system/apple-logo.ts`는 Storybook의 Apple 버튼 미리보기만 쓴다.
 
 **출시 직전에는** [출시 전 최종 점검](RELEASE-CHECKLIST.md)을 위에서부터 확인한다.
 
