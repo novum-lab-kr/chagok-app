@@ -17,6 +17,7 @@ describe('ScreenFailed — 화면을 보여 주지 못할 때 (2026-10-10 B안)'
     expect(screenFailureCopy('records').title).toBe('기록을 불러오지 못했어요');
     expect(screenFailureCopy('goals').title).toBe('목표를 불러오지 못했어요');
     expect(screenFailureCopy('stickers').title).toBe('스티커를 불러오지 못했어요');
+    expect(screenFailureCopy('subscription')).toEqual({title:'구독 상품을 불러오지 못했어요',detail:'잠시 뒤 다시 시도해 주세요.'});
     expect(screenFailureCopy('screen').title).toBe('화면을 보여 주지 못했어요');
   });
   it('[다시 시도] [홈으로]를 보이고 각각 부른다',()=>{

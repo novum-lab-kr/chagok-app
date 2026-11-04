@@ -21,6 +21,7 @@ export const en: Messages = {
   'loadFailed.records': "Couldn't load your records",
   'loadFailed.goals': "Couldn't load your goals",
   'loadFailed.stickers': "Couldn't load your stickers",
+  'loadFailed.subscription': "Couldn't load subscription plans",
   'loadFailed.screen': "Couldn't show this screen",
   'loadFailed.tryLater': 'Give it another try in a moment.',
   'loadFailed.restartApp': "Still stuck? Close and reopen the app.",

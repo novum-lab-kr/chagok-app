@@ -37,7 +37,7 @@ export default function Subscription() {
   const views = prices ? planViews(prices, new Date()) : null;
   if (!views) {
     // 받았는데 가격이 없으면(스토어에 상품이 없음) 기다려도 소용없으니 바로 안내한다.
-    return <LoadingScreen failed={failed || prices !== null} kind="screen" onRetry={retry} onHome={goHome} />;
+    return <LoadingScreen failed={failed || prices !== null} kind="subscription" onRetry={retry} onHome={goHome} />;
   }
 
   /** 결제 창을 닫은 취소에는 아무것도 띄우지 않는다. 보호자 승인을 기다리면 그 안내 (구독 설계 4.2). */
