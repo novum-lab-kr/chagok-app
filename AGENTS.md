@@ -15,7 +15,7 @@
 | [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | 개발 빌드, 시뮬레이터, 개발 서버 실행 |
 | [docs/RELEASE-DECISIONS.md](docs/RELEASE-DECISIONS.md) | 식별자, 계정, 가격, 광고 같은 출시 결정 |
 | [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 스토어에 내기 직전. 출시 전 최종 점검 목록 |
-| [docs/RELEASE-1.0.1.md](docs/RELEASE-1.0.1.md) | 1.0.1을 합치거나 내보낼 때. 심사 시점별 처리, 운영 DB 반영 순서 |
+| [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) | 1.1.0을 합치거나 내보낼 때. 심사 시점별 처리, 운영 DB 반영 순서 |
 | [docs/LEGAL-REVIEW.md](docs/LEGAL-REVIEW.md) | 출시와 업데이트 때마다. 약관과 처리방침이 기대는 법령의 개정 확인과 문서 유효성 점검 |
 | [docs/migration/README.md](docs/migration/README.md) | 레포를 옮긴 직후에만 |
 
@@ -99,7 +99,7 @@ Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](
 1.0.0을 심사에 낸 뒤부터 적용한다.
 
 - 올린 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 운영 DB를 통째로 지우지 않고 바뀐 파일만 올린다([DEV-SETUP](docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 기기 DB(`src/db/schema.ts`)도 버전을 올려 옮긴다.
-- 약관과 처리방침은 1.0.0 출시 전이면 1판을 고치고, 출시 뒤면 새 판을 낸다([1.0.1 출시 순서](docs/RELEASE-1.0.1.md) 「처리방침 판」).
+- 약관과 처리방침은 1.0.0 출시 전이면 1판을 고치고, 출시 뒤면 새 판을 낸다([1.1.0 출시 순서](docs/RELEASE-1.1.0.md) 「처리방침 판」).
 
 ## 빠른 확인
 
