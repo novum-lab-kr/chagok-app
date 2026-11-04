@@ -1,5 +1,5 @@
 import React from 'react';
-import {BoardProgressRow,GuideCard,progressBlockPose,tallyGridLayout,tallyPageSize} from './index';
+import {BoardProgressRow,GuideCard,boardColumns,progressBlockPose,tallyGridLayout,tallyPageSize} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
@@ -318,11 +318,18 @@ describe('적립판 쪽 넘기기 (2026-11-03 시안 P1)',()=>{
 });
 
 describe('혼자 적립판 4칸, 판 안 폭 330 이상이면 5칸 (2026-11-05)',()=>{
-  // 콘텐츠 폭에서 칸 영역 좌우 여백 2×6을 뺀 폭이 판 안 폭이다. 칸 사이 15.
-  it('390 폭 폰(콘텐츠 294, 판 안 282)은 4칸, 칸 한 변 59',()=>{
+  // 판 안 폭 W는 패널 안 폭(폰 폭 - 96). 열 수는 작은 판과 같이 W로, 칸은 좌우 여백 2×6을 뺀 폭에서 칸 사이 15로 나눈다.
+  it('390 폭 폰(W 294)은 4칸, 칸 한 변 59',()=>{
     expect(tallyGridLayout(294)).toEqual({columns:4,cell:59});
   });
-  it('440 폭 폰(콘텐츠 344, 판 안 332)은 5칸, 칸 한 변 54',()=>{
+  it('430 폭 폰(W 334)은 5칸, 칸 한 변 52',()=>{
+    expect(tallyGridLayout(334)).toEqual({columns:5,cell:52});
+  });
+  it('440 폭 폰(W 344)은 5칸, 칸 한 변 54',()=>{
     expect(tallyGridLayout(344)).toEqual({columns:5,cell:54});
+  });
+  it('혼자 판과 작은 판(boardColumns)은 같은 W에서 같은 열 수를 고른다',()=>{
+    for(const w of [294,334]) expect(tallyGridLayout(w).columns).toBe(boardColumns(w));
+    expect([boardColumns(294),boardColumns(334)]).toEqual([4,5]);
   });
 });

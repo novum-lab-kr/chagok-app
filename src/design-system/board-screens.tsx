@@ -287,11 +287,13 @@ export function tallyPageSize(total:number,maxHeight:number,cellHeight:number,ro
   if(rows(maxHeight)*columns>=total) return total;
   return Math.max(3,rows(maxHeight-TALLY_PAGE_NAV_HEIGHT))*columns;
 }
-/** 혼자 적립판 칸 배치: 판 안 폭(칸 영역 좌우 여백을 뺀 폭)으로 열 수와 칸 한 변을 정한다. 작은 판(CompactTally)과 같은 셈. */
-export function tallyGridLayout(contentWidth:number):{columns:number;cell:number} {
-  const inner=Math.max(0,contentWidth-2*retro.layout.boardInset);
-  const columns=boardColumns(inner);
-  return {columns,cell:boardCellSize(inner,columns,retro.layout.boardGap)};
+/**
+ * 혼자 적립판 칸 배치. 열 수는 작은 판(CompactTally)과 같은 패널 안 폭으로 정한다(같은 폰이면 두 판의 한 줄 칸 수가 같다).
+ * 혼자 판은 칸 영역 좌우 여백(boardInset 6)을 그대로 두고, 칸 한 변만 그 안에서 맞춘다 (2026-11-05 검토 B안).
+ */
+export function tallyGridLayout(panelWidth:number):{columns:number;cell:number} {
+  const columns=boardColumns(panelWidth);
+  return {columns,cell:boardCellSize(Math.max(0,panelWidth-2*retro.layout.boardInset),columns,retro.layout.boardGap)};
 }
 /** 달력판 MonthNavigation과 같은 줄: [이전] 「1~21칸 / 40」 [다음]. 끝 쪽에서는 그 방향 버튼 자리를 비운다. */
 function TallyPageNavigation({from,to,total,onPrev,onNext}:{from:number;to:number;total:number;onPrev?:()=>void;onNext?:()=>void}) {

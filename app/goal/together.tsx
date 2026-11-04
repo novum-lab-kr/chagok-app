@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { TogetherGoalScreen, boardDialogs, togetherDialogs } from '../../src/design-system';
 import type { BoardKind, EndDateMode, StickerId, TogetherMode } from '../../src/design-system';
@@ -51,6 +51,9 @@ export default function TogetherGoal() {
   const [submitting, setSubmitting] = useState(false);
   const [submitOnce] = useState(createSingleFlight);
   const { ask, dialog: failure } = useDialog();
+  /** 화면이 아직 떠 있는가. 만드는 사이 화면이 닫혔으면 공유 창과 이동을 건너뛴다(목표는 다음 동기화 회차가 목록에 넣는다) */
+  const mounted = useRef(true);
+  useEffect(() => () => { mounted.current = false; }, []);
 
   useEffect(() => {
     let alive = true;
@@ -69,7 +72,8 @@ export default function TogetherGoal() {
 
   const dirty = name !== '' || mode !== 'each' || kind !== 'tally' || count !== DEFAULT_COUNT || endMode !== 'none'
     || myName !== defaults.name || sticker !== defaults.sticker;
-  const { goBack, dialog } = useUnsavedBack(dirty);
+  // 만드는 중(서버 호출, 다시 받기, 공유 창)에는 뒤로 가기를 막는다
+  const { goBack, dialog } = useUnsavedBack(dirty, submitting);
   // 「기본 스티커」에서 고르고 돌아오면 받는다 (새 목표와 같음).
   useFocusEffect(useCallback(() => {
     const picked = takeOfferedSticker();
@@ -85,20 +89,31 @@ export default function TogetherGoal() {
     : countRejected ? t('validation.slotCountMax', SHARED_SLOTS_MAX) : undefined;
 
   async function submit() {
-    // 목표 탭 [+]가 막지만, 링크로 바로 열어도 한도를 지킨다. 함께 목표도 목표 수에 든다
-    const [goals, pack] = await Promise.all([listGoals(), loadPackState()]);
-    if (!canCreateGoal(goals.length, pack.subscribed)) {
-      router.replace({ pathname: '/subscription', params: { from: 'goals' } });
+    // 누른 때부터 끝날 때까지 뒤로 가기를 막는다(useUnsavedBack busy)
+    setSubmitting(true);
+    let d: Awaited<ReturnType<typeof actionDeps>>;
+    try {
+      // 목표 탭 [+]가 막지만, 링크로 바로 열어도 한도를 지킨다. 함께 목표도 목표 수에 든다
+      const [goals, pack] = await Promise.all([listGoals(), loadPackState()]);
+      if (!canCreateGoal(goals.length, pack.subscribed)) {
+        router.replace({ pathname: '/subscription', params: { from: 'goals' } });
+        return;
+      }
+      d = await actionDeps();
+    } catch {
+      if (!mounted.current) return;
+      setSubmitting(false);
+      await ask(boardDialogs.saveFailed(t('failed.createGoal')));
       return;
     }
-    const d = await actionDeps();
+    if (!mounted.current) return;
     if (!d) {
+      setSubmitting(false);
       // 이 화면에 있는 동안 로그인이 풀렸다. 로그인하고 돌아오면 입력이 그대로 있다
       if ((await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
       return;
     }
     const goalName = name.trim();
-    setSubmitting(true);
     let created: Awaited<ReturnType<typeof createAndFetch>>;
     try {
       created = await createAndFetch(d, {
@@ -108,6 +123,7 @@ export default function TogetherGoal() {
         displayName: myName.trim(), stickerId: sticker,
       });
     } catch (error) {
+      if (!mounted.current) return;
       setSubmitting(false);
       const word = error instanceof SharedGoalError ? error.word : 'network';
       if (word === 'name_not_allowed') setNameRejected({ goal: errorMessage(word), mine: errorMessage(word) });
@@ -116,8 +132,10 @@ export default function TogetherGoal() {
       else await ask(boardDialogs.saveFailed(t('failed.createGoal')));
       return;
     }
+    if (!mounted.current) return;
     // 공유 창을 닫거나 취소해도 다음으로 간다
     await shareInviteUrl(goalName, created.inviteUrl).catch(() => {});
+    if (!mounted.current) return;
     setSubmitting(false);
     // 기기에 아직 받지 못했으면 목록으로. 다음 동기화 회차가 받아 오면 목록에 생긴다
     if (created.onDevice) router.replace({ pathname: '/goal/[id]', params: { id: created.goalId } });

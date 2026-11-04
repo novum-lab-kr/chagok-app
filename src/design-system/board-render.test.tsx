@@ -73,12 +73,24 @@ describe('혼자 적립판 한 줄 칸 수 (2026-11-05 4칸, 큰 폰 5칸)',()=>
     while(node&&!getComputedStyle(node).width.endsWith('px')) node=node.parentElement;
     return node&&getComputedStyle(node).width;
   };
-  it('390 폭 적립판은 한 줄 4칸: 판 안 282 → 칸 한 변 59',()=>{
+  it('390 폭 적립판은 한 줄 4칸: 판 안 W 294, 여백 뺀 282 → 칸 한 변 59',()=>{
     phone(390);
     render(<Screen b={board(15,0)}/>);
     expect(cellWidth()).toBe('59px');
   });
-  it('440 폭 적립판은 한 줄 5칸: 판 안 332 → 칸 한 변 54',()=>{
+  it('430 폭 폰(판 안 W 334)은 혼자 판도 함께 목표 작은 판도 한 줄 5칸',()=>{
+    phone(430);
+    // 혼자 판: 좌우 여백 6을 둔 322 안에 5칸 → 칸 한 변 52
+    render(<Screen b={board(15,0)}/>);
+    expect(cellWidth()).toBe('52px');
+    cleanup();
+    // 작은 판(boardRows=2): 다음 빈칸 12가 든 쪽이 5칸 두 줄이면 11~20칸
+    const b=board(30,11);
+    render(<BoardDetailScreen name="내 판" sticker="shoe" completed={false} progress={{value:11,total:30,percentLabel:'36%'}} board={b}
+      hideProgress boardRows={2} onBack={()=>{}} onSettings={()=>{}}/>);
+    expect(screen.getByText('11~20칸 / 30')).toBeTruthy();
+  });
+  it('440 폭 적립판은 한 줄 5칸: 판 안 W 344, 여백 뺀 332 → 칸 한 변 54',()=>{
     phone(440);
     render(<Screen b={board(15,0)}/>);
     expect(cellWidth()).toBe('54px');
