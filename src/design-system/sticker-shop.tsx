@@ -77,7 +77,8 @@ export function colorPack(id:ColorStickerPackId,state:PackState,trialLabel?:stri
  * 배지 없이 [>], [묶음 열기], [열기], [광고 없애기]. 결제 창이 실제 가격을 보여 준다 (2026-10-13 시안 A).
  */
 /** 접힌 줄 한 칸 폭(StickerChoice), 칸 사이, 「+n」 글자 폭 */
-const ROW_CELL=50,ROW_GAP=10,ROW_MORE=28;
+// 접힌 줄 간격 6: 보통 iPhone 폭에서 5개 + 「+n」이 들어가게 (2026-11-04 사용자 요청, 이전 10이라 4개만 보였다)
+const ROW_CELL=50,ROW_GAP=6,ROW_MORE=28;
 /**
  * 접힌 줄에 보일 스티커 수(최대 5). 남으면 「+n」 자리까지 들어가야 한다.
  * 폴드 커버(344dp)에서 5개 + 「+n」이 카드 밖으로 넘쳐 폭을 재서 줄인다 (2026-10-12). 재기 전(0)에는 5개.
@@ -89,19 +90,23 @@ export function packRowCount(width:number,total:number):number {
   return 1;
 }
 
-/** 묶음 카드. 가진 묶음·체험 중은 펼치거나(5개씩 두 줄) 접고(5개 + +n), 잠긴 묶음은 흐린 5개 + +n 위에 가림막. */
+/**
+ * 묶음 카드. 가진 묶음과 체험 중은 펼치거나(5개씩 두 줄) 접고(5개 + +n), 잠긴 묶음은 이름 앞 자물쇠와 흐린 5개 + +n.
+ * 2026-11-04 시안(B안, 흐림 40%): 무료와 열었어요 표시는 없앴다. 지금 쓸 수 있는 묶음은 표시 없이, 잠긴 묶음만 자물쇠로 구분한다.
+ * 가림막과 「눌러서 미리 보기」도 없애 누르기 전에도 스티커 윤곽이 보인다.
+ */
 export function PackCard({pack,open,selected,rewardReady=false,selectable=true,onToggle,onSelect,onOpenPack}:{pack:PackView;open:boolean;selected?:StickerId;rewardReady?:boolean;/** false면 둘러보기만(스티커 탭): 스티커가 고르는 칸이 아니다 */selectable?:boolean;onToggle:()=>void;onSelect:(id:StickerId)=>void;onOpenPack:()=>void}) {
   const locked=pack.state==='locked';
   const {ref:row,size,onLayout}=useLayoutSize();
   const fit=packRowCount(size.width,pack.stickers.length);
   const more=pack.stickers.length-fit;
-  const right=pack.state==='free'?<PixelText variant="caption" style={caption}>{t('shop.free')}</PixelText>
-    :pack.state==='owned'?<PixelBadge label={t('shop.opened')}/>
+  const right=pack.state==='free'||pack.state==='owned'?null
     :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
     :<>{rewardReady?<PixelBadge label={t('shop.threeDaysFree')} tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
   const head=<View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:36}}>
     {/* 이름이 길면(영어) 개수를 다음 줄로 내려 가격과 화살표를 밀지 않는다 */}
     <View style={{flex:1,flexDirection:'row',flexWrap:'wrap',alignItems:'center',columnGap:8}}>
+      {locked&&<ActionSymbol name="lock" size={16} color={c.buttonText}/>}
       <PixelText accessibilityRole="header" style={{fontSize:20,lineHeight:26,color:c.buttonText}}>{pack.label}</PixelText>
       <PixelText variant="caption" style={caption}>{t('shop.stickerCount',pack.stickers.length)}</PixelText>
     </View>{right}
@@ -111,17 +116,9 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
   if(locked) return <Pressable accessibilityRole="button" accessibilityLabel={t('shop.previewPack',pack.label)} onPress={onOpenPack}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
       {head}
-      <View ref={row} onLayout={onLayout}>
-        <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-          {pack.stickers.slice(0,fit).map(id=><View key={id} style={{opacity:retro.opacity.disabled}}><StickerGlyph id={id} size={48}/></View>)}
-          {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
-        </View>
-        <View style={{position:'absolute',left:-4,right:-4,top:-4,bottom:-4,alignItems:'center',justifyContent:'center'}}>
-          <View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:c.secondary,opacity:0.7}}/>
-          <PixelFrame variant="selection" fill={c.ink} contentStyle={{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:10,paddingVertical:4}}>
-            <ActionSymbol name="lock" size={14} color={c.lcd}/><PixelText style={{color:c.lcd,fontSize:15}}>{t('shop.tapToPreview')}</PixelText>
-          </PixelFrame>
-        </View>
+      <View ref={row} onLayout={onLayout} style={{flexDirection:'row',alignItems:'center',gap:ROW_GAP,opacity:retro.opacity.disabled}}>
+        {pack.stickers.slice(0,fit).map(id=><View key={id} style={{width:ROW_CELL,alignItems:'center'}}><StickerGlyph id={id} size={48}/></View>)}
+        {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
       </View>
     </PixelFrame>
   </Pressable>;
