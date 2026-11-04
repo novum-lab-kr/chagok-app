@@ -181,10 +181,10 @@ function MemberFields({name,onChangeName,nameError,nameMaxLength,onNameBlur,stic
  * 친구와 함께 만들기: 어떻게 채울까요 → 목표 이름 → 판 종류(칸 수 또는 종료일) → 내 이름 → 내 스티커 → [만들고 초대하기].
  * 내 이름과 스티커는 지난번 함께 목표 값을 호스트가 채워 넘긴다. 금칙어와 스티커 겹침 문구는 서버 응답을 그대로 error로 넘긴다.
  */
-export function TogetherGoalScreen({mode,onChangeMode,name,onChangeName,nameMaxLength,nameError,onNameBlur,kind,onChangeKind,count,onChangeCount,end,myName,onChangeMyName,myNameMaxLength,myNameError,onMyNameBlur,sticker,onChooseSticker,stickerError,maxFriends,error,onSubmit,submitDisabled=false,submitting=false,onBack}:{
+export function TogetherGoalScreen({mode,onChangeMode,name,onChangeName,nameMaxLength,nameError,onNameBlur,kind,onChangeKind,count,onChangeCount,countMax,end,myName,onChangeMyName,myNameMaxLength,myNameError,onMyNameBlur,sticker,onChooseSticker,stickerError,maxFriends,error,onSubmit,submitDisabled=false,submitting=false,onBack}:{
   mode:TogetherMode;onChangeMode:(mode:TogetherMode)=>void;
   name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;nameError?:string;onNameBlur?:()=>void;
-  kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;
+  kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;/** 칸 수 상한(서버 값) */countMax?:number;
   /** 달력판 종료일(선택). 새 목표와 같다 */end?:{mode:EndDateMode;onChangeMode:(mode:EndDateMode)=>void;date?:string;onChangeDate:(date:string)=>void;today:string;todayLabel:string};
   myName:string;onChangeMyName:(name:string)=>void;myNameMaxLength?:number;myNameError?:string;onMyNameBlur?:()=>void;
   sticker:StickerId;onChooseSticker:()=>void;stickerError?:string;
@@ -197,7 +197,7 @@ export function TogetherGoalScreen({mode,onChangeMode,name,onChangeName,nameMaxL
     </View>
     <PixelInput label={t('goal.name')} value={name} onChangeText={onChangeName} placeholder={t('goal.name')} maxLength={nameMaxLength} error={nameError} onBlur={onNameBlur}/>
     <BoardTypePicker value={kind} onChange={onChangeKind}/>
-    {kind==='tally'&&<SlotCountPicker value={count} onChange={onChangeCount}/>}
+    {kind==='tally'&&<SlotCountPicker value={count} onChange={onChangeCount} max={countMax}/>}
     {kind==='calendar'&&end&&<View style={{gap:8}}>
       <PixelText>{t('goal.endDateOptional')}</PixelText>
       <OptionButtons options={[{key:'none',label:t('goal.endDateNone')},{key:'pick',label:t('goal.endDatePick')}] as const} value={end.mode} onChange={end.onChangeMode}/>
@@ -299,10 +299,11 @@ function ProblemSection({mode,onReport,onBlock,onLeave}:{mode:TogetherMode;onRep
  * 「목표 이름과 칸 수는 만든 사람이 바꿔요」. 모두 내 이름, 내 스티커, 함께하는 사람(members), 문제가 있을 때를 본다.
  * 완성한 판은 만든 사람에게도 onChangeGoalName과 slots를 넘기지 않는다(이름과 칸 수 칸이 없다).
  */
-export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,onReport,onBlock,onLeave,onDelete,onBack}:{
+export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,completed=false,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,onReport,onBlock,onLeave,onDelete,onBack}:{
   role:'owner'|'member';mode:TogetherMode;
   goalName:string;/** 만든 사람만 */onChangeGoalName?:(name:string)=>void;goalNameMaxLength?:number;goalNameError?:string;
-  /** 만든 사람의 진행 중인 적립판만. 늘리기만 된다(새 조립, GoalSettingsScreen과 같은 칸) */slots?:SlotsFieldView;ownerName:string;
+  /** 만든 사람의 진행 중인 적립판만. 늘리기만 된다(새 조립, GoalSettingsScreen과 같은 칸) */slots?:SlotsFieldView;
+  /** 빈 문자열이면(내가 만든 사람을 차단해 기기에 없음) 이름 없는 안내 */ownerName:string;/** 완성한 판: 아무도 바꿀 수 없어 안내를 그리지 않는다 */completed?:boolean;
   myName:string;onChangeMyName:(name:string)=>void;myNameMaxLength?:number;myNameError?:string;
   sticker:StickerId;onChooseSticker:()=>void;stickerError?:string;
   /** MemberList */members?:ReactNode;onSave:()=>void;saveDisabled?:boolean;
@@ -311,7 +312,7 @@ export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goal
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
     {owner
       ?onChangeGoalName&&<PixelInput label={t('goal.name')} value={goalName} onChangeText={onChangeGoalName} maxLength={goalNameMaxLength} error={goalNameError}/>
-      :<PixelPanel title={goalName}><View style={{paddingTop:6}}><Small>{t('together.ownerEdits',ownerName)}</Small></View></PixelPanel>}
+      :<PixelPanel title={goalName}>{!completed&&<View style={{paddingTop:6}}><Small>{ownerName?t('together.ownerEdits',ownerName):t('together.ownerEditsNoName')}</Small></View>}</PixelPanel>}
     {owner&&slots&&<SlotsField {...slots}/>}
     <MemberFields name={myName} onChangeName={onChangeMyName} nameMaxLength={myNameMaxLength} nameError={myNameError} sticker={sticker} onChooseSticker={onChooseSticker} stickerError={stickerError}/>
     {members}

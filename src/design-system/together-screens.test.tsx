@@ -3,7 +3,9 @@ import {afterEach,beforeEach,describe,expect,it} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {PixelFrame,PixelText} from './components';
 import {BoardDetailScreen,type TallyBoardView} from './board-screens';
-import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,TogetherSettingsScreen,togetherDialogs,type FriendBoard} from './together-screens';
+import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,TogetherGoalScreen,TogetherSettingsScreen,togetherDialogs,type FriendBoard} from './together-screens';
+import {SlotsField} from './board-screens';
+import {t} from '../i18n';
 afterEach(cleanup);
 
 /** jsdom은 창 폭이 0이다. RN Web의 Dimensions는 documentElement 폭을 읽는다(board-entry.test.tsx와 같은 방법). */
@@ -173,6 +175,16 @@ describe('함께 목표 설정 (PRD 4.15)',()=>{
     expect(screen.getByText('목표 이름과 칸 수는 만든 사람(은주)이 바꿔요.')).toBeTruthy();
     expect(screen.getByText('이 목표에서 나가기')).toBeTruthy();
   });
+  it('만든 사람 이름이 없으면(차단해 기기에 없음) 빈 괄호 대신 이름 없는 안내',()=>{
+    render(<TogetherSettingsScreen {...base} role="member" ownerName=""/>);
+    expect(screen.getByText('만든 사람만 바꿀 수 있어요.')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('()');
+  });
+  it('완성한 판은 함께하는 사람에게도 안내가 없다',()=>{
+    render(<TogetherSettingsScreen {...base} role="member" completed/>);
+    expect(screen.getByText('만 보 걷기')).toBeTruthy();
+    expect(screen.queryByText(/바꿔요|바꿀 수 있어요/)).toBeNull();
+  });
   it('완성한 판(만든 사람에게 이름 칸을 넘기지 않음)은 이름 칸도 안내도 없다',()=>{
     render(<TogetherSettingsScreen {...base} role="owner" onDelete={noop}/>);
     expect(screen.queryByLabelText('목표 이름')).toBeNull();
@@ -233,5 +245,34 @@ describe('목표 설정 창 문구',()=>{
       expect(spec.primaryLabel).toBe('확인');
       expect(spec).not.toHaveProperty('secondaryLabel');
     }
+  });
+});
+
+describe('칸 수 직접 입력 상한 (함께 목표 1000칸)',()=>{
+  const noop=()=>{};
+  /** 직접 입력으로 바꾼 뒤 입력칸 */
+  function customInput() {
+    fireEvent.click(screen.getByRole('button',{name:'직접 입력'}));
+    return screen.getByLabelText('칸 수 직접 입력',{selector:'input'}) as HTMLInputElement;
+  }
+  it('max=1000이면 1000과 1001을 칠 수 있고, 1001이면 넘긴 상한 문구를 보인다',()=>{
+    const typed:string[]=[];
+    const {rerender}=render(<SlotsField current={30} value="30" onChange={v=>typed.push(v)} max={1000}/>);
+    const input=customInput();
+    expect(input.maxLength).toBe(5);
+    fireEvent.change(input,{target:{value:'1000'}});
+    fireEvent.change(input,{target:{value:'1001'}});
+    expect(typed).toEqual(['1000','1001']);
+    rerender(<SlotsField current={30} value="1001" onChange={noop} max={1000} error={t('validation.slotCountMax',1000)}/>);
+    expect(screen.getByText('1000칸까지 만들 수 있어요.')).toBeTruthy();
+  });
+  it('max가 없으면(혼자 목표) 지금 그대로 세 자리',()=>{
+    render(<SlotsField current={30} value="30" onChange={noop}/>);
+    expect(customInput().maxLength).toBe(3);
+  });
+  it('친구와 함께 만들기도 countMax를 넘기면 네 자리 넘게 칠 수 있다',()=>{
+    render(<TogetherGoalScreen mode="each" onChangeMode={noop} name="걷기" onChangeName={noop} kind="tally" onChangeKind={noop} count="15" onChangeCount={noop} countMax={1000}
+      myName="은주" onChangeMyName={noop} sticker="basic.shoe" onChooseSticker={noop} maxFriends={5} onSubmit={noop} onBack={noop}/>);
+    expect(customInput().maxLength).toBe(5);
   });
 });

@@ -507,6 +507,7 @@ export const en: Messages = {
   'together.oneBoardNote': "Each slot shows the sticker of whoever placed it. Tap a friend's slot to see who placed it and when.",
   'together.viewOnlyNote': (name: string) => `${name} is sharing this board. You can look but not place.`,
   'together.ownerEdits': (owner: string) => `Only the creator (${owner}) can change the goal name and slots.`,
+  'together.ownerEditsNoName': 'Only the person who made it can change this.',
   'together.problems': 'If something is wrong',
   'together.report': 'Report a hurtful name',
   'together.reportHint': "If a goal name or someone's name is hurtful, let Chagok know. No one else will see it.",

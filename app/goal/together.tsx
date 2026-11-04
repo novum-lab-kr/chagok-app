@@ -153,6 +153,7 @@ export default function TogetherGoal() {
         onNameBlur={() => setNameTouched(true)}
         kind={kind} onChangeKind={setKind}
         count={count} onChangeCount={(next) => { setCount(next); setCountRejected(false); }}
+        countMax={SHARED_SLOTS_MAX}
         end={{ mode: endMode, onChangeMode: setEndMode, date: endDate, onChangeDate: setEndDate, today, todayLabel: longDate(today) }}
         myName={myName}
         onChangeMyName={(next) => { setMyName(next); setNameRejected({}); if (next !== '') setMyNameTouched(true); }}

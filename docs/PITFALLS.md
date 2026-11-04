@@ -25,6 +25,7 @@
 ## 의존성과 빌드
 
 - **새 worktree에는 git 밖 파일이 없다.** `src/design-system/apple-siwa-logo.generated.ts`가 없으면 타입 검사(TS2307), 린트(import/no-unresolved), 컴포넌트 테스트 3개가 실패한다. 다른 체크아웃에서 복사하거나 [개발 설정](DEV-SETUP.md) 「Apple 로그인 버튼 로고」대로 만든다. `.env.local`과 `node_modules`도 링크한다.
+- **새 고정 라우트를 더하면 `.expo/types/router.d.ts`를 다시 만들어야 타입 검사가 통과한다(2026-11-05, `app/settings/blocked.tsx`).** 이 파일은 git이 무시하고 Metro가 만든다. 이미 `.expo/types`가 있는 체크아웃(main 등)은 Metro를 한 번 띄우거나 Expo 타입 생성을 돌리기 전까지 `router.push('/settings/blocked')` 같은 줄에서 TS2345로 실패한다. `[id]` 같은 동적 라우트 아래로 들어가는 주소(`/goal/together`)는 이미 맞는 꼴이 있어 실패하지 않는다.
 - **`package.json`의 `overrides: { "react-dom": "19.2.3" }`를 지우지 않는다.** 지우면 모든 설치가 ERESOLVE로 실패한다. `jest-expo`도 같은 충돌이라 `jest` + `ts-jest`를 쓴다. 의존성을 더할 때는 `package.json`·`package-lock.json`을 백업하고, 설치 뒤 `npm ls react-dom --all`이 `19.2.3` 하나인지 본다.
 - **`ios/`가 이미 있는 체크아웃에서 빌드하면 옛 네이티브 프로젝트를 그대로 쓴다.** `ios/`는 git에 없고 `expo run:ios`는 폴더가 없을 때만 prebuild한다. 2026-10-10 main 체크아웃의 옛 `ios/`(위젯 타깃 없음)로 빌드하자 앱은 떴지만 위젯 동기화가 매번 `ExponentAsset-….png doesn't exist`로 실패했다. 빌드 전에 `npx expo prebuild --platform ios --clean`, 빌드 뒤 Metro 로그에서 `widget sync failed`를 찾는다.
 - **expo-widgets를 올릴 때:** `npx expo prebuild --platform ios --clean` → iOS 빌드 → 위젯 편집 「목표」 확인. prebuild가 `widget-goal: … 자리를 못 찾았어요`로 멈추면 expo-widgets가 만드는 Swift 모양이 바뀐 것이니 `plugins/widget-goal/patch.js`와 fixture를 맞춘다.

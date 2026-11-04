@@ -270,10 +270,12 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
    * 동작이 실패했을 때. 볼 수 없는 목표면 창 뒤 목표 탭으로, 만든 사람이 바뀌었으면 창 뒤 다시 읽는다(동작이 이미 다시 받았다).
    * 계정이 바뀌었으면 이 화면은 다른 계정 것이라 문구 없이 닫는다. 그 밖은 title과 낱말 문구.
    */
-  async function notify(error: unknown, title: string) {
+  async function notify(error: unknown, title: string, about: 'goal' | 'person' = 'goal') {
     if (error instanceof AccountChanged) { router.dismissTo('/'); return; }
     const word = error instanceof SharedGoalError ? error.word : 'network';
-    if (word === 'not_member' || word === 'not_shared') { await ask(togetherDialogs.gone); router.dismissTo('/'); return; }
+    // 차단과 신고의 not_member는 「그 사람이 멤버가 아님」일 수 있다. 목표가 남아 있으면 일반 실패로 보인다
+    const gone = word === 'not_shared' || (word === 'not_member' && (about === 'goal' || !(await loadTogether(goalId).catch(() => null))));
+    if (gone) { await ask(togetherDialogs.gone); router.dismissTo('/'); return; }
     if (word === 'not_owner') { await ask(togetherDialogs.ownerOnly); await read(true).catch(() => {}); return; }
     if (word === 'needs_login') {
       if ((await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
@@ -310,6 +312,8 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
       if (goalChanged) {
         const totalSlots = goal.boardType === 'tally' && slots?.ok ? slots.value : goal.totalSlots;
         try { await saveGoal(d, goalId, { name: name.trim(), totalSlots, endDate: goal.endDate }); } catch (error) {
+          // 내 값은 이미 저장됐을 수 있다. 다시 읽어 다음 [저장]이 같은 값을 또 보내지 않게 한다
+          if (mineChanged) await read(false).catch(() => {});
           if (!rejectField(error, 'goal')) await notify(error, t('failed.save'));
           return;
         }
@@ -321,7 +325,7 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
   }
 
   /** 확인을 받은 뒤 서버 동작을 하고 다시 읽는다. 실패하면 title로 알린다. */
-  async function act(title: string, run: (d: NonNullable<Awaited<ReturnType<typeof actionDeps>>>) => Promise<void>): Promise<boolean> {
+  async function act(title: string, run: (d: NonNullable<Awaited<ReturnType<typeof actionDeps>>>) => Promise<void>, about: 'goal' | 'person' = 'goal'): Promise<boolean> {
     const d = await signedIn();
     if (!d) return false;
     setBusy(true);
@@ -329,7 +333,7 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
       await run(d);
       return true;
     } catch (error) {
-      await notify(error, title);
+      await notify(error, title, about);
       return false;
     } finally {
       setBusy(false);
@@ -357,13 +361,13 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
     if (pick === 'report') {
       const target = id === 'goal' ? t('report.goalName') : t('report.personName', others.find((r) => r.id === id)?.name ?? '');
       if (!(await confirm(togetherDialogs.report(target)))) return;
-      if (await act(t('failed.report'), (d) => reportName(d, goalId, id === 'goal' ? null : id))) await ask(togetherDialogs.reportDone);
+      if (await act(t('failed.report'), (d) => reportName(d, goalId, id === 'goal' ? null : id), 'person')) await ask(togetherDialogs.reportDone);
       setSheetOpen(false);
       return;
     }
     const person = others.find((r) => r.id === id);
     if (!person || !(await confirm(togetherDialogs.blockConfirm(person.name)))) return;
-    const ok = await act(t('failed.block'), (d) => block(d, id));
+    const ok = await act(t('failed.block'), (d) => block(d, id), 'person');
     setSheetOpen(false);
     if (ok) await read(false).catch(() => {});
   }
@@ -400,8 +404,10 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
           value: slotsText,
           onChange: (next) => { setSlotsText(next); setRejected({}); },
           error: slots.ok ? rejected.slots : slots.reason,
+          max: SHARED_SLOTS_MAX,
         } : undefined}
         ownerName={ownerName}
+        completed={isCompleted(goal)}
         myName={myName}
         onChangeMyName={(next) => { setMyName(next); setRejected({}); }}
         myNameMaxLength={MEMBER_NAME_MAX}
@@ -424,7 +430,7 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
       <BlockPickSheet
         visible={sheetOpen}
         title={pick === 'report' ? t('report.pickTitle') : undefined}
-        extraRows={pick === 'report' ? [{ id: 'goal', label: t('report.goalName') }] : undefined}
+        extraRows={pick === 'report' && !owner ? [{ id: 'goal', label: t('report.goalName') }] : undefined}
         people={others}
         onPick={(id) => { void actOnce(() => picked(id)); }}
         onRequestClose={() => setSheetOpen(false)}

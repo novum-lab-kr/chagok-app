@@ -492,6 +492,7 @@ export const ko = {
   'together.oneBoardNote': '칸마다 붙인 사람의 스티커예요. 친구 칸을 누르면 누가 언제 붙였는지 보여요.',
   'together.viewOnlyNote': (name: string) => `${name}님이 보여주는 판이에요. 보기만 할 수 있어요.`,
   'together.ownerEdits': (owner: string) => `목표 이름과 칸 수는 만든 사람(${owner})이 바꿔요.`,
+  'together.ownerEditsNoName': '만든 사람만 바꿀 수 있어요.',
   'together.problems': '문제가 있을 때',
   'together.report': '불쾌한 이름 신고하기',
   'together.reportHint': '목표 이름이나 사람 이름이 불쾌하면 차곡차곡에 알려 주세요. 다른 사람에게는 보이지 않아요.',

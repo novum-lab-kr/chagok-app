@@ -523,10 +523,10 @@ function StickerField({value,onChoose,targetRef}:{value:StickerId;onChoose:()=>v
 // ── 목표 설정 ──────────────────────────────────────────────────────
 export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:string;picking:boolean;onPick:()=>void;onChange:(date:string)=>void;onClear:()=>void};
 /** 목표 설정의 칸 수 칸. 늘리기만 된다(min = 지금 칸 수). 혼자 목표와 함께 목표(만든 사람)가 같이 쓴다. */
-export type SlotsFieldView={current:number;value:string;onChange:(value:string)=>void;error?:string};
-export function SlotsField({current,value,onChange,error}:SlotsFieldView) {
+export type SlotsFieldView={current:number;value:string;onChange:(value:string)=>void;error?:string;/** 상한(함께 목표만) */max?:number};
+export function SlotsField({current,value,onChange,error,max}:SlotsFieldView) {
   return <View style={{gap:8}}>
-    <SlotCountPicker value={value} onChange={onChange} min={current}/>
+    <SlotCountPicker value={value} onChange={onChange} min={current} max={max}/>
     <Small>{t('goal.slotsNow',current)}</Small>
     {error&&<View accessible accessibilityRole="alert"><Small>{error}</Small></View>}
   </View>;
