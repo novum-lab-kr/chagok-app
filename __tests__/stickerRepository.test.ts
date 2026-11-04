@@ -20,9 +20,9 @@ describe('stickerRepository', () => {
     expect(s.placedAt).toBeGreaterThan(0);
   });
 
-  it('종류를 안 주면 새싹이가 기본값이다', async () => {
+  it('종류를 안 주면 네잎클로버가 기본값이다', async () => {
     const g = await goal();
-    expect((await placeSticker(g.id, 0)).stickerType).toBe('basic.sprout');
+    expect((await placeSticker(g.id, 0)).stickerType).toBe('basic.clover');
   });
 
   it('한 판 안에서 종류를 섞어 쓸 수 있다', async () => {

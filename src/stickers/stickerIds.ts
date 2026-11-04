@@ -3,7 +3,7 @@ import { pocketStickers } from './pocket/catalog';
 
 const COLOR = new Set<string>(colorStickers.map((s) => s.id));
 const LEGACY = new Set<string>(pocketStickers.map((s) => s.id));
-export const DEFAULT_COLOR_STICKER: ColorStickerId = 'basic.sprout';
+export const DEFAULT_COLOR_STICKER: ColorStickerId = 'basic.clover';
 
 /**
  * 저장값을 그릴 수 있는 컬러 ID로 (2026-10-07 모두 컬러). 스키마 v6이 기기 값은 옮기지만

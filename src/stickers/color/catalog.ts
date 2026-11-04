@@ -33,4 +33,9 @@ export function getColorSticker(id:ColorStickerId):ColorStickerDefinition {
   if (!sticker) throw new Error(`Unknown color sticker: ${id}`);
   return sticker;
 }
-export const colorStickersInPack=(pack:ColorStickerPackId)=>colorStickers.filter(s=>s.pack===pack);
+/**
+ * 묶음 목록에서만 뺀 스티커. 이미 붙인 판과 목표는 그대로 그려야 해서 그림과 ID는 남긴다(ID는 다른 그림에 다시 쓰지 않는다).
+ * 2026-11-04 기본 묶음 10개로 맞추며 새싹은 네잎클로버로, 운동화는 물방울로 바꿨다.
+ */
+export const retiredColorStickers:ReadonlySet<string>=new Set(['basic.sprout','basic.shoe']);
+export const colorStickersInPack=(pack:ColorStickerPackId)=>colorStickers.filter(s=>s.pack===pack&&!retiredColorStickers.has(s.id));

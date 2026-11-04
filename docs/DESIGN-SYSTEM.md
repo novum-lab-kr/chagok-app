@@ -45,7 +45,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 
 ## 스티커 자산
 
-- **컬러 스티커(앱이 쓰는 것):** `src/stickers/color/`. 24×24 도트 66종 — 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10. ID는 `묶음.이름`. 원본은 `source/sticker-packs-24.json`, 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다. 위젯용 그림은 `widgetStickerArt.generated.ts`. 검토는 Storybook `Stickers / Color Assets`. [README](../src/stickers/color/README.md).
+- **컬러 스티커(앱이 쓰는 것):** `src/stickers/color/`. 24×24 도트 102종, 묶음마다 10개씩 보인다. 기본(무료)은 네잎클로버, 물방울, 책, 꽃, 별, 고양이, 달, 영양제, 불꽃, 음표(2026-11-04). 새싹과 운동화는 묶음에서만 빼고(`retiredColorStickers`) 그림은 남겨 이미 붙인 판에서 그대로 보인다. 새 목표의 기본 스티커는 네잎클로버(`DEFAULT_COLOR_STICKER`). ID는 `묶음.이름`. 원본은 `source/sticker-packs-24.json`, 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다. 위젯용 그림은 `widgetStickerArt.generated.ts`. 검토는 Storybook `Stickers / Color Assets`. [README](../src/stickers/color/README.md).
 - **흑백 스티커:** `src/stickers/pocket/`(6종, 56×56 SVG path). 앱 저장값은 스키마 v6에서 컬러로 옮겼다. `node scripts/trace-pocket-stickers.mjs`는 추가 5종 파일을 덮어쓰니 자산을 다시 만들 때만 쓴다.
 - `src/stickers/catalog.ts`(22종)는 쓰는 코드가 없지만 옛 마이그레이션 매핑 근거라 지우지 않는다.
 

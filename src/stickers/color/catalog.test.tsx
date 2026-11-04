@@ -11,13 +11,16 @@ afterEach(cleanup);
 const ROW=/M(\d+) (\d+)h(\d+)v1h-(\d+)Z/g;
 
 describe('컬러 스티커 카탈로그',()=>{
-  it('묶음은 기본 6개, 나머지 10개씩 66종이고 기본, 동물, 감정이 무료다',()=>{
+  it('묶음마다 10개씩 보이고(기본은 새싹과 운동화를 뺀 10개, 2026-11-04) 기본, 동물, 감정이 무료다',()=>{
     expect(colorStickerPacks.map(p=>[p.id,colorStickersInPack(p.id).length,p.free])).toEqual([
-      ['basic',6,true],['sports_normal',10,false],['snack_normal',10,false],['objects_normal',10,false],
+      ['basic',10,true],['sports_normal',10,false],['snack_normal',10,false],['objects_normal',10,false],
       ['animals_normal',10,true],['emotions_normal',10,true],['weather_normal',10,false],
       ['christmas_normal',10,false],['study_normal',10,false],['food_normal',10,false],
     ]);
-    expect(colorStickers).toHaveLength(96);
+    expect(colorStickers).toHaveLength(102);
+    // 뺀 두 개는 그림이 남아 이미 붙인 판에서 그대로 보인다
+    expect(colorStickers.map(s=>s.id)).toEqual(expect.arrayContaining(['basic.sprout','basic.shoe']));
+    expect(colorStickersInPack('basic').map(s=>s.id)).toEqual(['basic.clover','basic.water','basic.book','basic.flower','basic.star','basic.cat','basic.moon','basic.pill','basic.flame','basic.music']);
   });
 
   it('ID는 "묶음.이름" 형식으로 겹치지 않고, 흑백 스티커 ID와도 겹치지 않는다',()=>{

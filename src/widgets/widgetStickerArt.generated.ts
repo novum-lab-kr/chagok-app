@@ -1,12 +1,18 @@
 // 생성 파일 — 직접 고치지 않는다. node scripts/build-widget-art.mjs로 다시 만든다.
 // 위젯 스티커 그림: 컬러 스티커 ID → 앱 번들 PNG.
 export const widgetStickerArt: Record<string, number> = {
+  'basic.clover': require('../../assets/widget-art/color-basic-clover.png'),
+  'basic.water': require('../../assets/widget-art/color-basic-water.png'),
   'basic.sprout': require('../../assets/widget-art/color-basic-sprout.png'),
   'basic.shoe': require('../../assets/widget-art/color-basic-shoe.png'),
   'basic.book': require('../../assets/widget-art/color-basic-book.png'),
   'basic.flower': require('../../assets/widget-art/color-basic-flower.png'),
   'basic.star': require('../../assets/widget-art/color-basic-star.png'),
   'basic.cat': require('../../assets/widget-art/color-basic-cat.png'),
+  'basic.moon': require('../../assets/widget-art/color-basic-moon.png'),
+  'basic.pill': require('../../assets/widget-art/color-basic-pill.png'),
+  'basic.flame': require('../../assets/widget-art/color-basic-flame.png'),
+  'basic.music': require('../../assets/widget-art/color-basic-music.png'),
   'sports_normal.dumbbell': require('../../assets/widget-art/color-sports_normal-dumbbell.png'),
   'sports_normal.run': require('../../assets/widget-art/color-sports_normal-run.png'),
   'sports_normal.walk': require('../../assets/widget-art/color-sports_normal-walk.png'),

@@ -52,7 +52,7 @@ describe('initialChoice — 「기본 스티커」를 열 때 고른 상태', ()
   it('쓸 수 있는 스티커면 그대로, 그 묶음을 펼친다', () => {
     expect(initialChoice('basic.star', [], now)).toEqual({ selected: 'basic.star', open: 'basic' });
   });
-  it('잠긴 묶음 스티커로 열면(체험이 끝난 뒤 [다른 스티커]) 새싹을 고른 채로 연다', () => {
-    expect(initialChoice('weather_normal.sun', [], now)).toEqual({ selected: 'basic.sprout', open: 'basic' });
+  it('잠긴 묶음 스티커로 열면(체험이 끝난 뒤 [다른 스티커]) 기본 스티커(네잎클로버)를 고른 채로 연다', () => {
+    expect(initialChoice('weather_normal.sun', [], now)).toEqual({ selected: 'basic.clover', open: 'basic' });
   });
 });

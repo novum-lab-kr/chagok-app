@@ -1,5 +1,5 @@
 // 워치 앱 타깃 (PRD 4.14, 워치 계획 2). prebuild 때 @bacons/apple-targets가 읽는다.
-// 스티커 그림은 위젯과 같은 assets/widget-art의 컬러 스티커를 그대로 싣는다. 이미지 이름은 파일 이름에서 「color-」를 뺀 것(basic-sprout).
+// 스티커 그림은 위젯과 같은 assets/widget-art의 컬러 스티커를 그대로 싣는다. 이미지 이름은 파일 이름에서 「color-」를 뺀 것(basic-clover).
 const fs = require('node:fs');
 const path = require('node:path');
 

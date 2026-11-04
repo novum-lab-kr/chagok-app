@@ -7,7 +7,7 @@ import {
   completeGoal, countGoalContents, deleteGoal, getGoal, settleExpiredPeriods, updateGoal,
 } from '../../../src/repositories/goalRepository';
 import { boardLabel, deleteDescription, longDate, periodLabel } from '../../../src/app-data/pocketAdapter';
-import { normalizeStickerId } from '../../../src/stickers/stickerIds';
+import { DEFAULT_COLOR_STICKER, normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { useUnsavedBack } from '../../../src/app-data/useUnsavedBack';
@@ -28,7 +28,7 @@ export default function GoalSettings() {
   const router = useRouter();
   const [goal, setGoal] = useState<Goal | null>(null);
   const [name, setName] = useState('');
-  const [sticker, setSticker] = useState<StickerId>('basic.sprout');
+  const [sticker, setSticker] = useState<StickerId>(DEFAULT_COLOR_STICKER);
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
   /** 적립판 칸 수 입력. 문자열로 들고 저장할 때 parseSlotCount로 검사한다 (2026-09-30). */
   const [slotsText, setSlotsText] = useState('');

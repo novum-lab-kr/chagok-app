@@ -1,12 +1,18 @@
 // 생성 파일 — 직접 고치지 않는다. node scripts/build-widget-art.mjs로 다시 만든다.
 // 워치 블록 색: 컬러 스티커 ID → 대표색 하나.
 export const stickerBlockColors: Record<string, string> = {
+  'basic.clover': '#7DBE5A',
+  'basic.water': '#8FD0F5',
   'basic.sprout': '#F2D58C',
   'basic.shoe': '#FD855F',
   'basic.book': '#FEF1D1',
   'basic.flower': '#F7A8B8',
   'basic.star': '#FFD25E',
   'basic.cat': '#D9DDE2',
+  'basic.moon': '#FFD25E',
+  'basic.pill': '#FFFFFF',
+  'basic.flame': '#F2603A',
+  'basic.music': '#3A3346',
   'sports_normal.dumbbell': '#A9B4BE',
   'sports_normal.run': '#F6A638',
   'sports_normal.walk': '#FFF2D2',

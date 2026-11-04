@@ -63,7 +63,7 @@ const filledWith=(n:number,sticker:StickerId)=>Object.fromEntries(range(n).map(k
 export function TutorialListExample() {
   const add=useTutorialSpot('add');
   return <GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} addTargetRef={add} completed={[]} active={[
-    {id:'reading',name:t('example.reading'),sticker:'basic.sprout',kind:t('board.tally'),percent:40,status:[t('goalCard.filled','40%')]},
+    {id:'reading',name:t('example.reading'),sticker:'basic.clover',kind:t('board.tally'),percent:40,status:[t('goalCard.filled','40%')]},
     {id:'walk',name:t('example.walkEveryEvening'),sticker:'basic.shoe',kind:t('board.calendar'),percent:30,status:[t('goalCard.filled',t('goalCard.percentThisMonth',30))]},
   ]}/>;
 }
@@ -76,8 +76,8 @@ export function TutorialNewGoalExample() {
 /** 3·4단계: 진행 중인 적립판의 다음 빈칸과 붙인 칸 */
 export function TutorialBoardExample() {
   const slot=useTutorialSpot('slot'),record=useTutorialSpot('record');
-  return <BoardDetailScreen name={t('example.reading')} sticker="basic.sprout" completed={false} progress={{value:6,total:15,percentLabel:'40%'}} onBack={noop} onSettings={noop}
-    board={{kind:'tally',total:15,filled:filledWith(6,'basic.sprout'),onPress:noop,onOpenRecord:noop,nextSlotRef:slot,recordSlotRef:record}}/>;
+  return <BoardDetailScreen name={t('example.reading')} sticker="basic.clover" completed={false} progress={{value:6,total:15,percentLabel:'40%'}} onBack={noop} onSettings={noop}
+    board={{kind:'tally',total:15,filled:filledWith(6,'basic.clover'),onPress:noop,onOpenRecord:noop,nextSlotRef:slot,recordSlotRef:record}}/>;
 }
 /** 5단계: 완성한 판의 [완성] 스티커 */
 export function TutorialCompletedExample() {
