@@ -3,7 +3,7 @@
  * 시각은 `now`로 받아 테스트에서 고정한다. 날짜는 모두 로컬 날짜 키다.
  * 적립판 칸 번호는 0부터(slotIndex)다. 화면의 1부터 번호는 어댑터가 바꾼다.
  */
-import { dateKeyOf, dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
+import { dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
 import type { DateKey } from './dates';
 import type { Goal, Sticker } from './types';
 import { t } from '../i18n';

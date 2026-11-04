@@ -53,7 +53,10 @@ export default function TogetherGoal() {
   const { ask, dialog: failure } = useDialog();
   /** 화면이 아직 떠 있는가. 만드는 사이 화면이 닫혔으면 공유 창과 이동을 건너뛴다(목표는 다음 동기화 회차가 목록에 넣는다) */
   const mounted = useRef(true);
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
