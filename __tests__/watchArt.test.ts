@@ -13,7 +13,7 @@ describe('워치 그림', () => {
 
   it('블록 색이 있는 스티커는 모두 워치 그림이 있다', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const config = require('../targets/watch/expo-target.config.js')() as { images: Record<string, string> };
+    const config = require('../targets/watch/expo-target.config.js')({ name: '차곡차곡', icon: './assets/icon.png', ios: { bundleIdentifier: 'com.novumlab.chagok' } }) as { images: Record<string, string> };
     const names = Object.keys(stickerBlockColors).map((id) => id.replace('.', '-')).sort();
     expect(Object.keys(config.images).sort()).toEqual(names);
     for (const p of Object.values(config.images)) expect(fs.existsSync(`targets/watch/${p}`)).toBe(true);

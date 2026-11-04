@@ -1,13 +1,14 @@
+import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 import { GoogleSignin, isCancelledResponse } from '@react-native-google-signin/google-signin';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { GoogleSignInDeps } from './google';
-import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from './googleKeys';
+import { GOOGLE_WEB_CLIENT_ID, googleIosClientId } from './googleKeys';
 
 let configured = false;
 function ensureConfigured() {
   if (configured) return;
-  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID, iosClientId: GOOGLE_IOS_CLIENT_ID });
+  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID, iosClientId: googleIosClientId(Application.applicationId) });
   configured = true;
 }
 
