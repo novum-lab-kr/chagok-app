@@ -243,5 +243,19 @@ export function memoError(memo: string): string | undefined {
 export function shownGoalNameError(name: string, touched: boolean): string | undefined {
   return name === '' && !touched ? undefined : goalNameError(name);
 }
+/**
+ * 함께 목표에서 다른 사람에게 보이는 내 이름 (PRD 4.15, 2026-11-04). 1~10자, 저장할 때 앞뒤 공백을 뺀다.
+ * 10자는 판 화면 이름 배지(폭 56) 두 줄을 생각한 값이다. 금칙어는 서버가 거른다(문구는 서버 응답에 따라 화면이 넘긴다).
+ */
+export const MEMBER_NAME_MAX = 10;
+export function memberNameError(name: string): string | undefined {
+  if (name.trim() === '') return t('validation.memberNameEmpty');
+  if (name.length >= MEMBER_NAME_MAX) return t('validation.maxLength', MEMBER_NAME_MAX);
+  return undefined;
+}
+/** 목표 이름과 같이, 처음 연 빈 칸에는 문구를 보이지 않는다. */
+export function shownMemberNameError(name: string, touched: boolean): string | undefined {
+  return name === '' && !touched ? undefined : memberNameError(name);
+}
 
 export { dateKeyOf };

@@ -6,6 +6,7 @@ import {
   canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
   endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount,
   GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, shownGoalNameError,
+  MEMBER_NAME_MAX, memberNameError, shownMemberNameError,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
 
@@ -317,5 +318,23 @@ describe('입력 글자 수 (2026-10-08)', () => {
   test('한도를 넘은 이름(예전에 저장된 값)도 한도 문구를 보인다', () => {
     expect(goalNameError('가'.repeat(25))).toBe('20자까지 입력할 수 있어요.');
     expect(shownGoalNameError('가'.repeat(25), false)).toBe('20자까지 입력할 수 있어요.');
+  });
+});
+
+describe('함께 목표 내 이름 (2026-11-04)', () => {
+  test('비었거나 띄어쓰기만 있으면 적어 달라고 한다', () => {
+    expect(memberNameError('')).toBe('이름을 적어 주세요.');
+    expect(memberNameError('   ')).toBe('이름을 적어 주세요.');
+  });
+  test('10자에 닿으면 한도를 알린다', () => {
+    expect(MEMBER_NAME_MAX).toBe(10);
+    expect(memberNameError('은주')).toBeUndefined();
+    expect(memberNameError('가'.repeat(9))).toBeUndefined();
+    expect(memberNameError('가'.repeat(10))).toBe('10자까지 입력할 수 있어요.');
+  });
+  test('처음 연 빈 칸에는 문구가 없고, 건드린 뒤 비면 보인다', () => {
+    expect(shownMemberNameError('', false)).toBeUndefined();
+    expect(shownMemberNameError('', true)).toBe('이름을 적어 주세요.');
+    expect(shownMemberNameError(' ', false)).toBe('이름을 적어 주세요.');
   });
 });
