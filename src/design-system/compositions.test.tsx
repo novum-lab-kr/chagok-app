@@ -1,5 +1,5 @@
 import React from 'react';
-import {BoardProgressRow,GuideCard,progressBlockPose,tallyPageSize} from './index';
+import {BoardProgressRow,GuideCard,progressBlockPose,tallyGridLayout,tallyPageSize} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
@@ -303,15 +303,26 @@ describe('판 진행 표시와 안내 (2026-11-02)',()=>{
 });
 
 describe('적립판 쪽 넘기기 (2026-11-03 시안 P1)',()=>{
-  // 칸 높이 76, 줄 간격 10 → 줄 하나 86
+  // 칸 높이 76, 줄 간격 10 → 줄 하나 86. 한 줄 4칸(2026-11-05)
   it('남은 높이에 다 들어가면 쪽을 나누지 않는다',()=>{
-    expect(tallyPageSize(15,500,76,10)).toBe(15);
+    expect(tallyPageSize(15,500,76,10,4)).toBe(15);
   });
   it('넘치면 넘김 줄을 빼고 들어가는 줄만큼 넣는다',()=>{
-    expect(tallyPageSize(40,600,76,10)).toBe(18); // (600-52+10)/86 = 6줄
-    expect(tallyPageSize(40,700,76,10)).toBe(21); // 7줄
+    expect(tallyPageSize(40,600,76,10,4)).toBe(24); // (600-52+10)/86 = 6줄
+    expect(tallyPageSize(40,700,76,10,4)).toBe(28); // 7줄
+    expect(tallyPageSize(40,600,76,10,5)).toBe(30); // 큰 폰 5칸
   });
   it('아주 작은 화면도 최소 3줄을 넣는다',()=>{
-    expect(tallyPageSize(40,200,76,10)).toBe(9);
+    expect(tallyPageSize(40,200,76,10,4)).toBe(12);
+  });
+});
+
+describe('혼자 적립판 4칸, 판 안 폭 330 이상이면 5칸 (2026-11-05)',()=>{
+  // 콘텐츠 폭에서 칸 영역 좌우 여백 2×6을 뺀 폭이 판 안 폭이다. 칸 사이 15.
+  it('390 폭 폰(콘텐츠 294, 판 안 282)은 4칸, 칸 한 변 59',()=>{
+    expect(tallyGridLayout(294)).toEqual({columns:4,cell:59});
+  });
+  it('440 폭 폰(콘텐츠 344, 판 안 332)은 5칸, 칸 한 변 54',()=>{
+    expect(tallyGridLayout(344)).toEqual({columns:5,cell:54});
   });
 });

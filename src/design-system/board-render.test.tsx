@@ -59,3 +59,28 @@ describe('완성한 판 고치기 (2026-10-08)',()=>{
     expect(press).toHaveBeenCalledWith(10);
   });
 });
+
+describe('혼자 적립판 한 줄 칸 수 (2026-11-05 4칸, 큰 폰 5칸)',()=>{
+  // jsdom은 창 폭이 0이다. RN Web의 Dimensions는 documentElement 폭을 읽는다.
+  const phone=(width:number)=>{
+    Object.defineProperty(document.documentElement,'clientWidth',{configurable:true,value:width});
+    window.dispatchEvent(new Event('resize'));
+  };
+  afterEach(()=>phone(0));
+  // 칸을 감싼 것 가운데 폭을 숫자로 정한 첫 상자가 칸 자리다.
+  const cellWidth=()=>{
+    let node:HTMLElement|null=screen.getByRole('button',{name:/^1번 칸/});
+    while(node&&!getComputedStyle(node).width.endsWith('px')) node=node.parentElement;
+    return node&&getComputedStyle(node).width;
+  };
+  it('390 폭 적립판은 한 줄 4칸: 판 안 282 → 칸 한 변 59',()=>{
+    phone(390);
+    render(<Screen b={board(15,0)}/>);
+    expect(cellWidth()).toBe('59px');
+  });
+  it('440 폭 적립판은 한 줄 5칸: 판 안 332 → 칸 한 변 54',()=>{
+    phone(440);
+    render(<Screen b={board(15,0)}/>);
+    expect(cellWidth()).toBe('54px');
+  });
+});

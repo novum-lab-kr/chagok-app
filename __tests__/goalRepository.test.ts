@@ -201,6 +201,19 @@ describe('목록 요약 (PRD 4.1, 6.3)', () => {
     const [row] = await listGoalSummaries(nextMonth);
     expect(row).toMatchObject({ placedAll: 1, placedInBasis: 0 });
   });
+
+  it('memberCount는 보기만 하는 사람(viewer)을 빼고 센다. 혼자 목표는 1', async () => {
+    const solo = await createGoal({ name: '혼자', boardType: 'tally', totalSlots: 5 });
+    const shared = await createGoal({ name: '함께', boardType: 'tally', totalSlots: 5 });
+    const db = await getDb();
+    await db.run("UPDATE goals SET mode = 'each' WHERE id = ?", shared.id);
+    for (const [user, role] of [['u1', 'member'], ['u2', 'member'], ['u3', 'viewer']]) {
+      await db.run('INSERT INTO goal_members (goal_id, user_id, role, joined_at) VALUES (?, ?, ?, 1)', shared.id, user, role);
+    }
+    const byId = Object.fromEntries((await listGoalSummaries(new Date())).map((r) => [r.goal.id, r]));
+    expect(byId[solo.id].memberCount).toBe(1);
+    expect(byId[shared.id].memberCount).toBe(3);
+  });
 });
 
 describe('외래키가 꺼진 연결에서도 (expo 트랜잭션 연결)', () => {

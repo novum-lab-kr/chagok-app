@@ -495,6 +495,8 @@ export const ko = {
   'together.leaveHintEach': '내 판은 내 목표로 남고, 친구들에게서는 사라져요.',
   'together.leaveHintOne': '판에 붙인 내 스티커가 떨어지고, 이 목표가 내 목록에서 사라져요.',
   'together.deleteOwner': '내 판과 기록이 지워지고 이 목표에서 나가요. 친구들의 판은 그대로예요.',
+  'together.loginTitle': '로그인이 필요해요',
+  'together.loginDescription': '친구와 함께하려면 로그인해 주세요. 지금 목표와 기록은 그대로예요.',
   'together.tryLater': '잠시 뒤 다시 해 주세요',
   'together.goneTitle': '이 목표를 볼 수 없어요',
   'together.ownerOnly': '만든 사람만 바꿀 수 있어요',

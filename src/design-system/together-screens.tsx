@@ -159,8 +159,8 @@ export function MemberBadgeRow({people}:{people:readonly MemberBadge[]}) {
 
 // ── 만들기 ─────────────────────────────────────────────────────────
 /** 목표 탭 + 시트: [혼자 채우기] [친구와 함께]. */
-export function AddGoalSheet({visible,onSolo,onTogether,onRequestClose,overlay}:{visible:boolean;onSolo:()=>void;onTogether:()=>void;onRequestClose:()=>void;/** 시트 위 다이얼로그(로그인 안내 등) */overlay?:ReactNode}) {
-  return <PixelBottomSheet visible={visible} title={t('goal.new')} onRequestClose={onRequestClose} overlay={overlay}>
+export function AddGoalSheet({visible,onSolo,onTogether,onRequestClose,onDismiss,overlay}:{visible:boolean;onSolo:()=>void;onTogether:()=>void;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤(그 뒤에 다른 화면을 연다) */onDismiss?:()=>void;/** 시트 위 다이얼로그(로그인 안내 등) */overlay?:ReactNode}) {
+  return <PixelBottomSheet visible={visible} title={t('goal.new')} onRequestClose={onRequestClose} onDismiss={onDismiss} overlay={overlay}>
     <PixelButton label={t('together.solo')} variant="secondary" onPress={onSolo}/>
     <PixelButton label={t('together.title')} variant="secondary" onPress={onTogether}/>
   </PixelBottomSheet>;
@@ -336,5 +336,7 @@ export function BlockedPeopleScreen({people,onUnblock,onBack}:{people:readonly B
 
 /** 함께 목표 확인 창 문구. PixelDialogModal(basic)에 넘긴다. 값은 읽는 순간의 언어로 만든다. */
 export const togetherDialogs={
+  /** + 시트 [친구와 함께], 친구와 함께 만들기에서 로그인 전. [로그인]은 계정 연결로 간다. */
+  get login(){return {title:t('together.loginTitle'),description:t('together.loginDescription'),primaryLabel:t('account.login'),secondaryLabel:t('common.close')};},
   blockConfirm:(name:string)=>({title:t('block.confirmTitle',name),description:t('block.confirmDescription',name),secondaryLabel:t('common.cancel'),primaryLabel:t('block.confirm')}),
 };

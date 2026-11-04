@@ -79,19 +79,26 @@ describe('목록 카드와 진행 문구 (PRD 4.1)', () => {
   });
 
   it('적립판 진행 중: m% 채웠어요', () => {
-    const card = goalCard({ goal: { ...tally, totalSlots: 15 }, placedAll: 6, placedInBasis: 6 }, NOW);
+    const card = goalCard({ goal: { ...tally, totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 1 }, NOW);
     expect(card).toMatchObject({ id: 'g1', name: '러닝', sticker: 'basic.shoe', kind: '적립판', percent: 40, status: ['40% 채웠어요'] });
   });
 
+  it('함께 목표 카드 status 첫 줄은 「3명이 함께」, 혼자 목표 카드는 그대로', () => {
+    const shared = goalCard({ goal: { ...tally, mode: 'each', totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 3 }, NOW);
+    expect(shared.status).toEqual(['3명이 함께', '40% 채웠어요']);
+    const solo = goalCard({ goal: { ...tally, totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 1 }, NOW);
+    expect(solo.status).toEqual(['40% 채웠어요']);
+  });
+
   it('종료일 없는 달력판은 이번 달을 붙인다', () => {
-    const card = goalCard({ goal: cal, placedAll: 20, placedInBasis: 9 }, NOW);
+    const card = goalCard({ goal: cal, placedAll: 20, placedInBasis: 9, memberCount: 1 }, NOW);
     expect(card.status).toEqual(['이번 달 30% 채웠어요']);
   });
 
   it('완성한 판: m%와 M/D 완성. 종료일 없는 달력판은 완성한 달을 붙인다', () => {
-    const doneTally = goalCard({ goal: { ...tally, totalSlots: 20, completedAt: at(9, 29, 8) }, placedAll: 20, placedInBasis: 20 }, NOW);
+    const doneTally = goalCard({ goal: { ...tally, totalSlots: 20, completedAt: at(9, 29, 8) }, placedAll: 20, placedInBasis: 20, memberCount: 1 }, NOW);
     expect(doneTally.status).toEqual(['100%', '9/29 완성']);
-    const doneOpen = goalCard({ goal: { ...cal, completedAt: at(8, 31) }, placedAll: 10, placedInBasis: 10 }, NOW);
+    const doneOpen = goalCard({ goal: { ...cal, completedAt: at(8, 31) }, placedAll: 10, placedInBasis: 10, memberCount: 1 }, NOW);
     expect(doneOpen.status).toEqual(['8월 32%', '8/31 완성']);
   });
 

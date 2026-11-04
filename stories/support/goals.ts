@@ -48,9 +48,9 @@ function placedInBasis(goal: Goal, stickers: readonly Sticker[]) {
   return basis.kind === 'all' ? stickers.length : stickers.filter(s => s.dateKey.startsWith(monthKeyOf(basis.year, basis.month))).length;
 }
 
-/** 목록 카드. 앱 목표 탭과 같은 goalCard. */
-export const cardOf = (goal: Goal, stickers: readonly Sticker[]): GoalCardItem =>
-  goalCard({goal, placedAll: stickers.length, placedInBasis: placedInBasis(goal, stickers)}, NOW);
+/** 목록 카드. 앱 목표 탭과 같은 goalCard. memberCount는 함께 목표의 함께하는 사람 수(혼자 목표는 1). */
+export const cardOf = (goal: Goal, stickers: readonly Sticker[], memberCount = 1): GoalCardItem =>
+  goalCard({goal, placedAll: stickers.length, placedInBasis: placedInBasis(goal, stickers), memberCount}, NOW);
 export const cardFor = (key: GoalKey) => cardOf(goals[key], stickersOf[key]);
 
 /** 판 상세(BoardDetailScreen) 값. 앱 app/goal/[id]/index.tsx와 같은 함수로 만든다. 누르는 동작은 비운다. */

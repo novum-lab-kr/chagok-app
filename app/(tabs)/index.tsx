@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { trackTutorial } from '../../src/analytics';
-import { FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
+import { AddGoalSheet, FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, togetherDialogs, useLoadRetry } from '../../src/design-system';
 import type { GoalListTab } from '../../src/design-system';
 import { listGoalSummaries, reorderGoals, settleExpiredPeriods } from '../../src/repositories/goalRepository';
 import type { GoalSummary } from '../../src/repositories/goalRepository';
 import { getFlag, getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
-import { useDialog } from '../../src/app-data/useDialog';
+import { DISMISS_FALLBACK_MS, useDialog } from '../../src/app-data/useDialog';
+import { signedInUserId } from '../../src/app-data/sharedGoalActions';
+import { subscribeLocalChange } from '../../src/sync/changes';
+import { requestSync } from '../../src/sync/syncGate';
 import { ConnectAccount } from '../account/connect';
 import { readAccountState } from '../../src/sync/accountStatus';
 import { getSupabase } from '../../src/sync/supabaseClient';
@@ -22,6 +26,9 @@ import { subscribeWidgetApplied } from '../../src/widgets/applied';
 import { loadPackState } from '../../src/repositories/packRepository';
 import { canCreateGoal } from '../../src/domain/subscription';
 import { reachedThreshold, showTrialReadyCard } from '../../src/domain/packs';
+
+/** 동기화 회차가 기기를 바꾼 뒤 목록을 다시 읽기까지 모으는 시간 */
+const LOCAL_CHANGE_DELAY_MS = 1000;
 
 /** 홈 = 목표 탭 (PRD 4.1, 2026-10-12 하단 탭). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
 export default function GoalList() {
@@ -47,6 +54,10 @@ export default function GoalList() {
   const navigation = useNavigation();
   /** 내 목표를 끄는 동안. 화면을 밀어 탭이 바뀌지 않게 한다 (PRD 4.1, 2026-10-30). */
   const [dragging, setDragging] = useState(false);
+  /** + 시트 [혼자 채우기] [친구와 함께] (PRD 4.15) */
+  const [sheet, setSheet] = useState(false);
+  /** 시트가 다 닫힌 뒤 열 화면. iOS는 닫히는 중인 Modal 위로 화면을 열면 Modal에 가린다 */
+  const afterSheet = useRef<(() => void) | null>(null);
 
   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
   useFocusEffect(useCallback(() => {
@@ -135,6 +146,18 @@ export default function GoalList() {
     void listGoalSummaries(new Date()).then(setSummaries);
   }), []);
 
+  // 목표 탭을 볼 때 서버 것을 바로 받는다(로그인해 있을 때만 회차가 돈다). 회차가 기기를 바꾸면 목록을 다시 읽는다 —
+  // 친구가 만든 함께 목표, 바뀐 이름과 사람 수. 신호는 커밋 전에 올 수 있어 모았다가 읽는다(changes.ts).
+  useFocusEffect(useCallback(() => {
+    requestSync();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const off = subscribeLocalChange(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { void listGoalSummaries(new Date()).then(setSummaries).catch(() => {}); }, LOCAL_CHANGE_DELAY_MS);
+    });
+    return () => { off(); clearTimeout(timer); };
+  }, []));
+
   // 시작 화면·튜토리얼·불러오는 동안은 하단 탭을 숨긴다. 첫 실행은 탭보다 먼저 끝내야 한다.
   const hideTabBar = !summaries || showTutorial !== false || showStart !== false;
   useEffect(() => {
@@ -191,10 +214,35 @@ export default function GoalList() {
     if (value) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
 
-  /** 구독이 아니면 목표는 5개까지(완성한 목표 포함). 넘으면 [+]가 구독 화면을 열고, 그 화면이 이유를 알린다 (2026-11-02 시안 C안) */
+  /**
+   * 구독이 아니면 목표는 5개까지(완성한 목표, 함께 목표 포함). 넘으면 [+]가 구독 화면을 열고, 그 화면이 이유를 알린다 (2026-11-02 시안 C안).
+   * 넘지 않으면 + 시트를 연다 (PRD 4.15).
+   */
   const addGoal = () => {
-    if (canCreateGoal(summaries.length, subscribed)) router.push('/goal/new');
+    if (canCreateGoal(summaries.length, subscribed)) setSheet(true);
     else router.push({ pathname: '/subscription', params: { from: 'goals' } });
+  };
+  const runAfterSheet = () => {
+    const next = afterSheet.current;
+    afterSheet.current = null;
+    next?.();
+  };
+  /** 시트를 닫고, 다 닫힌 뒤(iOS onDismiss, 신호가 안 오면 잠시 뒤) 다음 화면을 연다 */
+  const closeSheetThen = (next: () => void) => {
+    afterSheet.current = next;
+    setSheet(false);
+    if (Platform.OS === 'ios') setTimeout(runAfterSheet, DISMISS_FALLBACK_MS);
+    else runAfterSheet();
+  };
+  /** [친구와 함께]: 로그인해 있으면 만들기로, 아니면 시트 위에서 로그인을 권한다. 로그인이 끝나면 계정 연결이 만들기로 보낸다 */
+  const addTogether = async () => {
+    if (await signedInUserId()) {
+      closeSheetThen(() => router.push('/goal/together'));
+      return;
+    }
+    if ((await ask(togetherDialogs.login)) === 'primary') {
+      closeSheetThen(() => router.push({ pathname: '/account/connect', params: { from: 'together' } }));
+    }
   };
 
   const closeTrial = () => {
@@ -220,7 +268,15 @@ export default function GoalList() {
           ? <TrialReadyCard days={trial} onChoose={() => router.navigate('/stickers')} onClose={closeTrial} />
           : undefined}
       />
-      {dialog}
+      <AddGoalSheet
+        visible={sheet}
+        onSolo={() => closeSheetThen(() => router.push('/goal/new'))}
+        onTogether={() => { void addTogether().catch(() => {}); }}
+        onRequestClose={() => setSheet(false)}
+        onDismiss={runAfterSheet}
+        overlay={sheet ? dialog : undefined}
+      />
+      {!sheet && dialog}
     </TabSafeArea>
   );
 }

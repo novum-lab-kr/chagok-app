@@ -510,6 +510,8 @@ export const en: Messages = {
   'together.leaveHintEach': 'Your board stays as your own goal and goes away for your friends.',
   'together.leaveHintOne': 'Your stickers come off the board and this goal leaves your list.',
   'together.deleteOwner': "Your board and records will be deleted and you'll leave this goal. Your friends' boards stay.",
+  'together.loginTitle': 'Please sign in',
+  'together.loginDescription': 'Sign in to fill a goal with friends. Your goals and records stay as they are.',
   'together.tryLater': 'Please try again in a moment',
   'together.goneTitle': "You can't see this goal",
   'together.ownerOnly': 'Only the person who made it can change this',

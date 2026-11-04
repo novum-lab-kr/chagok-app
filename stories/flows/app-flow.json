@@ -925,6 +925,10 @@
           {
             "id": "screens-함께-목표--add-sheet",
             "label": "혼자 채우기, 친구와 함께"
+          },
+          {
+            "id": "screens-함께-목표--add-sheet-login",
+            "label": "친구와 함께, 로그인 전"
           }
         ],
         "scenarios": [
@@ -2089,6 +2093,28 @@
       "source": "together-sheet",
       "target": "together-new",
       "label": "친구와 함께",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-sheet-start",
+      "source": "together-sheet",
+      "target": "start",
+      "label": "로그인",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "start-together-new",
+      "source": "start",
+      "target": "together-new",
+      "label": "로그인 끝",
       "data": {
         "scenarios": [
           "together"

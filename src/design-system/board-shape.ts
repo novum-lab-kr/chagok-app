@@ -7,7 +7,7 @@ const keyOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.
 
 /**
  * 내 판 열 수: 4칸, 판 안 폭이 330 이상인 큰 폰은 5칸.
- * 함께 목표 판에 먼저 쓴다. 혼자 판도 같은 셈으로 바꾸기로 했다(2026-11-04 사용자, 아직 바꾸지 않음).
+ * 함께 목표 판과 혼자 적립판(2026-11-05)이 같은 셈을 쓴다.
  */
 export function boardColumns(innerWidth: number): number {
   return innerWidth >= 330 ? 5 : 4;

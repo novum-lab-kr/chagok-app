@@ -98,11 +98,14 @@ export const OneBoardScreen: Story = {name: '한 판에 같이', render: () => <
 export const ShowBoardReadOnly: Story = {name: '보여주기 받은 판 보기만', render: () => <Stage><ShowBoard/></Stage>};
 
 // ── 만들기 ─────────────────────────────────────────────────────────
-const sharedCard: GoalCardItem = {...cardOf(walk, slots(walk, 11)), status: [t('together.memberCount', 4), ...cardOf(walk, slots(walk, 11)).status]};
+const sharedCard: GoalCardItem = cardOf(walk, slots(walk, 11), 4);
 function GoalList() {
   return <GoalListScreen tab="active" onTab={noop} active={[cardFor('reading'), sharedCard, cardFor('water')]} completed={[]} onOpen={noop} onAdd={noop}/>;
 }
 export const AddSheet: Story = {name: '더하기 시트', render: () => <Stage tab="index"><GoalList/><AddGoalSheet visible onSolo={noop} onTogether={noop} onRequestClose={noop}/></Stage>};
+/** [친구와 함께]를 로그인 전에 눌렀을 때. 앱은 시트 위(overlay)에 togetherDialogs.login을 띄운다. 새 문구, 사용자 확인 전 */
+export const AddSheetLogin: Story = {name: '더하기 시트 로그인 전', render: () => <Stage tab="index"><GoalList/><AddGoalSheet visible onSolo={noop} onTogether={noop} onRequestClose={noop}
+  overlay={<PixelDialogModal visible {...togetherDialogs.login} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/>}/></Stage>};
 
 /** 앱 app/goal/together.tsx가 넘길 값. 이름 검사는 앱과 같은 함수 */
 function TogetherForm({initialMode = 'each', initialName = walk.name, initialMyName = ME.name, myNameError}: {initialMode?: TogetherMode; initialName?: string; initialMyName?: string; myNameError?: string}) {

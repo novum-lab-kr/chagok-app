@@ -71,16 +71,17 @@ export function percentLabel(goal: Goal, placedInBasis: number, now: Date): stri
   return basis.current ? t('goalCard.percentThisMonth', percent) : t('goalCard.percentInMonth', basis.month, percent);
 }
 
-/** 목록 카드: `[판 종류] m% 채웠어요` 또는 `[판 종류] m% M/D 완성` (PRD 4.1). */
-export function goalCard({ goal, placedInBasis }: GoalSummary, now: Date): GoalCardItem {
+/** 목록 카드: `[판 종류] m% 채웠어요` 또는 `[판 종류] m% M/D 완성` (PRD 4.1). 함께 목표는 앞에 「n명이 함께」(PRD 4.15). */
+export function goalCard({ goal, placedInBasis, memberCount }: GoalSummary, now: Date): GoalCardItem {
   const label = percentLabel(goal, placedInBasis, now);
+  const progress = isCompleted(goal) ? [label, t('goalCard.completedOn', shortDate(goal.completedAt!))] : [t('goalCard.filled', label)];
   return {
     id: goal.id,
     name: goal.name,
     sticker: normalizeStickerId(goal.defaultStickerId),
     kind: kindLabel(goal),
     percent: progressOf(goal, placedInBasis, now).percent,
-    status: isCompleted(goal) ? [label, t('goalCard.completedOn', shortDate(goal.completedAt!))] : [t('goalCard.filled', label)],
+    status: goal.mode === 'solo' ? progress : [t('together.memberCount', memberCount), ...progress],
   };
 }
 

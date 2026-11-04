@@ -25,12 +25,18 @@ export type ActionDeps = {
   client: SharedClient; userId: string; sync: PushDeps; currentUserId: () => Promise<string | null>;
 };
 
+/** 로그인한 사용자 id. 서버 설정이 없거나 세션이 없으면 null이다(화면이 로그인을 권한다). */
+export async function signedInUserId(): Promise<string | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  return (await supabase.auth.getSession()).data.session?.user.id ?? null;
+}
+
 /** 로그인한 사용자 기준 구성. 서버 설정이 없거나 세션이 없으면 null이다(화면이 로그인을 권한다). */
 export async function actionDeps(): Promise<ActionDeps | null> {
   const supabase = getSupabase();
-  if (!supabase) return null;
-  const userId = (await supabase.auth.getSession()).data.session?.user.id;
-  if (!userId) return null;
+  const userId = await signedInUserId();
+  if (!supabase || !userId) return null;
   const currentUserId = async () => (await supabase.auth.getSession()).data.session?.user.id ?? null;
   return {
     // supabase-js의 표 읽기 모양이 SharedClient의 최소 모양보다 크다. 쓰는 부분(select, eq, is, maybeSingle)만 맞으면 된다
@@ -132,5 +138,10 @@ export async function rotateAndShare(d: ActionDeps, goalId: string, goalName: st
   await shareLink(goalName, await rotateInvite(d.client, goalId));
 }
 
-// 메시지 안의 주소를 메신저가 링크로 읽으므로 iOS에도 url을 따로 주지 않는다
-const shareLink = (goalName: string, code: string) => Share.share({ message: t('together.shareMessage', goalName, inviteUrl(code)) });
+const shareLink = (goalName: string, code: string) => shareInviteUrl(goalName, inviteUrl(code));
+
+/** 초대 주소를 OS 공유 창으로 보낸다. 공유를 닫거나 취소해도 그대로 끝난다. */
+export async function shareInviteUrl(goalName: string, url: string): Promise<void> {
+  // 메시지 안의 주소를 메신저가 링크로 읽으므로 iOS에도 url을 따로 주지 않는다
+  await Share.share({ message: t('together.shareMessage', goalName, url) });
+}

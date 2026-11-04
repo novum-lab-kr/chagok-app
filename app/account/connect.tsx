@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { track } from '../../src/analytics';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import {
   AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
@@ -41,7 +41,8 @@ import { t } from '../../src/i18n';
 const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
 const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD;
 
-type From = 'start' | 'settings' | 'relogin';
+/** together: 목표 탭 + 시트 [친구와 함께]에서 왔다. 연결이 끝나면 친구와 함께 만들기로 간다(PRD 4.15) */
+type From = 'start' | 'settings' | 'relogin' | 'together';
 type Step =
   | { kind: 'login' }
   | { kind: 'restoring' }
@@ -154,6 +155,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     await endConnect();
     resumeSync();
     if (from === 'start') onDone?.(restored);
+    else if (from === 'together') router.replace('/goal/together');
     else goBackOrHome();
   };
 

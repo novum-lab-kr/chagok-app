@@ -308,6 +308,8 @@ export type GoalSummary = {
   placedAll: number;
   /** 진행률 기준(progressBasis) 안에서 붙어 있는 수. 기간 없는 달력판만 전체와 다르다 */
   placedInBasis: number;
+  /** 함께하는 사람 수(나 포함, 보기만 하는 사람은 뺀다. countMembers와 같은 규칙). 혼자 목표는 1 */
+  memberCount: number;
 };
 
 /**
@@ -321,6 +323,9 @@ export async function listGoalSummaries(now: Date): Promise<GoalSummary[]> {
     `SELECT goal_id, substr(date_key, 1, 7) AS ym, COUNT(*) AS n
        FROM stickers WHERE board_user_id = '${ME}' OR board_user_id IS NULL GROUP BY goal_id, ym`,
   );
+  const members = new Map((await db.all<{ goal_id: string; n: number }>(
+    "SELECT goal_id, COUNT(*) AS n FROM goal_members WHERE role != 'viewer' GROUP BY goal_id",
+  )).map((r) => [r.goal_id, r.n]));
   return goals.map((goal) => {
     const mine = counts.filter((c) => c.goal_id === goal.id);
     const placedAll = mine.reduce((sum, c) => sum + c.n, 0);
@@ -328,6 +333,6 @@ export async function listGoalSummaries(now: Date): Promise<GoalSummary[]> {
     const placedInBasis = basis.kind === 'all'
       ? placedAll
       : mine.find((c) => c.ym === monthKeyOf(basis.year, basis.month))?.n ?? 0;
-    return { goal, placedAll, placedInBasis };
+    return { goal, placedAll, placedInBasis, memberCount: members.get(goal.id) ?? 1 };
   });
 }

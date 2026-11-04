@@ -4,7 +4,7 @@ import {Animated,PanResponder,Pressable,View,type LayoutChangeEvent,type LayoutR
 import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
-import {CompletionSticker,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickMotion,StickerGrid,removeStickerAction,stickerCellSize,useContentWidth,useLayoutSize,useReducedMotion} from './components';
+import {CompletionSticker,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickMotion,removeStickerAction,useContentWidth,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard,MonthNavigation,calendarDateKey} from './calendar';
@@ -280,12 +280,18 @@ const TALLY_PAGE_TURN_DELAY_MS=700;
 const TALLY_MEASURE_TIMEOUT_MS=400;
 /**
  * 적립판 한 쪽에 넣을 칸 수 (2026-11-03 시안 P1). 남은 높이에 다 들어가면 쪽을 나누지 않는다(total).
- * 나누면 넘김 줄 높이를 빼고 들어가는 줄 수만큼, 최소 3줄을 넣는다. 한 줄은 3칸이다.
+ * 나누면 넘김 줄 높이를 빼고 들어가는 줄 수만큼, 최소 3줄을 넣는다. 한 줄 칸 수는 columns(판 안 폭에 따라 4칸이나 5칸, 2026-11-05)다.
  */
-export function tallyPageSize(total:number,maxHeight:number,cellHeight:number,rowGap:number):number {
+export function tallyPageSize(total:number,maxHeight:number,cellHeight:number,rowGap:number,columns:number):number {
   const rows=(height:number)=>Math.floor((height+rowGap)/(cellHeight+rowGap));
-  if(rows(maxHeight)*3>=total) return total;
-  return Math.max(3,rows(maxHeight-TALLY_PAGE_NAV_HEIGHT))*3;
+  if(rows(maxHeight)*columns>=total) return total;
+  return Math.max(3,rows(maxHeight-TALLY_PAGE_NAV_HEIGHT))*columns;
+}
+/** 혼자 적립판 칸 배치: 판 안 폭(칸 영역 좌우 여백을 뺀 폭)으로 열 수와 칸 한 변을 정한다. 작은 판(CompactTally)과 같은 셈. */
+export function tallyGridLayout(contentWidth:number):{columns:number;cell:number} {
+  const inner=Math.max(0,contentWidth-2*retro.layout.boardInset);
+  const columns=boardColumns(inner);
+  return {columns,cell:boardCellSize(inner,columns,retro.layout.boardGap)};
 }
 /** 달력판 MonthNavigation과 같은 줄: [이전] 「1~21칸 / 40」 [다음]. 끝 쪽에서는 그 방향 버튼 자리를 비운다. */
 function TallyPageNavigation({from,to,total,onPrev,onNext}:{from:number;to:number;total:number;onPrev?:()=>void;onNext?:()=>void}) {
@@ -305,8 +311,10 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
   const all=Array.from({length:board.total},(_,i)=>i+1);
   const next=all.find(n=>!board.filled[n]);
   const lastFilled=Math.max(0,...Object.keys(board.filled).map(Number));
-  const [width,setWidth]=useState(0);
-  const perPage=maxHeight!==null&&width>0?tallyPageSize(board.total,maxHeight,stickerCellSize(width).height,retro.layout.boardRowGap):null;
+  const [layoutWidth,setWidth]=useState<number|null>(null);
+  const width=useContentWidth(layoutWidth);
+  const {columns,cell}=tallyGridLayout(width);
+  const perPage=maxHeight!==null&&width>0?tallyPageSize(board.total,maxHeight,cell,retro.layout.boardRowGap,columns):null;
   const paged=perPage!==null&&perPage<board.total;
   const pages=paged?Math.ceil(board.total/perPage):1;
   // 처음에는 다음 빈칸(없으면 마지막으로 붙인 칸)이 있는 쪽. 쪽 크기가 바뀌어도 보던 첫 칸이 든 쪽을 그대로 보여 준다.
@@ -369,15 +377,16 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
   },[]);
   return <View {...swipe.panHandlers} onLayout={event=>setWidth(Math.round(event.nativeEvent.layout.width))}>
     {paged&&<TallyPageNavigation from={first} to={last} total={board.total} onPrev={page>0?()=>go(page-1):undefined} onNext={page<pages-1?()=>go(page+1):undefined}/>}
-    <StickerGrid>{numbers.map(n=>{
+    <View style={{flexDirection:'row',flexWrap:'wrap',paddingHorizontal:retro.layout.boardInset,columnGap:retro.layout.boardGap,rowGap:retro.layout.boardRowGap}}>{numbers.map(n=>{
     const filled=board.filled[n];
-    const cell=<TallyCell key={n} n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'}
+    const slot=<TallyCell n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'}
       hasRecord={board.recorded?.has(n)??false} popIn={n===board.justPlaced} onPress={press} onOpenRecord={filled?open:undefined}/>;
-    // 튜토리얼 대상 칸은 감싸서 잰다. 감싸는 View는 칸을 그대로 채운다.
-    if(n===next) return <View key={n} ref={setNextNode} onLayout={centerNext} style={{width:'100%',height:'100%'}}>{cell}</View>;
-    if(filled&&n===lastFilled) return <View key={n} ref={board.recordSlotRef} style={{width:'100%',height:'100%'}}>{cell}</View>;
-    return cell;
-  })}</StickerGrid></View>;
+    const size={width:cell,height:cell};
+    // 튜토리얼 대상 칸은 그 칸을 감싼 View로 잰다.
+    if(n===next) return <View key={n} ref={setNextNode} onLayout={centerNext} style={size}>{slot}</View>;
+    if(filled&&n===lastFilled) return <View key={n} ref={board.recordSlotRef} style={size}>{slot}</View>;
+    return <View key={n} style={size}>{slot}</View>;
+  })}</View></View>;
 }
 
 // ── 작은 판 (함께 목표, PRD 4.15) ──────────────────────────────────
