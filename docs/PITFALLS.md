@@ -34,10 +34,11 @@
 - **시뮬레이터에서 폰 앱을 다시 설치하면 워치 앱도 다시 넣는다.** 안 그러면 폰의 WCSession이 `appInstalled: NO`로 남아 스냅샷을 보내지 않는다(2026-10-16).
 - **Release 빌드는 RevenueCat 테스트 키를 보면 「Wrong API Key」 창을 띄우고 앱을 닫는다.** 시뮬레이터에서 Release로 확인할 때는 `EXPO_PUBLIC_REVENUECAT_KEY= xcodebuild …`처럼 키를 비워 빌드한다. 그러면 결제는 개발용 대역이 맡고, 누를 때마다 성공, 실패, 보호자 승인 대기, 취소를 고르는 「시험 결제」 창이 뜬다(2026-11-02, 전에는 바로 성공했다).
 - **개발 모드 Metro는 `.env*` 파일 값이 셸 환경 변수보다 앞선다(2026-11-02).** `KEY= npx expo start`로는 `.env.local`의 결제 키를 비우지 못한다. 키 없이 띄우려면 그 worktree에 `EXPO_PUBLIC_REVENUECAT_KEY=` 한 줄만 든 `.env.development.local`을 두고(git이 무시한다), 끝나면 지운다. Metro 로그에 `[RevenueCat]`이 보이면 아직 키가 들어간 것이다.
-- **Debug `expo run:ios`도 `SENTRY_DISABLE_AUTO_UPLOAD=true`가 있어야 끝까지 빌드된다(2026-11-02).** 없으면 소스맵 올리기에서 실패한다.
+- **Debug `expo run:ios`와 실기기 `xcodebuild`도 `SENTRY_DISABLE_AUTO_UPLOAD=true`가 있어야 끝까지 빌드된다(2026-11-02).** 없으면 소스맵 올리기에서 실패한다.
+- **새 번들 id로 폰에 처음 깔면 위젯 추가 목록에 안 나올 수 있다(2026-11-04, 차곡 개발).** 빌드 안 위젯 확장과 서명이 맞으면 폰을 재시동한다. 재시동 뒤 바로 나왔다.
 - **워치 컴플리케이션 번들 id는 워치 앱 id 아래여야 한다.** `@bacons/apple-targets`의 `watch-widget` 기본값(`com.novumlab.chagok.watch-widget`)은 설치 때 「does not have expected identifier prefix」로 거부된다. `targets/watch-widget/expo-target.config.js`에 `bundleIdentifier: 'com.novumlab.chagok.watch.widgets'`(2026-10-16).
 - **EAS 빌드 Node는 이 Mac과 같게 둔다(`eas.json` `"node": "24.18.0"`).** EAS 기본은 Node 22(npm 10)인데, `@bacons/apple-targets` 안의 typescript 5 선택 의존성을 npm 10은 「잠금 파일에 없다」(`Missing: typescript@5.9.3 from lock file`)로 실패시키고 npm 11은 넘어간다(2026-10-17). 의존성을 바꾼 뒤 올리기 전에 깨끗한 복사본에서 `npm ci`로 확인한다.
-- 개발 빌드는 Metro 주소를 기억한다. 다른 포트로 띄웠으면 `xcrun simctl openurl <UDID> "com.novumlab.chagok://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A<포트>"`로 연다.
+- 개발 빌드는 Metro 주소를 기억한다. 다른 포트로 띄웠으면 `xcrun simctl openurl <UDID> "exp+chagok://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A<포트>"`로 연다.
 - **탭 화면 밀기에 기기 쪽 모듈이 들어갔다(2026-10-17):** 아래 탭이 `expo-router/js-top-tabs` + `react-native-tab-view` + `react-native-pager-view`다. pager-view는 기기 쪽 코드라 이 변경 전에 만든 개발 빌드(폰, 시뮬레이터)로는 앱이 뜨지 않는다. 개발 빌드를 다시 만든다.
 - **Animated: 기기 쪽 값과 JS 값을 한 뷰에 섞지 않는다(2026-10-17):** 탭 넘김 위치(`position`)는 기기 쪽에서 움직인다. 같은 뷰의 transform에 JS로 움직이는 값(`useNativeDriver: false`)을 같이 걸면, 그 값을 움직이는 순간 "Attempting to run JS driven animation on animated node that has been moved to native" 오류가 난다. 겹친 두 뷰로 나눈다(FloatingTabBar).
 - **탭 넘김에서 옆 탭이 비어 보였다(2026-10-17):** 탭 화면이 `useFocusEffect`에서만 데이터를 읽으면, 미리 그려 둬도 처음 밀 때는 불러오는 중 화면이다. 기록, 스티커 탭은 처음 그릴 때도 한 번 읽는다.
