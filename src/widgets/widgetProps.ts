@@ -23,7 +23,7 @@ export type TallyWidgetProps = Shared & { goals: Record<string, TallyCard> };
 const base = (g: WidgetGoal, art: WidgetArt): CardBase => ({
   id: g.id, name: g.name, placed: g.placed, total: g.total,
   placedToday: g.placedToday, undoable: g.undoable, remaining: g.remaining,
-  sticker: art.stickers[g.sticker] ?? art.stickers['basic.sprout'] ?? '',
+  sticker: art.stickers[g.sticker] ?? art.stickers['basic.clover'] ?? '',
   locked: g.locked,
 });
 

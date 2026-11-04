@@ -14,6 +14,7 @@ import { localDateKey } from '../../src/domain/dates';
 import { takeOfferedSticker } from '../../src/app-data/stickerChoice';
 import { GOAL_NAME_MAX, shownGoalNameError } from '../../src/domain/board';
 import { t } from '../../src/i18n';
+import { DEFAULT_COLOR_STICKER } from '../../src/stickers/stickerIds';
 
 const DEFAULT_COUNT = '15';
 
@@ -25,13 +26,13 @@ export default function NewGoal() {
   const [nameTouched, setNameTouched] = useState(false);
   const [kind, setKind] = useState<BoardKind>('tally');
   const [count, setCount] = useState(DEFAULT_COUNT);
-  const [sticker, setSticker] = useState<StickerId>('basic.sprout');
+  const [sticker, setSticker] = useState<StickerId>(DEFAULT_COLOR_STICKER);
   const [endMode, setEndMode] = useState<EndDateMode>('none');
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
   const [submitOnce] = useState(createSingleFlight);
   const { ask, dialog: failure } = useDialog();
 
-  const dirty = name !== '' || kind !== 'tally' || count !== DEFAULT_COUNT || sticker !== 'basic.sprout' || endMode !== 'none';
+  const dirty = name !== '' || kind !== 'tally' || count !== DEFAULT_COUNT || sticker !== DEFAULT_COLOR_STICKER || endMode !== 'none';
   const { goBack, dialog } = useUnsavedBack(dirty);
   // 「기본 스티커」에서 고르고 돌아오면 받는다 (PRD 4.12).
   useFocusEffect(useCallback(() => {

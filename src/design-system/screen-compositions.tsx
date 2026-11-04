@@ -9,7 +9,7 @@ import {t} from '../i18n';
 
 export interface PocketGoal {id:string;name:string;kind:BoardKind;total:number;sticker:StickerId;filled:number[];calendarRecords:Record<string,StickerId>;/** 칸 번호 → 실제로 붙은 스티커. 없으면 기본 스티커로 그린다. 기본 스티커를 바꿔도 이미 붙은 칸은 그대로여야 한다 (PRD 4.4). */filledStickers?:Record<number,StickerId>}
 export const exampleGoals:readonly PocketGoal[]=[
-  {id:'reading',get name(){return t('example.reading')},kind:'tally',total:15,sticker:'basic.sprout',filled:[1,2,3,4,5,6],calendarRecords:{}},
+  {id:'reading',get name(){return t('example.reading')},kind:'tally',total:15,sticker:'basic.clover',filled:[1,2,3,4,5,6],calendarRecords:{}},
   {id:'walking',get name(){return t('example.walking')},kind:'calendar',total:30,sticker:'basic.shoe',filled:[],calendarRecords:Object.fromEntries([2,4,7,10,14,17,20].map(day=>[`2026-09-${String(day).padStart(2,'0')}`,'basic.shoe' as const]))},
 ];
 /**

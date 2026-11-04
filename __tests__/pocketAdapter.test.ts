@@ -38,7 +38,7 @@ describe('toPocketGoal - 적립판', () => {
   });
   it('붙은 칸의 폐기된 종류는 대체한다', () => {
     const p = toPocketGoal(tally, [stk({ slotIndex: 0, stickerType: 'dot' })]);
-    expect(p.filledStickers).toEqual({ 1: 'basic.sprout' });
+    expect(p.filledStickers).toEqual({ 1: 'basic.clover' });
   });
   it('달력 기록은 비어 있다', () => {
     expect(toPocketGoal(tally, [stk({})]).calendarRecords).toEqual({});
@@ -60,12 +60,12 @@ describe('toPocketGoal - 달력판', () => {
 describe('알 수 없는 스티커 종류', () => {
   it('폐기된 id가 있어도 렌더 가능한 값으로 대체한다', () => {
     const p = toPocketGoal({ ...tally, defaultStickerId: 'stamp-good' }, []);
-    expect(p.sticker).toBe('basic.sprout');
+    expect(p.sticker).toBe('basic.clover');
   });
   it('붙은 스티커의 폐기된 종류도 대체한다', () => {
     const at = new Date(2026, 8, 3).getTime();
     const p = toPocketGoal(cal, [stk({ goalId: 'g2', placedAt: at, stickerType: 'dot' })]);
-    expect(p.calendarRecords['2026-09-03']).toBe('basic.sprout');
+    expect(p.calendarRecords['2026-09-03']).toBe('basic.clover');
   });
 });
 

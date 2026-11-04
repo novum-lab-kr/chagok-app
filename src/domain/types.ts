@@ -31,7 +31,8 @@ export type Goal = {
 };
 
 /** 목표가 기본 스티커 없이 만들어졌을 때의 값 */
-export const DEFAULT_STICKER_ID = 'basic.sprout';
+/** 새 목표와 스티커의 기본 그림 (2026-11-04 새싹에서 네잎클로버로) */
+export const DEFAULT_STICKER_ID = 'basic.clover';
 
 export type Sticker = {
   id: string;

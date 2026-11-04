@@ -42,7 +42,7 @@ enum WatchBoard: Codable, Equatable {
 struct WatchGoal: Codable, Equatable, Identifiable {
   var id: String
   var name: String
-  /** 기본 스티커 id (basic.sprout). 그림 이름은 imageName */
+  /** 기본 스티커 id (예: basic.clover). 그림 이름은 imageName */
   var sticker: String
   /** 블록 색 #RRGGBB */
   var color: String
