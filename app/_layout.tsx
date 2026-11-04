@@ -8,6 +8,7 @@ import { startAnalytics } from '../src/analytics/posthog';
 import { reportScreenError, setErrorUser, startSentry, wrapRoot } from '../src/analytics/sentry';
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
+import { removeManagedRecordPhoto } from '../src/app-data/recordPhotos';
 import { applyDeviceLanguage, useDeviceLanguage } from '../src/i18n/device';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
@@ -18,9 +19,8 @@ import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
 import { subscribeLocalChange } from '../src/sync/changes';
-import { connectSync } from '../src/sync/connect';
+import { connectSync, syncRound } from '../src/sync/connect';
 import { recoverInterruptedConnect, rememberAccount } from '../src/sync/connectMarker';
-import { pushOnce } from '../src/sync/push';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
 import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
 import { startWidgetSync } from '../src/widgets/syncWidgets';
@@ -177,7 +177,7 @@ function RootLayout() {
             if (error) throw error;
             // 로그아웃이 실패해 세션 정리만 했으면 이 스케줄러는 지난 사용자 것이다 — 보내지 않는다
             if (data.session?.user.id !== userId) return;
-            await pushOnce(await syncDepsFor(supabase, userId));
+            await syncRound(await syncDepsFor(supabase, userId), userId, removeManagedRecordPhoto);
           } catch (error) {
             await recordSyncFailure();
             throw error; // 스케줄러가 다시 시도한다

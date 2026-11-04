@@ -71,7 +71,7 @@ describe('updateGrowth (워치 설계 「성장 수」)', () => {
     expect(await updateGrowth()).toBe(6);
     const db = await getDb();
     await db.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox;');
-    await restoreAll(server);
+    await restoreAll({ server, userId: server.userId });
     expect(await updateGrowth()).toBe(1);
   });
 });

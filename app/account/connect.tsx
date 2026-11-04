@@ -213,7 +213,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     const s = session.current!;
     setStep({ kind: 'restoring' });
     try {
-      const data = snap ?? await pullAll(s.deps.server);
+      const data = snap ?? await pullAll({ server: s.deps.server, userId: s.userId });
       const { photos, oldPhotoUris } = await applyRestore(data);
       // 기기가 이제 이 계정 기록이다. 이 뒤에서 실패해 취소해도 이전 계정 표시로 되돌리지 않게 먼저 연결한다.
       await link(s.userId);
@@ -231,8 +231,9 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     const s = session.current!;
     setStep({ kind: 'restoring' });
     try {
-      await replaceServerWithDevice(s.deps.server, s.deps.deviceId);
+      const { removedPhotoUris } = await replaceServerWithDevice({ server: s.deps.server, userId: s.userId }, s.deps.deviceId);
       await link(s.userId);
+      removedPhotoUris.forEach(removeManagedRecordPhoto);
       await finish(false); // 사진은 잠금이 풀린 뒤 자동 전송이 올린다
     } catch {
       setFailed(() => () => { setFailed(null); void keepDevice(); });
@@ -326,7 +327,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         } else if (plan === 'restore') {
           await runRestore(null);
         } else {
-          const snap = await pullAll(deps.server);
+          const snap = await pullAll({ server: deps.server, userId: user.id });
           setStep({ kind: 'conflict', snap, server: toCard(summarizeSnapshot(snap)), device: toCard(await summarizeDevice()), choice: 'server' });
         }
       } catch (e) {

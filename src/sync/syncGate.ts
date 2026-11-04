@@ -18,6 +18,8 @@ export function resumeSync(): void {
 export function kickSync(): void {
   for (const fn of [...resumeListeners]) fn();
 }
+/** 화면이 서버 것을 바로 받고 싶다(목표 탭, 판 화면 포커스. 화면 연결은 2단계). 깨우는 일은 kickSync와 같다. */
+export const requestSync = kickSync;
 export function subscribeResume(fn: () => void): () => void {
   resumeListeners.add(fn);
   return () => { resumeListeners.delete(fn); };

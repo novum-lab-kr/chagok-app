@@ -86,14 +86,19 @@ async function applySnapshot(deps: PullDeps, goalId: string): Promise<string[]> 
     if (!(error instanceof NotMember)) throw error;
   }
   const db = await getDb();
-  const ctx = await db.transaction(async (tx) => {
-    const c = await openCtx(tx, deps.userId);
-    if (!snap || snap.goal.deleted_at != null) await removeGoal(c, goalId);
-    else await replaceGoal(c, snap);
-    await closeCtx(c);
-    return c;
-  });
-  return ctx.removed;
+  return db.transaction((tx) => writeGoalSnapshot(tx, deps.userId, goalId, snap));
+}
+
+/**
+ * 목표 하나를 pull_goal 스냅숏으로 통째로 바꾼다(트랜잭션 안). 스냅숏이 없거나(멤버가 아님) 지운 목표면 기기에서 지운다.
+ * 복원도 혼자 목표와 함께 목표를 이것으로 쓴다. 지운 기기 사진 경로를 돌려준다.
+ */
+export async function writeGoalSnapshot(tx: DbDriver, userId: string, goalId: string, snap: GoalSnapshot | null): Promise<string[]> {
+  const c = await openCtx(tx, userId);
+  if (!snap || snap.goal.deleted_at != null) await removeGoal(c, goalId);
+  else await replaceGoal(c, snap);
+  await closeCtx(c);
+  return c.removed;
 }
 
 // ───────────── 행 하나씩 ─────────────

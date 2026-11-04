@@ -15,7 +15,7 @@ withFreshDb();
 
 describeIfServer('기기 ↔ 서버 왕복', () => {
   it('기기에서 올린 기록을 새 기기에서 복원한다', async () => {
-    const { client } = await newUser();
+    const { client, userId } = await newUser();
     const server = new SupabaseSyncServer({ rpc: (fn, args) => client.rpc(fn, args) });
     const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 5 });
     const s = await placeSticker(g.id, 0);
@@ -26,7 +26,7 @@ describeIfServer('기기 ↔ 서버 왕복', () => {
 
     setDriverFactory(async () => createNodeDriver()); // 새 기기
     expect(await listGoals()).toEqual([]);
-    await restoreAll(server);
+    await restoreAll({ server, userId });
     expect((await listGoals()).map((x) => x.name)).toEqual(['산책']);
   });
 
