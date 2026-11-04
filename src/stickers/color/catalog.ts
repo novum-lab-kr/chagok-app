@@ -1,6 +1,6 @@
 import {colorStickerData} from './stickers.generated';
 
-export type ColorStickerPackId='basic'|'sports_normal'|'snack_normal'|'objects_normal'|'animals_normal'|'emotions_normal'|'weather_normal';
+export type ColorStickerPackId='basic'|'sports_normal'|'snack_normal'|'objects_normal'|'animals_normal'|'emotions_normal'|'weather_normal'|'christmas_normal'|'study_normal'|'food_normal';
 export interface ColorStickerLayer {readonly color:string; readonly d:string}
 export interface ColorStickerDefinition {
   readonly id:string;
@@ -19,6 +19,9 @@ export const colorStickerPacks=[
   {id:'animals_normal',label:'동물',free:true},
   {id:'emotions_normal',label:'감정',free:true},
   {id:'weather_normal',label:'날씨와 계절',free:false},
+  {id:'christmas_normal',label:'크리스마스',free:false},
+  {id:'study_normal',label:'공부와 일',free:false},
+  {id:'food_normal',label:'카페와 음식',free:false},
 ] as const satisfies readonly {id:ColorStickerPackId;label:string;free:boolean}[];
 
 /** Stable IDs: append new definitions; never reuse an ID for a different sticker. */

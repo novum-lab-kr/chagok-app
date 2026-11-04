@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppState, Platform, StyleSheet, View } from 'react-native';
+import { Alert, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Stack, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,7 +12,8 @@ import { applyDeviceLanguage, useDeviceLanguage } from '../src/i18n/device';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
 import { configureRevenueCat, linkPurchaseAccount } from '../src/purchases/revenueCat';
-import { loadPrices } from '../src/purchases';
+import { setDevPurchaseChooser } from '../src/purchases/devStore';
+import { loadPrices, refreshSubscription } from '../src/purchases';
 import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
@@ -36,8 +37,19 @@ startSentry();
 startAnalytics().catch(() => { /* 기록 실패가 앱을 막으면 안 된다 */ });
 // 결제는 화면보다 먼저 준비한다. 키나 결제 모듈이 없으면 개발용 대역 그대로 (src/purchases/revenueCat.ts).
 configureRevenueCat();
+// 결제 키가 없는 빌드(개발, preview)는 개발용 대역을 쓴다. 결제마다 결과를 고르는 창을 띄워 몰래 공짜로 열리지 않게 한다
+setDevPurchaseChooser((what) => new Promise((resolve) => {
+  Alert.alert('시험 결제', `${what}: 결과를 고르세요. 실제 결제는 일어나지 않아요.`, [
+    { text: '성공', onPress: () => resolve('success') },
+    { text: '실패', onPress: () => resolve('failed') },
+    { text: '보호자 승인 대기', onPress: () => resolve('pending') },
+    { text: '취소', style: 'cancel', onPress: () => resolve('cancelled') },
+  ], { cancelable: true, onDismiss: () => resolve('cancelled') });
+}));
 // 가격은 앱을 켤 때 한 번 받아 둔다 — 상점 화면이 처음부터 가격을 그린다
 void loadPrices();
+// 구독 상태를 스토어에 물어 기기에 맞춘다. 못 물으면 저장한 값으로 판단한다 (구독 설계 4.3)
+void refreshSubscription();
 void configureAds();
 
 /**
@@ -96,7 +108,9 @@ function RootLayout() {
   useEffect(() => {
     track('app_open', { source: 'cold' });
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') track('app_open', { source: 'foreground' });
+      if (state !== 'active') return;
+      track('app_open', { source: 'foreground' });
+      void refreshSubscription();
     });
     return () => sub.remove();
   }, []);
@@ -202,6 +216,7 @@ function RootLayout() {
           <Stack.Screen name="records/feed" />
           <Stack.Screen name="stickers/choose" options={{ presentation: 'modal' }} />
           <Stack.Screen name="stickers/pack/[packId]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="subscription" options={{ presentation: 'modal' }} />
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="send-info" />
           <Stack.Screen name="policies/index" />

@@ -9,6 +9,7 @@ describe('packViews', () => {
     const views = packViews([{ packId: 'objects_normal', source: 'ad', grantedAt: now, expiresAt: now + AD_TRIAL_MS }], now);
     expect(views.map((v) => [v.id, v.state])).toEqual([
       ['basic', 'free'], ['sports_normal', 'locked'], ['snack_normal', 'locked'], ['objects_normal', 'trial'], ['animals_normal', 'free'], ['emotions_normal', 'free'], ['weather_normal', 'locked'],
+      ['christmas_normal', 'locked'], ['study_normal', 'locked'], ['food_normal', 'locked'],
     ]);
     const objects = views.find((v) => v.id === 'objects_normal')!;
     expect(objects).toMatchObject({ label: '사물', trialLabel: '24시간 남음' });

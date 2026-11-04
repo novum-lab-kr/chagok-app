@@ -15,8 +15,9 @@ describe('컬러 스티커 카탈로그',()=>{
     expect(colorStickerPacks.map(p=>[p.id,colorStickersInPack(p.id).length,p.free])).toEqual([
       ['basic',6,true],['sports_normal',10,false],['snack_normal',10,false],['objects_normal',10,false],
       ['animals_normal',10,true],['emotions_normal',10,true],['weather_normal',10,false],
+      ['christmas_normal',10,false],['study_normal',10,false],['food_normal',10,false],
     ]);
-    expect(colorStickers).toHaveLength(66);
+    expect(colorStickers).toHaveLength(96);
   });
 
   it('ID는 "묶음.이름" 형식으로 겹치지 않고, 흑백 스티커 ID와도 겹치지 않는다',()=>{

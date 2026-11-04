@@ -565,6 +565,18 @@
           {
             "id": "screens-account-backup--settings-ad-free",
             "label": "광고 제거를 산 뒤"
+          },
+          {
+            "id": "screens-subscription--settings-none",
+            "label": "구독 전"
+          },
+          {
+            "id": "screens-subscription--settings-active",
+            "label": "구독 중"
+          },
+          {
+            "id": "screens-subscription--settings-cancelling",
+            "label": "해지 예약"
           }
         ],
         "scenarios": [
@@ -758,6 +770,10 @@
           {
             "id": "screens-screen-failed--stickers",
             "label": "불러오지 못함"
+          },
+          {
+            "id": "screens-subscription--ended",
+            "label": "구독이 끝난 뒤 (판에서)"
           }
         ],
         "scenarios": [
@@ -856,7 +872,40 @@
           {
             "id": "screens-bottom-tabs--stickers-tab",
             "label": "스티커 탭"
+          },
+          {
+            "id": "screens-subscription--stickers-subscribed",
+            "label": "구독 중"
           }
+        ]
+      }
+    },
+    {
+      "id": "subscription",
+      "data": {
+        "label": "구독 화면",
+        "tags": [
+          "PRD 4.12",
+          "app/subscription"
+        ],
+        "stories": [
+          {
+            "id": "screens-subscription--subscribe",
+            "label": "구독 화면"
+          },
+          {
+            "id": "screens-subscription--subscribe-goal-limit",
+            "label": "목표 탭 [+]에서 열었을 때"
+          },
+          {
+            "id": "screens-subscription--subscribe-buying",
+            "label": "결제 기다리는 중"
+          }
+        ],
+        "scenarios": [
+          "sticker",
+          "goal",
+          "info"
         ]
       }
     }
@@ -1654,6 +1703,64 @@
       "label": "저장 뒤 기록 탭 보기",
       "data": {
         "scenarios": []
+      }
+    },
+    {
+      "id": "pack-subscription",
+      "source": "pack",
+      "target": "subscription",
+      "label": "구독하고 모든 묶음 열기",
+      "data": {
+        "scenarios": [
+          "sticker"
+        ]
+      }
+    },
+    {
+      "id": "app-settings-subscription",
+      "source": "app-settings",
+      "target": "subscription",
+      "label": "구독 보기",
+      "data": {
+        "scenarios": [
+          "info"
+        ]
+      }
+    },
+    {
+      "id": "list-subscription",
+      "source": "list",
+      "target": "subscription",
+      "label": "[+] (목표가 5개일 때)",
+      "data": {
+        "scenarios": [
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "subscription-store-pay",
+      "source": "subscription",
+      "target": "store-pay",
+      "label": "월 구독하기, 연 구독하기",
+      "data": {
+        "scenarios": [
+          "sticker",
+          "info",
+          "goal"
+        ]
+      }
+    },
+    {
+      "id": "subscription-policy-web",
+      "source": "subscription",
+      "target": "policy-web",
+      "label": "이용약관, 개인정보 처리방침",
+      "data": {
+        "scenarios": [
+          "sticker",
+          "info"
+        ]
       }
     }
   ]

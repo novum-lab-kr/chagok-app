@@ -3,7 +3,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { track } from '../../src/analytics';
 import { NewGoalScreen } from '../../src/design-system';
 import type { BoardKind, EndDateMode, StickerId } from '../../src/design-system';
-import { createGoal } from '../../src/repositories/goalRepository';
+import { createGoal, listGoals } from '../../src/repositories/goalRepository';
+import { loadPackState } from '../../src/repositories/packRepository';
+import { canCreateGoal } from '../../src/domain/subscription';
 import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
@@ -45,6 +47,12 @@ export default function NewGoal() {
 
   /** 저장이 끝난 뒤에 판을 연다. 실패하면 화면을 그대로 두어 입력을 잃지 않는다 (PRD 7절). */
   async function submit() {
+    // 목표 탭 [+]가 막지만, 링크로 바로 열어도 한도를 지킨다 (구독 설계 4.8, 보안 검토 2026-11-02 L3)
+    const [goals, pack] = await Promise.all([listGoals(), loadPackState()]);
+    if (!canCreateGoal(goals.length, pack.subscribed)) {
+      router.replace({ pathname: '/subscription', params: { from: 'goals' } });
+      return;
+    }
     let createdId = '';
     const ok = await saveOrNotify(ask, t('failed.createGoal'), async () => {
       const created = await createGoal({

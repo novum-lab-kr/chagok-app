@@ -14,7 +14,7 @@ async function placedDays(n: number) {
 
 describe('packRepository', () => {
   it('처음에는 아무 묶음도 없고 붙인 날 0, 받은 체험 0, 광고 제거 아님', async () => {
-    expect(await loadPackState()).toEqual({ access: [], days: 0, claimed: 0, adFree: false });
+    expect(await loadPackState()).toEqual({ access: [], days: 0, claimed: 0, adFree: false, adFreePurchased: false, subscription: null, subscribed: false });
   });
 
   it('사면 영구', async () => {

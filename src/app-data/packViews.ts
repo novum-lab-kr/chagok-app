@@ -14,9 +14,10 @@ export function packViews(access: readonly PackAccess[], now: number, prices: Pr
     return {
       id: p.id,
       label: packName(p.id),
-      state: s.state,
+      // 구독 중은 체험 배지 자리에 「구독 중」을 보인다 (2026-11-02 구독 흐름 시안)
+      state: s.state === 'subscribed' ? 'trial' : s.state,
       stickers: colorStickersInPack(p.id).map((c) => c.id as ColorStickerId),
-      ...(s.trialLabel ? { trialLabel: s.trialLabel } : {}),
+      ...(s.state === 'subscribed' ? { trialLabel: t('sub.active') } : s.trialLabel ? { trialLabel: s.trialLabel } : {}),
       ...(prices[p.id] ? { price: prices[p.id] } : {}),
     };
   });
