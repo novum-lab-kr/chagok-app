@@ -36,6 +36,6 @@ export function SettingsTab({status={state:'synced',provider:'Apple',backedUpAt:
   return <RetroScreen style={{gap:16}} header={<TabTitle title="설정"/>}>
     <AccountBackupPanel status={status} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>
     <PurchasePanel adFree={adFree} price={price??undefined} onRemoveAds={noop} onRestore={noop} busy={busy}/>
-    <HelpInfoPanel adFree={adFree} version="1.0.0" onTutorial={noop} onContact={noop} onReportAd={noop} onPolicies={noop}/>
+    <HelpInfoPanel adFree={adFree} version="1.0.0" onTutorial={noop} onContact={noop} onReportAd={noop} onPolicies={noop} onSendInfo={noop}/>
   </RetroScreen>;
 }

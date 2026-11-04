@@ -40,7 +40,7 @@ describe('placementFromWidgetLink (위젯 링크로 열렸을 때 붙일 곳)', 
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 3 });
     await placeSticker(g.id, 0);
     const tap = Date.now();
-    await applyWidgetRequests([{ id: 'w1', goalId: g.id, kind: 'add', at: tap, dateKey: localDateKey(tap) }]);
+    await applyWidgetRequests([{ id: 'w1', goalId: g.id, kind: 'add', at: tap, dateKey: localDateKey(tap) }], 'widget');
     const at = new Date();
     const board = (await loadBoard(g.id, at.getFullYear(), at.getMonth() + 1, at))!;
     expect(placementFromWidgetLink(board.goal, board.stickers, at)).toEqual({ slotIndex: 2, at: { slot: 3 } });

@@ -83,9 +83,16 @@ export function TutorialCompletedExample() {
     board={{kind:'tally',total:20,filled:filledWith(20,'basic.star'),onPress:noop,onOpenRecord:noop}}/>;
 }
 
-/** 앱 첫 실행. 끝까지 보거나 건너뛰면 onFinish. */
-export function FirstRunTutorial({onFinish}:{onFinish:()=>void}) {
+export type TutorialProgress={kind:'start'|'step'|'skip'|'finish';step:number};
+
+/** 앱 첫 실행. 끝까지 보거나 건너뛰면 onFinish. onProgress는 처음 보일 때 한 번, 단계가 보일 때, 건너뛸 때, 끝낼 때 부른다(step은 1부터). */
+export function FirstRunTutorial({onFinish,onProgress}:{onFinish:()=>void;onProgress?:(progress:TutorialProgress)=>void}) {
   const [index,setIndex]=useState(0);
+  const started=useRef(false);
+  useEffect(()=>{
+    if(!started.current){started.current=true;onProgress?.({kind:'start',step:index+1});}
+    onProgress?.({kind:'step',step:index+1});
+  },[index,onProgress]);
   const screen=index===0?<TutorialListExample/>:index===1?<TutorialNewGoalExample/>:index<4?<TutorialBoardExample/>:<TutorialCompletedExample/>;
-  return <FirstRunTutorialFrame key={index} index={index} style={{flex:1}} onSkip={onFinish} onPrev={()=>setIndex(index-1)} onNext={()=>index===firstRunSteps.length-1?onFinish():setIndex(index+1)}>{screen}</FirstRunTutorialFrame>;
+  return <FirstRunTutorialFrame key={index} index={index} style={{flex:1}} onSkip={()=>{onProgress?.({kind:'skip',step:index+1});onFinish();}} onPrev={()=>setIndex(index-1)} onNext={()=>{if(index===firstRunSteps.length-1){onProgress?.({kind:'finish',step:index+1});onFinish();}else setIndex(index+1);}}>{screen}</FirstRunTutorialFrame>;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { trackTutorial } from '../../src/analytics';
 import { FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
 import type { GoalListTab } from '../../src/design-system';
 import { listGoalSummaries, reorderGoals, settleExpiredPeriods } from '../../src/repositories/goalRepository';
@@ -153,7 +154,7 @@ export default function GoalList() {
   }
 
   if (showTutorial) {
-    return <FirstRunTutorial onFinish={() => { setShowTutorial(false); void setFlag('tutorialDone', true); }} />;
+    return <FirstRunTutorial onProgress={trackTutorial} onFinish={() => { setShowTutorial(false); void setFlag('tutorialDone', true); }} />;
   }
 
   const now = new Date();

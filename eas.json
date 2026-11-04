@@ -18,7 +18,10 @@
     },
     "preview": {
       "node": "24.18.0",
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "production": {
       "node": "24.18.0",

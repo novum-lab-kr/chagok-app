@@ -6,6 +6,7 @@ import type { Goal, BoardType } from '../domain/types';
 import { localDateKey } from '../domain/dates';
 import { periodEndAt, progressBasis } from '../domain/board';
 import { enqueue } from '../sync/outbox';
+import { track } from '../analytics';
 
 type GoalRow = {
   id: string;
@@ -202,7 +203,10 @@ export async function settleExpiredPeriods(now: Date): Promise<void> {
       WHERE board_type = 'calendar' AND end_date IS NOT NULL AND completed_at IS NULL AND end_date < ?`,
     today,
   );
-  for (const r of rows) await completeGoal(r.id, periodEndAt(r.end_date));
+  for (const r of rows) {
+    await completeGoal(r.id, periodEndAt(r.end_date));
+    track('goal_complete', { source: 'period_end' });
+  }
 }
 
 /** 삭제 확인에 보여줄 수. 기록은 사진이나 비어 있지 않은 메모가 있는 것만 센다 (기록 표식과 같은 기준). */

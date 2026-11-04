@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { track } from '../../../src/analytics';
 import { CompletedGoalSettingsScreen, GoalSettingsScreen, LoadingScreen, boardDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import {
@@ -87,7 +88,9 @@ export default function GoalSettings() {
       await saveEdits();
       await completeGoal(current.id, Date.now());
     });
-    if (ok) goBackOrHome();
+    if (!ok) return;
+    track('goal_complete', { source: 'app' });
+    goBackOrHome();
   }
 
   /** 삭제 (PRD 4.4). 함께 지워질 수를 보여주고, DB 삭제가 끝난 뒤에 사진 파일을 지운다. */
@@ -97,6 +100,7 @@ export default function GoalSettings() {
     let photos: string[] = [];
     const ok = await saveOrNotify(ask, '목표를 삭제하지 못했어요', async () => { photos = await deleteGoal(current.id); });
     if (!ok) return;
+    track('goal_delete');
     for (const uri of photos) {
       try { removeManagedRecordPhoto(uri); } catch { /* 고아 파일로 남는다. 목표는 이미 지워졌다 */ }
     }
