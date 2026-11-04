@@ -14,10 +14,10 @@ export function packViews(access: readonly PackAccess[], now: number, prices: Pr
     return {
       id: p.id,
       label: packName(p.id),
-      // 구독 중은 체험 배지 자리에 「구독 중」을 보인다 (2026-11-02 구독 흐름 시안)
+      // 구독 중은 쓸 수 있는 묶음으로 다루되 배지는 두지 않는다 — 구독하면 모든 묶음을 쓰니 표시가 필요 없다 (2026-11-04 사용자, 이전: 「구독 중」 배지)
       state: s.state === 'subscribed' ? 'trial' : s.state,
       stickers: colorStickersInPack(p.id).map((c) => c.id as ColorStickerId),
-      ...(s.state === 'subscribed' ? { trialLabel: t('sub.active') } : s.trialLabel ? { trialLabel: s.trialLabel } : {}),
+      ...(s.trialLabel ? { trialLabel: s.trialLabel } : {}),
       ...(prices[p.id] ? { price: prices[p.id] } : {}),
     };
   });

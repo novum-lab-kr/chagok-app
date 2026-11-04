@@ -13,6 +13,7 @@ export const ko = {
   'loadFailed.records': '기록을 불러오지 못했어요',
   'loadFailed.goals': '목표를 불러오지 못했어요',
   'loadFailed.stickers': '스티커를 불러오지 못했어요',
+  'loadFailed.subscription': '구독 상품을 불러오지 못했어요',
   'loadFailed.screen': '화면을 보여 주지 못했어요',
   'loadFailed.tryLater': '잠시 뒤 다시 시도해 주세요.',
   'loadFailed.restartApp': '다시 시도해도 안 되면 앱을 껐다 켜 주세요.',

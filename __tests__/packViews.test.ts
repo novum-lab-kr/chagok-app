@@ -16,6 +16,11 @@ describe('packViews', () => {
     expect(objects.stickers).toHaveLength(10);
     expect(objects.stickers.every((id) => id.startsWith('objects_normal.'))).toBe(true);
   });
+  it('구독 중인 묶음은 쓸 수 있는 묶음으로 보이고 배지 글자는 없다 (2026-11-04)', () => {
+    const sub = packViews([{ packId: 'weather_normal', source: 'sub', grantedAt: now - 1000, expiresAt: now + 86_400_000 }], now).find((v) => v.id === 'weather_normal')!;
+    expect(sub.state).toBe('trial');
+    expect(sub.trialLabel).toBeUndefined();
+  });
   it('판 예시는 그 묶음의 서로 다른 5개', () => {
     const v = packViews([], now).find((p) => p.id === 'snack_normal')!;
     const s = samplePlacement(v);

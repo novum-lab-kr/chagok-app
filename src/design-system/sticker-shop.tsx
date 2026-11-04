@@ -101,7 +101,7 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
   const fit=packRowCount(size.width,pack.stickers.length);
   const more=pack.stickers.length-fit;
   const right=pack.state==='free'||pack.state==='owned'?null
-    :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
+    :pack.state==='trial'?(pack.trialLabel?<PixelBadge label={pack.trialLabel} tone="primary"/>:null)
     :<>{rewardReady?<PixelBadge label={t('shop.threeDaysFree')} tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
   const head=<View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:36}}>
     {/* 이름이 길면(영어) 개수를 다음 줄로 내려 가격과 화살표를 밀지 않는다 */}
@@ -156,7 +156,7 @@ export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,
 }
 
 /** 묶음 화면 (PRD 4.12). 스티커 영역은 고르기 카드와 같은 모양, 「판에 붙이면」은 6칸에 5개. */
-export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,onBack,busy,onSubscribe}:{pack:PackView;/** 구독 화면으로 가는 [구독하고 모든 묶음 열기]. 없으면 줄을 그리지 않는다 (2026-11-02 구독 흐름 시안) */onSubscribe?:()=>void;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
+export function PackScreen({pack,sample,adFree,adReady=true,reward,onBuy,onWatchAd,onTrial,onBack,busy,onSubscribe}:{pack:PackView;/** 보상형 광고를 지금 띄울 수 있다. false면 [광고 보고 하루]를 숨긴다 — 광고를 못 불러오는데 누를 수 있게 두지 않는다 (2026-11-04) */adReady?:boolean;/** 구독 화면으로 가는 [구독하고 모든 묶음 열기]. 없으면 줄을 그리지 않는다 (2026-11-02 구독 흐름 시안) */onSubscribe?:()=>void;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
   const ready=reward.days>=reward.goal;
   return <RetroScreen style={{gap:14}} header={<ScreenHeader title={t('shop.packTitle',pack.label)} onBack={onBack}/>}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14}}>
@@ -170,7 +170,7 @@ export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,on
     <View style={{gap:10}}>
       <PixelButton label={pack.price?t('shop.openForPrice',pack.price):t('shop.openPack')} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
       {onSubscribe&&<PixelButton label={t('sub.openAllPacks')} variant="secondary" disabled={busy!==undefined} onPress={onSubscribe}/>}
-      {!adFree&&<PixelButton label={t('shop.watchAd')} variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
+      {!adFree&&adReady&&<PixelButton label={t('shop.watchAd')} variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
       <PixelButton label={t('shop.tryThreeDays')} variant="secondary" disabled={!ready||busy!==undefined} onPress={onTrial}/>
       {!ready&&<PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{t('shop.tryAfter',reward.goal-reward.days,reward.days,reward.goal)}</PixelText>}
     </View>

@@ -11,40 +11,81 @@ export interface RewardedAdLike {
   show(): Promise<void> | void;
 }
 
-/** 이 시간 안에 못 불러오면 「지금은 광고를 볼 수 없어요」 */
-export const LOAD_TIMEOUT_MS = 15_000;
+/** 불러온 보상형 광고는 1시간 뒤 만료된다(AdMob). 조금 앞서 버리고 새로 불러온다 */
+export const AD_MAX_AGE_MS = 55 * 60_000;
 
-/** 불러오면 바로 띄운다. 끝까지 봐서 보상을 받은 채로 닫아야 ok, 중간에 닫으면 closed. */
-export function playRewardedAd(ad: RewardedAdLike, timeoutMs = LOAD_TIMEOUT_MS): Promise<AdResult> {
-  return new Promise((resolve) => {
-    let earned = false;
-    let shown = false;
-    let done = false;
-    const offs: (() => void)[] = [];
-    const finish = (r: AdResult) => {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      offs.forEach((off) => off());
-      resolve(r);
-    };
-    const timer = setTimeout(() => { if (!shown) finish({ ok: false, reason: 'unavailable' }); }, timeoutMs);
+/** 광고를 미리 불러 둘 수 있는가 — 묶음 화면이 [광고 보고 하루]를 보일지 정한다 */
+export interface RewardedPreloader {
+  /** 지금 바로 띄울 수 있는 광고가 있다 */
+  ready(): boolean;
+  /** 불러오는 중이거나 준비돼 있으면 아무것도 하지 않는다 */
+  preload(): void;
+  play(): Promise<AdResult>;
+  subscribe(listener: (ready: boolean) => void): () => void;
+}
+
+/**
+ * 보상형 광고를 미리 불러 둔다 (2026-11-04 사용자: 광고를 못 불러오면 버튼을 숨기고, 볼 수 있을 때만 보인다).
+ * 실패하면 다음 preload(화면에 다시 들어올 때) 때 다시 부른다. 본 뒤에는 바로 다음 광고를 불러 둔다.
+ */
+export function createRewardedPreloader(make: () => RewardedAdLike, clock: () => number = Date.now): RewardedPreloader {
+  let ad: RewardedAdLike | null = null;
+  let loading = false;
+  let loadedAt = 0;
+  let offs: (() => void)[] = [];
+  const listeners = new Set<(ready: boolean) => void>();
+  const ready = () => ad !== null && !loading && clock() - loadedAt < AD_MAX_AGE_MS;
+  const emit = () => { const r = ready(); listeners.forEach((l) => l(r)); };
+  const drop = () => { offs.forEach((off) => off()); offs = []; ad = null; loading = false; };
+
+  function preload() {
+    if (loading || ready()) return;
+    drop();
+    const next = make();
+    ad = next;
+    loading = true;
     offs.push(
-      ad.addAdEventListener('rewarded_loaded', () => {
-        shown = true;
-        Promise.resolve()
-          .then(() => ad.show())
-          .catch(() => finish({ ok: false, reason: 'unavailable' }));
-      }),
-      ad.addAdEventListener('rewarded_earned_reward', () => { earned = true; }),
-      ad.addAdEventListener('closed', () => finish(earned ? { ok: true } : { ok: false, reason: 'closed' })),
-      // 띄운 뒤의 오류도 보상을 받았으면 ok로 친다
-      ad.addAdEventListener('error', () => finish(earned ? { ok: true } : { ok: false, reason: 'unavailable' })),
+      next.addAdEventListener('rewarded_loaded', () => { loading = false; loadedAt = clock(); emit(); }),
+      next.addAdEventListener('error', () => { drop(); emit(); }),
     );
     try {
-      ad.load();
+      next.load();
     } catch {
-      finish({ ok: false, reason: 'unavailable' });
+      drop();
+      emit();
     }
-  });
+  }
+
+  function play(): Promise<AdResult> {
+    if (!ready() || !ad) {
+      preload();
+      return Promise.resolve({ ok: false, reason: 'unavailable' });
+    }
+    const current = ad;
+    drop();
+    emit();
+    return new Promise((resolve) => {
+      let earned = false;
+      let done = false;
+      const mine: (() => void)[] = [];
+      const finish = (r: AdResult) => {
+        if (done) return;
+        done = true;
+        mine.forEach((off) => off());
+        resolve(r);
+        preload();
+      };
+      mine.push(
+        current.addAdEventListener('rewarded_earned_reward', () => { earned = true; }),
+        current.addAdEventListener('closed', () => finish(earned ? { ok: true } : { ok: false, reason: 'closed' })),
+        // 띄운 뒤의 오류도 보상을 받았으면 ok로 친다
+        current.addAdEventListener('error', () => finish(earned ? { ok: true } : { ok: false, reason: 'unavailable' })),
+      );
+      Promise.resolve()
+        .then(() => current.show())
+        .catch(() => finish({ ok: false, reason: 'unavailable' }));
+    });
+  }
+
+  return { ready, preload, play, subscribe: (l) => { listeners.add(l); return () => { listeners.delete(l); }; } };
 }
