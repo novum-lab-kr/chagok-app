@@ -10,7 +10,7 @@ const HELP = `사용: node scripts/dev-friend.mjs <명령> [인자]   (npm run s
   setup                                  dev2 계정이 없으면 만든다(service 키 사용, 이 명령에서만)
   join <코드> <이름> <스티커>             join_goal. 실패하면 {"error": 낱말}
   place <goalId> <칸 번호|YYYY-MM-DD> [스티커]
-                                         sync_push로 스티커 한 장. 칸 번호는 화면 번호(1부터), 날짜면 달력판.
+                                         sync_push로 스티커 한 장. 칸 번호는 화면 번호(1부터), 날짜면 달력판(그 날짜 칸).
                                          스티커는 basic.cat 같은 값(기본 basic.clover, 멤버 스티커를 쓰지 않는다)
   rename <goalId> <이름> [스티커]         update_member
   leave <goalId>                         leave_goal
@@ -98,8 +98,8 @@ switch (cmd) {
     need(2);
     const [goalId, where] = args;
     const isDate = /^\d{4}-\d{2}-\d{2}$/.test(where);
-    // 앱과 같은 slot_index: 적립판은 화면 번호 - 1, 달력판은 그 날짜의 일 - 1
-    const slotIndex = isDate ? Number(where.slice(8, 10)) - 1 : Number(where) - 1;
+    // 적립판은 앱과 같은 slot_index(화면 번호 - 1). 달력판은 앱이 칸을 date_key로 고르고(stickerDate) 서버 cell_key도 날짜라 0을 보낸다
+    const slotIndex = isDate ? 0 : Number(where) - 1;
     if (!Number.isInteger(slotIndex) || slotIndex < 0) fail(`칸 번호는 1부터입니다: ${where}`);
     const now = Date.now();
     const row = {
