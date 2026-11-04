@@ -397,7 +397,7 @@ delete from private.account_deletions where completed_at < now() - interval '1 y
 ```sh
 # 이 맥 (main 체크아웃)
 COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink
-scp /tmp/fn.tgz chagok@187.127.114.161:~/fn.tgz && rm /tmp/fn.tgz
+scp /tmp/fn.tgz chagok@<운영 서버 주소>:~/fn.tgz && rm /tmp/fn.tgz
 
 # 서버
 cd ~/supabase/volumes
@@ -431,7 +431,7 @@ cd ~/supabase && sh run.sh recreate functions
 cd ~/supabase && sed -i "s|^ENABLE_EMAIL_SIGNUP=.*|ENABLE_EMAIL_SIGNUP=true|" .env && sh run.sh recreate auth
 
 # 이 맥: 터널을 열고 돌린다. server-test.env는 http://127.0.0.1:18000과 운영 키를 가리킨다
-ssh -f -N -L 18000:127.0.0.1:8000 chagok@187.127.114.161
+ssh -f -N -L 18000:127.0.0.1:8000 chagok@<운영 서버 주소>
 set -a; . .secrets/prod/server-test.env; set +a
 npx jest __tests__/server --runInBand
 pkill -f "ssh .*-L 18000:127.0.0.1:8000"
@@ -444,7 +444,7 @@ sed -i "s|^ENABLE_EMAIL_SIGNUP=.*|ENABLE_EMAIL_SIGNUP=false|" .env && sh run.sh 
 
 ## 운영 서버 업데이트
 
-Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 `update.sh`가 설정 파일을 새 판과 3방향으로 합친다. `.env` 값, `volumes/db/data`, `volumes/storage`는 건드리지 않지만 **DB와 사진을 백업하지는 않는다.** 지금 판은 `~/supabase/.supabase-version`에 있다(2026-10-26 `self-hosted/v0.8.3`). 모두 `ssh chagok@187.127.114.161`에서 한다.
+Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 `update.sh`가 설정 파일을 새 판과 3방향으로 합친다. `.env` 값, `volumes/db/data`, `volumes/storage`는 건드리지 않지만 **DB와 사진을 백업하지는 않는다.** 지금 판은 `~/supabase/.supabase-version`에 있다(2026-10-26 `self-hosted/v0.8.3`). 모두 `ssh chagok@<운영 서버 주소>`에서 한다.
 
 1. **바뀌는 것 읽기:** 새 태그의 `CHANGELOG.md`와 `upgrades.json`(깨지는 변경)을 읽는다. Postgres 큰 판이 바뀌면(17 → 18 등) 이 순서로 하지 않고 따로 계획한다.
 2. **백업:** `systemctl --user start chagok-backup.service`. Healthchecks.io의 백업이 방금 시각으로 초록인지 본다.
