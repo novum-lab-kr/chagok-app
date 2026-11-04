@@ -194,7 +194,7 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   it('목표 설정: 적립판 칸 수는 늘리기만 된다고 알리고, 오류가 있으면 보여준다 (2026-09-30)',()=>{
     const slots={current:30,value:'15',onChange:vi.fn(),error:'지금 30칸보다 줄일 수 없어요.'};
     render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
-    expect(screen.getByText('지금 30칸 · 늘리기만 할 수 있어요')).toBeTruthy();
+    expect(screen.getByText('지금 30칸이에요. 칸은 늘리기만 할 수 있어요.')).toBeTruthy();
     expect(screen.getByText('지금 30칸보다 줄일 수 없어요.')).toBeTruthy();
   });
   it('[바꾸기]는 「기본 스티커」 화면을 연다',()=>{
@@ -205,7 +205,7 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   });
   it('완성한 판 설정은 마지막 정보 줄에 밑줄이 없어 [삭제하기] 위 구분선과 겹치지 않는다',()=>{
     const bottom=(label:string)=>parseFloat(getComputedStyle(screen.getByText(label).parentElement!).borderBottomWidth)||0;
-    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 · 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
     expect(bottom('기본 스티커')).toBeGreaterThan(0);
     expect(bottom('판 종류')).toBe(0);
     cleanup();

@@ -7,7 +7,7 @@
 - **1.0.0은 빌드 7(`538f7eb`, production)로 심사에 냈다.** 지금 `origin/main`이 이 커밋이다. 빌드 번호는 2026-11-01 EAS 기록에서 확인한 값이다.
 - **1.0.0 심사 결과는 확인 못 함.** 아래 표에서 지금 줄은 「심사 중」으로 잡았다. 결과를 확인하면 해당 줄로 옮긴다.
 - 1.0.1 작업은 `release/1.0.1`에 모은다(`app.json` `version`은 이미 `1.0.1`).
-- `v1.0.0` 태그는 아직 없다. main에 1.0.1을 합치기 전에 `538f7eb`에 붙여야 1.0.0 긴급 수정을 시작할 지점이 남는다.
+- `v1.0.0` 태그가 `538f7eb`에 붙어 있다(원격에도 있음, 2026-11-04 확인). 1.0.0 긴급 수정은 이 태그에서 시작한다.
 
 ## 핵심 원칙
 
@@ -43,7 +43,7 @@
 
 | 순서 | 어디 | 할 일 | 누가 | 지금 상태 |
 | --- | --- | --- | --- | --- |
-| 0 | chagok-app | 1.0.0 결과 확인, `538f7eb`에 `v1.0.0` 태그 | 에이전트 | 빌드 7 제출, 결과 확인 못 함 |
+| 0 | chagok-app | 1.0.0 결과 확인 | 에이전트 | 빌드 7 제출, 결과 확인 못 함. `v1.0.0` 태그는 붙음 |
 | 1 | chagok-app | 통합 시험을 통과한 뒤 `release/1.0.1`을 main으로 | 에이전트, 사용자 승인 | 통합 빌드 실기기 확인 전 |
 | 1 | novum-web | 처리방침 이벤트 기록 개정 머지. 머지하면 운영에 바로 반영된다 | novum-web-fe, 사용자 승인 | 초안 |
 | 1 | PostHog와 Sentry | 계정과 키 만들기, EAS `production` 변수 넣기 | 사용자 | 프로젝트와 IP 설정 끝, EAS 변수는 아직 |
@@ -52,8 +52,26 @@
 | 4 | 승인 직후 | 앱 출시, `v1.0.1` 태그, 운영 로그와 Sentry 확인 | 사용자, 에이전트 | 시작 전 |
 
 - 1.0.1 기능은 시험 빌드로 함께 확인한 통합 브랜치(`test/1.0.1-integration`)를 원래 커밋 그대로 `release/1.0.1`에 합친다(#21, 2026-11-04 결정). 통합 브랜치 위에서 이어 간 브랜치가 있어서 커밋을 옮겨 쌓지 않는다. 그 위의 PR은 아래 PR이 합쳐진 뒤 base를 `release/1.0.1`로 바꾸고 Merge commit으로 합친다.
-- EAS 변수 이름은 아직 합치지 않은 이벤트 기록 브랜치 기준으로 `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST`, `EXPO_PUBLIC_SENTRY_DSN` 세 개다. 같은 브랜치에 `SENTRY_AUTH_TOKEN` 같은 다른 이름도 있어, 세 개로 충분한지는 **확인 못 함.** 키를 넣기 전에 그 브랜치에서 확인한다.
+- EAS `production` 변수: 앱이 읽는 것은 `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST`, `EXPO_PUBLIC_SENTRY_DSN` 세 개다(2026-11-04 `release/1.0.1` 코드에서 확인). 오류 보고의 소스맵까지 올리려면 빌드 때 `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_URL`(`https://de.sentry.io/`)도 넣는다. 토큰 없이 빌드하면 `SENTRY_DISABLE_AUTO_UPLOAD=true`를 넣는다(DEV-SETUP 「이벤트 기록과 오류 보고」, preview 프로필은 이미 넣어 둠).
 - 1.0.1은 기기 언어를 따른다(한국어면 한국어, 나머지는 영어, 2026-11-02 사용자 결정). 판매 지역은 그대로 대한민국이다. 영어 문구는 Claude 초안이고 원어민 검수 전이다.
+
+### 스토어 상품과 결제 (제출 전, 2026-11-04 정리)
+
+1.0.0 때 RevenueCat에 App Store 앱과 상품 5개(묶음 4개, 광고 제거)를 붙였다([출시 준비 결정](RELEASE-DECISIONS.md) 2026-10-26). 1.0.1은 아래 5개를 더한다. 상품 ID는 지운 뒤에도 다시 못 쓰니 한 글자씩 맞춰 본다(`src/purchases/revenueCatStore.ts`).
+
+| 종류 | 상품 ID | 가격 | RevenueCat 권한 |
+| --- | --- | --- | --- |
+| 비소모성 | `com.novumlab.chagok.pack.christmas_normal` (크리스마스) | 2,200원 | `pack_christmas_normal` |
+| 비소모성 | `com.novumlab.chagok.pack.study_normal` (공부와 일) | 2,200원 | `pack_study_normal` |
+| 비소모성 | `com.novumlab.chagok.pack.food_normal` (카페와 음식) | 2,200원 | `pack_food_normal` |
+| 자동 갱신 구독, 1개월 | `com.novumlab.chagok.sub.monthly` | 4,900원 | `all_access` |
+| 자동 갱신 구독, 1년 | `com.novumlab.chagok.sub.yearly` | 24,900원 | `all_access` |
+
+1. **App Store Connect:** 구독 그룹 하나를 만들고 월과 연 구독을 그 안에 둔다(둘을 동시에 결제하지 않게). 무료 체험과 할인 없음. 판매 지역은 대한민국만(앱과 같게). 상품마다 한국어 표시 이름과 설명, 심사용 스크린샷(그 상품을 사는 화면)을 넣는다. 4,900원과 24,900원이 원화 가격표에 있는지는 **확인 못 함.** 등록할 때 본다.
+2. **처음 내는 구독은 앱 버전과 함께 심사받는다.** 1.0.1 버전 페이지의 「앱 내 구입 및 구독」에 새 상품 5개를 모두 골라 넣고 제출한다.
+3. **RevenueCat:** 새 상품 5개를 가져와 위 표의 권한에 붙인다. 앱은 오퍼링을 쓰지 않고 상품 ID로 직접 부른다.
+4. **약관과 메타데이터:** 자동 갱신 구독은 앱 안과 스토어에 이용약관과 처리방침 링크가 있어야 한다(Apple 개발자 계약 Schedule 2 제3.8(b)). 구독 조항은 이용약관 2판(시행 2026-12-04, novum-web PR #63)에 넣었다. 2판을 게시한 뒤 스토어 설명 끝이나 EULA 칸에 이용약관 주소를 둔다.
+5. **확인:** TestFlight 빌드에서 샌드박스 계정으로 월 구독, 해지 예약, 끝남, 구매 복원을 본다.
 
 ### 1.0.1과 별개인 랜딩과 약관 일
 

@@ -78,6 +78,12 @@ describe('「기본 스티커」 화면',()=>{
     rerender(<PackCard pack={priced} open={false} rewardReady onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
     expect(screen.getByText('3일 무료')).toBeTruthy();
   });
+  it('무료와 연 묶음은 표시 없이, 잠긴 묶음은 가림막과 미리 보기 글자 없이 보인다 (2026-11-04 시안 B안)',()=>{
+    render(<>{(['free','owned','locked'] as const).map(state=><PackCard key={state} pack={colorPack(state==='free'?'basic':'animals_normal',state)} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>)}</>);
+    expect(screen.queryByText('무료')).toBeNull();
+    expect(screen.queryByText('열었어요')).toBeNull();
+    expect(screen.queryByText('눌러서 미리 보기')).toBeNull();
+  });
   it('가격을 못 받아 왔으면 잠긴 묶음에 가격 배지가 없다',()=>{
     render(<PackCard pack={colorPack('animals_normal','locked')} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
     expect(screen.queryByText(/원$/)).toBeNull();
