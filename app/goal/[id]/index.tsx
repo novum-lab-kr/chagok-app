@@ -174,6 +174,8 @@ export default function Board() {
    */
   async function place(slotIndex: number, at: { slot?: number; date?: string }, from: BoardData | null = data, placedAt?: number) {
     if (!from) return;
+    // 첫 스티커 안내가 보이는 채로 다음 칸을 붙이면 본 것으로 친다. 안 닫고 계속 붙여도 매번 다시 뜨지 않게 한다.
+    if (firstGuide && !dialogOpen) void setFlag('firstStickerGuideDone', true);
     const target = from.goal;
     // 기본 스티커 묶음의 체험이나 구독이 끝났으면 붙이지 않고 안내한다. 붙은 칸은 그대로다 (2026-10-08, 구독 2026-11-02).
     const gate = await checkPlaceGate(target);

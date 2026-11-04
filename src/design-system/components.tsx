@@ -160,11 +160,13 @@ export function clampLength(text: string, max?: number): string {
   const code = text.charCodeAt(max - 1);
   return text.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 1 : max);
 }
+/** 입력칸 안내 글자: 먹색을 흐림 값(0.4)만큼 옅게. 본문과 같은 먹색이면 이미 입력한 글자처럼 보였다 (2026-11-04 사용자) */
+const placeholderInk=(()=>{const h=c.ink.replace('#','');const n=(i:number)=>parseInt(h.slice(i,i+2),16);return `rgba(${n(0)},${n(2)},${n(4)},${retro.opacity.disabled})`;})();
 export function PixelInput({label, error, style, onFocus, onBlur, onChangeText, ...props}: TextInputProps & {label: string; /** 입력칸 아래 검사 문구 */error?: string}) {
   const [focused,setFocused] = useState(false);
   return <View style={{gap:8}}><PixelText>{label}</PixelText>
     <PixelFrame variant="input" fill={c.secondary} focused={focused}>
-      <TextInput allowFontScaling={false} {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={c.ink}
+      <TextInput allowFontScaling={false} {...props} onChangeText={onChangeText&&(text=>onChangeText(clampLength(text,props.maxLength)))} accessibilityLabel={props.accessibilityLabel ?? label} placeholderTextColor={placeholderInk}
         returnKeyType={props.returnKeyType ?? 'done'}
         onFocus={e=>{setFocused(true);onFocus?.(e)}} onBlur={e=>{setFocused(false);onBlur?.(e)}}
         style={[{minHeight:48,paddingHorizontal:12,paddingVertical:Platform.OS==='web'?10:0,color:c.ink,...(props.multiline?retro.typography.body:singleLineText)},style,{fontFamily:retro.fontFamily,fontWeight:'400',letterSpacing:0}]}/>
@@ -232,11 +234,15 @@ export function useContentWidth(measured:number|null) {
 }
 
 /** Shared three-column board spacing. Slots inside use width/height 100%. */
+/** StickerGrid 3열 칸 하나의 크기. 판 쪽 넘기기(PRD 4.2)가 한 쪽에 들어갈 줄 수를 셀 때도 쓴다. */
+export function stickerCellSize(width:number):{width:number;height:number} {
+  const cellWidth=Math.max(0,Math.floor((width-2*retro.layout.boardInset-2*retro.layout.boardGap)/3));
+  return {width:cellWidth,height:Math.round(cellWidth*64/84)};
+}
 export function StickerGrid({children}: {children:ReactNode}) {
   const [measured,setWidth]=useState<number|null>(null);
   const width=useContentWidth(measured);
-  const cellWidth=Math.max(0,Math.floor((width-2*retro.layout.boardInset-2*retro.layout.boardGap)/3));
-  const cellHeight=Math.round(cellWidth*64/84);
+  const {width:cellWidth,height:cellHeight}=stickerCellSize(width);
   return <View onLayout={e=>setWidth(Math.round(e.nativeEvent.layout.width))}
     style={{flexDirection:'row',flexWrap:'wrap',paddingHorizontal:retro.layout.boardInset,columnGap:retro.layout.boardGap,rowGap:retro.layout.boardRowGap}}>
     {React.Children.map(children,child=><View style={{width:cellWidth,height:cellHeight}}>{child}</View>)}

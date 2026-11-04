@@ -1,5 +1,5 @@
 import React from 'react';
-import {BoardProgressRow,GuideCard,progressBlockPose} from './index';
+import {BoardProgressRow,GuideCard,progressBlockPose,tallyPageSize} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
@@ -299,5 +299,19 @@ describe('판 진행 표시와 안내 (2026-11-02)',()=>{
     render(<GuideCard text="안내" onClose={onClose}/>);
     fireEvent.click(screen.getByRole('button',{name:'닫기'}));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('적립판 쪽 넘기기 (2026-11-03 시안 P1)',()=>{
+  // 칸 높이 76, 줄 간격 10 → 줄 하나 86
+  it('남은 높이에 다 들어가면 쪽을 나누지 않는다',()=>{
+    expect(tallyPageSize(15,500,76,10)).toBe(15);
+  });
+  it('넘치면 넘김 줄을 빼고 들어가는 줄만큼 넣는다',()=>{
+    expect(tallyPageSize(40,600,76,10)).toBe(18); // (600-52+10)/86 = 6줄
+    expect(tallyPageSize(40,700,76,10)).toBe(21); // 7줄
+  });
+  it('아주 작은 화면도 최소 3줄을 넣는다',()=>{
+    expect(tallyPageSize(40,200,76,10)).toBe(9);
   });
 });
