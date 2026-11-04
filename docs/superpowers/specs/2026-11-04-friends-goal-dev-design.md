@@ -182,7 +182,7 @@ create table goal_shares (
 4. 화면 연결(만들기 → 초대 → 판 → 설정 → 차단)
 5. 딥링크(앱 설정 + novum-web 파일)
 6. 위젯 「n명」과 한 판 위젯 붙이기
-7. 처리방침과 약관 새 판 문안(1.1.0 개정에 합침)
+7. 약관 3판과 처리방침 3판 게시(초안은 `friends-goal-policy-draft/`)
 8. qa, security, 사용자 확인
 
 ## 13. 확인할 것
