@@ -4,7 +4,7 @@ import {
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
   canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
-  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount,
+  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount, SHARED_SLOTS_MAX,
   GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, shownGoalNameError,
   MEMBER_NAME_MAX, memberNameError, shownMemberNameError,
 } from '../src/domain/board';
@@ -290,6 +290,13 @@ describe('목표 설정 칸 수 입력 (2026-09-30)', () => {
     expect(parseSlotCount('3.5', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
     expect(parseSlotCount('abc', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
     expect(parseSlotCount('0', 0)).toEqual({ ok: false, reason: '1칸 이상이어야 해요.' });
+  });
+  it('함께 목표는 1000칸까지만 받는다', () => {
+    expect(parseSlotCount('1000', 30, SHARED_SLOTS_MAX)).toEqual({ ok: true, value: 1000 });
+    expect(parseSlotCount('1001', 30, SHARED_SLOTS_MAX)).toEqual({ ok: false, reason: '1000칸까지 만들 수 있어요.' });
+  });
+  it('상한을 주지 않으면(혼자 목표) 5000도 받는다', () => {
+    expect(parseSlotCount('5000', 30)).toEqual({ ok: true, value: 5000 });
   });
 });
 

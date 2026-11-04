@@ -149,6 +149,28 @@
       }
     },
     {
+      "id": "slots-together--max",
+      "data": {
+        "label": "칸 수, 친구와 함께, 1000칸 넘음",
+        "tags": [
+          "「1000칸까지 만들 수 있어요.」",
+          "1000칸까지",
+          "PRD 4.15",
+          "app/goal/together"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-together-max",
+            "label": "1000칸까지 만들 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "slots",
+          "together"
+        ]
+      }
+    },
+    {
       "id": "memo--full",
       "data": {
         "label": "메모 · 기록 · 500자",

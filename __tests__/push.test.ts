@@ -4,7 +4,7 @@ import { getSticker, placeSticker, removeSticker } from '../src/repositories/sti
 import { upsertRecord } from '../src/repositories/recordRepository';
 import { pendingCount, takeBatch } from '../src/sync/outbox';
 import { pushOnce } from '../src/sync/push';
-import { refetchGoal } from '../src/sync/pull';
+import { AccountChanged, refetchGoal } from '../src/sync/pull';
 import { PhotoRejected } from '../src/sync/contract';
 import type { V2Change } from '../src/sync/contract';
 import { FakePhotos, FakeServer } from './support/fakeServer';
@@ -249,6 +249,37 @@ describe('2판 행 (api_v2.sql sync_push)', () => {
     const pushes = deps.server.pushes;
     await pushOnce(deps);
     expect(deps.server.pushes).toBe(pushes);
+  });
+
+  it('보내기 전에 계정이 바뀌었으면 서버를 부르지 않고 AccountChanged로 멈춘다', async () => {
+    const deps = setup();
+    await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const pending = (await pendingCount()).pending;
+    await expect(pushOnce({ ...deps, userId: deps.server.userId, currentUserId: async () => 'user-b' }))
+      .rejects.toBeInstanceOf(AccountChanged);
+    expect(deps.server.pushes).toBe(0);
+    expect((await pendingCount()).pending).toBe(pending);
+  });
+
+  it('보낸 뒤 거절을 반영하기 전에 계정이 바뀌면 기기 칸을 지우지 않는다', async () => {
+    const deps = setup();
+    const owner = deps.server.as('friend');
+    const { goalId, inviteCode } = owner.createSharedGoal({ mode: 'one' });
+    deps.server.join(inviteCode, '지우', 'basic.star');
+    await refetchGoal({ server: deps.server, userId: deps.server.userId }, goalId);
+    await owner.push('d2', [{ entity: 'sticker', op: 'upsert', row: {
+      id: 'friend-cell', goal_id: goalId, placed_at: 1, slot_index: 0, sticker_type: 'basic.clover', updated_at: 1,
+      date_key: '2026-11-05', tz_offset_min: 540,
+    } }]);
+    const mine = await placeSticker(goalId, 0);
+    let calls = 0;
+    const taken: string[] = [];
+    // 보내기 직전 확인은 지나고, 거절을 반영하기 직전 확인에서 바뀌었다
+    const currentUserId = async () => (++calls > 1 ? 'user-b' : deps.server.userId);
+    await expect(pushOnce({ ...deps, userId: deps.server.userId, currentUserId, onSlotTaken: (id) => taken.push(id) }))
+      .rejects.toBeInstanceOf(AccountChanged);
+    expect(await getSticker(mine.id)).not.toBeNull();
+    expect(taken).toEqual([]);
   });
 
   it('내 행이 아니면(not_allowed) 그 항목만 보류하고 나머지는 올린다', async () => {

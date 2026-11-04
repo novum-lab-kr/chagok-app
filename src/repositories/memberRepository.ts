@@ -34,6 +34,13 @@ export async function listMembers(goalId: string): Promise<GoalMember[]> {
   return rows.map(toMember);
 }
 
+/** 그 사람이 멤버로 있는 목표 id. 차단한 뒤 그 사람이 있던 목표를 다시 받을 때 쓴다. */
+export async function listGoalsWith(userId: string): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db.all<{ goal_id: string }>('SELECT goal_id FROM goal_members WHERE user_id = ? ORDER BY goal_id', userId);
+  return rows.map((r) => r.goal_id);
+}
+
 /** 정원에 드는 멤버 수. 보기만 하는 사람(viewer)은 뺀다. */
 export async function countMembers(goalId: string): Promise<number> {
   const db = await getDb();

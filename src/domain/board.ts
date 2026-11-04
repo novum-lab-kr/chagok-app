@@ -211,12 +211,13 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
  * 목표 설정의 적립판 칸 수 입력 (2026-09-30). 늘리기만 된다 — 지금 칸 수 이상의 정수만 받는다.
  * 앞의 0은 무시한다("030" → 30). reason은 입력칸 아래에 그대로 보여준다.
  */
-export function parseSlotCount(input: string, current: number): { ok: true; value: number } | { ok: false; reason: string } {
+export function parseSlotCount(input: string, current: number, max?: number): { ok: true; value: number } | { ok: false; reason: string } {
   const text = input.trim();
   if (text === '') return { ok: false, reason: t('validation.slotCountEmpty') };
   if (!/^\d+$/.test(text)) return { ok: false, reason: t('validation.digitsOnly') };
   const value = Number(text);
   if (value < 1) return { ok: false, reason: t('validation.slotCountMin') };
+  if (max !== undefined && value > max) return { ok: false, reason: t('validation.slotCountMax', max) };
   if (value < current) return { ok: false, reason: t('validation.slotCountBelowCurrent', current) };
   return { ok: true, value };
 }
@@ -243,6 +244,10 @@ export function memoError(memo: string): string | undefined {
 export function shownGoalNameError(name: string, touched: boolean): string | undefined {
   return name === '' && !touched ? undefined : goalNameError(name);
 }
+/** 함께 목표 적립판의 칸 수 상한. 서버 private.check_slots와 같은 값이다(혼자 목표는 상한이 없다). */
+export const SHARED_SLOTS_MAX = 1000;
+/** 함께 목표 최대 인원(만든 사람 포함). 서버 goals.max_members 기본값이다. 문구 「친구를 n명까지」는 여기서 1을 뺀다. */
+export const SHARED_MAX_MEMBERS = 6;
 /**
  * 함께 목표에서 다른 사람에게 보이는 내 이름 (PRD 4.15, 2026-11-04). 1~10자, 저장할 때 앞뒤 공백을 뺀다.
  * 10자는 판 화면 이름 배지(폭 56) 두 줄을 생각한 값이다. 금칙어는 서버가 거른다(문구는 서버 응답에 따라 화면이 넘긴다).

@@ -270,6 +270,14 @@ describe('한 회차 (syncRound)', () => {
     expect(await getSetting('syncCursor')).toBe(cursor);
   });
 
+  it('올리기에도 currentUserId를 넘긴다: 보내기 전에 계정이 바뀌면 서버를 부르지 않는다', async () => {
+    const server = new FakeServer();
+    await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    await expect(syncRound({ ...deps(server), currentUserId: async () => 'user-b' }, server.userId, () => {}))
+      .rejects.toBeInstanceOf(AccountChanged);
+    expect(server.pushes).toBe(0);
+  });
+
   it('받아 오기 뒤 계정이 바뀌면 사진을 받지 않는다', async () => {
     const server = new FakeServer();
     const photos = new FakePhotos();

@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {ExtendSlotsScreen, GoalSettingsScreen, InviteJoinScreen, NewGoalScreen, RecordScreen, TogetherGoalScreen, type BoardKind, type FriendBoard, type PocketGoal, type StickerId, type TogetherMode} from '../src/design-system';
-import {GOAL_NAME_MAX, MEMBER_NAME_MAX, MEMO_MAX, goalNameError, memberNameError, memoError, parseSlotCount, shownMemberNameError} from '../src/domain/board';
+import {GOAL_NAME_MAX, MEMBER_NAME_MAX, MEMO_MAX, goalNameError, memberNameError, memoError, parseSlotCount, shownMemberNameError, SHARED_SLOTS_MAX} from '../src/domain/board';
 import {t} from '../src/i18n';
 import {Stage, noop} from './support/frame';
 
@@ -82,12 +82,14 @@ function Join({initialName, touched = false, serverError, sticker = 'basic.sprou
     sticker={sticker} onChooseSticker={noop} stickerError={stickerError} onJoin={noop} joinDisabled={name.trim() === ''} onBack={noop}/></Stage>;
 }
 /** 앱 app/goal/together.tsx와 같은 값 */
-function Together({initialName}: {initialName: string}) {
-  const [mode, setMode] = useState<TogetherMode>('each'), [name, setName] = useState(initialName), [kind, setKind] = useState<BoardKind>('tally'), [count, setCount] = useState('30');
+function Together({initialName, initialCount = '30'}: {initialName: string; initialCount?: string}) {
+  const [mode, setMode] = useState<TogetherMode>('each'), [name, setName] = useState(initialName), [kind, setKind] = useState<BoardKind>('tally'), [count, setCount] = useState(initialCount);
   const [myName, setMyName] = useState('은주');
+  // 함께 목표의 적립판은 1000칸까지(서버 private.check_slots와 같은 값). 문구는 화면 아래 문구 자리에 보인다
+  const slots = parseSlotCount(count, 1, SHARED_SLOTS_MAX);
   return <Stage><TogetherGoalScreen mode={mode} onChangeMode={setMode} name={name} onChangeName={setName} nameMaxLength={GOAL_NAME_MAX} nameError={goalNameError(name)}
     kind={kind} onChangeKind={setKind} count={count} onChangeCount={setCount} myName={myName} onChangeMyName={setMyName} myNameMaxLength={MEMBER_NAME_MAX} myNameError={memberNameError(myName)}
-    sticker="basic.shoe" onChooseSticker={noop} maxFriends={6} onSubmit={noop} onBack={noop}/></Stage>;
+    sticker="basic.shoe" onChooseSticker={noop} maxFriends={6} error={kind === 'tally' && !slots.ok ? slots.reason : undefined} onSubmit={noop} onBack={noop}/></Stage>;
 }
 export const MemberNameTyping: Story = {name: '내 이름, 함께하기, 쓰는 중', render: () => <Join initialName="소라"/>};
 export const MemberNameFull: Story = {name: '내 이름, 함께하기, 10자', render: () => <Join initialName="산책하는 은주 언니"/>};
@@ -95,3 +97,4 @@ export const MemberNameBlank: Story = {name: '내 이름, 함께하기, 비움',
 export const MemberNameBanned: Story = {name: '내 이름, 함께하기, 금칙어 (서버)', render: () => <Join initialName="바보" serverError={t('validation.nameNotAllowed')}/>};
 export const StickerTaken: Story = {name: '내 스티커, 함께하기, 이미 쓰는 스티커 (서버)', render: () => <Join initialName="소라" sticker="basic.flower" stickerError={t('validation.stickerTaken')}/>};
 export const NameTogetherFull: Story = {name: '목표 이름, 친구와 함께, 20자', render: () => <Together initialName={NAME_20}/>};
+export const SlotsTogetherMax: Story = {name: '칸 수, 친구와 함께, 1000칸 넘음', render: () => <Together initialName="11월 만 보 걷기" initialCount="1001"/>};

@@ -6,6 +6,8 @@ import type { GoalMode } from '../domain/types';
 import { ME } from '../repositories/ids';
 import { deleteStickerRow } from '../repositories/stickerRepository';
 import { PhotoRejected, SyncRejected } from './contract';
+import { ensureSameAccount } from './pull';
+import type { PullDeps } from './pull';
 import type { GoalRow, MemberChangeRow, PhotoStore, PushRejection, RecordRow, StickerRow, SyncServer, V2Change } from './contract';
 
 /**
@@ -24,14 +26,20 @@ const STICKER_SQL = 'SELECT id, goal_id, placed_at, slot_index, sticker_type, up
 // 기기 경로 photo_uri는 보내지 않는다
 const RECORD_SQL = 'SELECT id, sticker_id, memo, photo_remote_path, created_at, updated_at FROM records WHERE id = ?';
 
-export type PushDeps = {
+export type PushDeps = Partial<Pick<PullDeps, 'userId' | 'currentUserId'>> & {
   server: SyncServer; photos: PhotoStore; deviceId: string; batchSize?: number; now?: () => number;
   /**
    * 한 판에서 다른 사람이 먼저 붙인 칸이라 기기에서 지웠다(slot_taken). 화면이 안내하고,
-   * 지운 기록의 기기 사진(removedPhotoUri)이 있으면 그 파일을 지운다. DB에서는 이미 지운 뒤에 부른다.
+   * 지운 기록의 기기 사진(removedPhotoUri)이 있으면 그 파일을 지운다. 목표 id는 지우기 전에 읽어 둔 것이다.
+   * DB에서는 이미 지운 뒤에 부른다.
    */
-  onSlotTaken?: (stickerId: string, removedPhotoUri: string | null) => void;
+  onSlotTaken?: (stickerId: string, removedPhotoUri: string | null, goalId: string) => void;
 };
+
+/** 올리는 사이 로그인한 계정이 바뀌었으면 던진다(AccountChanged). userId를 주지 않으면 확인하지 않는다. */
+async function ensureSameAccountFor(deps: PushDeps): Promise<void> {
+  if (deps.userId !== undefined) await ensureSameAccount({ userId: deps.userId, currentUserId: deps.currentUserId });
+}
 
 /**
  * 지금 행 상태로 바꾼다. 행이 없으면 삭제다 — 쪽지에 내용을 담지 않아 쪽지와 DB가 어긋나지 않는다.
@@ -64,17 +72,19 @@ const changeId = (c: V2Change): string => (c.op === 'delete' ? c.id : c.entity =
 
 /**
  * 한 판에서 다른 사람이 먼저 붙인 칸(slot_taken). 기기에서 그 칸과 기록을 지우고 다시 보내지 않는다.
- * 사진을 먼저 올렸으면 서버 파일은 지운다(기록이 없으면 pushPhoto가 지운다). 지운 기록의 기기 사진 경로를 돌려준다.
+ * 사진을 먼저 올렸으면 서버 파일은 지운다(기록이 없으면 pushPhoto가 지운다).
+ * 지운 기록의 기기 사진 경로와, 지우기 전에 읽어 둔 목표 id를 돌려준다.
  */
-async function dropTakenSticker(id: string, now: number): Promise<string | null> {
+async function dropTakenSticker(id: string, now: number): Promise<{ photoUri: string | null; goalId: string | null }> {
   const db = await getDb();
   return db.transaction(async (tx) => {
+    const goalId = (await tx.first<{ goal_id: string }>('SELECT goal_id FROM stickers WHERE id = ?', id))?.goal_id ?? null;
     const record = await deleteStickerRow(tx, id);
     await tx.run("DELETE FROM outbox WHERE entity = 'sticker' AND row_id = ?", id);
-    if (!record) return null;
+    if (!record) return { photoUri: null, goalId };
     await tx.run("DELETE FROM outbox WHERE entity IN ('record', 'photo') AND row_id = ?", record.recordId);
     if (record.photoRemotePath) await enqueue(tx, 'photo', record.recordId, now);
-    return record.photoUri;
+    return { photoUri: record.photoUri, goalId };
   });
 }
 
@@ -119,6 +129,7 @@ async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Pr
   const sending = built.flatMap(({ entry, change }) => (change ? [{ entry, change }] : []));
   let rejected: PushRejection[] = [];
   try {
+    await ensureSameAccountFor(deps); // 보내는 묶음은 지금 계정 것이어야 한다
     if (sending.length) ({ rejected } = await deps.server.push(deps.deviceId, sending.map((s) => s.change)));
   } catch (error) {
     if (!(error instanceof SyncRejected)) throw error;
@@ -130,6 +141,7 @@ async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Pr
     for (const e of entries) held += await pushRows([e], deps, now);
     return held;
   }
+  if (rejected.length) await ensureSameAccountFor(deps); // 거절 반영(칸 지우기, 보류)은 기기에 쓴다
   let held = 0;
   const handled = new Set<OutboxEntry>();
   for (const r of rejected) {
@@ -137,7 +149,8 @@ async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Pr
     if (!hit) continue;
     handled.add(hit.entry);
     if (r.reason === 'slot_taken' && r.entity === 'sticker') {
-      deps.onSlotTaken?.(r.id, await dropTakenSticker(r.id, now));
+      const { photoUri, goalId } = await dropTakenSticker(r.id, now);
+      if (goalId) deps.onSlotTaken?.(r.id, photoUri, goalId);
     } else {
       await hold(hit.entry, r.reason);
       held += 1;

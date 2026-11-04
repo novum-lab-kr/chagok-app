@@ -1,5 +1,5 @@
 import { createGoal } from '../src/repositories/goalRepository';
-import { countMembers, listMembers } from '../src/repositories/memberRepository';
+import { countMembers, listGoalsWith, listMembers } from '../src/repositories/memberRepository';
 import { withFreshDb } from './support/setup';
 import { getDb } from '../src/db/client';
 
@@ -30,6 +30,17 @@ describe('memberRepository', () => {
     expect(members.map((m) => m.userId)).toEqual(['me', 'u-c', 'u-a', 'u-b']);
     expect(members.map((m) => m.isMe)).toEqual([true, false, false, false]);
     expect(members[1].displayName).toBe('하늘');
+  });
+
+  it('listGoalsWith는 그 사람이 있는 목표 id만 준다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 3 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 3 });
+    const c = await createGoal({ name: 'c', boardType: 'tally', totalSlots: 3 });
+    await addMember(a.id, 'u1', 'member', 10);
+    await addMember(c.id, 'u1', 'member', 10);
+    await addMember(b.id, 'u2', 'member', 10);
+    expect(await listGoalsWith('u1')).toEqual([a.id, c.id].sort());
+    expect(await listGoalsWith('nobody')).toEqual([]);
   });
 
   it('다른 목표의 멤버는 섞이지 않는다', async () => {
