@@ -102,7 +102,7 @@ describe('목록 카드와 진행 문구 (PRD 4.1)', () => {
 
   it('날짜와 판 정보 표기', () => {
     expect(longDate('2026-09-03')).toBe('9월 3일');
-    expect(boardLabel({ ...tally, totalSlots: 20 })).toBe('적립판 · 20칸');
+    expect(boardLabel({ ...tally, totalSlots: 20 })).toBe('적립판 20칸');
     expect(boardLabel(cal)).toBe('달력판');
     expect(periodLabel({ ...cal, createdAt: at(9, 1), endDate: '2026-09-23' })).toBe('9월 1일 – 9월 23일');
     expect(periodLabel({ ...cal, createdAt: at(9, 1) })).toBe('9월 1일부터');
