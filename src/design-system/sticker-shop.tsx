@@ -101,7 +101,7 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
   const fit=packRowCount(size.width,pack.stickers.length);
   const more=pack.stickers.length-fit;
   const right=pack.state==='free'||pack.state==='owned'?null
-    :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
+    :pack.state==='trial'?(pack.trialLabel?<PixelBadge label={pack.trialLabel} tone="primary"/>:null)
     :<>{rewardReady?<PixelBadge label={t('shop.threeDaysFree')} tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
   const head=<View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:36}}>
     {/* 이름이 길면(영어) 개수를 다음 줄로 내려 가격과 화살표를 밀지 않는다 */}
