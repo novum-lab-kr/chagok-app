@@ -304,7 +304,8 @@ secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는�
 
 ```sh
 supabase db query --linked "select 1"              # 연결 확인
-supabase db reset --linked                         # 개발 서버를 비우고 supabase/migrations를 처음부터 다시 적용한다
+supabase db push --linked --dry-run                # 새 마이그레이션 파일만 들어가는지 먼저 본다
+supabase db push --linked                          # 새 마이그레이션 파일을 개발 서버에 올린다
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
 supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함수
 supabase functions deploy kakao-unlink --use-api   # 카카오 연결 해제 웹훅 (토큰 없이 받는다, config.toml verify_jwt = false)
@@ -312,7 +313,7 @@ npm run test:server                                # 실제 서버 테스트 (�
 npm run server:dev-user                            # 개발용 계정 만들기
 ```
 
-**1.0.0 심사 제출 전(2026-10-12~, 끝남):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **지금은** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`). 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
+**서버 구조 바꾸기:** 올린 마이그레이션 파일을 고치지 않고 새 파일을 더해 `db push`로 올린다. 기기 DB도 `src/db/schema.ts` `MIGRATIONS` 끝에 새 판을 더한다. **서버를 비우고 처음부터 다시 만드는 일은 2026-11-05(서버 2판, 운영 사용자 0명)가 마지막이다.** 앞으로는 운영 데이터를 옮기는 마이그레이션으로 바꾼다. 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
 
 **Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
 
@@ -410,13 +411,11 @@ delete from private.account_deletions where completed_at < now() - interval '1 y
 
 `supabase/migrations`를 운영 DB에 올리는 방법은 1.0.0 심사 제출 전과 뒤가 다르다. 지금은 제출 뒤다(AGENTS.md 「서버와 약관 규칙」).
 
-**주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 `20260930000004_account_admin.sql`을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
+**주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 계정 관리 마이그레이션(당시 `20260930000004`)을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
 
-**1.0.0 심사 제출 전까지만 쓴 방법 (지금은 하지 않는다): 통째로 다시 넣는다**
+**통째로 다시 넣는 방법 (2026-10-29, 2026-11-05에 썼다. 이제 하지 않는다)**
 
-심사와 승인 직후 사용이 운영 서버를 쓰므로 다시 하면 안 된다. 기록으로만 남긴다.
-
-마이그레이션 파일을 고쳐도 된다. 운영은 DB와 사진을 비우고 main의 파일 전체를 다시 넣는다(2026-10-29에 이 순서로 했다). 운영의 사용자, 기록, 사진이 모두 사라진다.
+운영의 사용자, 기록, 사진이 모두 사라진다. 2026-11-05 서버 2판(운영 사용자 0명 확인)이 마지막이다. 기록으로만 남긴다. 그때 맞춘 것: `log_min_error_statement` 다시 걸기, 함수 네 폴더 다시 올리기, 컨테이너 11개 healthy, Healthchecks 7개 초록.
 
 ```sh
 # 서버 (ssh chagok@<운영 서버 주소>)

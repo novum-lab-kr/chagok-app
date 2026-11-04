@@ -24,7 +24,7 @@ export class FakeServer implements SyncServer {
     const s = this.rows.get(this.key(entity, id));
     if (s && s.deletedAt === null) this.rows.set(this.key(entity, id), { ...s, deletedAt: at, seq: ++this.seq });
   }
-  /** apply_upsert의 where. 목표는 updated_at이 같으면 지운 행을 되살리지 않는다(20261030000001). */
+  /** apply_upsert의 where. 목표는 updated_at이 같으면 지운 행을 되살리지 않는다(1.1.0 호환 `push_changes`, `20261105000003_api_v1.sql`). */
   private upsertWins(entity: RowEntity, cur: Stored, updatedAt: number): boolean {
     if (entity !== 'goal') return cur.row.updated_at <= updatedAt;
     return cur.row.updated_at < updatedAt || (cur.row.updated_at === updatedAt && cur.deletedAt === null);
