@@ -2,6 +2,7 @@ import type { AccountProvider } from '../design-system/account-screens';
 import { getSetting, setSetting } from '../repositories/appSettingsRepository';
 import { pendingCount } from './outbox';
 import { notifySyncStatus } from './syncGate';
+import { t } from '../i18n';
 
 export type AccountState =
   | { state: 'local' }
@@ -60,7 +61,7 @@ export function formatBackedUpAt(ms: number, now: Date): string {
   const d = new Date(ms);
   const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((day(now) - day(d)) / 86_400_000);
-  if (diff === 0) return `오늘 ${hm(d)}`;
-  if (diff === 1) return `어제 ${hm(d)}`;
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  if (diff === 0) return t('date.todayAt', hm(d));
+  if (diff === 1) return t('date.yesterdayAt', hm(d));
+  return t('date.monthDay', d.getMonth() + 1, d.getDate());
 }

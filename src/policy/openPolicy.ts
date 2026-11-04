@@ -2,6 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Network from 'expo-network';
 import { createSingleFlight } from '../app-data/singleFlight';
 import type { DialogChoice, DialogSpec } from '../app-data/useDialog';
+import { t } from '../i18n';
 import { policyUrl } from './urls';
 import type { PolicyKind } from './versions';
 
@@ -17,12 +18,12 @@ export function openPolicy(kind: PolicyKind, ask: (spec: DialogSpec) => Promise<
     try {
       const state = await Network.getNetworkStateAsync();
       if (state.isConnected === false || state.isInternetReachable === false) {
-        await ask({ title: '연결이 필요해요', description: '인터넷에 연결되면 볼 수 있어요.', primaryLabel: '확인' });
+        await ask({ title: t('policy.offlineTitle'), description: t('policy.offlineDescription'), primaryLabel: t('common.ok') });
         return;
       }
       await WebBrowser.openBrowserAsync(policyUrl(kind));
     } catch {
-      await ask({ title: '열지 못했어요', description: '잠시 후 다시 시도해주세요.', primaryLabel: '확인' });
+      await ask({ title: t('policy.openFailedTitle'), description: t('policy.openFailedDescription'), primaryLabel: t('common.ok') });
     }
   });
 }

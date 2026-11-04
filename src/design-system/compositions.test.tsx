@@ -2,6 +2,9 @@ import React from 'react';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
+import {boardDialogs} from './board-dialogs';
+import {removeStickerAction} from './components';
+import {setLanguage} from '../i18n';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
 import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen,goalDragShift,goalDropIndex} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,goalMoveActionList} from './composition-controls';
@@ -261,5 +264,21 @@ describe('내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30)',()=>{
     render(<GoalListScreen tab="active" onTab={vi.fn()} active={[card('a'),card('b')]} completed={[]} onOpen={onOpen} onAdd={vi.fn()} onMove={vi.fn()}/>);
     fireEvent.click(screen.getByLabelText('b, 적립판, 10% 채웠어요'));
     expect(onOpen).toHaveBeenCalledWith('b');
+  });
+});
+describe('영어 문구 (공통 부품)',()=>{
+  afterEach(()=>setLanguage('ko'));
+  it('달력은 달 이름과 요일을 영어로 그리고 칸 이름도 영어다',()=>{
+    setLanguage('en');
+    render(<CalendarBoard year={2026} month={9} records={{'2026-09-02':'sprout'}} onSelect={vi.fn()} onMonthChange={vi.fn()}/>);
+    expect(screen.getByText('Sep 2026')).toBeTruthy();
+    expect(screen.getByText('Sun')).toBeTruthy();
+    expect(screen.getByRole('button',{name:'Sep 2, has a sticker'})).toBeTruthy();
+  });
+  it('다이얼로그 문구는 읽는 순간의 언어를 따른다',()=>{
+    expect(boardDialogs.unsaved.title).toBe('저장하지 않고 나갈까요?');
+    setLanguage('en');
+    expect(boardDialogs.unsaved.title).toBe('Leave without saving?');
+    expect(removeStickerAction.label).toBe('Remove sticker');
   });
 });

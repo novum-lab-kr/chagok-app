@@ -11,6 +11,7 @@ import { loadPackState } from '../../src/repositories/packRepository';
 import { updateGoal } from '../../src/repositories/goalRepository';
 import { normalizeStickerId } from '../../src/stickers/stickerIds';
 import { type ColorStickerId, type ColorStickerPackId } from '../../src/stickers/color/catalog';
+import { t } from '../../src/i18n';
 
 type PackState = Awaited<ReturnType<typeof loadPackState>>;
 
@@ -54,7 +55,7 @@ export default function ChooseSticker() {
 
   async function done() {
     if (goalId) {
-      const ok = await saveOrNotify(ask, '기본 스티커를 바꾸지 못했어요', () => updateGoal(goalId, { defaultStickerId: selected }));
+      const ok = await saveOrNotify(ask, t('shop.changeStickerFailed'), () => updateGoal(goalId, { defaultStickerId: selected }));
       if (!ok) return;
     } else {
       offerSticker(selected);
