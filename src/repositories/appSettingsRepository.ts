@@ -1,7 +1,7 @@
 import { getDb } from '../db/client';
 import { newId } from './ids';
 
-export type AppFlag = 'tutorialDone' | 'startDone';
+export type AppFlag = 'tutorialDone' | 'startDone' | 'reorderGuideDone' | 'firstStickerGuideDone' | 'firstStickerGuidePending';
 
 /** 정해둔 적 없으면 false. 첫 실행에서 튜토리얼이 뜨도록 한다. */
 export async function getFlag(key: AppFlag): Promise<boolean> {
@@ -48,7 +48,11 @@ export type SettingKey =
   /** 워치 성장 수(블록 수). 지금 붙어 있는 스티커 수보다 작아지지 않는다. 복원하면 지운다 (PRD 4.14) */
   | 'watchGrowth'
   /** 'feed'면 기록 탭을 사진 격자로 연다. 없으면 타임라인 (2026-10-17) */
-  | 'recordsView';
+  | 'recordsView'
+  /** '0'이면 사용 기록 보내기에 동의, '1'이면 거부나 철회, 없으면 아직 묻지 않았다. 로그아웃해도 남긴다 (src/sync/wipe.ts) */
+  | 'analyticsOff'
+  /** '1'이면 오류 보고를 보내지 않는다. 로그아웃해도 남긴다 (src/sync/wipe.ts) */
+  | 'errorReportOff';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();
@@ -70,11 +74,18 @@ export async function setSetting(key: SettingKey, value: string | null): Promise
   );
 }
 
-/** 설치마다 한 번 만든다. 서버 행의 "마지막으로 쓴 기기"다. */
-export async function getDeviceId(): Promise<string> {
+async function readOrCreateDeviceId(): Promise<string> {
   const existing = await getSetting('deviceId');
   if (existing) return existing;
   const id = newId();
   await setSetting('deviceId', id);
   return id;
+}
+
+let deviceIdInFlight: Promise<string> | null = null;
+
+/** 설치마다 한 번 만든다. 서버 행의 "마지막으로 쓴 기기"다. 첫 실행에 동시에 불러도 ID가 갈리지 않게 하나로 묶는다. */
+export function getDeviceId(): Promise<string> {
+  deviceIdInFlight ??= readOrCreateDeviceId().finally(() => { deviceIdInFlight = null; });
+  return deviceIdInFlight;
 }

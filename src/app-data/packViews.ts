@@ -4,6 +4,8 @@ import { canUseSticker, packStatus, type PackAccess } from '../domain/packs';
 import { colorStickerPacks, colorStickersInPack, getColorSticker, type ColorStickerId, type ColorStickerPackId } from '../stickers/color/catalog';
 import { DEFAULT_COLOR_STICKER, normalizeStickerId } from '../stickers/stickerIds';
 import type { PriceLabels } from '../purchases/price';
+import { t } from '../i18n';
+import { packName } from '../i18n/stickerNames';
 
 /** 「기본 스티커」·묶음 화면의 묶음 목록. colorStickerPacks 순서 (PRD 4.12). 가격은 스토어에서 받아 온 것만 붙인다. */
 export function packViews(access: readonly PackAccess[], now: number, prices: PriceLabels = {}): PackView[] {
@@ -11,7 +13,7 @@ export function packViews(access: readonly PackAccess[], now: number, prices: Pr
     const s = packStatus(p.id, access, now);
     return {
       id: p.id,
-      label: p.label,
+      label: packName(p.id),
       state: s.state,
       stickers: colorStickersInPack(p.id).map((c) => c.id as ColorStickerId),
       ...(s.trialLabel ? { trialLabel: s.trialLabel } : {}),
@@ -29,10 +31,7 @@ export const samplePlacement = (pack: PackView) => pack.stickers.slice(0, 5);
  */
 export function endLabel(endsAt: number, now: number): string {
   const d = new Date(endsAt);
-  const day = localDateKey(endsAt) === localDateKey(now) ? '오늘' : '내일';
-  const h = d.getHours();
-  const part = h < 6 ? '새벽' : h < 12 ? '아침' : h < 18 ? '낮' : '밤';
-  return `${day} ${part} ${h % 12 === 0 ? 12 : h % 12}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return t('shop.trialEnd', localDateKey(endsAt) === localDateKey(now), d.getHours(), d.getMinutes());
 }
 
 /**

@@ -1,10 +1,13 @@
 import {
   createGoal, listGoals, getGoal, deleteGoal, updateGoal, completeGoal, markCompletionSeen, reopenGoal,
-  extendSlots, extendEndDate, settleExpiredPeriods, countGoalContents, listGoalSummaries,
+  extendSlots, extendEndDate, settleExpiredPeriods, countGoalContents, listGoalSummaries, reorderGoals,
 } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
 import { withFreshDb } from './support/setup';
+import { getDb } from '../src/db/client';
+import { orderGoals } from '../src/domain/board';
+import { subscribeLocalChange } from '../src/sync/changes';
 
 withFreshDb();
 
@@ -249,5 +252,70 @@ describe('목표 설정에서 칸 늘리기 (2026-09-30)', () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 1 });
     await completeGoal(g.id, Date.now());
     await expect(updateGoal(g.id, { totalSlots: 5 })).rejects.toThrow('완성한 판');
+  });
+});
+
+describe('내 목표 순서 (PRD 4.1, 2026-10-30)', () => {
+  const shown = async () => orderGoals(await listGoals()).active.map((goal) => goal.name);
+  const outboxGoals = async () => (await (await getDb()).all<{ row_id: string }>(
+    "SELECT row_id FROM outbox WHERE entity = 'goal' ORDER BY row_id",
+  )).map((row) => row.row_id);
+
+  it('새 목표는 맨 위에 온다', async () => {
+    await createGoal({ name: '첫째', boardType: 'tally', totalSlots: 5 });
+    await createGoal({ name: '둘째', boardType: 'tally', totalSlots: 5 });
+    const third = await createGoal({ name: '셋째', boardType: 'tally', totalSlots: 5 });
+    expect(await shown()).toEqual(['셋째', '둘째', '첫째']);
+    expect(third.sortOrder).toBe(-2);
+  });
+
+  it('스티커를 붙여도 순서가 바뀌지 않는다', async () => {
+    const first = await createGoal({ name: '첫째', boardType: 'tally', totalSlots: 5 });
+    await createGoal({ name: '둘째', boardType: 'tally', totalSlots: 5 });
+    await placeSticker(first.id, 0);
+    expect(await shown()).toEqual(['둘째', '첫째']);
+  });
+
+  it('옮긴 순서를 저장하고 다시 읽어도 그대로다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    const c = await createGoal({ name: 'c', boardType: 'tally', totalSlots: 5 });
+    await reorderGoals([a.id, c.id, b.id]);
+    expect(await shown()).toEqual(['a', 'c', 'b']);
+    // 그다음 만든 목표는 옮긴 순서 위에 온다
+    await createGoal({ name: 'd', boardType: 'tally', totalSlots: 5 });
+    expect(await shown()).toEqual(['d', 'a', 'c', 'b']);
+  });
+
+  it('자리가 바뀐 목표만 outbox에 넣고 updated_at을 바꾼다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    const c = await createGoal({ name: 'c', boardType: 'tally', totalSlots: 5 });
+    await reorderGoals([c.id, b.id, a.id]); // 보이는 순서 그대로 0부터 다시 매긴다
+    const db = await getDb();
+    await db.exec('DELETE FROM outbox');
+    const before = await db.first<{ updated_at: number }>('SELECT updated_at FROM goals WHERE id = ?', c.id);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await reorderGoals([c.id, a.id, b.id]);
+    expect(await outboxGoals()).toEqual([a.id, b.id].sort());
+    expect(await db.first<{ updated_at: number }>('SELECT updated_at FROM goals WHERE id = ?', c.id)).toEqual(before);
+  });
+
+  it('옮기면 로컬 변경 신호를 보낸다 (위젯과 워치 갱신)', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    let notified = 0;
+    const off = subscribeLocalChange(() => { notified++; });
+    await reorderGoals([a.id, b.id]);
+    off();
+    expect(notified).toBeGreaterThan(0);
+  });
+
+  it('그사이 지워진 목표는 건너뛴다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    await deleteGoal(b.id);
+    await expect(reorderGoals([b.id, a.id])).resolves.toBeUndefined();
+    expect((await getGoal(a.id))?.sortOrder).toBe(1);
   });
 });

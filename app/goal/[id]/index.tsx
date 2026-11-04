@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BoardDetailScreen, CompletionNudge, LoadingScreen, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
+import { track } from '../../../src/analytics';
+import { hasAnsweredAnalytics, saveAnalyticsEnabled } from '../../../src/analytics/posthog';
+import { AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, GuideCard, LoadingScreen, PixelButton, boardDialogs, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
@@ -18,11 +20,13 @@ import {
 } from '../../../src/domain/board';
 import { localDateKey } from '../../../src/domain/dates';
 import type { Sticker } from '../../../src/domain/types';
-import { placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
+import { getFlag, setFlag } from '../../../src/repositories/appSettingsRepository';
+import { countAllStickers, placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
 import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
 import { subscribeWidgetApplied } from '../../../src/widgets/applied';
 import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
 import { syncWidgetsNow } from '../../../src/widgets/syncWidgets';
+import { t } from '../../../src/i18n';
 
 /** [완성] 스티커 붙이기 모션이 끝나고 다이얼로그를 띄우기까지 */
 const COMPLETION_DIALOG_DELAY_MS = 700;
@@ -41,11 +45,34 @@ export default function Board() {
   const { failed, attempt, fail, retry } = useLoadRetry();
   const [justPlaced, setJustPlaced] = useState<{ slot?: number; date?: string }>({});
   const [actOnce] = useState(createSingleFlight);
-  const { ask, confirm, dialog } = useDialog();
+  const { ask, confirm, dialog, dialogOpen } = useDialog();
+  /** 사용 기록 동의 (PRD 8.2). 붙는 모션을 본 뒤에 띄운다. */
+  const [consentPending, setConsentPending] = useState(false);
+  const [consentVisible, setConsentVisible] = useState(false);
+  // iOS에서 모달을 겹쳐 띄우면 시트가 뜨지 못한 채 터치만 막힌다. 다른 창이 떠 있으면 이번에는 묻지 않고 다음 스티커로 미룬다.
+  const completionWaiting = data ? pendingCompletion(data.goal) : false;
+  useEffect(() => {
+    if (!consentPending) return;
+    if (dialogOpen || completionWaiting) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 다른 창이 뜬 순간에 대기를 취소한다
+      setConsentPending(false);
+      return;
+    }
+    const timer = setTimeout(() => setConsentVisible(true), 600);
+    return () => clearTimeout(timer);
+  }, [consentPending, dialogOpen, completionWaiting]);
+  /** 저장에 실패하면 꺼진 채 두고 다음 스티커 때 다시 묻는다. 앱 사용을 막지 않는다. */
+  function answerConsent(agreed: boolean) {
+    setConsentVisible(false);
+    setConsentPending(false);
+    saveAnalyticsEnabled(agreed).catch(() => {});
+  }
   /** 완성 다이얼로그가 떠 있는 동안 다시 띄우지 않는다 */
   const completionOpen = useRef(false);
   /** 완성한 판을 [닫기]로 보관한 순간에만 보이는 「다음 판은 새 스티커로」. 닫거나 판을 나가면 다시 보이지 않는다 (2026-10-12). */
   const [nudge, setNudge] = useState(false);
+  /** 첫 스티커 안내를 띄운 스티커 */
+  const [firstGuide, setFirstGuide] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const next = await loadBoard(id, shown.year, shown.month, new Date());
@@ -78,14 +105,14 @@ export default function Board() {
     const choice = await ask(boardDialogs.completed(goal.boardType === 'tally' ? 'tally' : goal.endDate ? 'period' : 'open'));
     if (choice === 'dismiss') return;
     if (choice === 'secondary') {
-      if (await saveOrNotify(ask, '저장하지 못했어요', () => markCompletionSeen(goal.id))) {
+      if (await saveOrNotify(ask, t('failed.save'), () => markCompletionSeen(goal.id))) {
         await reload();
         setNudge(true);
       }
       return;
     }
     if (goal.boardType === 'calendar' && !goal.endDate) {
-      if (await saveOrNotify(ask, '저장하지 못했어요', () => reopenGoal(goal.id))) await reload();
+      if (await saveOrNotify(ask, t('failed.save'), () => reopenGoal(goal.id))) await reload();
       return;
     }
     router.push({ pathname: '/goal/[id]/extend', params: { id: goal.id } });
@@ -158,13 +185,29 @@ export default function Board() {
     }
     const complete = !isCompleted(target) && completesBoard(target, from.placedAll);
     if (complete && !(await confirm(boardDialogs.confirmLast(target.boardType)))) return;
-    const ok = await saveOrNotify(ask, '스티커를 붙이지 못했어요', async () => {
-      await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt });
+    let placedId: string | null = null;
+    const ok = await saveOrNotify(ask, t('failed.placeSticker'), async () => {
+      placedId = (await placeSticker(target.id, slotIndex, normalizeStickerId(target.defaultStickerId), { complete, placedAt })).id;
     });
     if (!ok) return;
+    track('sticker_place', { board_type: target.boardType, source: 'app' });
+    if (complete) track('goal_complete', { source: 'app' });
     setJustPlaced(at);
     if (!complete) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await reload();
+    setFirstGuide(null);
+    if (complete) return;
+    // 앱 전체의 첫 스티커에는 메모 안내만 보여 주고, 사용 기록 동의는 다음 스티커로 미룬다 (2026-11-02).
+    // 본 것으로 치는 때는 카드를 닫거나 [메모 남기기]를 누른 때다. 그 전에 완성 창 등에 밀려 사라지면 다음 스티커에서 다시 보여 준다.
+    const guideDone = await getFlag('firstStickerGuideDone').catch(() => true);
+    const first = !guideDone && ((await countAllStickers().catch(() => 0)) === 1 || (await getFlag('firstStickerGuidePending').catch(() => false)));
+    if (first && placedId) {
+      setFirstGuide(placedId);
+      void setFlag('firstStickerGuidePending', true);
+      return;
+    }
+    // 스티커를 붙인 뒤 한 번만 묻는다. 완성 흐름과 겹치면 다음 스티커로 미룬다 (PRD 8.2).
+    if (!(await hasAnsweredAnalytics().catch(() => true))) setConsentPending(true);
   }
 
   /** 뗀다. 기록이 있으면 먼저 확인한다 (PRD 4.5). 완성한 판에서도 뗀다 — 완성은 그대로 (2026-10-08). */
@@ -173,15 +216,16 @@ export default function Board() {
       if (!(await confirm(boardDialogs.removeSticker))) return;
     }
     let photo: string | null = null;
-    const ok = await saveOrNotify(ask, '스티커를 떼지 못했어요', async () => { photo = await removeSticker(target.id); });
+    const ok = await saveOrNotify(ask, t('failed.removeSticker'), async () => { photo = await removeSticker(target.id); });
     if (!ok) return;
+    track('sticker_remove', { source: 'app' });
     try { removeManagedRecordPhoto(photo); } catch { /* 고아 파일로 남는다. 기록은 이미 지워졌다 */ }
     setJustPlaced({});
     await reload();
   }
 
   function openRecord(target: Sticker | undefined) {
-    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id } });
+    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id, from: 'board' } });
   }
 
   const bySlot = (n: number) => stickers.find((s) => s.slotIndex === n - 1);
@@ -230,7 +274,13 @@ export default function Board() {
         progress={{ value: progress.value, total: progress.total, percentLabel: percentLabel(goal, placedInBasis, now) }}
         onBack={goBackOrHome}
         onSettings={() => router.push({ pathname: '/goal/[id]/settings', params: { id: goal.id } })}
-        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onClose={() => setNudge(false)} /> : undefined}
+        notice={nudge ? <CompletionNudge onStickers={() => { setNudge(false); router.navigate('/stickers'); }} onHome={() => { setNudge(false); goHome(); }} onClose={() => setNudge(false)} /> : firstGuide && !dialogOpen ? (
+          <GuideCard
+            text={t('guide.firstSticker')}
+            onClose={() => { setFirstGuide(null); void setFlag('firstStickerGuideDone', true); }}
+            actions={<PixelButton label={t('guide.writeMemo')} minHeight={40} onPress={() => { const target = firstGuide; setFirstGuide(null); void setFlag('firstStickerGuideDone', true); router.push({ pathname: '/sticker/[id]', params: { id: target, from: 'board' } }); }} />}
+          />
+        ) : undefined}
         board={goal.boardType === 'tally'
           ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: (n) => openRecord(bySlot(n)) }
           : {
@@ -244,6 +294,7 @@ export default function Board() {
           }}
       />
       {dialog}
+      <AnalyticsConsentSheet visible={consentVisible} onAgree={() => answerConsent(true)} onDecline={() => answerConsent(false)} />
     </>
   );
 }

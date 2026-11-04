@@ -32,7 +32,7 @@ function syncOnce(): Promise<{ changed: boolean }> {
   };
   return syncWidgetsOnce({
     widgets: { goal: port(ChagokGoal), month: port(ChagokMonth), tally: port(ChagokTally) },
-    apply: applyWidgetRequests,
+    apply: (requests) => applyWidgetRequests(requests, 'widget'),
     props: async (date) => {
       const [inputs, art] = await Promise.all([inputsFor(date), widgetArt()]);
       const s = buildWidgetSnapshot(inputs, date);

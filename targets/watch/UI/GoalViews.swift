@@ -33,14 +33,14 @@ struct TallyView: View {
             ForEach(start..<(start + n), id: \.self) { k in
               SlotCell(goal: goal, number: k + 1, state: cells[k] == .empty ? (k == next ? .next : .empty) : .filled)
                 .scaleEffect(k == pop ? 1.18 : 1)
-                .press("\(k + 1)번 칸, \(cells[k] == .empty ? "비었어요" : "붙였어요")",
+                .press(Language.pick("\(k + 1)번 칸", "Slot \(k + 1)") + ", " + (cells[k] == .empty ? Language.pick("비었어요", "empty") : Language.pick("붙였어요", "placed")),
                        tap: { handle(Tap.tally(goal, index: k)) }, hold: { handle(Tap.tallyHold(goal, index: k)) })
             }
           }
           .frame(width: 170)
           ChunkDots(count: (cells.count + 9) / 10, at: at / 10)
         }
-        Button("붙이기") { handle(Tap.stick(goal)) }
+        Button(Language.pick("붙이기", "Place")) { handle(Tap.stick(goal)) }
           .buttonStyle(PixelButtonStyle())
           .frame(width: 150, height: 44)
       }
@@ -75,11 +75,11 @@ struct CalendarView: View {
           VStack(spacing: 8) {
             if let today, today <= days.count {
               SlotCell(goal: goal, number: today, state: days[today - 1] == .placedToday || days[today - 1] == .placed ? .filled : .next, size: 64)
-                .press("오늘, \(days[today - 1] == .empty ? "비었어요" : "붙였어요")",
+                .press(Language.pick("오늘", "Today") + ", " + (days[today - 1] == .empty ? Language.pick("비었어요", "empty") : Language.pick("붙였어요", "placed")),
                        tap: { handle(Tap.day(goal, day: today)) }, hold: { handle(Tap.dayHold(goal, day: today)) })
-              Text("오늘, \(month)월 \(today)일").font(.pixel(11))
+              Text(Language.pick("오늘, \(month)월 \(today)일", "Today, \(month)/\(today)")).font(.pixel(11))
             }
-            Text("\(month)월").font(.pixel(12)).padding(.top, 30)
+            Text(Language.pick("\(month)월", "Month \(month)")).font(.pixel(12)).padding(.top, 30)
             monthGrid(days: days, firstWeekday: firstWeekday, today: today)
           }
           .foregroundStyle(Palette.ink)
@@ -99,13 +99,13 @@ struct CalendarView: View {
     let cols = Array(repeating: GridItem(.fixed(22), spacing: 2), count: 7)
     return VStack(spacing: 2) {
       LazyVGrid(columns: cols, spacing: 2) {
-        ForEach(Array("일월화수목금토"), id: \.self) { Text(String($0)).font(.pixel(9)) }
+        ForEach(Array(Language.pick("일월화수목금토", "SMTWTFS").enumerated()), id: \.offset) { Text(String($0.element)).font(.pixel(9)) }
       }
       LazyVGrid(columns: cols, spacing: 2) {
         ForEach(0..<firstWeekday, id: \.self) { _ in Color.clear.frame(width: 22, height: 22) }
         ForEach(1...days.count, id: \.self) { d in
           dayCell(d, days[d - 1], today: today)
-            .press("\(d)일, \(days[d - 1] == .placed || days[d - 1] == .placedToday ? "붙였어요" : "비었어요")",
+            .press(Language.pick("\(d)일", "Day \(d)") + ", " + (days[d - 1] == .placed || days[d - 1] == .placedToday ? Language.pick("붙였어요", "placed") : Language.pick("비었어요", "empty")),
                    tap: { handle(Tap.day(goal, day: d)) }, hold: { handle(Tap.dayHold(goal, day: d)) })
         }
       }
@@ -146,8 +146,8 @@ struct ConfirmView: View {
         StickerImage(goal: goal, size: 24)
         Text(Copy.confirmTitle).font(.pixel(15))
         Text(Copy.confirmBody).font(.pixel(11)).multilineTextAlignment(.center)
-        Button("완성하기", action: finish).buttonStyle(PixelButtonStyle()).frame(width: 140, height: 40)
-        Button("취소", action: cancel).buttonStyle(PixelButtonStyle(fill: Palette.ivory)).frame(width: 140, height: 40)
+        Button(Language.pick("완성하기", "Complete"), action: finish).buttonStyle(PixelButtonStyle()).frame(width: 140, height: 40)
+        Button(Language.pick("취소", "Cancel"), action: cancel).buttonStyle(PixelButtonStyle(fill: Palette.ivory)).frame(width: 140, height: 40)
       }
       .foregroundStyle(Palette.ink)
       .padding(.horizontal, 18)
@@ -166,6 +166,6 @@ private extension View {
       .accessibilityLabel(label)
       .accessibilityAddTraits(.isButton)
       .accessibilityAction(.default, tap)
-      .accessibilityAction(named: "떼기", hold)
+      .accessibilityAction(named: Language.pick("떼기", "Remove"), hold)
   }
 }

@@ -37,7 +37,7 @@ const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
         spacing={6}
         modifiers={[containerBackground(bg, 'widget'), widgetURL('chagok://goal/new'), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
         <Image uiImage={props.mascotSleepy} modifiers={[resizable(), frame({ width: 40, height: 40 })]} />
-        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>첫 목표를 만들어 보세요</Text>
+        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>{props.labels?.firstGoal ?? '첫 목표를 만들어 보세요'}</Text>
       </VStack>
     );
   }

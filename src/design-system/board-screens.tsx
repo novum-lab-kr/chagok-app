@@ -1,13 +1,15 @@
-import React,{memo,useCallback,useContext,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+import React,{memo,useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
-import {PanResponder,Pressable,View} from 'react-native';
+import {Animated,PanResponder,Pressable,View,type LayoutChangeEvent,type LayoutRectangle} from 'react-native';
+import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
-import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid} from './components';
+import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
+import {getLanguage,t} from '../i18n';
 
 /**
  * 홈 목록·판 상세·목표 설정 화면 (PRD 4.1–4.7, 2026-09-29 Storybook 확정 시안).
@@ -21,27 +23,151 @@ function Small({children}:{children:ReactNode}) {
 
 // ── 목록 ──────────────────────────────────────────────────────────
 export type GoalCardItem={id:string;name:string;sticker:StickerId;/** 배지: 적립판 / 달력판 */kind:string;percent:number;/** 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[]};
+/** 목록 카드 사이 간격. 끌어 옮길 때 자리 계산에도 쓴다. */
+const GOAL_GAP=12;
+/**
+ * 끌고 있는 카드가 놓일 자리. 내려가면 아래 끝이, 올라가면 위 끝이 다른 카드의 가운데를 넘을 때 그 자리로 간다.
+ * 카드 반쯤만 겹쳐도 옆 카드가 비켜서서 조금만 끌어도 움직이는 느낌이 난다 (2026-11-02, 전에는 가운데끼리 비교해 카드 하나만큼 끌어야 했다).
+ * heights는 지금 보이는 순서의 카드 높이, dy는 누른 곳에서 손가락이 움직인 거리다.
+ */
+export function goalDropIndex(heights:readonly number[],from:number,dy:number):number {
+  const tops:number[]=[];
+  let top=0;
+  for(const height of heights){tops.push(top);top+=height+GOAL_GAP;}
+  const start=(tops[from]??0)+dy,own=heights[from]??0;
+  const edge=dy>0?start+own:dy<0?start:start+own/2;
+  return heights.filter((height,index)=>index!==from&&(tops[index]??0)+height/2<edge).length;
+}
+/** 끄는 동안 다른 카드가 비켜서는 거리. 끄는 카드가 지나간 카드만 그 카드 높이(간격 포함)만큼 움직인다. */
+export function goalDragShift(index:number,from:number,to:number,size:number):number {
+  if(from<to&&index>from&&index<=to) return -size;
+  if(to<from&&index>=to&&index<from) return size;
+  return 0;
+}
+/** 비켜서는 카드는 바로 뛰지 않고 짧게 미끄러진다. 들린 카드는 손가락을 그대로 따른다. */
+function ShiftingCard({lifted,offset,shift,onLayout,children}:{lifted:boolean;offset:Animated.Value;shift:number;onLayout:(event:LayoutChangeEvent)=>void;children:ReactNode}) {
+  const [slide]=useState(()=>new Animated.Value(shift));
+  useEffect(()=>{Animated.timing(slide,{toValue:shift,duration:140,useNativeDriver:true}).start();},[shift,slide]);
+  return <Animated.View onLayout={onLayout} style={lifted?{zIndex:1,transform:[{translateY:offset}]}:{transform:[{translateY:slide}]}}>{children}</Animated.View>;
+}
+/**
+ * 내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30). 카드를 꾹 누르면 들리고, 그대로 끌면 손가락을 따라온다.
+ * 지나가는 카드는 비켜서고, 손을 떼면 그 자리로 옮긴다. 끄는 동안은 목록 스크롤과 탭 넘김을 멈춘다(onDragChange).
+ * 화면 읽기는 카드의 「위로 옮기기」 「아래로 옮기기」 동작으로 한 칸씩 옮긴다.
+ * 손이 화면 끝에 닿아도 목록을 저절로 스크롤하지 않는다. 화면 밖 자리로는 두 번에 나눠 옮긴다.
+ */
+function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순서 안내 중: 첫 카드를 끌어 한 칸 내렸다가 되돌리는 모션을 되풀이한다 (2026-11-02) */demo?:boolean;items:readonly GoalCardItem[];onOpen:(id:string)=>void;onMove:(from:number,to:number)=>void;onDragChange:(dragging:boolean)=>void}) {
+  const heights=useRef(new Map<string,number>());
+  const [drag,setDrag]=useState<{from:number;to:number;/** 끄는 카드 높이와 간격 */size:number}|null>(null);
+  const [offset]=useState(()=>new Animated.Value(0));
+  // 응답자 콜백은 렌더 밖에서 불린다. 지금 끄는 상태와 최신 콜백을 ref로 읽는다.
+  const current=useRef<{from:number;to:number;startY:number;moving:boolean;heights:number[];size:number}|null>(null);
+  const latest=useRef({onMove,onDragChange});
+  useEffect(()=>{latest.current={onMove,onDragChange};});
+  const finish=useCallback((commit:boolean)=>{
+    const ended=current.current;
+    if(!ended) return;
+    current.current=null;
+    offset.setValue(0);
+    setDrag(null);
+    latest.current.onDragChange(false);
+    if(commit&&ended.to!==ended.from) latest.current.onMove(ended.from,ended.to);
+  },[offset]);
+  // 탭 바의 끌어서 고르기와 같이 응답자 콜백을 직접 단다. 꾹 누른 뒤 첫 움직임에서 카드의 응답을 넘겨받고,
+  // 끄는 동안은 스크롤이나 탭 넘김에 넘기지 않는다.
+  const move=(pageY:number)=>{
+    const dragging=current.current;
+    if(!dragging) return;
+    const dy=pageY-dragging.startY;
+    offset.setValue(dy);
+    const to=goalDropIndex(dragging.heights,dragging.from,dy);
+    if(to!==dragging.to){dragging.to=to;setDrag({from:dragging.from,to,size:dragging.size});}
+  };
+  const start=(from:number,pageY:number)=>{
+    const measured=items.map(item=>heights.current.get(item.id)??0);
+    const size=(measured[from]??0)+GOAL_GAP;
+    current.current={from,to:from,startY:pageY,moving:false,heights:measured,size};
+    setDrag({from,to:from,size});
+    onDragChange(true);
+  };
+  const reduced=useReducedMotion();
+  const showDemo=demo&&!reduced&&items.length>=2;
+  useEffect(()=>{
+    if(!showDemo) return;
+    let alive=true;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const glide=(toValue:number,done:()=>void)=>Animated.timing(offset,{toValue,duration:700,useNativeDriver:true}).start(({finished})=>{if(alive&&finished&&!current.current) done();});
+    const run=()=>{
+      if(!alive||current.current) return;
+      const size=(heights.current.get(items[0].id)??0)+GOAL_GAP;
+      setDrag({from:0,to:0,size});
+      glide(size,()=>{
+        setDrag({from:0,to:1,size});
+        timer=setTimeout(()=>{setDrag({from:0,to:0,size});glide(0,()=>{setDrag(null);timer=setTimeout(run,900);});},500);
+      });
+    };
+    timer=setTimeout(run,600);
+    return ()=>{alive=false;clearTimeout(timer);offset.stopAnimation();if(!current.current){offset.setValue(0);setDrag(null);}};
+  },[showDemo,items,offset]);
+  // 꾹 누르고 움직이지 않은 채 떼면 그대로 내려놓는다
+  const release=()=>{if(current.current&&!current.current.moving) finish(false);};
+  return <View style={{gap:GOAL_GAP}}
+    onMoveShouldSetResponderCapture={()=>current.current!==null} onResponderTerminationRequest={()=>false}
+    onResponderGrant={event=>{if(current.current) current.current.moving=true;move(event.nativeEvent.pageY);}}
+    onResponderMove={event=>move(event.nativeEvent.pageY)}
+    onResponderRelease={()=>finish(true)} onResponderTerminate={()=>finish(false)}>
+    {items.map((item,index)=>{
+      const lifted=drag?.from===index;
+      const shift=drag&&!lifted?goalDragShift(index,drag.from,drag.to,drag.size):0;
+      return <ShiftingCard key={item.id} lifted={lifted} offset={offset} shift={shift} onLayout={event=>{heights.current.set(item.id,event.nativeEvent.layout.height);}}>
+        <GoalSummaryCard name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} lifted={lifted}
+          onPress={()=>onOpen(item.id)} onLongPress={pageY=>start(index,pageY)} onPressOut={release}
+          onMoveUp={index>0?()=>onMove(index,index-1):undefined}
+          onMoveDown={index<items.length-1?()=>onMove(index,index+1):undefined}/>
+      </ShiftingCard>;
+    })}
+  </View>;
+}
+/** 순서 안내가 비추는 높이. 목표가 많아도 위쪽 카드만 비춘다 */
+const REORDER_GUIDE_MAX_HEIGHT=240;
 /**
  * 목표 목록. 목표가 하나도 없으면 탭 아래 안내 상자만 둔다(2026-09-30 A안). 만드는 동작은 `+`다.
  * 완성한 판만 있고 진행 중인 목표가 없을 때의 문구는 시안이 없어 목록 안내와 같은 결로 두었다.
+ * onMove를 주면 내 목표를 꾹 눌러 끌어 옮긴다(PRD 4.1, 2026-10-30). 완성한 판은 완성 시각 순이라 옮기지 않는다.
  */
-export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettings,addTargetRef,footer,notice}:{/** 스크롤 밖 맨 아래. 광고 배너 자리(광고 제거를 샀으면 비움, PRD 4.12) */footer?:ReactNode;/** 목록 맨 위 안내(체험 열림 카드, 2026-10-12) */notice?:ReactNode;tab:GoalListTab;onTab:(tab:GoalListTab)=>void;active:readonly GoalCardItem[];completed:readonly GoalCardItem[];onOpen:(id:string)=>void;onAdd:()=>void;onSettings?:()=>void;addTargetRef?:React.Ref<View>}) {
+export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettings,addTargetRef,footer,notice,onMove,onDragChange,onReorderGuideDone}:{/** 주면 내 목표에 순서 바꾸기 안내를 띄운다(2026-11-02 시안 B) */onReorderGuideDone?:()=>void;/** 내 목표를 옮겼다. 보이는 순서의 자리 번호(0부터) */onMove?:(from:number,to:number)=>void;/** 끌기 시작과 끝. 앱은 진동과 탭 넘김 멈춤에 쓴다 */onDragChange?:(dragging:boolean)=>void;/** 스크롤 밖 맨 아래. 광고 배너 자리(광고 제거를 샀으면 비움, PRD 4.12) */footer?:ReactNode;/** 목록 맨 위 안내(체험 열림 카드, 2026-10-12) */notice?:ReactNode;tab:GoalListTab;onTab:(tab:GoalListTab)=>void;active:readonly GoalCardItem[];completed:readonly GoalCardItem[];onOpen:(id:string)=>void;onAdd:()=>void;onSettings?:()=>void;addTargetRef?:React.Ref<View>}) {
   const shown=tab==='active'?active:completed;
   const empty=tab==='completed'
-    ?<EmptyState title="아직 완성한 판이 없어요" description="판을 다 채우거나 달력판을 완성하면 여기에 모여요."/>
+    ?<EmptyState title={t('empty.noCompletedTitle')} description={t('empty.noCompletedDescription')}/>
     :completed.length===0
-      ?<EmptyState title="아직 목표가 없어요" description="오른쪽 위 ＋를 눌러 첫 목표를 만들어요."/>
-      :<EmptyState title="진행 중인 목표가 없어요" description="오른쪽 위 ＋를 눌러 새 목표를 만들어요."/>;
+      ?<EmptyState title={t('empty.noGoalsTitle')} description={t('empty.noGoalsDescription')}/>
+      :<EmptyState title={t('empty.noActiveTitle')} description={t('empty.noActiveDescription')}/>;
+  const [dragging,setDragging]=useState(false);
+  const dragChange=useCallback((value:boolean)=>{setDragging(value);onDragChange?.(value);},[onDragChange]);
+  const guideOn=!!onReorderGuideDone&&tab==='active'&&shown.length>=2;
+  const list=tab==='active'&&onMove
+    ?<ReorderableGoals items={shown} onOpen={onOpen} onMove={onMove} onDragChange={dragChange} demo={guideOn}/>
+    :<View style={{gap:GOAL_GAP}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>;
+  const {ref:root,size,onLayout}=useLayoutSize();
+  const listRef=useRef<View>(null);
+  const [guideTarget,setGuideTarget]=useState<LayoutRectangle>();
+  useEffect(()=>{
+    if(!guideOn) return;
+    const id=setTimeout(()=>listRef.current?.measureInWindow((x,y,width,height)=>root.current?.measureInWindow((rx,ry)=>setGuideTarget({x:x-rx,y:y-ry,width,height:Math.min(height,REORDER_GUIDE_MAX_HEIGHT)}))),50);
+    return ()=>clearTimeout(id);
+  },[guideOn,shown.length,root]);
   // 앱 헤더와 탭·+ 줄을 함께 고정한다. 목표가 많아도 새 목표와 탭 전환에 바로 닿는다 (2026-09-30).
-  return <View style={{flex:1}}>
-    <RetroScreen style={{gap:16}} header={<View style={{gap:16}}>
+  return <View ref={root} onLayout={onLayout} style={{flex:1}}>
+    <RetroScreen style={{gap:16}} scrollEnabled={!dragging} header={<View style={{gap:16}}>
     <AppHeader onSettings={onSettings}/>
     <GoalListHeader tab={tab} onTab={onTab} onAdd={onAdd} addTargetRef={addTargetRef} counts={{active:active.length,completed:completed.length}}/>
   </View>}>
     {notice}
-    {shown.length?<View style={{gap:12}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>:empty}
+    <View ref={listRef} collapsable={false}>{shown.length?list:empty}</View>
     </RetroScreen>
     {footer}
+    {guideOn&&guideTarget&&size.width>0&&<TutorialSpotlight step={1} target={guideTarget} width={size.width} height={size.height} onNext={onReorderGuideDone}
+      content={{step:'',title:t('guide.reorderTitle'),description:t('guide.reorder'),primaryLabel:t('guide.gotIt'),secondaryLabel:'',single:true}}/>}
   </View>;
 }
 
@@ -62,9 +188,9 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
   const visible=board.kind==='calendar'||ready;
   // 판 윗부분(테두리·제목·진행 줄)은 고정하고 칸만 판 안에서 스크롤한다. 빈칸으로 옮겨도 목표가 보인다 (2026-09-30 사용자 결정).
   // 칸이 적으면 판은 내용 높이 그대로이고, 넘치면 남은 높이까지 줄어든다.
-  return <View style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?'완성한 판':'내 목표'} onBack={onBack}/>}>
+  return <View style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
     <View testID="board-panel" style={{opacity:visible?1:0,flexShrink:1}}>
-    <PixelPanel style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel="목표 설정" onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
+    <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>
@@ -153,7 +279,9 @@ function TallyGrid({board,sticker,onSettled}:{board:TallyBoardView;sticker:Stick
 // ── 기본 스티커 선택 ────────────────────────────────────────────────
 /** 기본 스티커 줄. [바꾸기]를 누르면 「기본 스티커」 화면을 연다 (PRD 4.12). */
 function StickerField({value,onChoose,targetRef}:{value:StickerId;onChoose:()=>void;targetRef?:React.Ref<View>}) {
-  return <View style={{gap:8}}><PixelText>기본 스티커</PixelText><View ref={targetRef}><StickerSummary value={value} onChange={onChoose}/></View></View>;
+  // 튜토리얼 다이얼로그가 대상 바로 위에 떠서 라벨을 가린다. 영어는 라벨까지 대상에 넣는다. 한국어 화면은 지시대로 그대로 둔다(2026-10-31).
+  const withLabel=getLanguage()==='en';
+  return <View ref={withLabel?targetRef:undefined} style={{gap:8}}><PixelText>{t('board.basicSticker')}</PixelText><View ref={withLabel?undefined:targetRef}><StickerSummary value={value} onChange={onChoose}/></View></View>;
 }
 
 // ── 목표 설정 ──────────────────────────────────────────────────────
@@ -163,17 +291,17 @@ export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:st
  * 판 종류·칸 수 변경은 미확정이라 두지 않는다.
  */
 export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,sticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;sticker:StickerId;/** [바꾸기]: 「기본 스티커」 화면을 연다 */onChooseSticker:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
-  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
-    <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} maxLength={nameMaxLength} error={nameError}/>
+  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
+    <PixelInput label={t('goal.name')} value={name} onChangeText={onChangeName} maxLength={nameMaxLength} error={nameError}/>
     <StickerField value={sticker} onChoose={onChooseSticker}/>
     {period&&<PeriodField {...period}/>}
     {slots&&<View style={{gap:8}}>
       <SlotCountPicker value={slots.value} onChange={slots.onChange} min={slots.current}/>
-      <Small>{`지금 ${slots.current}칸 · 늘리기만 할 수 있어요`}</Small>
+      <Small>{t('goal.slotsNow',slots.current)}</Small>
       {slots.error&&<View accessible accessibilityRole="alert"><Small>{slots.error}</Small></View>}
     </View>}
-    {onComplete&&<View style={{gap:8}}><Small>종료일이 없는 달력판은 여기서 완성해요. 완성해도 계속하기로 다시 이어 쓸 수 있어요.</Small><PixelButton label="이 판 완성하기" variant="secondary" icon={<ActionSymbol name="check" size={16}/>} onPress={onComplete}/></View>}
-    <PixelButton label="저장하기" disabled={saveDisabled} onPress={onSave}/>
+    {onComplete&&<View style={{gap:8}}><Small>{t('goal.completeHint')}</Small><PixelButton label={t('goal.completeBoard')} variant="secondary" icon={<ActionSymbol name="check" size={16}/>} onPress={onComplete}/></View>}
+    <PixelButton label={t('goal.save')} disabled={saveDisabled} onPress={onSave}/>
     <DeleteSection onDelete={onDelete}/>
   </RetroScreen>;
 }
@@ -181,15 +309,15 @@ export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,st
 export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel,completedLabel,onDelete,onBack}:{name:string;sticker:StickerId;/** 예: '적립판 · 20칸', '달력판' */boardLabel:string;/** 달력판만. 예: '9월 1일 – 9월 23일', '9월 1일부터' */periodLabel?:string;/** 예: '9월 24일' */completedLabel:string;onDelete:()=>void;onBack:()=>void}) {
   // 마지막 줄은 밑줄을 두지 않는다. 바로 아래 [삭제하기] 구역의 윗줄과 겹쳐 빈 줄처럼 보인다 (2026-10-09)
   const row=(label:string,value:string,last=false)=><View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:44,borderBottomWidth:last?0:retro.shape.cellBorder,borderColor:retro.color.ink}}><PixelText style={{width:108}}>{label}</PixelText><PixelText style={{flex:1}}>{value}</PixelText></View>;
-  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="목표 설정" onBack={onBack}/>}>
-    <ShortNotice emphasis title="완성한 판이에요" detail={`${completedLabel}에 완성했어요. 판의 칸과 기록은 고칠 수 있고, 목표는 삭제만 할 수 있어요.`}/>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
+    <ShortNotice emphasis title={t('goal.completedNoticeTitle')} detail={t('goal.completedNoticeDetail',completedLabel)}/>
     <View>
       {/* 정보 블록 오른쪽에 스티커를 붙이듯 비스듬히 올린다. 값 글자와 겹치지 않도록 짧은 값이 오는 줄 위에 둔다. */}
       <View pointerEvents="none" style={{position:'absolute',right:0,top:50,zIndex:1}}><CompletionSticker sticker={sticker} tilted/></View>
-      {row('목표 이름',name)}
-      {row('기본 스티커',stickerLabel(sticker))}
-      {row('판 종류',boardLabel,periodLabel===undefined)}
-      {periodLabel!==undefined&&row('기간',periodLabel,true)}
+      {row(t('goal.name'),name)}
+      {row(t('board.basicSticker'),stickerLabel(sticker))}
+      {row(t('board.type'),boardLabel,periodLabel===undefined)}
+      {periodLabel!==undefined&&row(t('period.title'),periodLabel,true)}
     </View>
     <DeleteSection onDelete={onDelete}/>
   </RetroScreen>;
@@ -199,19 +327,19 @@ export function CompletedGoalSettingsScreen({name,sticker,boardLabel,periodLabel
 export type EndDateMode='none'|'pick';
 /** 새 목표: 이름 → 판 종류(적립판이면 칸 수) → 기본 스티커 → 종료일(달력판, 선택) (PRD 4.4). */
 export function NewGoalScreen({name,onChangeName,nameMaxLength,nameError,onNameBlur,kind,onChangeKind,count,onChangeCount,sticker,onChooseSticker,endMode,onChangeEndMode,endDate,onChangeEndDate,today,todayLabel,error,onSubmit,submitDisabled=false,onBack,stickerTargetRef}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;/** 이름 칸에서 나올 때: 빈 이름 문구를 보일지 정한다 */onNameBlur?:()=>void;kind:BoardKind;onChangeKind:(kind:BoardKind)=>void;count:string;onChangeCount:(count:string)=>void;sticker:StickerId;/** [바꾸기]: 「기본 스티커」 화면을 연다 */onChooseSticker:()=>void;endMode:EndDateMode;onChangeEndMode:(mode:EndDateMode)=>void;endDate?:string;onChangeEndDate:(date:string)=>void;/** 오늘 날짜 키. 종료일은 오늘부터 고른다 */today:string;/** 예: '9월 29일' */todayLabel:string;error?:string;onSubmit:()=>void;submitDisabled?:boolean;onBack:()=>void;stickerTargetRef?:React.Ref<View>}) {
-  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="새 목표" onBack={onBack}/>}>
-    <PixelInput label="목표 이름" value={name} onChangeText={onChangeName} placeholder="목표 이름" maxLength={nameMaxLength} error={nameError} onBlur={onNameBlur}/>
+  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.new')} onBack={onBack}/>}>
+    <PixelInput label={t('goal.name')} value={name} onChangeText={onChangeName} placeholder={t('goal.name')} maxLength={nameMaxLength} error={nameError} onBlur={onNameBlur}/>
     <BoardTypePicker value={kind} onChange={onChangeKind}/>
     {kind==='tally'&&<SlotCountPicker value={count} onChange={onChangeCount}/>}
     <StickerField value={sticker} onChoose={onChooseSticker} targetRef={stickerTargetRef}/>
     {kind==='calendar'&&<View style={{gap:8}}>
-      <PixelText>종료일 (선택)</PixelText>
-      <OptionButtons options={[{key:'none',label:'정하지 않기'},{key:'pick',label:'날짜 고르기'}] as const} value={endMode} onChange={onChangeEndMode}/>
-      <Small>{endMode==='pick'?'종료일이 지나면 완성한 판으로 옮겨요.':'종료일 없이 계속 붙여요. 완성은 목표 설정에서 할 수 있어요.'}</Small>
-      {endMode==='pick'&&<EndDatePicker firstAllowed={today} selected={endDate} onSelect={onChangeEndDate} hint={`시작일은 오늘(${todayLabel})이에요.`}/>}
+      <PixelText>{t('goal.endDateOptional')}</PixelText>
+      <OptionButtons options={[{key:'none',label:t('goal.endDateNone')},{key:'pick',label:t('goal.endDatePick')}] as const} value={endMode} onChange={onChangeEndMode}/>
+      <Small>{endMode==='pick'?t('goal.endDatePickHint'):t('goal.endDateNoneHint')}</Small>
+      {endMode==='pick'&&<EndDatePicker firstAllowed={today} selected={endDate} onSelect={onChangeEndDate} hint={t('goal.startsToday',todayLabel)}/>}
     </View>}
     {error&&<PixelText accessibilityRole="alert">{error}</PixelText>}
-    <PixelButton label="만들기" disabled={submitDisabled} onPress={onSubmit}/>
+    <PixelButton label={t('goal.create')} disabled={submitDisabled} onPress={onSubmit}/>
   </RetroScreen>;
 }
 
@@ -224,19 +352,19 @@ function ExtendSummary({name,detail}:{name:string;detail:string}) {
 }
 /** 기간 달력판의 계속하기: 종료일을 늘린다. 지난 날은 붙일 수 없으므로 오늘부터 고른다 (PRD 4.7). */
 export function ExtendEndDateScreen({name,periodLabel,firstAllowed,selected,onSelect,onSubmit,onBack}:{name:string;/** 예: '9월 1일 – 9월 23일' */periodLabel:string;firstAllowed:string;selected?:string;onSelect:(date:string)=>void;onSubmit:()=>void;onBack:()=>void}) {
-  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="종료일 늘리기" onBack={onBack}/>}>
-    <ExtendSummary name={name} detail={`${periodLabel} · 붙인 스티커와 기록은 그대로예요.`}/>
-    <EndDatePicker firstAllowed={firstAllowed} selected={selected} onSelect={onSelect} hint="새 종료일을 골라 주세요. 지난 날은 붙일 수 없어서 오늘부터 고를 수 있어요."/>
-    <PixelButton label="종료일 늘리기" disabled={!selected} onPress={onSubmit}/>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title={t('extend.endDate')} onBack={onBack}/>}>
+    <ExtendSummary name={name} detail={t('extend.periodDetail',periodLabel)}/>
+    <EndDatePicker firstAllowed={firstAllowed} selected={selected} onSelect={onSelect} hint={t('extend.endDateHint')}/>
+    <PixelButton label={t('extend.endDate')} disabled={!selected} onPress={onSubmit}/>
   </RetroScreen>;
 }
 /** 적립판의 계속하기: 칸을 더한다. 기본은 처음 만든 칸 수만큼이고 상한은 없다 (2026-09-30). */
 export function ExtendSlotsScreen({name,total,add,onChangeAdd,onSubmit,onBack}:{name:string;/** 지금 칸 수 */total:number;/** 더할 칸 수 입력값 */add:string;onChangeAdd:(value:string)=>void;onSubmit:()=>void;onBack:()=>void}) {
   const valid=/^\d+$/.test(add)&&Number(add)>0;
-  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title="칸 늘리기" onBack={onBack}/>}>
-    <ExtendSummary name={name} detail={`지금 ${total}칸 · 붙인 스티커와 기록은 그대로예요.`}/>
-    <SlotCountPicker label="더할 칸 수" value={add} onChange={onChangeAdd}/>
-    <PixelText accessibilityRole={valid?undefined:'alert'}>{valid?`늘린 뒤 ${total+Number(add)}칸`:'더할 칸 수를 1 이상으로 입력해주세요.'}</PixelText>
-    <PixelButton label="칸 늘리기" disabled={!valid} onPress={onSubmit}/>
+  return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('extend.slots')} onBack={onBack}/>}>
+    <ExtendSummary name={name} detail={t('extend.slotsDetail',total)}/>
+    <SlotCountPicker label={t('extend.addCount')} value={add} onChange={onChangeAdd}/>
+    <PixelText accessibilityRole={valid?undefined:'alert'}>{valid?t('extend.totalAfter',total+Number(add)):t('extend.addCountError')}</PixelText>
+    <PixelButton label={t('extend.slots')} disabled={!valid} onPress={onSubmit}/>
   </RetroScreen>;
 }

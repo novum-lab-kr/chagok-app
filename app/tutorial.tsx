@@ -1,3 +1,4 @@
+import { trackTutorial } from '../src/analytics';
 import { FirstRunTutorial } from '../src/design-system';
 import { goBackOrHome } from '../src/app-data/goBack';
 import { setFlag } from '../src/repositories/appSettingsRepository';
@@ -7,5 +8,5 @@ import { setFlag } from '../src/repositories/appSettingsRepository';
  * 튜토리얼은 단계마다 자기 예시 화면을 새로 그리므로 목록의 스크롤 위치와 상관없이 스포트라이트가 맞는다.
  */
 export default function TutorialReplay() {
-  return <FirstRunTutorial onFinish={() => { void setFlag('tutorialDone', true); goBackOrHome(); }} />;
+  return <FirstRunTutorial onProgress={trackTutorial} onFinish={() => { void setFlag('tutorialDone', true); goBackOrHome(); }} />;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { track } from '../../src/analytics';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import {
   AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
@@ -33,6 +34,7 @@ import { signInWithKakao } from '../../src/sync/signIn/kakao';
 import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
 import { beginConnect, endConnect, markRestored } from '../../src/sync/connectMarker';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
+import { t } from '../../src/i18n';
 
 const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
 const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD;
@@ -54,13 +56,13 @@ type ConsentAnswer = 'agree' | 'quit' | 'abort';
 
 type Method = 'apple' | 'kakao' | 'google' | 'dev';
 
-const connectFailed = { title: '연결하지 못했어요', description: '인터넷 연결을 확인하고 다시 시도해 주세요.', primaryLabel: '확인' };
+const connectFailed = () => ({ title: t('connect.failedTitle'), description: t('account.checkInternetRetry'), primaryLabel: t('common.ok') });
 /** Apple이 이유를 알려 주지 않은 실패(예: 기기에 Apple 계정이 없어 안내를 닫음). 원인을 짐작하지 않는다 (2026-10-22 사용자 결정). */
-const connectFailedUnknown = { title: '연결하지 못했어요', description: '다시 시도해 주세요.', primaryLabel: '확인' };
+const connectFailedUnknown = () => ({ title: t('connect.failedTitle'), description: t('connect.tryAgain'), primaryLabel: t('common.ok') });
 
 function toCard(s: RecordSummary): RecordSnapshot {
   const d = s.updatedAt === null ? null : new Date(s.updatedAt);
-  return { goals: s.goals, stickers: s.stickers, goalNames: s.goalNames, updatedAt: d ? `${d.getMonth() + 1}월 ${d.getDate()}일` : '없음' };
+  return { goals: s.goals, stickers: s.stickers, goalNames: s.goalNames, updatedAt: d ? t('date.monthDay', d.getMonth() + 1, d.getDate()) : t('period.none') };
 }
 
 /**
@@ -248,7 +250,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
       try {
         versions = currentVersions(await fetchPolicyManifest(), localDateKey(Date.now()));
       } catch {
-        await ask(connectFailed);
+        await ask(connectFailed());
         return;
       }
       // 여기서부터 끝나거나 취소될 때까지 전송을 잠근다. 앱이 꺼져도 다음 실행에서 되돌린다 (connectMarker).
@@ -263,6 +265,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         signingIn.current = true;
         // 로그인 실패도 check() 뒤에 던진다 — 화면을 떠난 시도가 다이얼로그를 띄우지 않게
         let signIn: { user: User } | 'canceled' | { failed: unknown };
+        track('login_start', { method });
         try {
           signIn = await signInWith(method);
         } catch (e) {
@@ -271,8 +274,15 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
           signingIn.current = false;
         }
         check();
-        if (signIn === 'canceled') throw CANCELED;
-        if ('failed' in signIn) throw signIn.failed;
+        if (signIn === 'canceled') {
+          track('login_cancel', { method });
+          throw CANCELED;
+        }
+        if ('failed' in signIn) {
+          track('login_fail', { method });
+          throw signIn.failed;
+        }
+        track('login_success', { method });
         const { user } = signIn;
         // 카카오에 가입 완료를 알린다. 로그인할 때마다 불러 한 번 실패해도 다음 로그인에서 메운다. 기다리지 않는다
         if (method === 'kakao') void completeKakaoSignUp();
@@ -334,7 +344,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         if (e === CANCELED) return;
         // 사용자에게는 일반 안내만 보이니, 개발 중에는 실제 이유를 Metro 로그로 본다
         if (__DEV__) console.warn('[connect] failed', e);
-        await ask((e as { code?: unknown } | null)?.code === 'ERR_REQUEST_UNKNOWN' ? connectFailedUnknown : connectFailed);
+        await ask((e as { code?: unknown } | null)?.code === 'ERR_REQUEST_UNKNOWN' ? connectFailedUnknown() : connectFailed());
       }
     } finally {
       setBusy(false);

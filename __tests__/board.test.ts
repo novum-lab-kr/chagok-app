@@ -4,7 +4,7 @@ import {
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
   canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
-  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, pendingCompletion, parseSlotCount,
+  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount,
   GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, shownGoalNameError,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
@@ -16,7 +16,7 @@ const NOW = new Date(2026, 8, 29, 10); // 2026-09-29 10:00
 const base: Goal = {
   id: 'g', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
   createdAt: at(2026, 9, 10), endDate: null, completedAt: null, completionSeen: false,
-  lastPlacedAt: null, initialSlots: 15,
+  lastPlacedAt: null, initialSlots: 15, sortOrder: null,
 };
 const tally = (over: Partial<Goal> = {}): Goal => ({ ...base, ...over });
 const calendar = (over: Partial<Goal> = {}): Goal =>
@@ -214,17 +214,64 @@ describe('칸 늘리기 (2026-09-30)', () => {
 });
 
 describe('목록 정렬 (PRD 4.1)', () => {
-  it('내 목표는 마지막으로 붙인 시각(없으면 만든 시각) 최근순, 완성한 판은 완성 시각 최근순', () => {
+  it('내 목표는 사용자가 정한 순서(sortOrder 작은 쪽이 위), 완성한 판은 완성 시각 최근순', () => {
+    const goals = [
+      tally({ id: 'b', sortOrder: 1, lastPlacedAt: 100 }),
+      tally({ id: 'a', sortOrder: 0, lastPlacedAt: 1 }),
+      tally({ id: 'top', sortOrder: -1, createdAt: 5 }),
+      tally({ id: 'done-early', completedAt: 10, sortOrder: -5 }),
+      tally({ id: 'done-late', completedAt: 20, sortOrder: 9 }),
+    ];
+    const { active, completed } = orderGoals(goals);
+    expect(active.map((goal) => goal.id)).toEqual(['top', 'a', 'b']);
+    expect(completed.map((goal) => goal.id)).toEqual(['done-late', 'done-early']);
+  });
+  it('붙여도 순서가 바뀌지 않는다 — 자동 정렬은 없다', () => {
+    const before = [tally({ id: 'a', sortOrder: 0 }), tally({ id: 'b', sortOrder: 1 })];
+    const after = [before[0], { ...before[1], lastPlacedAt: at(2026, 9, 29) }];
+    expect(orderGoals(after).active.map((goal) => goal.id)).toEqual(['a', 'b']);
+  });
+  it('순서가 없는 옛 목표는 마지막으로 붙인 시각(없으면 만든 시각) 최근순이다', () => {
     const goals = [
       tally({ id: 'old-placed', createdAt: 1, lastPlacedAt: 50 }),
       tally({ id: 'new-empty', createdAt: 60 }),
       tally({ id: 'recent', createdAt: 2, lastPlacedAt: 100 }),
-      tally({ id: 'done-early', completedAt: 10 }),
-      tally({ id: 'done-late', completedAt: 20 }),
     ];
-    const { active, completed } = orderGoals(goals);
-    expect(active.map((g) => g.id)).toEqual(['recent', 'new-empty', 'old-placed']);
-    expect(completed.map((g) => g.id)).toEqual(['done-late', 'done-early']);
+    expect(orderGoals(goals).active.map((goal) => goal.id)).toEqual(['recent', 'new-empty', 'old-placed']);
+  });
+  it('순서가 있는 목표가 순서가 없는 목표보다 위다', () => {
+    const goals = [tally({ id: 'legacy', lastPlacedAt: 999 }), tally({ id: 'ordered', sortOrder: 3 })];
+    expect(orderGoals(goals).active.map((goal) => goal.id)).toEqual(['ordered', 'legacy']);
+  });
+  it('순서 값이 같으면 최근순, 그다음 id순으로 늘 같은 결과다', () => {
+    const goals = [
+      tally({ id: 'y', sortOrder: 0, lastPlacedAt: 10 }),
+      tally({ id: 'x', sortOrder: 0, lastPlacedAt: 10 }),
+      tally({ id: 'z', sortOrder: 0, lastPlacedAt: 20 }),
+    ];
+    expect(orderGoals(goals).active.map((goal) => goal.id)).toEqual(['z', 'x', 'y']);
+  });
+  it('위젯 기본 목표는 순서와 따로, 가장 최근에 붙인(없으면 만든) 목표다 (PRD 4.10)', () => {
+    const goals = [
+      tally({ id: 'top', sortOrder: 0, lastPlacedAt: 10 }),
+      tally({ id: 'used', sortOrder: 1, lastPlacedAt: 30 }),
+      tally({ id: 'made', sortOrder: 2, createdAt: 20 }),
+    ];
+    expect(mostRecentGoal(goals)?.id).toBe('used');
+    expect(mostRecentGoal([tally({ id: 'b', createdAt: 5 }), tally({ id: 'a', createdAt: 5 })])?.id).toBe('a');
+    expect(mostRecentGoal([])).toBeNull();
+  });
+});
+
+describe('목표 옮기기 (PRD 4.1)', () => {
+  it('한 칸을 다른 자리로 옮긴 id 목록을 준다', () => {
+    expect(moveItem(['a', 'b', 'c', 'd'], 0, 2)).toEqual(['b', 'c', 'a', 'd']);
+    expect(moveItem(['a', 'b', 'c', 'd'], 3, 0)).toEqual(['d', 'a', 'b', 'c']);
+  });
+  it('범위를 넘는 자리는 끝으로 맞추고, 같은 자리면 그대로다', () => {
+    expect(moveItem(['a', 'b', 'c'], 1, 9)).toEqual(['a', 'c', 'b']);
+    expect(moveItem(['a', 'b', 'c'], 1, -3)).toEqual(['b', 'a', 'c']);
+    expect(moveItem(['a', 'b', 'c'], 1, 1)).toEqual(['a', 'b', 'c']);
   });
 });
 

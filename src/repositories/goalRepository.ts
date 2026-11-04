@@ -6,6 +6,7 @@ import type { Goal, BoardType } from '../domain/types';
 import { localDateKey } from '../domain/dates';
 import { periodEndAt, progressBasis } from '../domain/board';
 import { enqueue } from '../sync/outbox';
+import { track } from '../analytics';
 
 type GoalRow = {
   id: string;
@@ -19,6 +20,7 @@ type GoalRow = {
   completion_seen: number;
   last_placed_at: number | null;
   initial_slots: number | null;
+  sort_order: number | null;
 };
 
 function toGoal(r: GoalRow): Goal {
@@ -34,6 +36,7 @@ function toGoal(r: GoalRow): Goal {
     completionSeen: r.completion_seen === 1,
     lastPlacedAt: r.last_placed_at,
     initialSlots: r.initial_slots,
+    sortOrder: r.sort_order,
   };
 }
 
@@ -47,29 +50,33 @@ export async function createGoal(input: {
 }): Promise<Goal> {
   const db = await getDb();
   const tally = input.boardType === 'tally';
-  const goal: Goal = {
-    id: newId(),
-    name: input.name,
-    boardType: input.boardType,
-    totalSlots: tally ? input.totalSlots : null,
-    defaultStickerId: input.defaultStickerId ?? DEFAULT_STICKER_ID,
-    createdAt: Date.now(),
-    endDate: tally ? null : input.endDate ?? null,
-    completedAt: null,
-    completionSeen: false,
-    lastPlacedAt: null,
-    initialSlots: tally ? input.totalSlots : null,
-  };
-  await db.transaction(async (tx) => {
+  const createdAt = Date.now();
+  return db.transaction(async (tx) => {
+    // 새 목표는 내 목표 맨 위 (PRD 4.1). 지금 가장 작은 순서보다 하나 작게.
+    const top = await tx.first<{ min: number | null }>('SELECT MIN(sort_order) AS min FROM goals');
+    const goal: Goal = {
+      id: newId(),
+      name: input.name,
+      boardType: input.boardType,
+      totalSlots: tally ? input.totalSlots : null,
+      defaultStickerId: input.defaultStickerId ?? DEFAULT_STICKER_ID,
+      createdAt,
+      endDate: tally ? null : input.endDate ?? null,
+      completedAt: null,
+      completionSeen: false,
+      lastPlacedAt: null,
+      initialSlots: tally ? input.totalSlots : null,
+      sortOrder: top?.min == null ? 0 : top.min - 1,
+    };
     await tx.run(
-      `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, initial_slots, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO goals (id, name, board_type, total_slots, default_sticker_id, created_at, end_date, initial_slots, sort_order, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       goal.id, goal.name, goal.boardType, goal.totalSlots,
-      goal.defaultStickerId, goal.createdAt, goal.endDate, goal.initialSlots, goal.createdAt,
+      goal.defaultStickerId, goal.createdAt, goal.endDate, goal.initialSlots, goal.sortOrder, goal.createdAt,
     );
     await enqueue(tx, 'goal', goal.id, goal.createdAt);
+    return goal;
   });
-  return goal;
 }
 
 /**
@@ -120,6 +127,25 @@ async function writeGoal(
     if (check) await check(tx);
     await tx.run(`UPDATE goals SET ${sql}, updated_at = ? WHERE id = ?`, ...params, now, id);
     await enqueue(tx, 'goal', id, now);
+  });
+}
+
+/**
+ * 내 목표 순서를 저장한다 (PRD 4.1, 2026-10-30). ids는 목록 위에서부터의 진행 중 목표 id다.
+ * 자리가 바뀐 목표만 고쳐 updated_at을 바꾸고 outbox에 넣는다 — 위젯과 워치도 이 신호로 다시 그린다.
+ * 그사이 지워진 목표는 건너뛰고, ids에 없는 목표(그사이 만든 목표 등)는 그대로 둔다.
+ */
+export async function reorderGoals(ids: readonly string[]): Promise<void> {
+  const db = await getDb();
+  const now = Date.now();
+  await db.transaction(async (tx) => {
+    const rows = await tx.all<{ id: string; sort_order: number | null }>('SELECT id, sort_order FROM goals');
+    const current = new Map(rows.map((r) => [r.id, r.sort_order]));
+    for (const [index, id] of ids.entries()) {
+      if (!current.has(id) || current.get(id) === index) continue;
+      await tx.run('UPDATE goals SET sort_order = ?, updated_at = ? WHERE id = ?', index, now, id);
+      await enqueue(tx, 'goal', id, now);
+    }
   });
 }
 
@@ -177,7 +203,10 @@ export async function settleExpiredPeriods(now: Date): Promise<void> {
       WHERE board_type = 'calendar' AND end_date IS NOT NULL AND completed_at IS NULL AND end_date < ?`,
     today,
   );
-  for (const r of rows) await completeGoal(r.id, periodEndAt(r.end_date));
+  for (const r of rows) {
+    await completeGoal(r.id, periodEndAt(r.end_date));
+    track('goal_complete', { source: 'period_end' });
+  }
 }
 
 /** 삭제 확인에 보여줄 수. 기록은 사진이나 비어 있지 않은 메모가 있는 것만 센다 (기록 표식과 같은 기준). */

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import { router, useNavigation } from 'expo-router';
+import { resetUser, track } from '../../src/analytics';
+import { setErrorUser } from '../../src/analytics/sentry';
 import { AccountDeletedScreen, DeleteAccountScreen, PixelDialogModal, accountDialogs } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
 import { removeAllManagedPhotos } from '../../src/app-data/recordPhotos';
@@ -67,6 +69,9 @@ export default function DeleteAccount() {
       setStep(error instanceof NeedsLoginError ? 'needsLogin' : 'failed');
       return;
     }
+    track('account_delete');
+    resetUser();
+    setErrorUser(null).catch(() => {});
     resumeSync();
     setStep('done');
   };

@@ -1,5 +1,7 @@
 import { getDb } from '../src/db/client';
-import { createGoal, listGoals } from '../src/repositories/goalRepository';
+import { createGoal, listGoals, reorderGoals } from '../src/repositories/goalRepository';
+import { orderGoals } from '../src/domain/board';
+import type { GoalRow } from '../src/sync/contract';
 import { listStickers, placeSticker, removeSticker } from '../src/repositories/stickerRepository';
 import { getRecord, upsertRecord } from '../src/repositories/recordRepository';
 import { getSetting } from '../src/repositories/appSettingsRepository';
@@ -127,5 +129,67 @@ describe('누른 날 기록 (placed_days)', () => {
     const days = (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days')).map((r) => r.date_key);
     const { localDateKey } = await import('../src/domain/dates');
     expect(days).toEqual([localDateKey(Date.now())]);
+  });
+});
+
+describe('내 목표 순서 복원 (PRD 4.1, 2026-10-30)', () => {
+  const row = (id: string, over: Partial<GoalRow> = {}): GoalRow => ({
+    id, name: id, board_type: 'tally', total_slots: 5, default_sticker_id: 'basic.sprout', created_at: 1, end_date: null,
+    completed_at: null, completion_seen: 0, last_placed_at: null, initial_slots: 5, updated_at: 9, ...over,
+  });
+  const snapshot = (goals: GoalRow[]) => ({ goals, stickers: [], records: [], cursor: 3 });
+  const shown = async () => orderGoals(await listGoals()).active.map((goal) => goal.id);
+
+  it('옮긴 순서를 백업하고 다른 기기에서 복원해도 그대로다', async () => {
+    const server = new FakeServer();
+    const photos = new FakePhotos();
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 3 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 3 });
+    const c = await createGoal({ name: 'c', boardType: 'tally', totalSlots: 3 });
+    await reorderGoals([b.id, c.id, a.id]);
+    await pushOnce({ server, photos, deviceId: 'old' });
+    const db = await getDb();
+    await db.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox;');
+    await restoreAll(server);
+    expect(await shown()).toEqual([b.id, c.id, a.id]);
+    expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+  });
+
+  it('순서가 없는 옛 백업은 최근순으로 채우고, 채운 목표를 서버에 다시 올린다', async () => {
+    await applyRestore(snapshot([
+      row('old', { created_at: 1 }),
+      row('placed', { created_at: 2, last_placed_at: 50 }),
+      row('fresh', { created_at: 40, sort_order: null }),
+    ]));
+    expect(await shown()).toEqual(['placed', 'fresh', 'old']);
+    const db = await getDb();
+    expect((await db.all<{ id: string; sort_order: number; updated_at: number }>(
+      'SELECT id, sort_order, updated_at FROM goals ORDER BY sort_order',
+    ))).toEqual([
+      { id: 'placed', sort_order: 0, updated_at: 9 },
+      { id: 'fresh', sort_order: 1, updated_at: 9 },
+      { id: 'old', sort_order: 2, updated_at: 9 },
+    ]);
+    expect((await takeBatch(10)).map((entry) => entry.rowId).sort()).toEqual(['fresh', 'old', 'placed']);
+  });
+
+  it('순서가 있는 목표는 그대로 두고, 없는 목표는 그 아래에 붙인다', async () => {
+    await applyRestore(snapshot([
+      row('second', { sort_order: 4 }),
+      row('legacy', { last_placed_at: 99 }),
+      row('first', { sort_order: -1 }),
+    ]));
+    expect(await shown()).toEqual(['first', 'second', 'legacy']);
+    expect((await takeBatch(10)).map((entry) => entry.rowId)).toEqual(['legacy']);
+  });
+
+  it('이 기기 기록 유지: 서버에 순서도 올린다', async () => {
+    const server = new FakeServer();
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 3 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 3 });
+    await reorderGoals([a.id, b.id]);
+    await replaceServerWithDevice(server, 'd1');
+    const pulled = await pullAll(server);
+    expect(Object.fromEntries(pulled.goals.map((goal) => [goal.id, goal.sort_order]))).toEqual({ [a.id]: 0, [b.id]: 1 });
   });
 });

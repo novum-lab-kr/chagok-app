@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { DateKey } from '../domain/dates';
 import type { WidgetCalendarCell, WidgetGoal, WidgetSnapshot, WidgetTallyCell } from './snapshot';
 import type { WidgetRequest } from './requests';
@@ -6,12 +7,14 @@ import type { WidgetRequest } from './requests';
 export type WidgetArt = { mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: { ivory: string; white: string; ink: string }; stickers: Record<string, string> };
 export type CardBase = { id: string; name: string; placed: number; total: number; placedToday: boolean; undoable: boolean; remaining: number | null; sticker: string; locked?: boolean };
 export type GoalCard = CardBase;
-export type MonthCard = CardBase & { monthLabel: string; days: WidgetCalendarCell[]; firstWeekday: number; todayIndex: number };
+export type MonthCard = CardBase & { month: number; monthLabel: string; days: WidgetCalendarCell[]; firstWeekday: number; todayIndex: number };
 /** todaySlots·removableSlots는 판 전체 칸 번호(0부터)다. 위젯 칸 i는 from - 1 + i번 칸이다. */
 export type TallyCard = CardBase & { from: number; cells: WidgetTallyCell[]; nextCells?: WidgetTallyCell[]; todaySlots: number[]; removableSlots: number[] };
 type Shared = {
   order: { id: string; name: string }[]; defaultId: string | null; today: DateKey;
   mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: WidgetArt['bubbles']; requests: WidgetRequest[];
+  /** 위젯 프로세스에는 사전이 없어 앱이 지금 언어의 문구를 넘긴다 */
+  labels: { firstGoal: string; firstCalendar: string; firstTally: string; makeGoal: string };
 };
 export type GoalWidgetProps = Shared & { goals: Record<string, GoalCard> };
 export type MonthWidgetProps = Shared & { goals: Record<string, MonthCard> };
@@ -30,6 +33,7 @@ function shared(goals: readonly WidgetGoal[], s: WidgetSnapshot, art: WidgetArt)
   return {
     order: goals.map((g) => ({ id: g.id, name: g.name })), defaultId, today: s.today,
     mascotYet: art.mascotYet, mascotDone: art.mascotDone, mascotFull: art.mascotFull, mascotSleepy: art.mascotSleepy, bubbles: art.bubbles, requests: [],
+    labels: { firstGoal: t('widget.firstGoal'), firstCalendar: t('widget.firstCalendar'), firstTally: t('widget.firstTally'), makeGoal: t('widget.makeGoal') },
   };
 }
 
@@ -42,7 +46,7 @@ export function monthWidgetProps(s: WidgetSnapshot, art: WidgetArt, now: Date): 
   const goals: Record<string, MonthCard> = {};
   for (const g of cal) {
     if (g.mini.type !== 'calendar') continue;
-    goals[g.id] = { ...base(g, art), monthLabel: `${g.mini.month}월`, days: g.mini.days, firstWeekday: g.mini.firstWeekday, todayIndex: now.getDate() - 1 };
+    goals[g.id] = { ...base(g, art), month: g.mini.month, monthLabel: t('widget.month', g.mini.month), days: g.mini.days, firstWeekday: g.mini.firstWeekday, todayIndex: now.getDate() - 1 };
   }
   return { ...shared(cal, s, art), goals };
 }

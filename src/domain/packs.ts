@@ -3,6 +3,7 @@
  * 여는 길: 사기(영구) · 광고를 끝까지 본 때부터 24시간 · 붙인 날 누적 7·14·이후 30일마다 묶음 하나 3일.
  * 체험으로 붙인 스티커는 끝나도 판에 남는다 — 여기서는 「새로 붙일 수 있는가」만 정한다.
  */
+import { t } from '../i18n';
 import { colorStickerPacks, getColorSticker, type ColorStickerId, type ColorStickerPackId } from '../stickers/color/catalog';
 
 export type PackAccess = { packId: ColorStickerPackId; source: 'purchase' | 'ad' | 'days'; grantedAt: number; expiresAt: number | null };
@@ -19,7 +20,7 @@ const isFree = (packId: ColorStickerPackId) => colorStickerPacks.some((p) => p.i
 /** 남은 시간 배지: 24시간 넘게 남으면 「n일 남음」, 24시간 이하면 「n시간 남음」(둘 다 올림). */
 export function trialLabel(expiresAt: number, now: number): string {
   const left = Math.max(0, expiresAt - now);
-  return left > AD_TRIAL_MS ? `${Math.ceil(left / AD_TRIAL_MS)}일 남음` : `${Math.max(1, Math.ceil(left / HOUR))}시간 남음`;
+  return left > AD_TRIAL_MS ? t('trial.daysLeft', Math.ceil(left / AD_TRIAL_MS)) : t('trial.hoursLeft', Math.max(1, Math.ceil(left / HOUR)));
 }
 
 /** 같은 묶음에 줄이 여럿이면 산 것 > 끝나지 않은 체험 중 가장 늦게 끝나는 것 > 가장 최근에 끝난 것. */

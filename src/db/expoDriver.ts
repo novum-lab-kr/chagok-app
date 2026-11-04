@@ -22,7 +22,23 @@ function statements(db: SQLite.SQLiteDatabase): Omit<DbDriver, 'transaction'> {
  */
 const BUSY_TIMEOUT = 'PRAGMA busy_timeout = 5000';
 
-export async function createExpoDriver(name = 'chagok.db'): Promise<DbDriver> {
+const DB_NAME = 'chagok.db';
+
+/** 비동기 DB 준비 전에 설정 값 하나를 읽는다. 첫 실행이라 표가 없거나 읽지 못하면 null이다. */
+export function readSettingSync(key: string): string | null {
+  try {
+    const db = SQLite.openDatabaseSync(DB_NAME);
+    try {
+      return db.getFirstSync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', key)?.value ?? null;
+    } finally {
+      db.closeSync();
+    }
+  } catch {
+    return null;
+  }
+}
+
+export async function createExpoDriver(name = DB_NAME): Promise<DbDriver> {
   const db = await SQLite.openDatabaseAsync(name);
   await db.execAsync(`PRAGMA journal_mode = WAL; ${BUSY_TIMEOUT};`);
   return {

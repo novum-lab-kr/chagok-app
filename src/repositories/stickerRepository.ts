@@ -140,3 +140,9 @@ export async function countStickers(goalId: string): Promise<number> {
   return row?.n ?? 0;
 }
 
+/** 앱 전체에 붙인 스티커 수. 첫 스티커 안내에 쓴다. */
+export async function countAllStickers(): Promise<number> {
+  const db = await getDb();
+  const row = await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM stickers');
+  return row?.n ?? 0;
+}

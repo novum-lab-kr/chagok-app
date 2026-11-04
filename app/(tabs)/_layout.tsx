@@ -2,13 +2,14 @@ import { StyleSheet, type Animated, type StyleProp, type ViewStyle } from 'react
 import * as Haptics from 'expo-haptics';
 import { TopTabs, type MaterialTopTabBarProps } from 'expo-router/js-top-tabs';
 import { FloatingTabBar, retro, type TabItem } from '../../src/design-system';
+import { t } from '../../src/i18n';
 
 type TabKey = 'index' | 'records' | 'stickers' | 'settings';
-const TABS: readonly TabItem<TabKey>[] = [
-  { key: 'index', label: '목표', icon: 'goal' },
-  { key: 'records', label: '기록', icon: 'record' },
-  { key: 'stickers', label: '스티커', icon: 'sticker' },
-  { key: 'settings', label: '설정', icon: 'settings' },
+const tabItems = (): readonly TabItem<TabKey>[] => [
+  { key: 'index', label: t('tabs.goals'), icon: 'goal' },
+  { key: 'records', label: t('tabs.records'), icon: 'record' },
+  { key: 'stickers', label: t('tabs.stickers'), icon: 'sticker' },
+  { key: 'settings', label: t('tabs.settings'), icon: 'settings' },
 ];
 
 /** 탭 바가 쓰는 만큼만. expo-router의 MaterialTopTabBarProps는 any라 직접 적는다 */
@@ -34,7 +35,7 @@ function AppTabBar({ state, descriptors, navigation, position }: AppTabBarProps)
   if (style?.display === 'none') return null;
   return (
     <FloatingTabBar
-      items={TABS}
+      items={tabItems()}
       value={focused.name as TabKey}
       position={position}
       onTick={() => { void Haptics.selectionAsync().catch(() => {}); }}

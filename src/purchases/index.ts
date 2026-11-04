@@ -1,4 +1,7 @@
+import { track } from '../analytics';
 import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/catalog';
+import { t } from '../i18n';
+import { packName } from '../i18n/stickerNames';
 import { grantPurchase, setAdFree, startAdTrial } from '../repositories/packRepository';
 import { devStore } from './devStore';
 import { priceLabel, type PriceLabels, type ProductKey, type StorePrice } from './price';
@@ -43,37 +46,58 @@ function oneAtATime(key: string, run: () => Promise<BuyResult>): Promise<BuyResu
   return result;
 }
 
+/** 이벤트 기록용 결과 낱말 (src/analytics) */
+function purchaseResult(r: BuyResult): 'success' | 'cancel' | 'fail' | 'pending' {
+  if (r.ok) return 'success';
+  if (r.reason === 'cancelled') return 'cancel';
+  return r.reason === 'failed' ? 'fail' : 'pending';
+}
+
 export function buyPack(packId: ColorStickerPackId, now = Date.now()): Promise<BuyResult> {
   return oneAtATime(packId, async () => {
+    track('purchase_start', { product: 'pack' });
     const r = await store().buyPack(packId);
     if (r.ok) await grantPurchase(packId, now);
+    track('purchase_result', { product: 'pack', result: purchaseResult(r) });
     return r;
   });
 }
 
 /** 광고를 끝까지 본 때부터 24시간 (2026-10-08). */
 export async function watchAdForPack(packId: ColorStickerPackId, now = Date.now()): Promise<{ ok: true; endsAt: number } | Extract<AdResult, { ok: false }>> {
+  track('ad_rewarded_start');
   const r = await store().showRewardedAd();
+  track('ad_rewarded_result', { result: r.ok ? 'earned' : r.reason });
   if (!r.ok) return r;
   return { ok: true, endsAt: await startAdTrial(packId, now) };
 }
 
 export function buyAdFree(): Promise<BuyResult> {
   return oneAtATime('adFree', async () => {
+    track('purchase_start', { product: 'ad_free' });
     const r = await store().buyAdFree();
     if (r.ok) await setAdFree(true);
+    track('purchase_result', { product: 'ad_free', result: purchaseResult(r) });
     return r;
   });
 }
 
 /** 산 묶음 전부와 광고 제거를 되살린다. 결과 문구용 이름: 묶음 순서대로 「○○ 묶음」, 끝에 「광고 제거」. */
 export async function restorePurchases(now = Date.now()): Promise<string[]> {
-  const { packs, adFree } = await store().restore();
+  let restored: Awaited<ReturnType<Store['restore']>>;
+  try {
+    restored = await store().restore();
+  } catch (error) {
+    track('restore_result', { result: 'fail' });
+    throw error;
+  }
+  track('restore_result', { result: 'success' });
+  const { packs, adFree } = restored;
   for (const id of packs) await grantPurchase(id, now);
   if (adFree) await setAdFree(true);
   return [
-    ...colorStickerPacks.filter((p) => packs.includes(p.id)).map((p) => `${p.label} 묶음`),
-    ...(adFree ? ['광고 제거'] : []),
+    ...colorStickerPacks.filter((p) => packs.includes(p.id)).map((p) => t('shop.packTitle', packName(p.id))),
+    ...(adFree ? [t('shop.adFree')] : []),
   ];
 }
 

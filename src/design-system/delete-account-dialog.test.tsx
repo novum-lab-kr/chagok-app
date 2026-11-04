@@ -5,6 +5,7 @@ import { accountDialogs } from './account-screens';
 import DeleteAccount from '../../app/account/delete';
 import { deleteAccountOnServer, NeedsLoginError } from '../sync/account';
 
+vi.mock('../analytics/sentry',()=>({setErrorUser:vi.fn(async()=>undefined)}));
 vi.mock('./index', async () => {
   const { accountDialogs: dialogs } = await import('./account-screens');
   return {

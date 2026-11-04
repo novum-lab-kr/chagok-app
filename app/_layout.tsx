@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
-import { Stack, type ErrorBoundaryProps } from 'expo-router';
+import { Stack, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { identifyUser, resetUser, screen, track } from '../src/analytics';
+import { startAnalytics } from '../src/analytics/posthog';
+import { reportScreenError, setErrorUser, startSentry, wrapRoot } from '../src/analytics/sentry';
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
+import { applyDeviceLanguage, useDeviceLanguage } from '../src/i18n/device';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
 import { configureRevenueCat, linkPurchaseAccount } from '../src/purchases/revenueCat';
@@ -21,10 +25,15 @@ import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
 import { startWidgetSync } from '../src/widgets/syncWidgets';
 import { startWatchSync } from '../src/watch/syncWatch';
 
+// 어떤 화면이 문구를 읽기 전에 언어부터 정한다.
+applyDeviceLanguage();
 // OS 스플래시(윤곽선만 있는 차곡이)를 앱이 그릴 때까지 잡아 둔다. 같은 자리의 애니메이션 첫 장면이
 // 그려지는 순간 페이드 없이 내려서 끊김 없이 이어지게 한다 (docs/design/character/README.md 「스플래시」).
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 0, fade: false });
+// 오류 수집은 다른 준비보다 먼저 켠다 — 그 준비에서 나는 오류도 받는다.
+startSentry();
+startAnalytics().catch(() => { /* 기록 실패가 앱을 막으면 안 된다 */ });
 // 결제는 화면보다 먼저 준비한다. 키나 결제 모듈이 없으면 개발용 대역 그대로 (src/purchases/revenueCat.ts).
 configureRevenueCat();
 // 가격은 앱을 켤 때 한 번 받아 둔다 — 상점 화면이 처음부터 가격을 그린다
@@ -62,7 +71,8 @@ export const unstable_settings = { anchor: '(tabs)' };
  * 화면을 그리다 예외가 나면 빈 화면 대신 같은 안내를 보인다 (PRD 7절). [다시 시도]는 그 화면을 다시 그린다.
  * https://docs.expo.dev/versions/v57.0.0/sdk/router/ 「ErrorBoundary」
  */
-export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => { reportScreenError(error); }, [error]);
   return (
     <SafeAreaProvider>
       <LoadingScreen failed kind="screen" onRetry={() => { void retry(); }} onHome={goHome} />
@@ -70,7 +80,26 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   );
 }
 
-export default function RootLayout() {
+/** 이벤트 기록과 오류 수집에 지금 계정을 알린다. null이면 로그아웃이다. */
+function setAnalyticsAccount(userId: string | null): void {
+  if (userId) identifyUser(userId);
+  else resetUser();
+  setErrorUser(userId).catch(() => { /* 기록 실패가 앱을 막으면 안 된다 */ });
+}
+
+function RootLayout() {
+  const language = useDeviceLanguage();
+  // 화면 이름은 라우트 패턴(goal/[id])이라 목표 ID가 나가지 않는다.
+  const segments = useSegments();
+  const screenName = `/${segments.join('/')}`;
+  useEffect(() => { screen(screenName); }, [screenName]);
+  useEffect(() => {
+    track('app_open', { source: 'cold' });
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') track('app_open', { source: 'foreground' });
+    });
+    return () => sub.remove();
+  }, []);
   // 앱을 처음 켤 때만 재생한다. 백그라운드에서 돌아올 때는 이 레이아웃이 다시 만들어지지 않는다.
   const [splashDone, setSplashDone] = useState(false);
   const finishSplash = useCallback(() => setSplashDone(true), []);
@@ -86,8 +115,12 @@ export default function RootLayout() {
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
-    void supabase.auth.getSession().then(({ data }) => linkPurchaseAccount(data.session?.user.id ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => { void linkPurchaseAccount(session?.user.id ?? null); });
+    const onAccount = (userId: string | null) => {
+      void linkPurchaseAccount(userId);
+      setAnalyticsAccount(userId);
+    };
+    void supabase.auth.getSession().then(({ data }) => onAccount(data.session?.user.id ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => { onAccount(session?.user.id ?? null); });
     return () => data.subscription.unsubscribe();
   }, []);
   // 로그인해 있는 동안만 백업을 올린다 (계정·백업 설계 ②). 서버 설정이 없으면 기기에서만 쓴다.
@@ -149,6 +182,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <RetroFontProvider loading={<View style={{ flex: 1, backgroundColor: retro.color.screen }} />}>
         <Stack
+          key={language}
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: retro.color.screen },
@@ -169,6 +203,7 @@ export default function RootLayout() {
           <Stack.Screen name="stickers/choose" options={{ presentation: 'modal' }} />
           <Stack.Screen name="stickers/pack/[packId]" options={{ presentation: 'modal' }} />
           <Stack.Screen name="tutorial" />
+          <Stack.Screen name="send-info" />
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />
           <Stack.Screen name="account/connect" />
@@ -183,3 +218,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+export default wrapRoot(RootLayout);
