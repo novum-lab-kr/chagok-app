@@ -4,10 +4,10 @@ import {Animated,PanResponder,Pressable,View,type LayoutChangeEvent,type LayoutR
 import {TutorialSpotlight} from './tutorial';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
-import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,useLayoutSize,useReducedMotion} from './components';
+import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid,stickerCellSize,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
-import {CalendarBoard} from './calendar';
+import {CalendarBoard,MonthNavigation} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 import {getLanguage,t} from '../i18n';
 
@@ -186,25 +186,44 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
   const bottomInset=useContext(SafeAreaInsetsContext)?.bottom??0;
   // 달력판은 가리지 않는다. 틀은 PixelFrame이 그리기 전에 재고, 가리면 첫 layout 이벤트가 버려질 때 판이 투명한 채 남는다.
   const visible=board.kind==='calendar'||ready;
-  // 판 윗부분(테두리·제목·진행 줄)은 고정하고 칸만 판 안에서 스크롤한다. 빈칸으로 옮겨도 목표가 보인다 (2026-09-30 사용자 결정).
-  // 칸이 적으면 판은 내용 높이 그대로이고, 넘치면 남은 높이까지 줄어든다.
-  return <View style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
-    <View testID="board-panel" style={{opacity:visible?1:0,flexShrink:1}}>
+  // 판 윗부분(테두리·제목·진행 줄)은 고정한다. 적립판은 화면에 들어가는 줄만큼씩 쪽을 나눠 좌우로 넘긴다 (2026-11-03 시안 P1).
+  // 칸 영역이 쓸 수 있는 높이 = 판이 내려갈 수 있는 바닥 − 판 위쪽 − (판 높이 − 칸 영역 높이).
+  // 바닥은 화면 아래에서 홈 인디케이터 여백과 RetroScreen 여백 둘(바깥, 본문)을 뺀 곳이다. 칸 영역 바깥(테두리, 제목, 진행 줄)은 쪽 수와 상관없이 같다.
+  // 아주 작은 화면에서 최소 줄(3줄)도 넘치면 그 쪽 안에서만 스크롤한다. (2026-11-03: 처음에 flex:1 영역으로 재다가 RetroScreen 본문에 높이가 없어 판이 0으로 접혔다)
+  const rootRef=useRef<View>(null),panelRef=useRef<View>(null);
+  const [frame,setFrame]=useState<{rootBottom:number;panelTop:number;panelHeight:number}|null>(null);
+  const [gridHeight,setGridHeight]=useState(0);
+  const measureFrame=useCallback(()=>{
+    rootRef.current?.measureInWindow((_x,rootY,_w,rootHeight)=>panelRef.current?.measureInWindow((_px,panelTop,_pw,panelHeight)=>{
+      const next={rootBottom:Math.floor(rootY+rootHeight),panelTop:Math.ceil(panelTop),panelHeight:Math.ceil(panelHeight)};
+      setFrame(previous=>previous&&previous.rootBottom===next.rootBottom&&previous.panelTop===next.panelTop&&previous.panelHeight===next.panelHeight?previous:next);
+    }));
+  },[]);
+  const gridMax=frame&&gridHeight>0?frame.rootBottom-bottomInset-2*SCREEN_PADDING-frame.panelTop-(frame.panelHeight-gridHeight):null;
+  return <View ref={rootRef} onLayout={measureFrame} style={{flex:1}}><RetroScreen scrollable={false} style={{gap:12}} header={<ScreenHeader title={completed?t('goal.completedBoard'):t('goal.myGoal')} onBack={onBack}/>}>
+    <View ref={panelRef} testID="board-panel" onLayout={measureFrame} style={{opacity:visible?1:0,flexShrink:1}}>
     <PixelPanel titleRule={false} style={{flexShrink:1}} contentStyle={{flexShrink:1}} title={name} action={<Pressable accessibilityRole="button" accessibilityLabel={t('goal.settings')} onPress={onSettings} hitSlop={touchSlop({width:40,height:40})} style={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={36}/></Pressable>}>
       <BoardProgressRow value={progress.value} total={progress.total} percentLabel={progress.percentLabel} completed={completed} sticker={sticker} completionTargetRef={completionTargetRef} animateCompletion={animateCompletion}/>
       <View style={{height:retro.layout.progressGridGap}}/>
+      {board.kind==='calendar'&&<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset,marginBottom:TALLY_PAGE_NAV_HEIGHT-44}}><MonthNavigation year={board.year} month={board.month} onChange={board.onMonthChange} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext}/></View></CalendarSwipe>}
+      <View style={{flexShrink:1}} onLayout={event=>setGridHeight(Math.ceil(event.nativeEvent.layout.height))}>
       <CenteringScrollView testID="board-scroll" style={{flexGrow:0,flexShrink:1}}>
       {board.kind==='calendar'
-        ?<CalendarSwipe board={board}><CalendarBoard year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
-          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} poppedDate={board.justPlaced}/></CalendarSwipe>
-        :<TallyGrid board={board} sticker={sticker} onSettled={reveal}/>}
+        ?<CalendarSwipe board={board}><View style={{paddingHorizontal:retro.layout.boardInset}}><CalendarBoard showNavigation={false} year={board.year} month={board.month} records={board.records} recordedDates={board.recordedDates} selectedDate={board.selectedDate} onSelect={board.onSelect} onMonthChange={board.onMonthChange}
+          isDateEnabled={board.isDateEnabled} canGoPrev={board.canGoPrev} canGoNext={board.canGoNext} onOpenRecord={board.onOpenRecord} poppedDate={board.justPlaced}/></View></CalendarSwipe>
+        :<TallyGrid board={board} sticker={sticker} onSettled={reveal} maxHeight={gridMax}/>}
       </CenteringScrollView>
+      </View>
     </PixelPanel>
     </View>
   </RetroScreen>
   {notice&&<View style={{position:'absolute',left:SCREEN_PADDING,right:SCREEN_PADDING,bottom:bottomInset+SCREEN_PADDING}}>{notice}</View>}
   </View>;
 }
+/** 화면 왼쪽 끝에서 시작한 밀기는 iOS 뒤로 가기에 맡긴다. 판 밀기가 가져가면 판 화면에서 뒤로 가기가 막혔다 (2026-11-03, iOS 26 시뮬레이터) */
+const EDGE_BACK_WIDTH=24;
+/** 손가락이 처음 닿은 x. gestureState.x0은 판이 응답자가 되기 전에는 0이라 쓸 수 없다 (2026-11-03, 그래서 모든 밀기가 막혔다) */
+const startX=(g:{moveX:number;dx:number})=>g.moveX-g.dx;
 /** 달력판은 좌우 스와이프로도 달을 옮긴다 (PRD 4.3). 화살표를 숨긴 방향으로는 가지 않는다. */
 function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactNode}) {
   const {year,month,canGoPrev,canGoNext,onMonthChange}=board;
@@ -214,7 +233,7 @@ function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactN
   },[year,month,canGoPrev,canGoNext,onMonthChange]);
   // PanResponder는 첫 렌더 값을 가두지 않도록 useMemo로 만든다.
   const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponder:(_,g)=>startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
     onPanResponderRelease:(_,g)=>{if(g.dx<=-48)shift(1);else if(g.dx>=48)shift(-1);},
   }),[shift]);
   return <View {...swipe.panHandlers}>{children}</View>;
@@ -232,15 +251,70 @@ const TallyCell=memo(function TallyCell({n,sticker,state,hasRecord,popIn,onPress
   return <GoalStickerCell number={n} sticker={sticker} state={state} enabled hasRecord={hasRecord} popIn={popIn}
     onPress={()=>onPress(n)} onOpenRecord={onOpenRecord?()=>onOpenRecord(n):undefined}/>;
 });
+/** 쪽 넘김 줄 높이(버튼 44 + 아래 간격 8) */
+export const TALLY_PAGE_NAV_HEIGHT=52;
+/** 마지막 칸 붙이기 모션을 본 뒤 다음 쪽으로 넘긴다 */
+const TALLY_PAGE_TURN_DELAY_MS=700;
+/** 칸 영역 높이를 재지 못해도 이만큼 뒤에는 판을 보여 준다 */
+const TALLY_MEASURE_TIMEOUT_MS=400;
+/**
+ * 적립판 한 쪽에 넣을 칸 수 (2026-11-03 시안 P1). 남은 높이에 다 들어가면 쪽을 나누지 않는다(total).
+ * 나누면 넘김 줄 높이를 빼고 들어가는 줄 수만큼, 최소 3줄을 넣는다. 한 줄은 3칸이다.
+ */
+export function tallyPageSize(total:number,maxHeight:number,cellHeight:number,rowGap:number):number {
+  const rows=(height:number)=>Math.floor((height+rowGap)/(cellHeight+rowGap));
+  if(rows(maxHeight)*3>=total) return total;
+  return Math.max(3,rows(maxHeight-TALLY_PAGE_NAV_HEIGHT))*3;
+}
+/** 달력판 MonthNavigation과 같은 줄: [이전] 「1~21칸 / 40」 [다음]. 끝 쪽에서는 그 방향 버튼 자리를 비운다. */
+function TallyPageNavigation({from,to,total,onPrev,onNext}:{from:number;to:number;total:number;onPrev?:()=>void;onNext?:()=>void}) {
+  const slot={width:44,height:44,alignItems:'center' as const,justifyContent:'center' as const};
+  return <View style={{flexDirection:'row',alignItems:'center',gap:8,height:44,marginBottom:TALLY_PAGE_NAV_HEIGHT-44}}>
+    {onPrev?<Pressable accessibilityRole="button" accessibilityLabel={t('board.previousPage')} onPress={onPrev} hitSlop={touchSlop({width:44,height:44})} style={slot}><ActionSymbol name="back" size={24}/></Pressable>:<View style={slot}/>}
+    <PixelText variant="title" numberOfLines={1} accessibilityRole="header" style={{flex:1,textAlign:'center',fontSize:20,lineHeight:28}}>{t('board.pageRange',from,to,total)}</PixelText>
+    {onNext?<Pressable accessibilityRole="button" accessibilityLabel={t('board.nextPage')} onPress={onNext} hitSlop={touchSlop({width:44,height:44})} style={slot}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={slot}/>}
+  </View>;
+}
 /**
  * 적립판 칸. 다음 빈칸을 화면 가운데로 스크롤한다 — 판을 열 때, 그리고 칸 수가 바뀌었을 때(칸 늘리기)만.
  * 붙일 때마다 옮기면 누르는 중에 판이 움직인다 (2026-09-30).
  * 옮긴 뒤(빈칸이 없으면 그리고 나서) onSettled를 부른다.
  */
-function TallyGrid({board,sticker,onSettled}:{board:TallyBoardView;sticker:StickerId;onSettled:()=>void}) {
-  const numbers=Array.from({length:board.total},(_,i)=>i+1);
-  const next=numbers.find(n=>!board.filled[n]);
+function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardView;sticker:StickerId;onSettled:()=>void;/** 칸이 쓸 수 있는 높이. 재기 전(null)에는 쪽을 나누지 않는다 */maxHeight?:number|null}) {
+  const all=Array.from({length:board.total},(_,i)=>i+1);
+  const next=all.find(n=>!board.filled[n]);
   const lastFilled=Math.max(0,...Object.keys(board.filled).map(Number));
+  const [width,setWidth]=useState(0);
+  const perPage=maxHeight!==null&&width>0?tallyPageSize(board.total,maxHeight,stickerCellSize(width).height,retro.layout.boardRowGap):null;
+  const paged=perPage!==null&&perPage<board.total;
+  const pages=paged?Math.ceil(board.total/perPage):1;
+  // 처음에는 다음 빈칸(없으면 마지막으로 붙인 칸)이 있는 쪽. 쪽 크기가 바뀌어도 보던 첫 칸이 든 쪽을 그대로 보여 준다.
+  const [anchor,setAnchor]=useState(()=>next??Math.max(1,lastFilled));
+  const page=paged?Math.min(pages-1,Math.floor((anchor-1)/perPage)):0;
+  const first=paged?page*perPage+1:1,last=paged?Math.min(board.total,first+perPage-1):board.total;
+  const numbers=paged?all.slice(first-1,last):all;
+  const go=useCallback((to:number)=>{if(perPage) setAnchor(to*perPage+1);},[perPage]);
+  // 방금 붙인 칸이 다른 쪽이면(위젯 링크) 그 쪽으로 간다. 이 쪽 마지막 칸을 붙였고 다음 빈칸이 다음 쪽이면 붙는 모션 뒤에 넘긴다.
+  // 판 화면은 붙인 칸(justPlaced)을 먼저 알리고 칸 상태(next)는 다시 읽은 뒤에 바뀐다. 둘 다 보고, 붙인 칸마다 한 번만 그 쪽으로 맞춘다.
+  const {justPlaced}=board;
+  const shownFor=useRef<number|undefined>(undefined);
+  useEffect(()=>{
+    if(!paged||justPlaced===undefined) return;
+    if(shownFor.current!==justPlaced){
+      shownFor.current=justPlaced;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 붙인 칸이 보이도록 쪽을 맞춘다
+      if(justPlaced<first||justPlaced>last){setAnchor(justPlaced);return;}
+    }
+    if(justPlaced!==last||next===undefined||next<=last) return;
+    const id=setTimeout(()=>setAnchor(next),TALLY_PAGE_TURN_DELAY_MS);
+    return ()=>clearTimeout(id);
+  },[justPlaced,next,paged,first,last]);
+  // 칸(Pressable)이 손가락을 먼저 잡으면 판 밀기가 받지 못한다(2026-11-03 실기기). 가로로 분명히 움직이면 캡처 단계에서 판이 가져온다.
+  const swipe=useMemo(()=>PanResponder.create({
+    onMoveShouldSetPanResponderCapture:(_,g)=>paged&&startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onMoveShouldSetPanResponder:(_,g)=>paged&&startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
+    onPanResponderRelease:(_,g)=>{if(g.dx<=-48&&page<pages-1) go(page+1);else if(g.dx>=48&&page>0) go(page-1);},
+  }),[paged,page,pages,go]);
   const scrollToCenter=useScrollToCenter();
   const nextNode=useRef<View|null>(null);
   /** 마지막으로 가운데로 옮긴 때의 칸 수 */
@@ -264,8 +338,17 @@ function TallyGrid({board,sticker,onSettled}:{board:TallyBoardView;sticker:Stick
     requestAnimationFrame(()=>{void scrollToCenter(node,animated).then(settle);});
   }
   // 처음 layout 이벤트가 버려져도 판이 투명한 채 남지 않게 그린 직후에도 한 번 부른다(PixelFrame 참고). 이미 했으면 아무것도 하지 않는다.
-  useLayoutEffect(()=>{if(next!==undefined) centerNext(); else if(!settled.current) settle();});
-  return <View onLayout={next===undefined?settle:undefined}><StickerGrid>{numbers.map(n=>{
+  // 다음 빈칸이 다른 쪽이면 가운데로 옮길 칸이 없다. 그대로 보여 준다.
+  const nextShown=next!==undefined&&next>=first&&next<=last;
+  // 쪽 크기를 재기 전에 보이면 전체 칸이 잠깐 보였다가 쪽으로 바뀐다. 잴 때까지 기다리고, 재지 못하는 환경(테스트)에서는 잠시 뒤 그대로 보인다.
+  const measured=perPage!==null;
+  useLayoutEffect(()=>{if(!measured) return;if(nextShown) centerNext(); else if(!settled.current) settle();});
+  useEffect(()=>{const id=setTimeout(()=>{if(!settled.current) settle();},TALLY_MEASURE_TIMEOUT_MS);return ()=>clearTimeout(id);// 처음 한 번만
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  return <View {...swipe.panHandlers} onLayout={event=>setWidth(Math.round(event.nativeEvent.layout.width))}>
+    {paged&&<TallyPageNavigation from={first} to={last} total={board.total} onPrev={page>0?()=>go(page-1):undefined} onNext={page<pages-1?()=>go(page+1):undefined}/>}
+    <StickerGrid>{numbers.map(n=>{
     const filled=board.filled[n];
     const cell=<TallyCell key={n} n={n} sticker={filled??sticker} state={filled?'filled':n===next?'available':'empty'}
       hasRecord={board.recorded?.has(n)??false} popIn={n===board.justPlaced} onPress={press} onOpenRecord={filled?open:undefined}/>;

@@ -133,7 +133,7 @@ describe('설정, 계정, 약관 문구', () => {
   afterEach(() => setLanguage('ko'));
 
   test('한국어 글자는 그대로다', () => {
-    expect(t('restore.counts', 2, 5)).toBe('목표 2개 · 스티커 5개');
+    expect(t('restore.counts', 2, 5)).toBe('목표 2개, 스티커 5개');
     expect(t('restore.namesMore', '물 마시기, 운동', 3)).toBe('물 마시기, 운동 외 3개');
     expect(t('account.logoutHeldTitle', 2)).toBe('기록 2개가 사라져요');
     expect(t('account.continueKakao')).toBe('카카오로 계속하기');

@@ -1,5 +1,5 @@
 import React from 'react';
-import {BoardProgressRow,GuideCard,progressBlockPose} from './index';
+import {BoardProgressRow,GuideCard,progressBlockPose,tallyPageSize} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
@@ -194,7 +194,7 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   it('목표 설정: 적립판 칸 수는 늘리기만 된다고 알리고, 오류가 있으면 보여준다 (2026-09-30)',()=>{
     const slots={current:30,value:'15',onChange:vi.fn(),error:'지금 30칸보다 줄일 수 없어요.'};
     render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
-    expect(screen.getByText('지금 30칸 · 늘리기만 할 수 있어요')).toBeTruthy();
+    expect(screen.getByText('지금 30칸이에요. 늘리기만 할 수 있어요')).toBeTruthy();
     expect(screen.getByText('지금 30칸보다 줄일 수 없어요.')).toBeTruthy();
   });
   it('[바꾸기]는 「기본 스티커」 화면을 연다',()=>{
@@ -205,7 +205,7 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   });
   it('완성한 판 설정은 마지막 정보 줄에 밑줄이 없어 [삭제하기] 위 구분선과 겹치지 않는다',()=>{
     const bottom=(label:string)=>parseFloat(getComputedStyle(screen.getByText(label).parentElement!).borderBottomWidth)||0;
-    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 · 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판, 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
     expect(bottom('기본 스티커')).toBeGreaterThan(0);
     expect(bottom('판 종류')).toBe(0);
     cleanup();
@@ -299,5 +299,19 @@ describe('판 진행 표시와 안내 (2026-11-02)',()=>{
     render(<GuideCard text="안내" onClose={onClose}/>);
     fireEvent.click(screen.getByRole('button',{name:'닫기'}));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('적립판 쪽 넘기기 (2026-11-03 시안 P1)',()=>{
+  // 칸 높이 76, 줄 간격 10 → 줄 하나 86
+  it('남은 높이에 다 들어가면 쪽을 나누지 않는다',()=>{
+    expect(tallyPageSize(15,500,76,10)).toBe(15);
+  });
+  it('넘치면 넘김 줄을 빼고 들어가는 줄만큼 넣는다',()=>{
+    expect(tallyPageSize(40,600,76,10)).toBe(18); // (600-52+10)/86 = 6줄
+    expect(tallyPageSize(40,700,76,10)).toBe(21); // 7줄
+  });
+  it('아주 작은 화면도 최소 3줄을 넣는다',()=>{
+    expect(tallyPageSize(40,200,76,10)).toBe(9);
   });
 });

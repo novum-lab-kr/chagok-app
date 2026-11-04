@@ -23,13 +23,13 @@ export function MonthNavigation({year,month,onChange,canGoPrev=true,canGoNext=tr
     {canGoNext?<Pressable accessibilityRole="button" accessibilityLabel={t('calendar.nextMonth')} onPress={()=>move(1)} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelIcon name="chevron" size={24}/></Pressable>:<View style={{width:44,height:44}}/>}
   </View>;
 }
-export function CalendarBoard({year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,poppedDate}:{/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void}) {
+export function CalendarBoard({showNavigation=true,year,month,records={},recordedDates,selectedDate,onSelect,onMonthChange,isDateEnabled,canGoPrev,canGoNext,onOpenRecord,poppedDate}:{/** false면 달 넘기기 줄을 그리지 않는다. 판 상세는 스크롤 밖에 따로 둔다 (2026-11-03) */showNavigation?:boolean;/** 방금 붙인 날: 붙이기 모션 (PRD 4.5) */poppedDate?:string;year:number;month:number;records?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;selectedDate?:string;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;/** false를 돌려준 날짜는 누를 수 없고 흐리게 그린다. 없으면 모든 날짜를 누를 수 있다. */isDateEnabled?:(date:string)=>boolean;canGoPrev?:boolean;canGoNext?:boolean;/** 스티커가 붙은 날의 기록 열기 (한 번 누르기) */onOpenRecord?:(date:string)=>void}) {
   const [measured,setWidth]=useState<number|null>(null);
   const width=useContentWidth(measured);
   const border=retro.shape.cellBorder;
   const cellWidth=Math.max(0,Math.floor((width-border)/7));
   return <View onLayout={e=>setWidth(e.nativeEvent.layout.width)} style={{gap:16}}>
-    <MonthNavigation year={year} month={month} onChange={onMonthChange} canGoPrev={canGoPrev} canGoNext={canGoNext}/>
+    {showNavigation&&<MonthNavigation year={year} month={month} onChange={onMonthChange} canGoPrev={canGoPrev} canGoNext={canGoNext}/>}
     <View accessibilityLabel={t('calendar.label',t('date.yearMonth',year,month))} style={{width:cellWidth*7+border,borderTopWidth:border,borderLeftWidth:border,borderColor:retro.color.ink,alignSelf:'center'}}>
       <View style={{flexDirection:'row'}}>{[0,1,2,3,4,5,6].map(day=><View key={day} style={{width:cellWidth,height:36,alignItems:'center',justifyContent:'center',borderRightWidth:border,borderBottomWidth:border,borderColor:retro.color.ink}}><PixelText>{t('date.weekdayShort',day)}</PixelText></View>)}</View>
       <View style={{flexDirection:'row',flexWrap:'wrap'}}>{monthCells(year,month).map((day,index)=>{
