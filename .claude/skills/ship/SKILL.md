@@ -47,6 +47,7 @@ npm run lint
 ## Gotchas
 
 - **`git add`에 이미 지운 파일 경로를 섞으면 add 전체가 멈춘다**(`fatal: pathspec ... did not match`). 그 상태로 `git commit`하면 미리 staged된 것만 들어간다. 지운 파일은 `git rm`으로 따로 올리고, 커밋 뒤 `git status --short`가 비었는지 본다(2026-11-02).
+- **`git apply --3way`로 옮긴 변경은 이미 staged 상태다.** 덩어리별로 나눠 커밋할 때 다른 커밋에 섞여 들어간다(2026-11-04 배너 수정이 문구 커밋에 섞임). 옮긴 직후 `git reset -q <파일>`로 내려 두거나, 커밋마다 `git show --stat`으로 파일 목록을 본다.
 - 새 worktree에는 git 밖 파일이 없어 확인 명령이 실패할 수 있다. AGENTS.md 「작업마다 새 worktree」 줄의 세 파일을 먼저 챙긴다.
 
 ## 새 worktree를 만든 직후

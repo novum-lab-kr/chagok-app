@@ -84,7 +84,7 @@ export function goalCard({ goal, placedInBasis }: GoalSummary, now: Date): GoalC
   };
 }
 
-/** 완성한 판 설정의 판 종류 줄. '적립판, 20칸' / '달력판' */
+/** 완성한 판 설정의 판 종류 줄. '적립판 20칸' / '달력판' */
 export const boardLabel = (goal: Goal): string =>
   goal.boardType === 'tally' ? t('board.tallyWithSlots', goal.totalSlots ?? 0) : t('board.calendar');
 

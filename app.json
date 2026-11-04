@@ -98,8 +98,8 @@
                   "default": "ivory",
                   "values": [
                     { "name": "아이보리", "value": "ivory" },
-                    { "name": "흰색", "value": "white" },
-                    { "name": "먹색", "value": "ink" }
+                    { "name": "화이트", "value": "white" },
+                    { "name": "다크", "value": "ink" }
                   ]
                 }
               }
@@ -123,8 +123,8 @@
                   "default": "ivory",
                   "values": [
                     { "name": "아이보리", "value": "ivory" },
-                    { "name": "흰색", "value": "white" },
-                    { "name": "먹색", "value": "ink" }
+                    { "name": "화이트", "value": "white" },
+                    { "name": "다크", "value": "ink" }
                   ]
                 }
               }
@@ -148,8 +148,8 @@
                   "default": "ivory",
                   "values": [
                     { "name": "아이보리", "value": "ivory" },
-                    { "name": "흰색", "value": "white" },
-                    { "name": "먹색", "value": "ink" }
+                    { "name": "화이트", "value": "white" },
+                    { "name": "다크", "value": "ink" }
                   ]
                 }
               }

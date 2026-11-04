@@ -97,7 +97,9 @@ describe('흐름 중간 안내',()=>{
 describe('묶음 카드 한 줄',()=>{
   it('폭에 들어가는 만큼만 보이고 나머지는 +n으로 (폴드 344dp에서 넘치던 것, 2026-10-12)',()=>{
     expect(packRowCount(400,10)).toBe(5);
-    expect(packRowCount(262,10)).toBe(3);
+    expect(packRowCount(262,10)).toBe(4);
+    expect(packRowCount(308,10)).toBe(5);
+    expect(packRowCount(307,10)).toBe(4);
     expect(packRowCount(290,5)).toBe(5);
     expect(packRowCount(0,10)).toBe(5);
   });
