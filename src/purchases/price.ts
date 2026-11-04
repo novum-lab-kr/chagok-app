@@ -12,6 +12,10 @@ export type PriceLabels = Partial<Record<ProductKey, string>>;
  * 다른 통화는 스토어가 준 글자 그대로 — 결제 창 가격과 어긋나지 않게.
  */
 export function priceLabel(p: StorePrice): string {
-  if (p.currency !== 'KRW') return p.text;
-  return t('shop.priceWon', String(Math.round(p.amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+  return p.currency === 'KRW' ? wonLabel(p.amount) : p.text;
+}
+
+/** 원화 금액 글자 「2,200원」. 가격과 아끼는 금액이 같이 쓴다 */
+export function wonLabel(amount: number): string {
+  return t('shop.priceWon', String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
 }

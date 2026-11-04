@@ -7,13 +7,12 @@ import { offerSticker, takeOpenPack } from '../../src/app-data/stickerChoice';
 import { saveOrNotify, useDialog } from '../../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../../src/app-data/goBack';
 import { dayTrialThreshold } from '../../src/domain/packs';
-import { loadPackState } from '../../src/repositories/packRepository';
+import { loadPackState, type LoadedPackState } from '../../src/repositories/packRepository';
 import { updateGoal } from '../../src/repositories/goalRepository';
 import { normalizeStickerId } from '../../src/stickers/stickerIds';
 import { type ColorStickerId, type ColorStickerPackId } from '../../src/stickers/color/catalog';
 import { t } from '../../src/i18n';
 
-type PackState = Awaited<ReturnType<typeof loadPackState>>;
 
 /**
  * 「기본 스티커」 (PRD 4.12). 새 목표·목표 설정의 [바꾸기], 판 화면 「체험이 끝났어요」의 [다른 스티커]에서 연다.
@@ -26,7 +25,7 @@ export default function ChooseSticker() {
   const [open, setOpen] = useState<readonly ColorStickerPackId[]>([]);
   const started = useRef(false);
   const [mine, setMine] = useState(false);
-  const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
+  const [state, setState] = useState<{ pack: LoadedPackState; now: number } | null>(null);
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
   const prices = usePrices();

@@ -83,9 +83,11 @@ Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](
 | 하려는 일 | 먼저 볼 곳 |
 | --- | --- |
 | 날짜 키, 월 키, 날짜 차이 | `src/domain/dates.ts` (`localDateKey`, `dateKeyOf`, `monthKeyOf`, `daysInclusive`) |
-| 가격과 금액 글자 | `src/purchases/price.ts` (`priceLabel`) |
+| 가격과 금액 글자 | `src/purchases/price.ts` (`priceLabel`, `wonLabel`) |
+| 결제 실패와 보호자 승인 대기 안내, 구매 복원 | `src/app-data/purchaseDialogs.ts` (`notifyBuyFailure`, `restoreWithDialog`) |
 | 확인 창, 안내 창 | `src/app-data/useDialog.ts`, 창 내용은 `src/design-system`의 `*Dialogs` |
 | 뒤로 가기 | `src/app-data/goBack.ts` (`goBackOrHome`) |
+| 로그아웃, 계정 삭제, 연결 취소의 기기 정리 | `src/app-data/signOut.ts` (`signOutAndWipe`, `clearSignInSessions`), 실제 모듈은 `signOutDeps.ts` |
 | 스토어 응답, 구독 상태 같은 상태 타입 | `src/domain`에 한 번만 정의하고 나머지는 가져다 쓴다 |
 
 - **순서가 중요한 흐름은 함수 하나에만 둔다.** 로그아웃, 계정 삭제, 결제처럼 단계 순서가 보안이나 데이터에 걸리는 흐름은 화면마다 복사하지 않고, 부르는 순서를 확인하는 테스트를 같이 둔다.

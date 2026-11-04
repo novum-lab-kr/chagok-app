@@ -78,18 +78,22 @@ export async function setAdFree(on: boolean): Promise<void> {
  * 화면에 필요한 것 한 번에: 묶음 권한, 붙인 날 수, 받은 체험 수, 광고 제거, 구독.
  * adFree는 광고가 없는가(광고 제거를 샀거나 구독 중), adFreePurchased는 광고 제거를 샀는가.
  */
-export async function loadPackState(now = Date.now()): Promise<{ access: PackAccess[]; days: number; claimed: number; adFree: boolean; adFreePurchased: boolean; subscription: StoredSubscription | null; subscribed: boolean }> {
+/** loadPackState가 돌려주는 것. 디자인 시스템의 PackState(묶음 하나의 상태)와 다르다 */
+export type LoadedPackState = { access: PackAccess[]; days: number; claimed: number; adFree: boolean; adFreePurchased: boolean; subscription: StoredSubscription | null; subscribed: boolean };
+
+export async function loadPackState(now = Date.now()): Promise<LoadedPackState> {
   const db = await getDb();
   const days = (await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM placed_days'))?.n ?? 0;
+  const subscription = await getSubscription();
+  const subscribed = isSubscribed(subscription, now);
+  const adFreePurchased = (await getSetting('adFree')) === '1';
   return {
     access: await listPackAccess(),
     days,
     claimed: Number((await getSetting('dayTrialsClaimed')) ?? 0),
-    ...await (async () => {
-      const subscription = await getSubscription();
-      const subscribed = isSubscribed(subscription, now);
-      const adFreePurchased = (await getSetting('adFree')) === '1';
-      return { subscription, subscribed, adFreePurchased, adFree: adFreePurchased || subscribed };
-    })(),
+    subscription,
+    subscribed,
+    adFreePurchased,
+    adFree: adFreePurchased || subscribed,
   };
 }

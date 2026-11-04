@@ -22,7 +22,7 @@ export type DialogChoice = 'primary' | 'secondary' | 'link' | 'dismiss';
  * 반환한 `dialog`는 화면에 함께 렌더해야 한다.
  */
 /** 닫히는 애니메이션(fade)보다 넉넉하게 */
-const DISMISS_FALLBACK_MS = 700;
+export const DISMISS_FALLBACK_MS = 700;
 
 export function useDialog() {
   const [open, setOpen] = useState<{ spec: DialogSpec; resolve: (choice: DialogChoice) => void } | null>(null);

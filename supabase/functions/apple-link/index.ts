@@ -1,8 +1,7 @@
 // Apple 로그인 직후 authorizationCode를 refresh token으로 바꿔 저장한다 (계정·백업 설계 ③).
 // 계정 삭제 때 delete-account가 이 토큰으로 Apple 연결을 폐기한다 (App Store 5.1.1(v)).
-import { createClient } from 'npm:@supabase/supabase-js@2';
 import { appleConfigFrom, exchangeCode } from '../_shared/apple.ts';
-import { json, userIdFrom } from '../_shared/auth.ts';
+import { adminClient, json, userIdFrom } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
   const uid = await userIdFrom(req);
@@ -18,9 +17,7 @@ Deno.serve(async (req) => {
     return json({ error: String(e), step: 'exchange' }, 502);
   }
 
-  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = adminClient();
   // 다른 Apple 계정의 코드로 이 계정에 토큰을 붙이지 못하게, 로그인한 Apple 계정과 같은지 본다.
   const user = await admin.auth.admin.getUserById(uid);
   if (user.error) return json({ error: user.error.message, step: 'user' }, 500);

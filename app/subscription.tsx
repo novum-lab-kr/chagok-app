@@ -2,11 +2,12 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LoadingScreen, SubscriptionScreen, stickerShopDialogs, useLoadRetry, type SubscriptionPlan } from '../src/design-system';
 import { planViews } from '../src/app-data/subscriptionViews';
+import { notifyBuyFailure, restoreWithDialog } from '../src/app-data/purchaseDialogs';
 import { useDialog } from '../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../src/app-data/goBack';
 import { createSingleFlight } from '../src/app-data/singleFlight';
 import { FREE_GOAL_LIMIT } from '../src/domain/subscription';
-import { loadSubscriptionPrices, refreshSubscription, restorePurchases, subscribe } from '../src/purchases';
+import { loadSubscriptionPrices, refreshSubscription, subscribe } from '../src/purchases';
 import type { StorePrice } from '../src/purchases/price';
 import { openPolicy } from '../src/policy/openPolicy';
 
@@ -44,7 +45,7 @@ export default function Subscription() {
     setBusy(plan);
     const r = await subscribe(plan).finally(() => setBusy(undefined));
     if (!r.ok) {
-      if (r.reason !== 'cancelled') await ask(r.reason === 'pending' ? stickerShopDialogs.purchasePending : stickerShopDialogs.subscribeFailed);
+      await notifyBuyFailure(ask, r, stickerShopDialogs.subscribeFailed);
       return;
     }
     await ask(stickerShopDialogs.subscribed);
@@ -53,16 +54,7 @@ export default function Subscription() {
 
   async function restore() {
     setBusy('restore');
-    let names: string[];
-    try {
-      names = await restorePurchases();
-    } catch {
-      await ask(stickerShopDialogs.restoreFailed);
-      return;
-    } finally {
-      setBusy(undefined);
-    }
-    await ask(names.length > 0 ? stickerShopDialogs.restoreDone(names) : stickerShopDialogs.restoreNone);
+    if ((await restoreWithDialog(ask, () => setBusy(undefined))) === null) return;
     if (await refreshSubscription()) goBackOrHome();
   }
 

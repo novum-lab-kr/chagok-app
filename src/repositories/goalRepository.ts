@@ -3,7 +3,7 @@ import type { DbDriver } from '../db/driver';
 import { newId } from './ids';
 import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { Goal, BoardType } from '../domain/types';
-import { localDateKey } from '../domain/dates';
+import { localDateKey, monthKeyOf } from '../domain/dates';
 import { periodEndAt, progressBasis } from '../domain/board';
 import { enqueue } from '../sync/outbox';
 import { track } from '../analytics';
@@ -273,7 +273,7 @@ export async function listGoalSummaries(now: Date): Promise<GoalSummary[]> {
     const basis = progressBasis(goal, now);
     const placedInBasis = basis.kind === 'all'
       ? placedAll
-      : mine.find((c) => c.ym === `${basis.year}-${String(basis.month).padStart(2, '0')}`)?.n ?? 0;
+      : mine.find((c) => c.ym === monthKeyOf(basis.year, basis.month))?.n ?? 0;
     return { goal, placedAll, placedInBasis };
   });
 }

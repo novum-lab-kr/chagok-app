@@ -1,7 +1,7 @@
 import type { SubscriptionPlanView, SubscriptionSummary } from '../design-system';
 import { planPeriod, isSubscribed, yearlySaving, type StoredSubscription, type SubscriptionPlan } from '../domain/subscription';
 import { getLanguage, t } from '../i18n';
-import { priceLabel, type StorePrice } from '../purchases/price';
+import { priceLabel, wonLabel, type StorePrice } from '../purchases/price';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 /** 기간 칸: 한국어 「2026.11.02」, 영어 「Nov 2, 2026」 */
@@ -11,7 +11,7 @@ const longDate = (d: Date) => t('date.yearMonthDay', d.getFullYear(), d.getMonth
 
 /** 아끼는 금액 글자. 원화는 「33,900원」, 다른 통화는 기기 언어의 통화 형식 */
 function moneyLabel(amount: number, currency: string): string {
-  if (currency === 'KRW') return priceLabel({ amount, currency, text: '' });
+  if (currency === 'KRW') return wonLabel(amount);
   try {
     return new Intl.NumberFormat(getLanguage() === 'ko' ? 'ko-KR' : 'en-US', { style: 'currency', currency }).format(amount);
   } catch {

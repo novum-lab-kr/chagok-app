@@ -5,15 +5,14 @@ import { packViews } from '../../src/app-data/packViews';
 import { usePrices } from '../../src/app-data/usePrices';
 import { takeOpenPack } from '../../src/app-data/stickerChoice';
 import { dayTrialThreshold } from '../../src/domain/packs';
-import { loadPackState } from '../../src/repositories/packRepository';
+import { loadPackState, type LoadedPackState } from '../../src/repositories/packRepository';
 import type { ColorStickerPackId } from '../../src/stickers/color/catalog';
 
-type PackState = Awaited<ReturnType<typeof loadPackState>>;
 
 /** 스티커 탭 (2026-10-12): 묶음 둘러보기. 잠긴 묶음을 누르면 묶음 화면(사기·광고 하루·붙인 날 3일). */
 export default function Stickers() {
   const router = useRouter();
-  const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
+  const [state, setState] = useState<{ pack: LoadedPackState; now: number } | null>(null);
   const [mine, setMine] = useState(false);
   const [open, setOpen] = useState<readonly ColorStickerPackId[]>([]);
   const { failed, attempt, fail, retry } = useLoadRetry();

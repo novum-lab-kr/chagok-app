@@ -8,13 +8,15 @@ import {
   type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
+import { clearSignInSessions } from '../../src/app-data/signOut';
+import { signOutDeps } from '../../src/app-data/signOutDeps';
 import { removeManagedRecordPhoto } from '../../src/app-data/recordPhotos';
 import { useDialog } from '../../src/app-data/useDialog';
 import { localDateKey } from '../../src/domain/dates';
 import { currentVersions, fetchPolicyManifest } from '../../src/policy/manifest';
 import { openPolicy } from '../../src/policy/openPolicy';
 import { getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
-import { deleteAccountOnServer, hasConsented, recordConsent, signOutLocal } from '../../src/sync/account';
+import { deleteAccountOnServer, hasConsented, recordConsent } from '../../src/sync/account';
 import { providerFromAuth } from '../../src/sync/accountStatus';
 import { syncDepsFor } from '../../src/sync/appSync';
 import { decideConnection } from '../../src/sync/connectAccount';
@@ -27,11 +29,11 @@ import {
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { signInWithApple } from '../../src/sync/signIn/apple';
 import { appleSignInAvailable, expoAppleDeps } from '../../src/sync/signIn/expoApple';
-import { expoGoogleDeps, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
-import { completeKakaoSignUp, expoKakaoDeps, signOutKakao } from '../../src/sync/signIn/expoKakao';
+import { expoGoogleDeps } from '../../src/sync/signIn/expoGoogle';
+import { completeKakaoSignUp, expoKakaoDeps } from '../../src/sync/signIn/expoKakao';
 import { signInWithGoogle } from '../../src/sync/signIn/google';
 import { signInWithKakao } from '../../src/sync/signIn/kakao';
-import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
+import { getSupabase } from '../../src/sync/supabaseClient';
 import { beginConnect, endConnect, markRestored } from '../../src/sync/connectMarker';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
 import { t } from '../../src/i18n';
@@ -184,10 +186,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     if (consentAnswer.current) answerConsent('abort');
     setConsent(null);
     try {
-      await signOutLocal(supabase, clearStoredSession);
-      // 카카오 SDK 토큰도 지운다 — 다음 시도에서 다른 카카오 계정을 고를 수 있게(카카오로 들어온 적이 없으면 아무 일도 없다)
-      await signOutKakao();
-      await signOutGoogle();
+      await clearSignInSessions(signOutDeps(supabase));
       await setSetting('accountUserId', previous.current);
       await endConnect();
     } finally {
@@ -333,9 +332,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
       } catch (e) {
         if (e === ABORTED) {
           // 취소가 이미 정리했다. 그 뒤에 생긴 세션과, 로그인 이벤트가 늦게 쓴 계정 기록을 되돌리고 잠금을 푼다.
-          await signOutLocal(supabase, clearStoredSession);
-          await signOutKakao();
-          await signOutGoogle();
+          await clearSignInSessions(signOutDeps(supabase));
           await setSetting('accountUserId', previous.current);
           resumeSync();
           return;

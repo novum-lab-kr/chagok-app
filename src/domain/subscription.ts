@@ -6,6 +6,8 @@
 export type SubscriptionPlan = 'month' | 'year';
 
 /** 마지막으로 확인한 상태. expiresAt은 스토어가 알려 준 끝나는 시각(결제 유예 중이면 유예가 끝나는 시각). */
+/** 스토어가 알려 준 구독 상태(RevenueCat 권한 all_access). expiresAt은 결제 유예 중이면 유예가 끝나는 시각 */
+export type SubscriptionStatus = { active: true; plan: SubscriptionPlan; expiresAt: number; willRenew: boolean } | { active: false };
 export type StoredSubscription = { plan: SubscriptionPlan; expiresAt: number; willRenew: boolean; verifiedAt: number };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -29,7 +31,7 @@ export function isSubscribed(s: StoredSubscription | null, now: number): boolean
  */
 export function nextStoredSubscription(
   prev: StoredSubscription | null,
-  status: { active: true; plan: SubscriptionPlan; expiresAt: number; willRenew: boolean } | { active: false } | null,
+  status: SubscriptionStatus | null,
   now: number,
 ): StoredSubscription | null {
   if (status === null) return prev;

@@ -2,21 +2,17 @@
 // 3초 안에 200을 줘야 하고 다시 보내 주지 않는다. 확인을 통과하면 바로 200을 주고 삭제는 응답 뒤에 한다.
 // 실패하면 2초, 8초 뒤에 다시 하고, 그래도 안 되면 private.kakao_unlink_failures에 남긴다(운영자가 다시 보낸다).
 // 로그에는 회원번호를 남기지 않는다. 삭제는 멱등이라 같은 요청을 다시 보내면 남은 단계부터 이어진다.
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import { json } from '../_shared/auth.ts';
+import { adminClient, json } from '../_shared/auth.ts';
 import { deleteUserData } from '../_shared/deleteUser.ts';
 import { decideUnlink, retryUnlink, type UnlinkAttempt } from '../_shared/kakaoUnlink.ts';
 
 // Supabase Edge Runtime 전역. 응답을 보낸 뒤에도 이 작업이 끝날 때까지 함수를 살려 둔다.
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const RETRY_DELAYS_MS = [2000, 8000];
 
 async function remove(kakaoId: string, referrer: string, requestedAt: Date) {
-  const admin = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = adminClient();
   // 처음 찾은 사용자를 기억한다. 인증 계정을 지운 뒤(감사 기록 정리나 파기 기록에서 실패) 다시 하면 회원번호로는 더 찾을 수 없다.
   let uid: string | null = null;
   const attempt = async (): Promise<UnlinkAttempt> => {
