@@ -4,7 +4,8 @@ import { getGoal, listGoals } from '../src/repositories/goalRepository';
 import { listMembers } from '../src/repositories/memberRepository';
 import { listBoardStickers, listStickers, placeSticker } from '../src/repositories/stickerRepository';
 import { pendingCount } from '../src/sync/outbox';
-import { pullOnce, refetchGoal } from '../src/sync/pull';
+import { AccountChanged, pullOnce, refetchGoal } from '../src/sync/pull';
+import { SharedGoalError } from '../src/sync/sharedGoals';
 import { subscribeResume } from '../src/sync/syncGate';
 import type { SharedClient } from '../src/sync/sharedGoals';
 import { getSupabase } from '../src/sync/supabaseClient';
@@ -91,9 +92,26 @@ describe('leave', () => {
     const { goalId } = await joined(server, 'each');
     await placeSticker(goalId, 0);
     server.failNext = 1;
-    await expect(leave(d, goalId)).rejects.toThrow('network');
+    await expect(leave(d, goalId)).rejects.toEqual(new SharedGoalError('network'));
     expect(log).not.toContain('leave_goal');
     expect(await getGoal(goalId)).not.toBeNull();
+  });
+
+  it('올리는 사이 계정이 바뀌면 AccountChanged를 그대로 던지고 나가지 않는다', async () => {
+    const { server, log, d } = setup();
+    const { goalId } = await joined(server, 'each');
+    await placeSticker(goalId, 0);
+    d.sync.currentUserId = async () => 'user-b';
+    await expect(leave(d, goalId)).rejects.toBeInstanceOf(AccountChanged);
+    expect(log).not.toContain('leave_goal');
+  });
+
+  it('removeAsOwner도 올리기 실패를 SharedGoalError로 던진다', async () => {
+    const { server, d } = setup();
+    const { goalId } = await joined(server, 'each');
+    await placeSticker(goalId, 0);
+    server.failNext = 1;
+    await expect(removeAsOwner(d, goalId)).rejects.toMatchObject({ word: 'network' });
   });
 
   it('각자 판을 나가면 옛 목표는 기기에서 사라지고 새 혼자 목표에 올리지 않은 내 칸이 있다', async () => {

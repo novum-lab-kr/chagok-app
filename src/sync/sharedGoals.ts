@@ -46,6 +46,10 @@ export function errorMessage(word: ErrorWord): string {
     case 'not_member':
     case 'not_shared': return t('together.goneTitle');
     case 'not_owner': return t('together.ownerOnly');
+    case 'full': return t('invite.fullTitle');
+    case 'closed': return t('invite.closedTitle');
+    case 'invalid_name': return t('validation.memberNameEmpty');
+    // invalid_sticker, invalid_input은 맞는 기존 문구가 없다(화면이 입력을 먼저 막아 거의 닿지 않는다). 문구는 사용자 확인 뒤에 정한다
     default: return t('account.checkInternetRetry');
   }
 }

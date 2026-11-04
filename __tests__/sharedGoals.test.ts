@@ -97,6 +97,9 @@ describe('실패 낱말', () => {
     expect(errorMessage('not_member')).toBe('이 목표를 볼 수 없어요');
     expect(errorMessage('not_shared')).toBe('이 목표를 볼 수 없어요');
     expect(errorMessage('not_owner')).toBe('만든 사람만 바꿀 수 있어요');
+    expect(errorMessage('full')).toBe('자리가 다 찼어요');
+    expect(errorMessage('closed')).toBe('이 목표에는 들어갈 수 없어요');
+    expect(errorMessage('invalid_name')).toBe('이름을 적어 주세요.');
     expect(errorMessage('network')).toBe('인터넷 연결을 확인하고 다시 시도해 주세요.');
     expect(errorMessage('needs_login')).toBe('인터넷 연결을 확인하고 다시 시도해 주세요.');
   });

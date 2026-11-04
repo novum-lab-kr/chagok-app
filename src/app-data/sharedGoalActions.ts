@@ -4,14 +4,14 @@ import { deleteGoal } from '../repositories/goalRepository';
 import { listGoalsWith } from '../repositories/memberRepository';
 import { getSupabase } from '../sync/supabaseClient';
 import { syncDepsFor } from '../sync/appSync';
-import { refetchGoal } from '../sync/pull';
+import { AccountChanged, refetchGoal } from '../sync/pull';
 import { pushOnce } from '../sync/push';
 import type { PushDeps } from '../sync/push';
 import {
-  blockUser, createSharedGoal, inviteUrl, kickMember, leaveSharedGoal, readInviteCode, rotateInvite, unblockUser,
-  updateMember, updateSharedGoal,
+  blockUser, createSharedGoal, inviteUrl, kickMember, leaveSharedGoal, readInviteCode, rotateInvite, SharedGoalError,
+  unblockUser, updateMember, updateSharedGoal,
+  type SharedClient,
 } from '../sync/sharedGoals';
-import type { SharedClient } from '../sync/sharedGoals';
 import { requestSync } from '../sync/syncGate';
 import { removeManagedRecordPhoto } from './recordPhotos';
 
@@ -82,7 +82,13 @@ export async function saveGoal(
  * 나간 목표는 기기에서 지워지고(서버가 NotMember), 각자 판이면 옮겨 간 새 혼자 목표를 받는다.
  */
 export async function leave(d: ActionDeps, goalId: string): Promise<{ soloGoalId: string | null }> {
-  await pushOnce(d.sync);
+  try {
+    await pushOnce(d.sync);
+  } catch (error) {
+    // 올리기가 막힌 이유는 연결이다. 화면이 낱말로 가르도록 SharedGoalError로 바꾼다.
+    // 계정이 바뀐 AccountChanged는 그대로 던진다 — 화면이 이미 다른 계정 것이라 문구 없이 닫는다.
+    throw error instanceof AccountChanged ? error : new SharedGoalError('network');
+  }
   const { soloGoalId } = await leaveSharedGoal(d.client, goalId);
   await tryRefetch(d, goalId);
   if (soloGoalId) await tryRefetch(d, soloGoalId);
