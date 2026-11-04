@@ -87,7 +87,8 @@ async function removeUser(
     if (!removed.data?.length) return { error: 'photo folder could not be emptied', step: 'photos' };
   }
 
-  // 3. 데이터 행
+  // 3. 데이터 행. 그 사람이 만든 함께 목표는 먼저 가장 먼저 들어온 멤버에게 넘기고(아무도 없으면 지움), 그 사람의 멤버 행,
+  //    칸, 혼자 목표, 기록, 차단을 지운다(private.remove_user, 20261105000005_storage_admin.sql). 다시 불러도 결과가 같다.
   const rows = await admin.rpc('admin_delete_user_rows', { p_user: uid });
   if (rows.error) return { error: rows.error.message, step: 'rows' };
 

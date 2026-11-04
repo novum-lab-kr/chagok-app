@@ -48,7 +48,7 @@
 | 1 | chagok-app | 통합 시험을 통과한 뒤 `release/1.1.0`을 main으로 | 에이전트, 사용자 승인 | 통합 빌드 실기기 확인 전 |
 | 1 | novum-web | 처리방침 이벤트 기록 개정 머지. 머지하면 운영에 바로 반영된다 | novum-web-fe, 사용자 승인 | 초안 |
 | 1 | PostHog와 Sentry | 계정과 키 만들기, EAS `production` 변수 넣기 | 사용자 | 프로젝트와 IP 설정 끝, EAS 변수는 아직 |
-| 2 | 운영 DB | 아래 절차로 `sort_order` 반영, 1.0.0 빌드로 동작 확인 | 에이전트, 사용자 승인 | 반영 전 |
+| 2 | 운영 DB | **서버 2판으로 대신한다(2026-11-04).** 운영 DB와 사진을 비우고 새 기준 마이그레이션 5개를 넣은 뒤 1.1.0 빌드로 확인. [서버 2판 계획](superpowers/specs/2026-11-04-server-v2-plan.md) 7절 | 에이전트, 사용자 승인 | 반영 전 |
 | 3 | chagok-app | production 빌드, TestFlight 최종 확인, 제출 | 사용자, 에이전트 | 시작 전 |
 | 4 | 승인 직후 | 앱 출시, `v1.1.0` 태그, 운영 로그와 Sentry 확인 | 사용자, 에이전트 | 시작 전 |
 
@@ -85,7 +85,9 @@ novum-web에서 하는 일이다. 1.1.0 머지 순서에 묶이지 않지만 빠
 
 ## 운영 DB 반영
 
-### 이번 변경
+> **2026-11-04: 아래 `sort_order` 반영 절차는 쓰지 않는다.** 운영 사용자가 0명이라 서버를 새 구조(서버 2판)로 처음부터 다시 만들고, `sort_order`는 `goal_members.sort_order`로 들어갔다. 순서는 [서버 2판 계획](superpowers/specs/2026-11-04-server-v2-plan.md) 7절. 이번이 마지막 리셋이고, 다음부터는 새 마이그레이션 파일로 바꾼다. 아래는 기록으로만 남긴다.
+
+### 이번 변경 (쓰지 않음)
 
 파일은 `supabase/migrations/20261030000001_goal_sort_order.sql`이다. `feature/goal-manual-order`에 커밋돼 있고 `test/1.0.1-integration`에 합쳤다. `release/1.1.0`과 main에는 아직 없다.
 
