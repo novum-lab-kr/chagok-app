@@ -83,11 +83,13 @@ describe('목록 카드와 진행 문구 (PRD 4.1)', () => {
     expect(card).toMatchObject({ id: 'g1', name: '러닝', sticker: 'basic.shoe', kind: '적립판', percent: 40, status: ['40% 채웠어요'] });
   });
 
-  it('함께 목표(각자 판, 한 판) 카드 status 첫 줄은 「3명이 함께」, 혼자와 보여주기 카드는 그대로', () => {
+  it('함께 목표(각자 판, 한 판) 카드 status 첫 줄은 「3명이 함께」(나뿐이면 없음), 혼자와 보여주기 카드는 그대로', () => {
     for (const mode of ['each', 'one'] as const) {
       const shared = goalCard({ goal: { ...tally, mode, totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 3 }, NOW);
       expect(shared.status).toEqual(['3명이 함께', '40% 채웠어요']);
     }
+    const alone = goalCard({ goal: { ...tally, mode: 'one', totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 1 }, NOW);
+    expect(alone.status).toEqual(['40% 채웠어요']);
     const shown = goalCard({ goal: { ...tally, mode: 'show', totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 2 }, NOW);
     expect(shown.status).toEqual(['40% 채웠어요']);
     const solo = goalCard({ goal: { ...tally, totalSlots: 15 }, placedAll: 6, placedInBasis: 6, memberCount: 1 }, NOW);

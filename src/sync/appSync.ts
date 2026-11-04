@@ -17,7 +17,7 @@ export async function syncDepsFor(supabase: SupabaseClient, userId: string): Pro
     photos: new SupabasePhotoStore(supabase.storage.from('record-photos'), userId, expoPhotoIO),
     deviceId: await getDeviceId(),
     onSlotTaken: (_stickerId, photoUri, goalId) => {
-      removeManagedRecordPhoto(photoUri);
+      try { removeManagedRecordPhoto(photoUri); } catch { /* 고아 파일로 남는다. 칸은 이미 기기에서 지워졌다 */ }
       notifySlotTaken(goalId);
     },
   };

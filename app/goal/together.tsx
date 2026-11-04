@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { TogetherGoalScreen, boardDialogs, togetherDialogs } from '../../src/design-system';
+import { TogetherGoalScreen, boardDialogs } from '../../src/design-system';
 import type { BoardKind, EndDateMode, StickerId, TogetherMode } from '../../src/design-system';
 import { listGoals } from '../../src/repositories/goalRepository';
 import { loadPackState } from '../../src/repositories/packRepository';
@@ -8,6 +8,7 @@ import { newId } from '../../src/repositories/ids';
 import { canCreateGoal } from '../../src/domain/subscription';
 import { useUnsavedBack } from '../../src/app-data/useUnsavedBack';
 import { useDialog } from '../../src/app-data/useDialog';
+import { askToSignIn } from '../../src/app-data/askToSignIn';
 import { createSingleFlight } from '../../src/app-data/singleFlight';
 import { longDate } from '../../src/app-data/pocketAdapter';
 import { takeOfferedSticker } from '../../src/app-data/stickerChoice';
@@ -87,9 +88,10 @@ export default function TogetherGoal() {
   const slots = parseSlotCount(count, 1, SHARED_SLOTS_MAX);
   const endValid = kind === 'tally' || endMode === 'none' || endDate !== undefined;
   const valid = name.trim().length > 0 && myName.trim().length > 0 && (kind === 'calendar' || slots.ok) && endValid;
-  const countError = kind !== 'tally' ? undefined
-    : !slots.ok ? slots.reason
-    : countRejected ? t('validation.slotCountMax', SHARED_SLOTS_MAX) : undefined;
+  const countRejectedMessage = kind === 'tally' && countRejected ? t('validation.slotCountMax', SHARED_SLOTS_MAX) : undefined;
+  const countError = kind !== 'tally' ? undefined : !slots.ok ? slots.reason : countRejectedMessage;
+  // 서버가 거절한 칸은 위쪽에 있어 [만들고 초대하기]를 누른 자리에서 안 보일 수 있다. 버튼 바로 위에도 한 번 더 보인다
+  const rejectedMessage = nameRejected.goal ?? nameRejected.mine ?? countRejectedMessage;
 
   async function submit() {
     // 누른 때부터 끝날 때까지 뒤로 가기를 막는다(useUnsavedBack busy)
@@ -113,7 +115,7 @@ export default function TogetherGoal() {
     if (!d) {
       setSubmitting(false);
       // 이 화면에 있는 동안 로그인이 풀렸다. 로그인하고 돌아오면 입력이 그대로 있다
-      if ((await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
+      await askToSignIn(ask, router);
       return;
     }
     const goalName = name.trim();
@@ -157,6 +159,7 @@ export default function TogetherGoal() {
         kind={kind} onChangeKind={setKind}
         count={count} onChangeCount={(next) => { setCount(next); setCountRejected(false); }}
         countMax={SHARED_SLOTS_MAX}
+        countError={countError}
         end={{ mode: endMode, onChangeMode: setEndMode, date: endDate, onChangeDate: setEndDate, today, todayLabel: longDate(today) }}
         myName={myName}
         onChangeMyName={(next) => { setMyName(next); setNameRejected({}); if (next !== '') setMyNameTouched(true); }}
@@ -166,7 +169,7 @@ export default function TogetherGoal() {
         sticker={sticker}
         onChooseSticker={() => router.push({ pathname: '/stickers/choose', params: { current: sticker } })}
         maxFriends={SHARED_MAX_MEMBERS - 1}
-        error={countError}
+        error={rejectedMessage}
         submitDisabled={!valid || submitting}
         submitting={submitting}
         onSubmit={() => { void submitOnce(submit); }}

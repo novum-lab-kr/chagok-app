@@ -517,6 +517,7 @@ export const en: Messages = {
   'together.leaveHintEach': 'Your board stays as your own goal and goes away for your friends.',
   'together.leaveHintOne': 'Your stickers come off the board and this goal leaves your list.',
   'together.deleteOwner': "Your board and records will be deleted and you'll leave this goal. Your friends' boards stay.",
+  'together.deleteOwnerOne': "Your stickers on the board and their records will be deleted and you'll leave this goal. Spots your friends placed stay.",
   'together.loginTitle': 'Please sign in',
   'together.loginDescription': 'Sign in to fill a goal with friends. Your goals and records stay as they are.',
   'together.tryLater': 'Please try again in a moment',
@@ -527,7 +528,9 @@ export const en: Messages = {
   'together.slotTakenDescription': 'A friend placed here first, so your sticker was taken off. Try another spot.',
   'together.offlineOne': 'You can place once you are connected',
   'together.offlineOneDescription': 'Everyone shares this board, so stickers go on only while you are online.',
-  'together.placedBy': (name: string) => `${name} placed this`,
+  'together.placedBy': (others: readonly string[], withMe: boolean = false) => (others.length === 0
+    ? 'You placed this'
+    : `${withMe ? 'You and ' : ''}${others.join(', ')} placed this`),
   'together.placedAt': (when: string) => `Placed ${when}`,
   'together.placeToo': 'Place mine too',
   'together.myRecord': 'See my record',
@@ -542,6 +545,7 @@ export const en: Messages = {
   'together.rotateConfirm': 'Make new',
   'together.goneDescription': 'The goal was deleted or you left it.',
   'together.ownerOnlyDescription': 'The person who made it has changed. We show the updated settings.',
+  'together.personGone': "That person isn't in this goal.",
   'invite.title': 'Invitation',
   'invite.invitedBy': (owner: string) => `Invited by ${owner}`,
   'invite.slotsInvitedBy': (count: number, owner: string) => `${count} ${count === 1 ? 'slot' : 'slots'}, invited by ${owner}`,

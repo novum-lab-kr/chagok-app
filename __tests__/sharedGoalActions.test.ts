@@ -297,6 +297,14 @@ describe('kick', () => {
     expect((await listMembers(goalId)).map((m) => m.userId)).toEqual(['me']);
   });
 
+  it('그 사람이 이미 나갔으면(not_member) 끝난 것으로 보고 던지지 않는다. 기기에서도 빠진다', async () => {
+    const { server, d } = setup();
+    const goalId = await owned(server);
+    server.as(FRIEND).leave(goalId);
+    await expect(kick(d, goalId, FRIEND)).resolves.toBeUndefined();
+    expect((await listMembers(goalId)).map((m) => m.userId)).toEqual(['me']);
+  });
+
   it('그사이 목표에서 나왔으면(not_member) 다시 받아 기기에서 지운다', async () => {
     const { server, d } = setup();
     const goalId = await owned(server);

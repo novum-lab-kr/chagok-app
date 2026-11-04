@@ -10,6 +10,16 @@ export function subscribeLocalChange(fn: () => void): () => void {
   return () => { listeners.delete(fn); };
 }
 
+/** 신호를 ms 동안 모아 마지막 신호 뒤 한 번 부른다. 화면이 기기 DB를 다시 읽을 때 쓴다(커밋 전 신호를 건너뛰게). */
+export function subscribeLocalChangeGathered(fn: () => void, ms = 1000): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const off = subscribeLocalChange(() => {
+    clearTimeout(timer);
+    timer = setTimeout(fn, ms);
+  });
+  return () => { off(); clearTimeout(timer); };
+}
+
 export function notifyLocalChange(): void {
   for (const fn of listeners) fn();
 }

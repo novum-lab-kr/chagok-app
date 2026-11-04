@@ -502,6 +502,7 @@ export const ko = {
   'together.leaveHintEach': '내 판은 내 목표로 남고, 친구들에게서는 사라져요.',
   'together.leaveHintOne': '판에 붙인 내 스티커가 떨어지고, 이 목표가 내 목록에서 사라져요.',
   'together.deleteOwner': '내 판과 기록이 지워지고 이 목표에서 나가요. 친구들의 판은 그대로예요.',
+  'together.deleteOwnerOne': '판에 붙인 내 스티커와 기록이 지워지고 이 목표에서 나가요. 친구들이 붙인 칸은 그대로예요.',
   'together.loginTitle': '로그인이 필요해요',
   'together.loginDescription': '친구와 함께하려면 로그인해 주세요. 지금 목표와 기록은 그대로예요.',
   'together.tryLater': '잠시 뒤 다시 해 주세요',
@@ -512,7 +513,10 @@ export const ko = {
   'together.slotTakenDescription': '친구가 먼저 붙인 칸이라 내 스티커는 떼었어요. 다른 칸에 붙여 주세요.',
   'together.offlineOne': '연결되면 붙일 수 있어요',
   'together.offlineOneDescription': '한 판은 다 같이 쓰는 판이라 인터넷에 연결된 때에만 붙여요.',
-  'together.placedBy': (name: string) => `${name}님이 붙였어요`,
+  /** 붙인 사람(나 빼고)과 나도 붙였는지. 나에게는 「님」을 붙이지 않는다 */
+  'together.placedBy': (others: readonly string[], withMe: boolean = false) => (others.length === 0
+    ? '내가 붙였어요'
+    : `${withMe ? '나와 ' : ''}${others.map((name) => `${name}님`).join(', ')}이 붙였어요`),
   'together.placedAt': (when: string) => `${when}에 붙였어요`,
   'together.placeToo': '나도 붙이기',
   'together.myRecord': '내 기록 보기',
@@ -527,6 +531,7 @@ export const ko = {
   'together.rotateConfirm': '새로 만들기',
   'together.goneDescription': '목표가 지워졌거나 이 목표에서 나왔어요.',
   'together.ownerOnlyDescription': '그사이 만든 사람이 바뀌었어요. 바뀐 설정을 다시 보여 드려요.',
+  'together.personGone': '그 사람은 이 목표에 없어요.',
   'invite.title': '함께하기 초대',
   'invite.invitedBy': (owner: string) => `${owner}님이 초대했어요`,
   'invite.slotsInvitedBy': (count: number, owner: string) => `${count}칸, ${owner}님이 초대했어요`,

@@ -3,7 +3,7 @@ import {afterEach,beforeEach,describe,expect,it} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {PixelFrame,PixelText} from './components';
 import {BoardDetailScreen,type TallyBoardView} from './board-screens';
-import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,TogetherGoalScreen,TogetherSettingsScreen,togetherDialogs,type FriendBoard} from './together-screens';
+import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,TogetherGoalScreen,TogetherSettingsScreen,deleteOwnerDescription,togetherDialogs,type FriendBoard} from './together-screens';
 import {SlotsField} from './board-screens';
 import {t} from '../i18n';
 afterEach(cleanup);
@@ -57,7 +57,8 @@ describe('친구 판 줄 (PRD 4.15)',()=>{
   it('줄을 누르면 그 친구 판을 연다',()=>{
     const opened:string[]=[];
     render(<FriendBoardList friends={[{id:'jiwoo',name:'지우',sticker:'basic.flower',board:tally(3)}]} onOpen={id=>opened.push(id)} onResend={()=>{}}/>);
-    expect(screen.getByText('함께하는 사람 1')).toBeTruthy();
+    // 목표 설정의 n/6과 같이 나를 포함한 수
+    expect(screen.getByText('함께하는 사람 2')).toBeTruthy();
     fireEvent.click(screen.getByLabelText('지우의 판'));
     expect(opened).toEqual(['jiwoo']);
   });
@@ -138,9 +139,18 @@ describe('한 판 창 문구 (판 화면이 띄운다)',()=>{
     expect(togetherDialogs.slotTaken).toMatchObject({title:'이미 누가 붙였어요',primaryLabel:'확인'});
   });
   it('하루 창: 붙일 수 있으면 [나도 붙이기], 나도 붙였으면 [내 기록 보기], 아니면 [확인]만',()=>{
-    expect(togetherDialogs.placedOnDay('지우',['지우 9월 3일 7:00'],'placeToo')).toMatchObject({primaryLabel:'나도 붙이기',secondaryLabel:'닫기'});
-    expect(togetherDialogs.placedOnDay('지우, 소라(나)',[],'myRecord')).toMatchObject({primaryLabel:'내 기록 보기',secondaryLabel:'닫기'});
-    expect(togetherDialogs.placedOnDay('지우',[],null)).not.toHaveProperty('secondaryLabel');
+    expect(togetherDialogs.placedOnDay([{name:'지우'}],['지우 9월 3일 7:00'],'placeToo')).toMatchObject({primaryLabel:'나도 붙이기',secondaryLabel:'닫기'});
+    expect(togetherDialogs.placedOnDay([{name:'지우'},{name:'소라',me:true}],[],'myRecord')).toMatchObject({primaryLabel:'내 기록 보기',secondaryLabel:'닫기'});
+    expect(togetherDialogs.placedOnDay([{name:'지우'}],[],null)).not.toHaveProperty('secondaryLabel');
+  });
+  it('붙인 사람 제목: 다른 사람은 「이름님」, 내가 있으면 앞에 「나와 」, 나만이면 「내가 붙였어요」',()=>{
+    const title=(people:{name:string;me?:boolean}[])=>togetherDialogs.placedOnDay(people,[],null).title;
+    expect(title([{name:'Bob'}])).toBe('Bob님이 붙였어요');
+    expect(title([{name:'Ann',me:true},{name:'Bob'}])).toBe('나와 Bob님이 붙였어요');
+    expect(title([{name:'Bob'},{name:'Ann',me:true}])).toBe('나와 Bob님이 붙였어요');
+    expect(title([{name:'Bob'},{name:'Cid'}])).toBe('Bob님, Cid님이 붙였어요');
+    expect(title([{name:'Ann',me:true}])).toBe('내가 붙였어요');
+    expect(togetherDialogs.placedBy('지우','9월 3일 7:00').title).toBe('지우님이 붙였어요');
   });
 });
 
@@ -179,6 +189,24 @@ describe('함께 목표 설정 (PRD 4.15)',()=>{
     render(<TogetherSettingsScreen {...base} role="member" ownerName=""/>);
     expect(screen.getByText('만든 사람만 바꿀 수 있어요.')).toBeTruthy();
     expect(document.body.textContent).not.toContain('()');
+  });
+  it('onReport가 없으면(다른 사람이 없음) [불쾌한 이름 신고하기] 줄이 없다',()=>{
+    render(<TogetherSettingsScreen {...base} role="owner" onDelete={noop} onReport={undefined}/>);
+    expect(screen.queryByText('불쾌한 이름 신고하기')).toBeNull();
+    expect(screen.getByText('사람 차단하기')).toBeTruthy();
+  });
+  it('saveError는 [저장하기] 바로 위에 보인다(위쪽 칸의 오류가 화면 밖이어도)',()=>{
+    render(<TogetherSettingsScreen {...base} role="member" stickerError="이 목표에서 이미 누가 쓰는 스티커예요." saveError="이 목표에서 이미 누가 쓰는 스티커예요."/>);
+    const msg='이 목표에서 이미 누가 쓰는 스티커예요.';
+    const text=document.body.textContent??'';
+    const save=text.indexOf(t('goal.save'));
+    expect(text.slice(save-msg.length,save)).toBe(msg);
+  });
+  it('삭제 안내는 방식마다 다르다: 한 판은 내가 붙인 칸이 지워지고 친구들이 붙인 칸은 그대로',()=>{
+    expect(deleteOwnerDescription('each')).toBe('내 판과 기록이 지워지고 이 목표에서 나가요. 친구들의 판은 그대로예요.');
+    render(<TogetherSettingsScreen {...base} mode="one" role="owner" onChangeGoalName={noop} onDelete={noop}/>);
+    expect(screen.getByText(deleteOwnerDescription('one'))).toBeTruthy();
+    expect(screen.queryByText(/친구들의 판은/)).toBeNull();
   });
   it('완성한 판은 함께하는 사람에게도 안내가 없다',()=>{
     render(<TogetherSettingsScreen {...base} role="member" completed/>);
@@ -274,5 +302,13 @@ describe('칸 수 직접 입력 상한 (함께 목표 1000칸)',()=>{
     render(<TogetherGoalScreen mode="each" onChangeMode={noop} name="걷기" onChangeName={noop} kind="tally" onChangeKind={noop} count="15" onChangeCount={noop} countMax={1000}
       myName="은주" onChangeMyName={noop} sticker="basic.shoe" onChooseSticker={noop} maxFriends={5} onSubmit={noop} onBack={noop}/>);
     expect(customInput().maxLength).toBe(5);
+  });
+  it('친구와 함께 만들기의 칸 수 오류는 칸 수 칸 바로 아래(내 이름 위)에 보인다',()=>{
+    render(<TogetherGoalScreen mode="each" onChangeMode={noop} name="걷기" onChangeName={noop} kind="tally" onChangeKind={noop} count="1001" onChangeCount={noop} countMax={1000}
+      countError="1000칸까지 만들 수 있어요." myName="은주" onChangeMyName={noop} sticker="basic.shoe" onChooseSticker={noop} maxFriends={5} onSubmit={noop} onBack={noop}/>);
+    const text=document.body.textContent??'';
+    expect(text.indexOf('1000칸까지 만들 수 있어요.')).toBeGreaterThan(text.indexOf('직접 입력'));
+    expect(text.indexOf('1000칸까지 만들 수 있어요.')).toBeLessThan(text.indexOf('내 이름'));
+    expect(screen.getAllByText('1000칸까지 만들 수 있어요.')).toHaveLength(1);
   });
 });

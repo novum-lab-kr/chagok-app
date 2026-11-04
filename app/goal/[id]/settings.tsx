@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { track } from '../../../src/analytics';
 import {
-  BlockPickSheet, CompletedGoalSettingsScreen, GoalSettingsScreen, LoadingScreen, MemberList, TogetherSettingsScreen, boardDialogs,
+  BlockPickSheet, CompletedGoalSettingsScreen, GoalSettingsScreen, LoadingScreen, MemberList, TogetherSettingsScreen, boardDialogs, deleteOwnerDescription,
   togetherDialogs, useLoadRetry,
 } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
@@ -13,6 +13,7 @@ import { boardLabel, deleteDescription, longDate, periodLabel } from '../../../s
 import { DEFAULT_COLOR_STICKER, normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
+import { askToSignIn } from '../../../src/app-data/askToSignIn';
 import { useUnsavedBack } from '../../../src/app-data/useUnsavedBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
@@ -255,6 +256,7 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
 
   if (!members) return <LoadingScreen failed={failed} kind="records" onRetry={retry} onHome={goHome} />;
 
+  const mode = goal.mode === 'each' ? 'each' : 'one';
   const rows = memberRowsOf(goal, members);
   const others = rows.filter((r) => !r.me);
   const ownerName = rows.find((r) => r.owner)?.name ?? '';
@@ -262,13 +264,14 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
   /** 세션이 없으면 로그인을 권하고 null. [로그인]은 다시 로그인으로 열어 돌아오면 입력이 그대로다. */
   async function signedIn() {
     const d = await actionDeps().catch(() => null);
-    if (!d && (await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
+    if (!d) await askToSignIn(ask, router);
     return d;
   }
 
   /**
    * 동작이 실패했을 때. 볼 수 없는 목표면 창 뒤 목표 탭으로, 만든 사람이 바뀌었으면 창 뒤 다시 읽는다(동작이 이미 다시 받았다).
    * 계정이 바뀌었으면 이 화면은 다른 계정 것이라 문구 없이 닫는다. 그 밖은 title과 낱말 문구.
+   * 사람 대상(about='person')의 not_member는 목표가 남아 있으면 「그 사람이 이 목표에 없다」로 알린다.
    */
   async function notify(error: unknown, title: string, about: 'goal' | 'person' = 'goal') {
     if (error instanceof AccountChanged) { router.dismissTo('/'); return; }
@@ -277,11 +280,8 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
     const gone = word === 'not_shared' || (word === 'not_member' && (about === 'goal' || !(await loadTogether(goalId).catch(() => null))));
     if (gone) { await ask(togetherDialogs.gone); router.dismissTo('/'); return; }
     if (word === 'not_owner') { await ask(togetherDialogs.ownerOnly); await read(true).catch(() => {}); return; }
-    if (word === 'needs_login') {
-      if ((await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
-      return;
-    }
-    await ask(togetherDialogs.failed(title, errorMessage(word)));
+    if (word === 'needs_login') { await askToSignIn(ask, router); return; }
+    await ask(togetherDialogs.failed(title, word === 'not_member' ? t('together.personGone') : errorMessage(word)));
   }
 
   /** 저장 실패 낱말이 칸 하나의 문제면 그 칸 아래에 보이고 true. */
@@ -343,7 +343,8 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
   async function kickOut(userId: string) {
     const person = others.find((r) => r.id === userId);
     if (!person || !(await confirm(togetherDialogs.kick(person.name)))) return;
-    if (await act(t('failed.kick'), (d) => kick(d, goalId, userId))) await read(false);
+    // 그 사람이 이미 나갔으면 kick이 끝난 것으로 본다(창 없이 다시 읽기만)
+    if (await act(t('failed.kick'), (d) => kick(d, goalId, userId), 'person')) await read(false);
   }
 
   async function invite() {
@@ -373,14 +374,14 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
   }
 
   async function leaveGoal() {
-    if (!(await confirm(togetherDialogs.leave(goal.mode === 'each' ? 'each' : 'one')))) return;
+    if (!(await confirm(togetherDialogs.leave(mode)))) return;
     // 각자 판이면 내 판이 새 혼자 목표로 목록에 있다
     if (await act(t('failed.leave'), async (d) => { await leave(d, goalId); })) router.dismissTo('/');
   }
 
-  /** 만든 사람 [삭제하기]: 나가고 옮겨 온 내 판까지 지운다. 친구들의 판은 그대로다. */
+  /** 만든 사람 [삭제하기]: 나가고 옮겨 온 내 판까지 지운다(각자 판). 한 판은 내가 붙인 칸이 지워진다. 친구들 것은 그대로다. */
   async function remove() {
-    if (!(await confirm(boardDialogs.deleteGoal(t('together.deleteOwner'))))) return;
+    if (!(await confirm(boardDialogs.deleteGoal(deleteOwnerDescription(mode))))) return;
     let photos: string[] = [];
     if (!(await act(t('failed.deleteGoal'), async (d) => { photos = await removeAsOwner(d, goalId); }))) return;
     track('goal_delete');
@@ -394,7 +395,7 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
     <>
       <TogetherSettingsScreen
         role={owner ? 'owner' : 'member'}
-        mode={goal.mode === 'each' ? 'each' : 'one'}
+        mode={mode}
         goalName={editsGoal ? name : goal.name}
         onChangeGoalName={editsGoal ? (next) => { setName(next); setRejected({}); } : undefined}
         goalNameMaxLength={GOAL_NAME_MAX}
@@ -415,13 +416,14 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
         sticker={sticker}
         onChooseSticker={() => router.push({ pathname: '/stickers/choose', params: { current: sticker } })}
         stickerError={rejected.sticker}
+        saveError={rejected.goal ?? rejected.slots ?? rejected.mine ?? rejected.sticker}
         members={<MemberList members={rows} max={SHARED_MAX_MEMBERS}
           onKick={owner ? (userId) => { void actOnce(() => kickOut(userId)); } : undefined}
           onInvite={owner ? () => { void actOnce(invite); } : undefined}
           onRotate={owner ? () => { void actOnce(rotate); } : undefined} />}
         saveDisabled={busy || myName.trim() === '' || (editsGoal && name.trim() === '') || (slots !== null && !slots.ok)}
         onSave={() => { void actOnce(save); }}
-        onReport={() => { setPick('report'); setSheetOpen(true); }}
+        onReport={others.length > 0 ? () => { setPick('report'); setSheetOpen(true); } : undefined}
         onBlock={() => { setPick('block'); setSheetOpen(true); }}
         onLeave={() => { void actOnce(leaveGoal); }}
         onDelete={owner ? () => { void actOnce(remove); } : undefined}

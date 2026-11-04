@@ -442,11 +442,14 @@ function CompactTally({board,sticker,label,rows,readOnly}:{board:TallyBoardView;
   const numbers=Array.from({length:Math.max(0,last-first+1)},(_,i)=>first+i);
   return <View style={{gap:8}}>
     <CompactBoardHeader label={label} range={t('board.pageRange',first,last,board.total)} onPrev={prev} onNext={after} prevLabel={t('board.previousPage')} nextLabel={t('board.nextPage')}/>
-    <View {...swipe.panHandlers} onLayout={event=>setMeasured(Math.round(event.nativeEvent.layout.width))} style={{flexDirection:'row',flexWrap:'wrap',gap:COMPACT_GAP,justifyContent:'center'}}>
+    {/* 칸 묶음은 가운데, 줄 안의 칸은 왼쪽부터(마지막 줄도 혼자 판처럼 왼쪽 정렬) */}
+    <View {...swipe.panHandlers} onLayout={event=>setMeasured(Math.round(event.nativeEvent.layout.width))} style={{alignItems:'center'}}>
+      <View style={{width:columns*cell+(columns-1)*COMPACT_GAP,flexDirection:'row',flexWrap:'wrap',gap:COMPACT_GAP}}>
       {numbers.map(n=>{const filled=board.filled[n];return <View key={n} style={{width:cell,height:cell}}>
         {board.hidden?.has(n)?<HiddenCell/>:<GoalStickerCell number={n} sticker={filled??sticker} state={filled?'filled':!readOnly&&n===next?'available':'empty'} enabled={!readOnly}
           hasRecord={board.recorded?.has(n)??false} popIn={n===justPlaced} onPress={()=>board.onPress(n)} onOpenRecord={filled&&!readOnly?()=>board.onOpenRecord(n):undefined}/>}
       </View>;})}
+      </View>
     </View>
   </View>;
 }

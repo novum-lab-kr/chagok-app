@@ -1,6 +1,6 @@
 import { Share } from 'react-native';
 import { t } from '../i18n';
-import { deleteGoal } from '../repositories/goalRepository';
+import { deleteGoal, getGoal } from '../repositories/goalRepository';
 import { listGoalsWith } from '../repositories/memberRepository';
 import { getSupabase } from '../sync/supabaseClient';
 import { syncDepsFor } from '../sync/appSync';
@@ -37,7 +37,7 @@ export async function actionDeps(): Promise<ActionDeps | null> {
   const supabase = getSupabase();
   const userId = await signedInUserId();
   if (!supabase || !userId) return null;
-  const currentUserId = async () => (await supabase.auth.getSession()).data.session?.user.id ?? null;
+  const currentUserId = signedInUserId;
   return {
     // supabase-js의 표 읽기 모양이 SharedClient의 최소 모양보다 크다. 쓰는 부분(select, eq, is, maybeSingle)만 맞으면 된다
     client: supabase as unknown as SharedClient,
@@ -123,9 +123,17 @@ export async function removeAsOwner(d: ActionDeps, goalId: string): Promise<stri
   return soloGoalId ? deleteGoal(soloGoalId) : [];
 }
 
-/** 내보낸다(만든 사람만). */
+/**
+ * 내보낸다(만든 사람만). 그 사람이 이미 나갔으면(not_member인데 다시 받은 뒤에도 목표가 기기에 있다) 바란 결과라 끝난 것으로 본다.
+ * 목표가 기기에서 사라졌으면 내가 나온 것이라 그대로 던진다.
+ */
 export async function kick(d: ActionDeps, goalId: string, userId: string): Promise<void> {
-  await onGoal(d, goalId, () => kickMember(d.client, goalId, userId));
+  try {
+    await onGoal(d, goalId, () => kickMember(d.client, goalId, userId));
+  } catch (error) {
+    if (error instanceof SharedGoalError && error.word === 'not_member' && (await getGoal(goalId))) return;
+    throw error;
+  }
   await tryRefetch(d, goalId);
 }
 

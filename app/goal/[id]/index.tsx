@@ -17,6 +17,7 @@ import { actionDeps, shareInvite } from '../../../src/app-data/sharedGoalActions
 import { normalizeStickerId } from '../../../src/stickers/stickerIds';
 import { removeManagedRecordPhoto } from '../../../src/app-data/recordPhotos';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
+import { askToSignIn } from '../../../src/app-data/askToSignIn';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { checkPlaceGate } from '../../../src/app-data/placeGate';
@@ -30,7 +31,7 @@ import { getFlag, setFlag } from '../../../src/repositories/appSettingsRepositor
 import { countAllStickers, placeSticker, removeSticker } from '../../../src/repositories/stickerRepository';
 import { markCompletionSeen, reopenGoal } from '../../../src/repositories/goalRepository';
 import { ME } from '../../../src/repositories/ids';
-import { subscribeLocalChange } from '../../../src/sync/changes';
+import { subscribeLocalChangeGathered } from '../../../src/sync/changes';
 import { requestSync } from '../../../src/sync/syncGate';
 import { subscribeWidgetApplied } from '../../../src/widgets/applied';
 import { placementFromWidgetLink } from '../../../src/widgets/linkPlacement';
@@ -39,8 +40,6 @@ import { t } from '../../../src/i18n';
 
 /** [완성] 스티커 붙이기 모션이 끝나고 다이얼로그를 띄우기까지 */
 const COMPLETION_DIALOG_DELAY_MS = 700;
-/** 함께 목표: 기기가 바뀌었다는 신호는 커밋 전에 올 수 있어 모았다가 다시 읽는다(목표 탭과 같음, changes.ts) */
-const LOCAL_CHANGE_DELAY_MS = 1000;
 
 /**
  * 판 상세 (PRD 4.1–4.7). 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기.
@@ -119,16 +118,12 @@ export default function Board() {
   useFocusEffect(useCallback(() => {
     if (!shared) return;
     requestSync();
-    let changed: ReturnType<typeof setTimeout> | undefined;
-    const offChange = subscribeLocalChange(() => {
-      clearTimeout(changed);
-      changed = setTimeout(() => { void latestReload.current().catch(() => {}); }, LOCAL_CHANGE_DELAY_MS);
-    });
+    const offChange = subscribeLocalChangeGathered(() => { void latestReload.current().catch(() => {}); });
     const offTaken = watchSlotTaken(id, () => {
       void latestReload.current().catch(() => {});
       void ask(togetherDialogs.slotTaken);
     });
-    return () => { offChange(); offTaken(); clearTimeout(changed); };
+    return () => { offChange(); offTaken(); };
   }, [shared, id, ask]));
 
   const goal = data?.goal;
@@ -312,7 +307,7 @@ export default function Board() {
     const names = day.people.map((p) => (p.me ? t('together.meName', p.name) : p.name));
     const action = canPlaceOn(goal, stickers, { date }, new Date()) ? 'placeToo' : day.mine ? 'myRecord' : null;
     void actOnce(async () => {
-      const choice = await ask(togetherDialogs.placedOnDay(names.join(', '), day.people.map((p, i) => `${names[i]} ${placedWhen(p.at)}`), action));
+      const choice = await ask(togetherDialogs.placedOnDay(day.people, day.people.map((p, i) => `${names[i]} ${placedWhen(p.at)}`), action));
       if (choice !== 'primary') return;
       if (action === 'placeToo') await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
       else if (action === 'myRecord') openRecord(day.mine);
@@ -324,10 +319,7 @@ export default function Board() {
     if (!goal) return;
     void actOnce(async () => {
       const d = await actionDeps().catch(() => null);
-      if (!d) {
-        if ((await ask(togetherDialogs.login)) === 'primary') router.push({ pathname: '/account/connect', params: { from: 'relogin' } });
-        return;
-      }
+      if (!d) { await askToSignIn(ask, router); return; }
       await saveOrNotify(ask, t('failed.shareLink'), async () => {
         // 코드가 없으면 그사이 만든 사람이 바뀌었다. 다시 받아 버튼이 사라지게 한다
         if (!(await shareInvite(d, goal.id, goal.name))) requestSync();
