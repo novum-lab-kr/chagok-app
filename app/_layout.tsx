@@ -227,6 +227,7 @@ function RootLayout() {
           <Stack.Screen name="subscription" options={{ presentation: 'modal' }} />
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="send-info" />
+          <Stack.Screen name="settings/blocked" />
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />
           <Stack.Screen name="account/connect" />

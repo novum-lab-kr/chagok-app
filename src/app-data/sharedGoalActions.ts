@@ -8,9 +8,9 @@ import { AccountChanged, refetchGoal } from '../sync/pull';
 import { pushOnce } from '../sync/push';
 import type { PushDeps } from '../sync/push';
 import {
-  blockUser, createSharedGoal, inviteUrl, kickMember, leaveSharedGoal, readInviteCode, rotateInvite, SharedGoalError,
-  unblockUser, updateMember, updateSharedGoal,
-  type SharedClient,
+  blockUser, createSharedGoal, inviteUrl, kickMember, leaveSharedGoal, myBlocks, readInviteCode, reportGoal, rotateInvite,
+  SharedGoalError, unblockUser, updateMember, updateSharedGoal,
+  type ErrorWord, type SharedClient,
 } from '../sync/sharedGoals';
 import { requestSync } from '../sync/syncGate';
 import { removeManagedRecordPhoto } from './recordPhotos';
@@ -61,6 +61,22 @@ async function tryRefetch(d: ActionDeps, goalId: string): Promise<boolean> {
   }
 }
 
+/** 기기가 서버보다 늦었다는 낱말: 만든 사람이 바뀌었거나(not_owner), 목표가 지워졌거나 내가 나왔다(not_member, not_shared). */
+const STALE: readonly ErrorWord[] = ['not_owner', 'not_member', 'not_shared'];
+
+/**
+ * 그 목표에 대한 호출. 서버가 기기와 다르다고 답하면 다시 받아 맞춘 뒤 같은 오류를 던진다 —
+ * 화면이 창을 띄운 뒤 다시 읽으면 바뀐 역할이 보이고, 나온 목표는 기기에서 지워져 있다.
+ */
+async function onGoal<T>(d: ActionDeps, goalId: string, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof SharedGoalError && STALE.includes(error.word)) await tryRefetch(d, goalId);
+    throw error;
+  }
+}
+
 /** 함께 목표를 만든다. onDevice가 false면 기기에는 다음 회차가 내 멤버 행을 보고 받아 온다. */
 export async function createAndFetch(
   d: ActionDeps, input: Parameters<typeof createSharedGoal>[1],
@@ -71,15 +87,15 @@ export async function createAndFetch(
 
 /** 내 이름과 스티커를 바꾼다. */
 export async function saveMine(d: ActionDeps, goalId: string, displayName: string, stickerId: string): Promise<void> {
-  await updateMember(d.client, goalId, displayName, stickerId);
+  await onGoal(d, goalId, () => updateMember(d.client, goalId, displayName, stickerId));
   await tryRefetch(d, goalId);
 }
 
-/** 목표 이름과 칸 수, 종료일을 바꾼다(만든 사람만). */
+/** 목표 이름과 칸 수, 종료일을 바꾼다(만든 사람만). 종료일은 만들 때만 정하므로 화면은 지금 값을 그대로 넘긴다. */
 export async function saveGoal(
   d: ActionDeps, goalId: string, v: Parameters<typeof updateSharedGoal>[2],
 ): Promise<void> {
-  await updateSharedGoal(d.client, goalId, v);
+  await onGoal(d, goalId, () => updateSharedGoal(d.client, goalId, v));
   await tryRefetch(d, goalId);
 }
 
@@ -95,7 +111,7 @@ export async function leave(d: ActionDeps, goalId: string): Promise<{ soloGoalId
     // 계정이 바뀐 AccountChanged는 그대로 던진다 — 화면이 이미 다른 계정 것이라 문구 없이 닫는다.
     throw error instanceof AccountChanged ? error : new SharedGoalError('network');
   }
-  const { soloGoalId } = await leaveSharedGoal(d.client, goalId);
+  const { soloGoalId } = await onGoal(d, goalId, () => leaveSharedGoal(d.client, goalId));
   await tryRefetch(d, goalId);
   if (soloGoalId) await tryRefetch(d, soloGoalId);
   return { soloGoalId };
@@ -109,7 +125,7 @@ export async function removeAsOwner(d: ActionDeps, goalId: string): Promise<stri
 
 /** 내보낸다(만든 사람만). */
 export async function kick(d: ActionDeps, goalId: string, userId: string): Promise<void> {
-  await kickMember(d.client, goalId, userId);
+  await onGoal(d, goalId, () => kickMember(d.client, goalId, userId));
   await tryRefetch(d, goalId);
 }
 
@@ -125,6 +141,16 @@ export async function unblock(d: ActionDeps, userId: string): Promise<void> {
   requestSync();
 }
 
+/** 내가 차단한 사람(최근 차단 먼저). 이름은 차단할 때 남긴 이름이라 없을 수 있다. */
+export async function blockedPeople(d: ActionDeps): Promise<{ userId: string; displayName: string | null }[]> {
+  return myBlocks(d.client);
+}
+
+/** 불쾌한 이름 신고. 대상이 null이면 목표 이름이다. 신고는 기기에 남기지 않는다. */
+export async function reportName(d: ActionDeps, goalId: string, targetUserId: string | null): Promise<void> {
+  await onGoal(d, goalId, () => reportGoal(d.client, goalId, targetUserId, 'name'));
+}
+
 /** 초대 링크를 OS 공유 창으로 보낸다. 쓰는 코드가 없으면 false. 코드는 기기에 두지 않고 그때그때 읽는다. */
 export async function shareInvite(d: ActionDeps, goalId: string, goalName: string): Promise<boolean> {
   const code = await readInviteCode(d.client, goalId);
@@ -135,7 +161,7 @@ export async function shareInvite(d: ActionDeps, goalId: string, goalName: strin
 
 /** 초대 링크를 새로 만들고(옛 링크는 꺼진다) 바로 공유 창을 연다. */
 export async function rotateAndShare(d: ActionDeps, goalId: string, goalName: string): Promise<void> {
-  await shareLink(goalName, await rotateInvite(d.client, goalId));
+  await shareLink(goalName, await onGoal(d, goalId, () => rotateInvite(d.client, goalId)));
 }
 
 const shareLink = (goalName: string, code: string) => shareInviteUrl(goalName, inviteUrl(code));

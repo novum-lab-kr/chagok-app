@@ -9,7 +9,9 @@ import { SharedGoalError } from '../src/sync/sharedGoals';
 import { subscribeResume } from '../src/sync/syncGate';
 import type { SharedClient } from '../src/sync/sharedGoals';
 import { getSupabase } from '../src/sync/supabaseClient';
-import { actionDeps, block, createAndFetch, leave, removeAsOwner, shareInvite, unblock } from '../src/app-data/sharedGoalActions';
+import {
+  actionDeps, block, blockedPeople, createAndFetch, kick, leave, removeAsOwner, reportName, saveGoal, shareInvite, unblock,
+} from '../src/app-data/sharedGoalActions';
 import type { ActionDeps } from '../src/app-data/sharedGoalActions';
 import { FakePhotos, FakeServer } from './support/fakeServer';
 import { withFreshDb } from './support/setup';
@@ -24,8 +26,15 @@ withFreshDb();
 const FRIEND = 'friend-id';
 
 /** FakeServer의 시험 도우미를 서버 RPC처럼 부르게 한다. 도우미가 던진 낱말은 P0001 오류로 바꾼다 */
-function rpcOf(server: FakeServer, log: string[]): SharedClient {
+function rpcOf(server: FakeServer, log: string[], args: Record<string, Record<string, unknown>> = {}): SharedClient {
   const handlers: Record<string, (a: Record<string, string>) => unknown> = {
+    update_goal: (a) => {
+      server.updateGoal(a.p_goal_id, { name: a.p_name, totalSlots: a.p_total_slots as unknown as number | null, endDate: a.p_end_date });
+      return null;
+    },
+    kick_member: (a) => { server.kick(a.p_goal_id, a.p_user_id); return null; },
+    report: () => null,
+    my_blocks: () => [{ user_id: FRIEND, display_name: '지우', created_at: 1 }],
     leave_goal: (a) => ({ solo_goal_id: server.leave(a.p_goal_id) }),
     block_user: (a) => { server.block(a.p_user_id); return null; },
     unblock_user: (a) => { server.unblock(a.p_user_id); return null; },
@@ -35,10 +44,11 @@ function rpcOf(server: FakeServer, log: string[]): SharedClient {
     },
   };
   return {
-    rpc: async (fn: string, args?: Record<string, unknown>) => {
+    rpc: async (fn: string, a?: Record<string, unknown>) => {
       log.push(fn);
+      args[fn] = a ?? {};
       try {
-        return { data: handlers[fn](args as Record<string, string>), error: null };
+        return { data: handlers[fn](a as Record<string, string>), error: null };
       } catch (error) {
         return { data: null, error: { code: 'P0001', message: (error as Error).message } };
       }
@@ -50,13 +60,14 @@ function rpcOf(server: FakeServer, log: string[]): SharedClient {
 function setup() {
   const server = new FakeServer();
   const log: string[] = [];
+  const args: Record<string, Record<string, unknown>> = {};
   const d: ActionDeps = {
-    client: rpcOf(server, log),
+    client: rpcOf(server, log, args),
     userId: server.userId,
     currentUserId: async () => server.userId,
     sync: { server, photos: new FakePhotos(), deviceId: 'phone', userId: server.userId, currentUserId: async () => server.userId },
   };
-  return { server, log, d };
+  return { server, log, args, d };
 }
 
 /** 친구가 만든 함께 목표에 내가 들어가 기기로 받아 둔다 */
@@ -246,5 +257,67 @@ describe('actionDeps', () => {
     expect(await actionDeps()).toBeNull();
     (getSupabase as jest.Mock).mockReturnValueOnce({ auth: { getSession: async () => ({ data: { session: null } }) } });
     expect(await actionDeps()).toBeNull();
+  });
+});
+
+/** 내가 만든 함께 목표에 친구가 들어와 기기로 받아 둔다 */
+async function owned(server: FakeServer, opts: { endDate?: string } = {}) {
+  const { goalId, inviteCode } = server.createSharedGoal({ mode: 'each', displayName: '은주', stickerId: 'basic.clover' });
+  if (opts.endDate) server.updateGoal(goalId, { name: '같이 걷기', totalSlots: 10, endDate: opts.endDate });
+  server.as(FRIEND).join(inviteCode, '지우', 'basic.star');
+  await refetchGoal({ server, userId: server.userId }, goalId);
+  return goalId;
+}
+
+describe('saveGoal', () => {
+  it('update_goal에 지금 종료일을 그대로 보내고, 다시 받아 기기 이름이 바뀐다', async () => {
+    const { server, args, d } = setup();
+    const goalId = await owned(server, { endDate: '2026-12-31' });
+    const goal = (await getGoal(goalId))!;
+    await saveGoal(d, goalId, { name: '12월 걷기', totalSlots: 20, endDate: goal.endDate });
+    expect(args.update_goal).toEqual({ p_goal_id: goalId, p_name: '12월 걷기', p_total_slots: 20, p_end_date: '2026-12-31' });
+    expect((await getGoal(goalId))!.name).toBe('12월 걷기');
+  });
+
+  it('not_owner면 SharedGoalError(not_owner)를 던지고 그 목표를 다시 받는다(바뀐 이름이 기기에 온다)', async () => {
+    const { server, d } = setup();
+    const { friend, goalId } = await joined(server, 'each');
+    friend.updateGoal(goalId, { name: '친구가 바꾼 이름', totalSlots: 10, endDate: null });
+    await expect(saveGoal(d, goalId, { name: '내가 바꾼 이름', totalSlots: 10, endDate: null })).rejects.toEqual(new SharedGoalError('not_owner'));
+    expect((await getGoal(goalId))!.name).toBe('친구가 바꾼 이름');
+  });
+});
+
+describe('kick', () => {
+  it('내보낸 뒤 그 사람 멤버 행이 기기에 없다', async () => {
+    const { server, d } = setup();
+    const goalId = await owned(server);
+    expect((await listMembers(goalId)).map((m) => m.userId)).toEqual(['me', FRIEND]);
+    await kick(d, goalId, FRIEND);
+    expect((await listMembers(goalId)).map((m) => m.userId)).toEqual(['me']);
+  });
+
+  it('그사이 목표에서 나왔으면(not_member) 다시 받아 기기에서 지운다', async () => {
+    const { server, d } = setup();
+    const goalId = await owned(server);
+    server.leave(goalId);
+    await expect(kick(d, goalId, FRIEND)).rejects.toMatchObject({ word: 'not_member' });
+    expect(await getGoal(goalId)).toBeNull();
+  });
+});
+
+describe('reportName, blockedPeople', () => {
+  it('목표 이름 신고는 대상 없이 사유 name으로 보낸다', async () => {
+    const { server, args, d } = setup();
+    const goalId = await owned(server);
+    await reportName(d, goalId, null);
+    expect(args.report).toEqual({ p_goal_id: goalId, p_target_user_id: null, p_reason: 'name' });
+    await reportName(d, goalId, FRIEND);
+    expect(args.report).toMatchObject({ p_target_user_id: FRIEND });
+  });
+
+  it('차단한 사람은 서버 목록 그대로(이름만)', async () => {
+    const { d } = setup();
+    expect(await blockedPeople(d)).toEqual([{ userId: FRIEND, displayName: '지우', createdAt: 1 }]);
   });
 });

@@ -392,6 +392,13 @@ export class FakeServer implements SyncServer {
     this.removeMember(goalId, userId, 'kicked');
   }
 
+  /** update_goal (만든 사람만): 이름, 칸 수, 종료일 */
+  updateGoal(goalId: string, v: { name: string; totalSlots: number | null; endDate: string | null }): void {
+    const g = this.sharedGoalFor(goalId);
+    if (g.owner_id !== this.userId) throw new Error('not_owner');
+    Object.assign(g, { name: v.name, total_slots: v.totalSlots, end_date: v.endDate, updated_at: this.world.now(), seq: this.world.next() });
+  }
+
   /** block_user: 내가 만든 함께 목표에서는 내보내고, touch_member_rows로 내 멤버 행과 그 목표 행의 순번을 바꾼다 */
   block(userId: string): void {
     const uid = this.userId;

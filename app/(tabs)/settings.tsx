@@ -35,6 +35,8 @@ export default function AppSettings() {
   const nav = useRouter();
   const supabase = getSupabase();
   const [status, setStatus] = useState<AccountBackupStatus | null>(null);
+  /** 세션이 있다. 「차단한 사람」 줄은 로그인해 있을 때만 보인다(차단은 서버에 있다) */
+  const [signedIn, setSignedIn] = useState(false);
   const [logout, setLogout] = useState<Logout>(null);
   /** 「구매」 블럭 (PRD 4.9·4.12). 키가 있으면 RevenueCat, 없으면 개발용 대역 (src/purchases). */
   const [adFree, setAdFree] = useState(false);
@@ -85,6 +87,7 @@ export default function AppSettings() {
     // 오프라인에서 토큰을 갱신하지 못한 것은 로그인이 풀린 게 아니다 — 연결한 계정 그대로 보여준다
     const sessionUser = error ? await getSetting('accountUserId') : data.session?.user.id ?? null;
     const s = await readAccountState(sessionUser);
+    setSignedIn(s.state !== 'local' && s.state !== 'needsLogin');
     setStatus(s.state === 'synced'
       ? { state: 'synced', provider: s.provider, backedUpAt: formatBackedUpAt(s.lastSyncedAt, new Date()) }
       : s);
@@ -166,6 +169,7 @@ export default function AppSettings() {
               onLogin={() => nav.push({ pathname: '/account/connect', params: { from: 'relogin' } })}
               onLogout={() => setLogout({ step: 'confirm' })}
               onDelete={() => nav.push('/account/delete')}
+              onBlocked={signedIn ? () => nav.push('/settings/blocked') : undefined}
             />
           )
         ) : (

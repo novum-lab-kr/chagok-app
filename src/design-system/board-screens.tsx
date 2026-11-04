@@ -522,20 +522,25 @@ function StickerField({value,onChoose,targetRef}:{value:StickerId;onChoose:()=>v
 
 // ── 목표 설정 ──────────────────────────────────────────────────────
 export type PeriodFieldView={startDate:string;endDate?:string;lastPlacedDate?:string;picking:boolean;onPick:()=>void;onChange:(date:string)=>void;onClear:()=>void};
+/** 목표 설정의 칸 수 칸. 늘리기만 된다(min = 지금 칸 수). 혼자 목표와 함께 목표(만든 사람)가 같이 쓴다. */
+export type SlotsFieldView={current:number;value:string;onChange:(value:string)=>void;error?:string};
+export function SlotsField({current,value,onChange,error}:SlotsFieldView) {
+  return <View style={{gap:8}}>
+    <SlotCountPicker value={value} onChange={onChange} min={current}/>
+    <Small>{t('goal.slotsNow',current)}</Small>
+    {error&&<View accessible accessibilityRole="alert"><Small>{error}</Small></View>}
+  </View>;
+}
 /**
  * 진행 중인 목표의 설정: 이름 → 기본 스티커 → 기간(달력판) → [이 판 완성하기](종료일 없는 달력판) → 저장 → [삭제하기] (PRD 4.4).
  * 판 종류·칸 수 변경은 미확정이라 두지 않는다.
  */
-export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,sticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;sticker:StickerId;/** [바꾸기]: 「기본 스티커」 화면을 연다 */onChooseSticker:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:{current:number;value:string;onChange:(value:string)=>void;error?:string};/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
+export function GoalSettingsScreen({name,onChangeName,nameMaxLength,nameError,sticker,onChooseSticker,period,slots,onComplete,onSave,saveDisabled=false,onDelete,onBack}:{name:string;onChangeName:(name:string)=>void;nameMaxLength?:number;/** 이름 칸 아래 검사 문구 */nameError?:string;sticker:StickerId;/** [바꾸기]: 「기본 스티커」 화면을 연다 */onChooseSticker:()=>void;/** 달력판만 */period?:PeriodFieldView;/** 진행 중인 적립판만. 늘리기만 된다 (2026-09-30) */slots?:SlotsFieldView;/** 종료일 없는 달력판만. 누르면 호스트가 확인을 받는다 */onComplete?:()=>void;onSave:()=>void;saveDisabled?:boolean;onDelete:()=>void;onBack:()=>void}) {
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
     <PixelInput label={t('goal.name')} value={name} onChangeText={onChangeName} maxLength={nameMaxLength} error={nameError}/>
     <StickerField value={sticker} onChoose={onChooseSticker}/>
     {period&&<PeriodField {...period}/>}
-    {slots&&<View style={{gap:8}}>
-      <SlotCountPicker value={slots.value} onChange={slots.onChange} min={slots.current}/>
-      <Small>{t('goal.slotsNow',slots.current)}</Small>
-      {slots.error&&<View accessible accessibilityRole="alert"><Small>{slots.error}</Small></View>}
-    </View>}
+    {slots&&<SlotsField {...slots}/>}
     {onComplete&&<View style={{gap:8}}><Small>{t('goal.completeHint')}</Small><PixelButton label={t('goal.completeBoard')} variant="secondary" icon={<ActionSymbol name="check" size={16}/>} onPress={onComplete}/></View>}
     <PixelButton label={t('goal.save')} disabled={saveDisabled} onPress={onSave}/>
     <DeleteSection onDelete={onDelete}/>

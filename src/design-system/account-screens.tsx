@@ -160,7 +160,8 @@ const backupLines=()=>({
 });
 /** provider 는 저장값이라 그대로 두고 보여 줄 때만 옮긴다. '개발'은 개발 빌드에서만 보인다. */
 const providerLabel=(provider:AccountProvider)=>provider==='카카오'?t('account.providerKakao'):provider;
-export function AccountBackupPanel({status,onConnect,onLogin,onLogout,onDelete}:{status:AccountBackupStatus;onConnect:()=>void;onLogin:()=>void;onLogout:()=>void;onDelete:()=>void}) {
+/** onBlocked: 로그인해 있을 때만 호스트가 넘긴다. 패널 맨 아래 「차단한 사람」 줄(새 조립). */
+export function AccountBackupPanel({status,onConnect,onLogin,onLogout,onDelete,onBlocked}:{status:AccountBackupStatus;onConnect:()=>void;onLogin:()=>void;onLogout:()=>void;onDelete:()=>void;onBlocked?:()=>void}) {
   if(status.state==='local') return <PixelPanel title={t('account.backupTitle')} contentStyle={{gap:0}}>
     <View style={{paddingVertical:12}}><PixelText>{t('account.deviceOnly')}</PixelText></View>
     <View style={{paddingBottom:12}}><PixelButton label={t('account.connectAction')} onPress={onConnect}/></View>
@@ -173,6 +174,7 @@ export function AccountBackupPanel({status,onConnect,onLogin,onLogout,onDelete}:
     {lines&&<><Rule/><View style={{paddingVertical:12,gap:4}}><PixelText>{lines[0]}</PixelText>{lines[1]&&<Caption>{lines[1]}</Caption>}</View></>}
     {status.state==='needsLogin'&&<View style={{paddingBottom:12}}><PixelButton label={t('account.login')} onPress={onLogin}/></View>}
     {status.state!=='restoring'&&<><Rule/><SettingRow label={t('account.logout')} onPress={onLogout}/><Rule/><SettingRow label={t('account.delete')} onPress={onDelete}/></>}
+    {onBlocked&&<><Rule/><SettingRow label={t('block.title')} onPress={onBlocked}/></>}
   </PixelPanel>;
 }
 

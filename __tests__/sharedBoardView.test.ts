@@ -1,4 +1,4 @@
-import { canPlaceOn, friendBoardsOf, memberBadgesOf, oneBoardCells, oneBoardDay, oneBoardShown, placeCompletes, placedWhen } from '../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, memberRowsOf, oneBoardCells, oneBoardDay, oneBoardShown, placeCompletes, placedWhen } from '../src/app-data/sharedBoardView';
 import type { Goal, GoalMember, Sticker } from '../src/domain/types';
 
 const at = (day: number, hour = 9, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
@@ -34,6 +34,16 @@ describe('friendBoardsOf (각자 판 친구 줄)', () => {
   it('스티커를 고르지 않은 사람은 목표 기본 스티커로 그린다', () => {
     const [first] = friendBoardsOf(goal({ mode: 'each' }), [{ ...MEMBERS[0], stickerId: null }], {}, '2026-09-29');
     expect(first.sticker).toBe('basic.shoe');
+  });
+});
+
+describe('memberRowsOf (목표 설정 함께하는 사람)', () => {
+  it('들어온 순서 그대로, 나는 me, 만든 사람은 owner', () => {
+    expect(memberRowsOf(goal(), MEMBERS)).toEqual([
+      { id: 'u-owner', name: '은주', sticker: 'basic.shoe', owner: true },
+      { id: 'me', name: '소라', sticker: 'basic.sprout', me: true },
+      { id: 'u-min', name: '민', sticker: 'basic.cat' },
+    ]);
   });
 });
 

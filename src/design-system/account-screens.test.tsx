@@ -112,6 +112,15 @@ describe('계정과 백업 칸',()=>{
     expect(screen.getByText('백업하려면 로그인이 필요해요')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'로그인'}));expect(handlers.onLogin).toHaveBeenCalled();
   });
+  it('onBlocked가 있으면 패널 맨 아래 「차단한 사람」 줄, 없으면 없다',()=>{
+    const blocked=vi.fn();
+    const {rerender}=render(<AccountBackupPanel status={{state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'}} {...handlers} onBlocked={blocked}/>);
+    const rows=screen.getAllByRole('button').map(b=>b.textContent);
+    expect(rows[rows.length-1]).toContain('차단한 사람');
+    fireEvent.click(screen.getByRole('button',{name:'차단한 사람'}));expect(blocked).toHaveBeenCalled();
+    rerender(<AccountBackupPanel status={{state:'synced',provider:'Apple',backedUpAt:'오늘 9:20'}} {...handlers}/>);
+    expect(screen.queryByRole('button',{name:'차단한 사람'})).toBeNull();
+  });
   it('복원 중에는 로그아웃·계정 삭제를 숨긴다',()=>{
     render(<AccountBackupPanel status={{state:'restoring',provider:'Apple'}} {...handlers}/>);
     expect(screen.queryByRole('button',{name:'로그아웃'})).toBeNull();

@@ -171,6 +171,28 @@
       }
     },
     {
+      "id": "slots-together--settings-max",
+      "data": {
+        "label": "칸 수, 함께 목표 설정, 1000칸 넘음",
+        "tags": [
+          "「1000칸까지 만들 수 있어요.」",
+          "1000칸까지",
+          "PRD 4.15",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-together-settings-max",
+            "label": "1000칸까지 만들 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "slots",
+          "together"
+        ]
+      }
+    },
+    {
       "id": "memo--full",
       "data": {
         "label": "메모 · 기록 · 500자",

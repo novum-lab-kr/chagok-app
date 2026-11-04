@@ -154,10 +154,12 @@ export const InviteClosed: Story = {name: '초대 문제 들어갈 수 없음', 
 // ── 목표 설정 ──────────────────────────────────────────────────────
 const OWNER_VIEW: readonly MemberRow[] = [{id: 'me', ...ME, me: true, owner: true}, ...FRIENDS.slice(0, 3)];
 const MEMBER_VIEW: readonly MemberRow[] = [{id: 'eunju', ...ME, owner: true}, {id: 'me', name: '소라', sticker: 'basic.sprout', me: true}, ...FRIENDS.slice(0, 2)];
+/** 앱과 같이 만든 사람에게는 칸 수 칸(적립판)과 [초대 링크 새로 만들기]가 있다 */
 function OwnerSettings() {
   return <TogetherSettingsScreen role="owner" mode="each" goalName={walk.name} onChangeGoalName={noop} goalNameMaxLength={GOAL_NAME_MAX} ownerName={ME.name}
+    slots={{current: 30, value: '30', onChange: noop}}
     myName={ME.name} onChangeMyName={noop} myNameMaxLength={MEMBER_NAME_MAX} sticker={ME.sticker} onChooseSticker={noop}
-    members={<MemberList members={OWNER_VIEW} max={MAX} onKick={noop} onInvite={noop}/>}
+    members={<MemberList members={OWNER_VIEW} max={MAX} onKick={noop} onInvite={noop} onRotate={noop}/>}
     onSave={noop} onReport={noop} onBlock={noop} onLeave={noop} onDelete={noop} onBack={noop}/>;
 }
 function MemberSettings() {
@@ -168,12 +170,40 @@ function MemberSettings() {
 }
 export const SettingsOwner: Story = {name: '목표 설정 만든 사람', render: () => <Stage auto><OwnerSettings/></Stage>};
 export const SettingsMember: Story = {name: '목표 설정 함께하는 사람', render: () => <Stage auto><MemberSettings/></Stage>};
+/** 새 조립(사용자 확인 전): 칸 수 칸은 혼자 목표 설정과 같은 SlotsField. 늘리기만 된다. 스크롤해 아래쪽을 본다 */
+export const SettingsOwnerSlots: Story = {name: '목표 설정 만든 사람 칸 수', render: () => <Stage><OwnerSettings/></Stage>};
+/** 앱(app/goal/[id]/settings.tsx)이 띄우는 창. 문구는 togetherDialogs 그대로 */
+function SettingsWith({member = false, dialog}: {member?: boolean; dialog: {title: string; description: string; primaryLabel: string; secondaryLabel?: string}}) {
+  return <Stage>{member ? <MemberSettings/> : <OwnerSettings/>}
+    <PixelDialogModal visible {...dialog} single={!dialog.secondaryLabel} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/></Stage>;
+}
+/** 새 문구(사용자 확인 전) */
+export const LeaveConfirm: Story = {name: '나가기 확인', render: () => <SettingsWith member dialog={togetherDialogs.leave('each')}/>};
+export const KickConfirm: Story = {name: '내보내기 확인', render: () => <SettingsWith dialog={togetherDialogs.kick('지우')}/>};
+export const RotateConfirm: Story = {name: '초대 링크 새로 만들기 확인', render: () => <SettingsWith dialog={togetherDialogs.rotate}/>};
+export const GoneDialog: Story = {name: '볼 수 없는 목표', render: () => <SettingsWith member dialog={togetherDialogs.gone}/>};
 
 // ── 차단 ─────────────────────────────────────────────────────────
 const PICK = [{id: 'eunju', ...ME}, ...FRIENDS.slice(0, 3)];
 export const BlockSheet: Story = {name: '차단 누구를 차단할까요', render: () => <Stage><MemberSettings/>
   <BlockPickSheet visible people={PICK} onPick={noop} onRequestClose={noop}/></Stage>};
+/** 새 조립(사용자 확인 전): 차단 고르기 시트에 제목을 바꾸고 「목표 이름」 줄을 사람 위에 둔다. 사유는 고정 낱말 name */
+export const ReportSheet: Story = {name: '신고 무엇을 신고할까요', render: () => <Stage><MemberSettings/>
+  <BlockPickSheet visible title={t('report.pickTitle')} extraRows={[{id: 'goal', label: t('report.goalName')}]} people={PICK} onPick={noop} onRequestClose={noop}/></Stage>};
+/** 새 문구(사용자 확인 전): 앱은 확인 창을 시트 위(overlay)에 띄운다 */
+export const ReportConfirm: Story = {name: '신고 확인', render: () => <Stage><MemberSettings/>
+  <BlockPickSheet visible title={t('report.pickTitle')} extraRows={[{id: 'goal', label: t('report.goalName')}]} people={PICK} onPick={noop} onRequestClose={noop}
+    overlay={<PixelDialogModal visible {...togetherDialogs.report(t('report.personName', '지우'))} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/>}/></Stage>};
+export const ReportDone: Story = {name: '신고했어요', render: () => <Stage><MemberSettings/>
+  <BlockPickSheet visible title={t('report.pickTitle')} extraRows={[{id: 'goal', label: t('report.goalName')}]} people={PICK} onPick={noop} onRequestClose={noop}
+    overlay={<PixelDialogModal visible single {...togetherDialogs.reportDone} onPrimary={noop} onRequestClose={noop}/>}/></Stage>};
+/** 앱은 차단 확인을 시트 위(overlay)에 띄운다 */
+export const BlockConfirmOnSheet: Story = {name: '차단 확인 시트 위', render: () => <Stage><MemberSettings/>
+  <BlockPickSheet visible people={PICK} onPick={noop} onRequestClose={noop}
+    overlay={<PixelDialogModal visible {...togetherDialogs.blockConfirm('지우')} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/>}/></Stage>};
 export const BlockConfirm: Story = {name: '차단 확인', render: () => <Stage><MemberSettings/>
   <PixelDialogModal visible {...togetherDialogs.blockConfirm('지우')} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/></Stage>};
 export const BlockedPeople: Story = {name: '차단한 사람', render: () => <Stage><BlockedPeopleScreen people={[{id: 'jiwoo', name: '지우', sticker: 'basic.flower', goalName: walk.name}]} onUnblock={noop} onBack={noop}/></Stage>};
+/** 지금 앱: 서버가 이름만 준다(아침 질문 2, C안). 스티커와 「…에서 차단」 줄이 없다 */
+export const BlockedPeopleNameOnly: Story = {name: '차단한 사람 이름만', render: () => <Stage><BlockedPeopleScreen people={[{id: 'jiwoo', name: '지우'}, {id: 'min', name: '민'}]} onUnblock={noop} onBack={noop}/></Stage>};
 export const BlockedPeopleEmpty: Story = {name: '차단한 사람 없음', render: () => <Stage><BlockedPeopleScreen people={[]} onUnblock={noop} onBack={noop}/></Stage>};

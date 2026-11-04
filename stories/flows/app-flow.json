@@ -563,6 +563,10 @@
             "label": "계정 연결됨"
           },
           {
+            "id": "screens-account-backup--settings-blocked-row",
+            "label": "차단한 사람 줄"
+          },
+          {
             "id": "screens-account-backup--settings-states",
             "label": "백업 상태별"
           },
@@ -1160,6 +1164,26 @@
           {
             "id": "screens-함께-목표--settings-member",
             "label": "함께하는 사람"
+          },
+          {
+            "id": "screens-함께-목표--settings-owner-slots",
+            "label": "만든 사람 칸 수"
+          },
+          {
+            "id": "screens-함께-목표--leave-confirm",
+            "label": "나가기 확인"
+          },
+          {
+            "id": "screens-함께-목표--kick-confirm",
+            "label": "내보내기 확인"
+          },
+          {
+            "id": "screens-함께-목표--rotate-confirm",
+            "label": "초대 링크 새로 만들기 확인"
+          },
+          {
+            "id": "screens-함께-목표--gone-dialog",
+            "label": "볼 수 없는 목표"
           }
         ],
         "scenarios": [
@@ -1183,6 +1207,37 @@
           {
             "id": "screens-함께-목표--block-confirm",
             "label": "차단 확인"
+          },
+          {
+            "id": "screens-함께-목표--block-confirm-on-sheet",
+            "label": "차단 확인 시트 위"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "report-pick",
+      "data": {
+        "label": "신고 고르기",
+        "tags": [
+          "PRD 4.15",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--report-sheet",
+            "label": "무엇을 신고할까요"
+          },
+          {
+            "id": "screens-함께-목표--report-confirm",
+            "label": "신고 확인"
+          },
+          {
+            "id": "screens-함께-목표--report-done",
+            "label": "신고했어요"
           }
         ],
         "scenarios": [
@@ -1206,6 +1261,10 @@
           {
             "id": "screens-함께-목표--blocked-people-empty",
             "label": "없을 때"
+          },
+          {
+            "id": "screens-함께-목표--blocked-people-name-only",
+            "label": "이름만 (지금 앱)"
           }
         ],
         "scenarios": [
@@ -2321,7 +2380,18 @@
       "id": "together-settings-share-sheet",
       "source": "together-settings",
       "target": "share-sheet",
-      "label": "친구 초대하기, 링크 다시 보내기",
+      "label": "친구 초대하기, 초대 링크 새로 만들기",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "together-settings-report-pick",
+      "source": "together-settings",
+      "target": "report-pick",
+      "label": "불쾌한 이름 신고하기",
       "data": {
         "scenarios": [
           "together"
@@ -2340,10 +2410,10 @@
       }
     },
     {
-      "id": "together-settings-detail",
+      "id": "together-settings-list",
       "source": "together-settings",
-      "target": "detail",
-      "label": "이 목표에서 나가기 (각자 판은 내 목표로 남음)",
+      "target": "list",
+      "label": "이 목표에서 나가기, 삭제하기 (각자 판은 내 목표로 남음)",
       "data": {
         "scenarios": [
           "together"

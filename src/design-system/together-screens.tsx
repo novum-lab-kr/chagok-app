@@ -2,7 +2,7 @@ import React,{useState,type ReactNode} from 'react';
 import {Pressable,ScrollView,View} from 'react-native';
 import {DIALOG_MAX_WIDTH,FieldError,ModalHost,PixelBadge,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,useContentWidth} from './components';
 import {BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,OptionButtons,PixelBottomSheet,RetroScreen,ScreenHeader,SettingHint,SlotCountPicker,StickerSummary,type BoardKind} from './composition-controls';
-import {useSwipePages,type EndDateMode} from './board-screens';
+import {SlotsField,useSwipePages,type EndDateMode,type SlotsFieldView} from './board-screens';
 import {monthCells,calendarDateKey} from './calendar';
 import {Mascot,type MascotPose} from './mascot';
 import {StickerGlyph,type StickerId} from './sticker-glyphs';
@@ -266,8 +266,11 @@ export function InviteProblemScreen({problem,max,onHome,onBack}:{problem:InviteP
 
 // ── 목표 설정 ──────────────────────────────────────────────────────
 export type MemberRow={id:string;name:string;sticker:StickerId;me?:boolean;owner?:boolean};
-/** 목표 설정 「함께하는 사람 n/6」. onKick을 주면(만든 사람이 볼 때) 나 말고 모두에게 [내보내기]. */
-export function MemberList({members,max,onKick,onInvite}:{members:readonly MemberRow[];max:number;onKick?:(id:string)=>void;onInvite?:()=>void}) {
+/**
+ * 목표 설정 「함께하는 사람 n/6」. onKick을 주면(만든 사람이 볼 때) 나 말고 모두에게 [내보내기].
+ * onRotate(만든 사람만)는 [친구 초대하기] 아래 같은 모양의 [초대 링크 새로 만들기](새 조립).
+ */
+export function MemberList({members,max,onKick,onInvite,onRotate}:{members:readonly MemberRow[];max:number;onKick?:(id:string)=>void;onInvite?:()=>void;onRotate?:()=>void}) {
   return <PixelPanel title={t('together.peopleOf',members.length,max)}><View style={{gap:4,paddingTop:6}}>
     {members.map(member=><View key={member.id} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:44}}>
       <StickerGlyph id={member.sticker} size={24}/>
@@ -277,7 +280,10 @@ export function MemberList({members,max,onKick,onInvite}:{members:readonly Membe
         <PixelText variant="caption" style={[caption,{textDecorationLine:'underline'}]}>{t('together.kick')}</PixelText>
       </Pressable>}
     </View>)}
-    {onInvite&&<><View style={{height:8}}/><PixelButton label={t('together.inviteFriends')} variant="secondary" onPress={onInvite}/></>}
+    {(onInvite||onRotate)&&<View style={{gap:8,paddingTop:8}}>
+      {onInvite&&<PixelButton label={t('together.inviteFriends')} variant="secondary" onPress={onInvite}/>}
+      {onRotate&&<PixelButton label={t('together.rotate')} variant="secondary" onPress={onRotate}/>}
+    </View>}
   </View></PixelPanel>;
 }
 /** 「문제가 있을 때」: 신고, 차단, 나가기. 줄마다 누르면 무슨 일이 생기는지 한 줄씩 (App Store 심사 지침 1.2). */
@@ -289,21 +295,24 @@ function ProblemSection({mode,onReport,onBlock,onLeave}:{mode:TogetherMode;onRep
   </View></PixelPanel>;
 }
 /**
- * 함께 목표의 목표 설정. 만든 사람(owner)은 목표 이름을 고치고 [삭제하기]가 있다. 나머지 사람은 목표 이름 대신
+ * 함께 목표의 목표 설정. 만든 사람(owner)은 목표 이름과 칸 수(적립판, slots)를 고치고 [삭제하기]가 있다. 나머지 사람은 목표 이름 대신
  * 「목표 이름과 칸 수는 만든 사람이 바꿔요」. 모두 내 이름, 내 스티커, 함께하는 사람(members), 문제가 있을 때를 본다.
+ * 완성한 판은 만든 사람에게도 onChangeGoalName과 slots를 넘기지 않는다(이름과 칸 수 칸이 없다).
  */
-export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,ownerName,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,onReport,onBlock,onLeave,onDelete,onBack}:{
+export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,onReport,onBlock,onLeave,onDelete,onBack}:{
   role:'owner'|'member';mode:TogetherMode;
-  goalName:string;/** 만든 사람만 */onChangeGoalName?:(name:string)=>void;goalNameMaxLength?:number;goalNameError?:string;ownerName:string;
+  goalName:string;/** 만든 사람만 */onChangeGoalName?:(name:string)=>void;goalNameMaxLength?:number;goalNameError?:string;
+  /** 만든 사람의 진행 중인 적립판만. 늘리기만 된다(새 조립, GoalSettingsScreen과 같은 칸) */slots?:SlotsFieldView;ownerName:string;
   myName:string;onChangeMyName:(name:string)=>void;myNameMaxLength?:number;myNameError?:string;
   sticker:StickerId;onChooseSticker:()=>void;stickerError?:string;
   /** MemberList */members?:ReactNode;onSave:()=>void;saveDisabled?:boolean;
   onReport:()=>void;onBlock:()=>void;onLeave:()=>void;/** 만든 사람만 */onDelete?:()=>void;onBack:()=>void}) {
   const owner=role==='owner';
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
-    {owner&&onChangeGoalName
-      ?<PixelInput label={t('goal.name')} value={goalName} onChangeText={onChangeGoalName} maxLength={goalNameMaxLength} error={goalNameError}/>
+    {owner
+      ?onChangeGoalName&&<PixelInput label={t('goal.name')} value={goalName} onChangeText={onChangeGoalName} maxLength={goalNameMaxLength} error={goalNameError}/>
       :<PixelPanel title={goalName}><View style={{paddingTop:6}}><Small>{t('together.ownerEdits',ownerName)}</Small></View></PixelPanel>}
+    {owner&&slots&&<SlotsField {...slots}/>}
     <MemberFields name={myName} onChangeName={onChangeMyName} nameMaxLength={myNameMaxLength} nameError={myNameError} sticker={sticker} onChooseSticker={onChooseSticker} stickerError={stickerError}/>
     {members}
     <PixelButton label={t('goal.save')} disabled={saveDisabled} onPress={onSave}/>
@@ -313,26 +322,36 @@ export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goal
 }
 
 // ── 차단 ─────────────────────────────────────────────────────────
-/** 「누구를 차단할까요」 시트. 고르면 호스트가 togetherDialogs.blockConfirm으로 확인을 받는다(시트 위에 띄우려면 overlay). */
-export function BlockPickSheet({visible,people,onPick,onRequestClose,overlay}:{visible:boolean;people:readonly {id:string;name:string;sticker:StickerId}[];onPick:(id:string)=>void;onRequestClose:()=>void;overlay?:ReactNode}) {
-  return <PixelBottomSheet visible={visible} title={t('block.pickTitle')} onRequestClose={onRequestClose} overlay={overlay}>
-    <View>{people.map(person=><Pressable key={person.id} accessibilityRole="button" accessibilityLabel={person.name} onPress={()=>onPick(person.id)}
-      style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:48,borderBottomWidth:1,borderColor:ROW_LINE}}>
-      <StickerGlyph id={person.sticker} size={24}/><PixelText style={{flex:1}}>{person.name}</PixelText><PixelIcon name="chevron" size={14}/>
-    </Pressable>)}</View>
+function PickRow({label,sticker,onPress}:{label:string;sticker?:StickerId;onPress:()=>void}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+    style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:48,borderBottomWidth:1,borderColor:ROW_LINE}}>
+    {sticker&&<StickerGlyph id={sticker} size={24}/>}<PixelText style={{flex:1}}>{label}</PixelText><PixelIcon name="chevron" size={14}/>
+  </Pressable>;
+}
+/**
+ * 「누구를 차단할까요」 시트. 고르면 호스트가 togetherDialogs.blockConfirm으로 확인을 받는다(시트 위에 띄우려면 overlay).
+ * 신고 고르기는 같은 시트에 title과 사람 위 extraRows(「목표 이름」)를 넘긴다(새 조립). 고를 사람이 없으면 [닫기]만 보인다.
+ */
+export function BlockPickSheet({visible,title=t('block.pickTitle'),extraRows=[],people,onPick,onRequestClose,overlay}:{visible:boolean;title?:string;/** 사람 위에 두는 줄(스티커 없음) */extraRows?:readonly {id:string;label:string}[];people:readonly {id:string;name:string;sticker:StickerId}[];onPick:(id:string)=>void;onRequestClose:()=>void;overlay?:ReactNode}) {
+  return <PixelBottomSheet visible={visible} title={title} onRequestClose={onRequestClose} overlay={overlay}>
+    <View>
+      {extraRows.map(row=><PickRow key={row.id} label={row.label} onPress={()=>onPick(row.id)}/>)}
+      {people.map(person=><PickRow key={person.id} label={person.name} sticker={person.sticker} onPress={()=>onPick(person.id)}/>)}
+    </View>
     <PixelButton label={t('common.close')} variant="secondary" onPress={onRequestClose}/>
   </PixelBottomSheet>;
 }
-export type BlockedPerson={id:string;name:string;sticker:StickerId;/** 차단한 함께 목표 이름 */goalName:string};
-/** 앱 설정 「차단한 사람」과 [풀기]. */
+/** 이름은 차단할 때 남긴 이름이라 없을 수 있다. 스티커와 목표 이름은 서버가 아직 주지 않아 없으면 그리지 않는다. */
+export type BlockedPerson={id:string;name:string|null;sticker?:StickerId;/** 차단한 함께 목표 이름 */goalName?:string};
+/** 앱 설정 「차단한 사람」과 [풀기]. 이름이 없으면 이름 줄을 비우고 [풀기] 접근성 이름은 「풀기」만. */
 export function BlockedPeopleScreen({people,onUnblock,onBack}:{people:readonly BlockedPerson[];onUnblock:(id:string)=>void;onBack:()=>void}) {
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title={t('block.title')} onBack={onBack}/>}>
     <Small>{t('block.hint')}</Small>
     {people.length
       ?<PixelPanel><View>{people.map(person=><View key={person.id} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:56}}>
-        <StickerGlyph id={person.sticker} size={24}/>
-        <View style={{flex:1}}><PixelText>{person.name}</PixelText><Small>{t('block.where',person.goalName)}</Small></View>
-        <PixelButton label={t('block.unblock')} accessibilityLabel={t('block.unblockA11y',person.name)} variant="secondary" minHeight={40} onPress={()=>onUnblock(person.id)}/>
+        {person.sticker&&<StickerGlyph id={person.sticker} size={24}/>}
+        <View style={{flex:1}}><PixelText>{person.name??''}</PixelText>{person.goalName&&<Small>{t('block.where',person.goalName)}</Small>}</View>
+        <PixelButton label={t('block.unblock')} accessibilityLabel={person.name?t('block.unblockA11y',person.name):t('block.unblock')} variant="secondary" minHeight={40} onPress={()=>onUnblock(person.id)}/>
       </View>)}</View></PixelPanel>
       :<EmptyState title={t('block.empty')}/>}
   </RetroScreen>;
@@ -356,4 +375,19 @@ export const togetherDialogs={
   /** 한 판에서 내가 붙인 칸을 다른 사람이 먼저 붙였다(slot_taken). 칸은 이미 지워졌다. */
   get slotTaken(){return {title:t('together.slotTaken'),description:t('together.slotTakenDescription'),primaryLabel:t('common.ok')};},
   blockConfirm:(name:string)=>({title:t('block.confirmTitle',name),description:t('block.confirmDescription',name),secondaryLabel:t('common.cancel'),primaryLabel:t('block.confirm')}),
+  /** 함께 목표 동작이 실패했을 때. detail은 실패 낱말 문구(호스트가 errorMessage로 만든다). */
+  failed:(title:string,detail:string)=>({title,description:detail,primaryLabel:t('common.ok')}),
+  /** 목표 설정 [이 목표에서 나가기]. 설명은 방식마다 「문제가 있을 때」 줄과 같다. */
+  leave:(mode:TogetherMode)=>({title:t('together.leaveTitle'),description:mode==='each'?t('together.leaveHintEach'):t('together.leaveHintOne'),secondaryLabel:t('common.cancel'),primaryLabel:t('together.leaveConfirm')}),
+  /** 만든 사람이 [내보내기]. */
+  kick:(name:string)=>({title:t('together.kickTitle',name),description:t('together.kickDescription',name),secondaryLabel:t('common.cancel'),primaryLabel:t('together.kick')}),
+  /** 만든 사람이 [초대 링크 새로 만들기]. 확인하면 새 링크로 공유 창을 연다. */
+  get rotate(){return {title:t('together.rotateTitle'),description:t('together.rotateDescription'),secondaryLabel:t('common.cancel'),primaryLabel:t('together.rotateConfirm')};},
+  /** 신고 확인. target은 「목표 이름」 또는 「지우님의 이름」. */
+  report:(target:string)=>({title:t('report.confirmTitle',target),description:t('report.confirmDescription'),secondaryLabel:t('common.cancel'),primaryLabel:t('report.confirm')}),
+  get reportDone(){return {title:t('report.doneTitle'),description:t('report.doneDescription'),primaryLabel:t('common.ok')};},
+  /** 목표가 지워졌거나 내가 나왔다(not_member, not_shared). 확인하면 목표 탭으로. */
+  get gone(){return {title:t('together.goneTitle'),description:t('together.goneDescription'),primaryLabel:t('common.ok')};},
+  /** 그사이 만든 사람이 바뀌었다(not_owner). 확인하면 화면을 다시 읽는다. */
+  get ownerOnly(){return {title:t('together.ownerOnly'),description:t('together.ownerOnlyDescription'),primaryLabel:t('common.ok')};},
 };

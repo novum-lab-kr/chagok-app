@@ -1,4 +1,4 @@
-import type { FriendBoardItem, MemberBadge, StickerId } from '../design-system';
+import type { FriendBoardItem, MemberBadge, MemberRow, StickerId } from '../design-system';
 import { canPlace, completesBoard, isDateEnabled, stickerDate } from '../domain/board';
 import type { PlaceTarget } from '../domain/board';
 import { localDateKey } from '../domain/dates';
@@ -31,6 +31,14 @@ export function friendBoardsOf(goal: Goal, members: readonly GoalMember[], frien
         : { kind: 'calendar', today, start: localDateKey(m.joinedAt ?? goal.createdAt), dates: new Set(stickers.map(stickerDate)) },
     };
   });
+}
+
+/** 목표 설정 「함께하는 사람」 줄. 들어온 순서 그대로, 나는 「(나)」, 만든 사람은 배지. */
+export function memberRowsOf(goal: Goal, members: readonly GoalMember[]): MemberRow[] {
+  return members.map((m) => ({
+    id: m.userId, name: nameOf(m), sticker: stickerOf(m, goal.defaultStickerId),
+    ...(m.isMe ? { me: true } : {}), ...(m.role === 'owner' ? { owner: true } : {}),
+  }));
 }
 
 /** 한 판 위 사람 줄. 나는 「나」 배지. */

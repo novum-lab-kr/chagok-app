@@ -22,7 +22,7 @@ const grid: Record<string, [row: number, col: number]> = {
   'stickers-tab': [5, 2], 'sticker-chooser': [5, 3], pack: [5, 4], subscription: [5, 5], 'store-pay': [5, 6], 'rewarded-ad': [5, 7],
   // 6 함께 목표 (PRD 4.15)
   'together-sheet': [6, 2], 'together-new': [6, 3], 'share-sheet': [6, 4], 'invite-login': [6, 5], 'invite-join': [6, 6], 'invite-problem': [6, 7],
-  'together-board': [6, 8], 'one-board': [6, 9], 'friend-board': [6, 10], 'show-board': [6, 11], 'together-settings': [6, 12], 'block-pick': [6, 13], blocked: [6, 14],
+  'together-board': [6, 8], 'one-board': [6, 9], 'friend-board': [6, 10], 'show-board': [6, 11], 'together-settings': [6, 12], 'block-pick': [6, 13], 'report-pick': [6, 14], blocked: [6, 15],
 };
 
 export const appFlow = {
