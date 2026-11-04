@@ -3,8 +3,8 @@
 import Foundation
 
 enum Complication {
-  /** 워치 앱과 컴플리케이션이 함께 쓰는 저장소 */
-  static let appGroup = "group.com.novumlab.chagok.watch"
+  /** 워치 앱과 컴플리케이션이 함께 쓰는 저장소. 「group.」 + 워치 앱 ID라 개발 앱(…dev.watch)은 따로 쓴다 (targets/watch/expo-target.config.js) */
+  static let appGroup = "group." + (Bundle.main.bundleIdentifier ?? "com.novumlab.chagok.watch")
   static let textKey = "complicationText"
   static let imageFile = "complication-chagok.png"
 

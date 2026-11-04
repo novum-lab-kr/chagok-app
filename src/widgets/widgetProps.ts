@@ -15,6 +15,8 @@ type Shared = {
   mascotYet: string; mascotDone: string; mascotFull: string; mascotSleepy: string; bubbles: WidgetArt['bubbles']; requests: WidgetRequest[];
   /** 위젯 프로세스에는 사전이 없어 앱이 지금 언어의 문구를 넘긴다 */
   labels: { firstGoal: string; firstCalendar: string; firstTally: string; makeGoal: string };
+  /** 위젯 링크의 scheme. 개발 앱은 chagok-dev라 앱이 넘긴다(app.config.js). 없으면 chagok */
+  scheme?: string;
 };
 export type GoalWidgetProps = Shared & { goals: Record<string, GoalCard> };
 export type MonthWidgetProps = Shared & { goals: Record<string, MonthCard> };

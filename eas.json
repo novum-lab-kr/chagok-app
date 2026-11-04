@@ -8,7 +8,10 @@
     "development": {
       "node": "24.18.0",
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "development"
+      }
     },
     "development-simulator": {
       "extends": "development",

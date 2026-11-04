@@ -47,8 +47,22 @@ npx expo run:android --no-bundler   # 첫 Gradle 빌드 약 8분
 바꿨을 때만. JS·화면 코드는 Metro 리로드로 충분하다.
 
 ```sh
-npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은 방식
+npm run prebuild:dev && npx expo run:ios --no-bundler   # 개발 앱으로 만든다. Android는 APP_VARIANT=development npx expo prebuild --clean --platform android
 ```
+
+**개발 앱과 출시 앱 (2026-11-04~)** — 이 맥과 EAS `development`에서 만드는 개발 빌드는 출시 앱과 다른 앱이다. 한 폰에 둘 다 깔리고 기록도 따로다. `app.config.js`가 `APP_VARIANT=development`일 때만 바꾼다.
+
+| | 출시 앱 | 개발 앱 |
+| --- | --- | --- |
+| 홈 화면 이름 | 차곡차곡 / Chagok | 차곡 개발 / Chagok Dev, 아이콘 아래 DEV 띠 (`assets/icon-dev.png`) |
+| 번들 ID | `com.novumlab.chagok` (위젯 `.ExpoWidgetsTarget`, 워치 `.watch`, 컴플리케이션 `.watch.widgets`) | 같은 자리에 `com.novumlab.chagok.dev` |
+| 앱 그룹 | `group.com.novumlab.chagok`, `group.com.novumlab.chagok.watch` | `.dev`가 붙는다 |
+| scheme | `chagok` (위젯 링크도 앱이 넘긴다) | `chagok-dev` |
+| Google iOS 클라이언트 | `…jmu9re3f…` | `…dh9esjca…` (Cloud 클라이언트 「chagok iOS dev」) |
+| 카카오 네이티브 앱 키 | `eee7d607…` (Default Native AppKey) | `09334c77…` (Dev Native AppKey, 키 하나에 iOS 번들 ID 하나라 따로 만듦) |
+
+- **`APP_VARIANT` 없이 prebuild하면 출시 앱 ID로 만들어진다.** 폰에 깔면 App Store 앱을 덮어쓰고, 개발 서버의 Apple 로그인도 실패한다(아래 「Apple 로그인」). 이 맥에서는 `npm run prebuild:dev`, Metro는 `npm run start:dev`로 띄운다.
+- 개발 서버 Supabase의 로그인 허용 목록(Apple Client IDs, Google, 카카오 Client ID)에는 두 앱 값이 모두 있다. 운영 서버에는 출시 앱 값만 둔다.
 
 **알아 둘 것**
 
@@ -70,8 +84,8 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 - 빌드: `npx eas-cli@latest build --profile development --platform ios`. 전역 `eas`(16.17.4)는 오래돼서 Apple 로그인 단계가
   「iTunes service key is empty」로 실패한다. Apple 로그인·인증서 질문이 대화형이라 **사용자의 터미널 앱에서** 돌린다(Claude의 `!`로는 안 된다).
 - 기기는 EAS에 등록돼 있고 배포 인증서도 있다. 네이티브 쪽(`app.json`·플러그인·네이티브 라이브러리)을 바꿨을 때만 다시 빌드한다.
-- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AJ7LJPM82M -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. TestFlight 앱을 덮어쓰고 데이터는 남는다.
-- 실행: Mac에서 `npx expo start --dev-client --port 8081`. 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8081`로 연다.
+- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. 먼저 `npm run prebuild:dev`로 개발 앱 프로젝트를 만든다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `SENTRY_DISABLE_AUTO_UPLOAD=true xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AJ7LJPM82M -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. 개발 앱(2026-11-04~)은 App Store나 TestFlight 앱과 따로 깔린다.
+- 실행: Mac에서 `npm run start:dev`(개발 앱 scheme으로 8081에 띄운다). 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8081`로 연다.
   JS·위젯 레이아웃 변경은 Metro 리로드로 폰에 반영된다.
 - worktree에서 Metro를 띄우면 `.env.local`을 링크하고, 다른 worktree에서 띄웠던 직후라면 `--clear`를 붙인다
   ([PITFALLS](PITFALLS.md)).
@@ -302,8 +316,8 @@ npm run server:dev-user                            # 개발용 계정 만들기
 
 **Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
 
-- Supabase Authentication → Providers → Apple: Client IDs `com.novumlab.chagok`. Secret Key는 비운다(네이티브 전용).
-- 함수 secret 네 개: `APPLE_TEAM_ID`(AJ7LJPM82M), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`(com.novumlab.chagok), `APPLE_PRIVATE_KEY`(`.secrets/AuthKey_<KeyID>.p8` 내용). `supabase secrets list`로 확인.
+- Supabase Authentication → Providers → Apple: Client IDs는 개발 서버 `com.novumlab.chagok,com.novumlab.chagok.dev`, 운영 서버 `com.novumlab.chagok`. Secret Key는 비운다(네이티브 전용).
+- 함수 secret 네 개: `APPLE_TEAM_ID`(AJ7LJPM82M), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY`. `APPLE_CLIENT_ID`는 Apple과 코드를 바꿀 때 쓰는 앱 ID라 서버마다 다르다: 개발 서버 `com.novumlab.chagok.dev`(2026-11-04~, 개발 앱만 Apple 로그인이 된다), 운영 서버 `com.novumlab.chagok`. `APPLE_PRIVATE_KEY`는 `.secrets/AuthKey_<KeyID>.p8` 내용이다. `supabase secrets list`로 확인.
 - `.p8`은 Apple에서 한 번만 내려받을 수 있다. 잃어버리면 새 키를 만들고 두 secret을 바꾼다.
 - 실기기 빌드에는 Xcode Accounts에 팀 AJ7LJPM82M 계정이 있어야 한다(`app.json` `ios.appleTeamId`).
 

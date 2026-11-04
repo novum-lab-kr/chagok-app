@@ -16,12 +16,12 @@ description: 차곡차곡 앱을 iOS 시뮬레이터에 빌드하고 띄워 화�
 ## 2. 빌드와 실행
 
 - 네이티브(`app.json`, 플러그인, 네이티브 라이브러리)가 바뀌었거나 앱이 깔려 있지 않으면 빌드한다. `npx expo run:ios --device <UDID> --port 8081`을 백그라운드로 돌리고 로그를 파일로 남긴다.
-  - 이미 `ios/`가 있는 체크아웃이면 `npx expo prebuild --clean`부터 한다.
+  - 이미 `ios/`가 있는 체크아웃이면 `npm run prebuild:dev`부터 한다. 개발 앱(`com.novumlab.chagok.dev`)으로 만들어야 개발 서버 Apple 로그인이 되고 출시 앱과 섞이지 않는다(DEV-SETUP 「개발 앱과 출시 앱」). 이때 `run:ios`와 Metro 앞에도 `APP_VARIANT=development`를 붙인다.
   - **이 명령은 끝나지 않는다.** 빌드 뒤 Metro를 계속 띄워 두기 때문이다. 끝나기를 기다리지 말고 로그의 `Build Succeeded`, `iOS Bundled`를 확인한다.
 - JS만 바뀌었으면 빌드하지 않는다. `npx expo start --dev-client --port 8081`만 띄운다.
 - **다른 worktree에서 띄웠던 Metro 다음이면 `--clear`를 붙인다.** 안 붙이면 남의 캐시로 DB 파일을 못 찾아 「목표를 불러오지 못했어요」가 뜬다. 첫 번들이 2초 안에 끝나면 캐시를 쓴 것이다.
-- 앱 열기: `xcrun simctl openurl <UDID> "exp+chagok://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081"`. 다시 켜려면 먼저 `xcrun simctl terminate <UDID> com.novumlab.chagok`.
-- 처음 상태로 돌리기: 앱을 끄고 `xcrun simctl get_app_container <UDID> com.novumlab.chagok data`의 `Documents`, `Library` 안을 비운다. 로그인 세션도 여기 있어서 함께 지워진다. 그 뒤 첫 실행에는 Expo 개발 메뉴 안내가 뜬다.
+- 앱 열기: `xcrun simctl openurl <UDID> "exp+chagok://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081"`. 다시 켜려면 먼저 `xcrun simctl terminate <UDID> com.novumlab.chagok.dev`(`APP_VARIANT` 없이 만든 옛 빌드는 `.dev`가 없다).
+- 처음 상태로 돌리기: 앱을 끄고 `xcrun simctl get_app_container <UDID> com.novumlab.chagok.dev data`의 `Documents`, `Library` 안을 비운다. 로그인 세션도 여기 있어서 함께 지워진다. 그 뒤 첫 실행에는 Expo 개발 메뉴 안내가 뜬다.
 - Simulator 창이 까맣게 보이면 기기는 둔 채 창만 다시 연다: `osascript -e 'quit app "Simulator"'` 뒤 `open -a Simulator --args -CurrentDeviceUDID <UDID>`. 기기는 꺼지지 않는다.
 
 ## 3. 조작과 증거

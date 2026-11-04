@@ -3,7 +3,8 @@
 import SwiftUI
 import WidgetKit
 
-private let appGroup = "group.com.novumlab.chagok.watch"
+// 「group.」 + 워치 앱 ID. 이 확장의 ID는 워치 앱 ID + .widgets다 (targets/watch-widget/expo-target.config.js)
+private let appGroup = "group." + (Bundle.main.bundleIdentifier ?? "com.novumlab.chagok.watch.widgets").replacingOccurrences(of: ".widgets", with: "", options: [.anchored, .backwards])
 private let textKey = "complicationText"
 private let imageFile = "complication-chagok.png"
 

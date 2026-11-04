@@ -23,6 +23,7 @@ type Config = { background: string; goal?: string };
 
 const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
   'widget';
+  const link = props.scheme ?? 'chagok';
   // 바탕은 고른 색 그대로 — 홈 화면 라이트·다크를 따르지 않는다(2026-10-06 사용자 결정).
   const pal = env.configuration?.background === 'white' ? 'white' : env.configuration?.background === 'ink' ? 'ink' : 'ivory';
   const bg = pal === 'white' ? '#FFFFFF' : pal === 'ink' ? '#1A1A1C' : '#FEF1D1';
@@ -35,7 +36,7 @@ const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
     return (
       <VStack
         spacing={6}
-        modifiers={[containerBackground(bg, 'widget'), widgetURL('chagok://goal/new'), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
+        modifiers={[containerBackground(bg, 'widget'), widgetURL(`${link}://goal/new`), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
         <Image uiImage={props.mascotSleepy} modifiers={[resizable(), frame({ width: 40, height: 40 })]} />
         <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>{props.labels?.firstGoal ?? '첫 목표를 만들어 보세요'}</Text>
       </VStack>
@@ -76,8 +77,8 @@ const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
   // 누르는 곳: 마지막 칸은 완성 확인 화면, 기록이 있으면 판 상세, 그 밖에는 위젯 안에서 붙이고 뗀다.
   const tap = (label: React.ReactElement) => {
     // 기본 스티커 묶음의 체험이 끝났으면 붙이지 않고 앱을 열어 안내한다 (2026-10-08).
-    if ((lastSlot || g.locked) && !placedToday) return <Link destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
-    if (placedToday && !undoable) return <Link destination={`chagok://goal/${g.id}`}>{label}</Link>;
+    if ((lastSlot || g.locked) && !placedToday) return <Link destination={`${link}://goal/${g.id}?place=1`}>{label}</Link>;
+    if (placedToday && !undoable) return <Link destination={`${link}://goal/${g.id}`}>{label}</Link>;
     return (
       <Button
         target="place"
@@ -100,7 +101,7 @@ const ChagokGoal = (props: GoalWidgetProps, env: WidgetEnvironment<Config>) => {
     );
   };
   return (
-    <ZStack alignment="bottomTrailing" modifiers={[containerBackground(bg, 'widget'), widgetURL(`chagok://goal/${g.id}`)]}>
+    <ZStack alignment="bottomTrailing" modifiers={[containerBackground(bg, 'widget'), widgetURL(`${link}://goal/${g.id}`)]}>
       <VStack
         alignment="leading"
         spacing={0}
