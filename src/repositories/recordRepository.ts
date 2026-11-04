@@ -1,4 +1,5 @@
 import { getDb } from '../db/client';
+import type { DbDriver } from '../db/driver';
 import { ME, newId } from './ids';
 import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { RecordNote } from '../domain/types';
@@ -122,14 +123,27 @@ export async function listRecordTimeline(): Promise<TimelineEntry[]> {
 export async function deleteRecord(stickerId: string): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    const row = await tx.first<{ id: string; photo_uri: string | null; photo_remote_path: string | null }>(
-      'SELECT id, photo_uri, photo_remote_path FROM records WHERE sticker_id = ?', stickerId,
-    );
+    const row = await deleteRecordRow(tx, 'sticker_id', stickerId);
     if (!row) return;
-    await tx.run('DELETE FROM records WHERE sticker_id = ?', stickerId);
     const now = Date.now();
-    await enqueue(tx, 'record', row.id, now);
+    await enqueue(tx, 'record', row.recordId, now);
     // 복원 뒤 사진을 아직 못 받은 기록은 기기 경로 없이 서버 경로만 있다. 서버 사진도 지운다.
-    if (row.photo_uri || row.photo_remote_path) await enqueue(tx, 'photo', row.id, now);
+    if (row.photoUri || row.photoRemotePath) await enqueue(tx, 'photo', row.recordId, now);
   });
+}
+
+/** 기기에서 지운 기록. 사진 파일은 호출자가 DB 삭제가 성공한 뒤에 지운다. */
+export type RemovedRecord = { recordId: string; photoUri: string | null; photoRemotePath: string | null };
+
+/**
+ * 기록 한 줄을 기기에서만 지운다(outbox를 만들지 않는다). 기록 지우기, 칸 떼기, 받아 오기가 함께 쓴다.
+ * 기록은 칸마다 하나라 sticker_id로도 한 줄이다.
+ */
+export async function deleteRecordRow(tx: DbDriver, by: 'id' | 'sticker_id', value: string): Promise<RemovedRecord | null> {
+  const row = await tx.first<{ id: string; photo_uri: string | null; photo_remote_path: string | null }>(
+    `SELECT id, photo_uri, photo_remote_path FROM records WHERE ${by} = ?`, value,
+  );
+  if (!row) return null;
+  await tx.run('DELETE FROM records WHERE id = ?', row.id);
+  return { recordId: row.id, photoUri: row.photo_uri, photoRemotePath: row.photo_remote_path };
 }

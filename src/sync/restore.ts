@@ -4,9 +4,9 @@ import { setSetting } from '../repositories/appSettingsRepository';
 import { ME } from '../repositories/ids';
 import { notifyLocalChange } from './changes';
 import { enqueue } from './outbox';
-import type { GoalRow, PhotoStore, RecordRow, StickerRow, SyncServer } from './contract';
+import type { GoalRow, PhotoStore, RecordRow, StickerRow, SyncServer, V2GoalRow, V2MemberRow, V2RecordRow, V2StickerRow } from './contract';
 
-type PhotoToFetch = { recordId: string; remotePath: string };
+export type PhotoToFetch = { recordId: string; remotePath: string };
 
 export async function hasLocalData(): Promise<boolean> {
   const db = await getDb();
@@ -21,25 +21,53 @@ export type RecordSummary = { goals: number; stickers: number; goalNames: string
  * 복원 충돌에서 고르기 전에 보여줄 요약도 이것으로 만들고, 고른 뒤 다시 받지 않는다.
  */
 export async function pullAll(server: SyncServer, pageSize = 500): Promise<ServerSnapshot> {
-  const goals = new Map<string, GoalRow>();
-  const stickers = new Map<string, StickerRow>();
-  const records = new Map<string, RecordRow>();
+  const goals = new Map<string, V2GoalRow>();
+  const members = new Map<string, V2MemberRow>(); // 목표 id로. 혼자 목표의 멤버는 나 하나다
+  const stickers = new Map<string, V2StickerRow>();
+  const records = new Map<string, V2RecordRow>();
+  const keep = <T>(map: Map<string, T>, id: string, row: T, deletedAt: number | null) => {
+    if (deletedAt === null) map.set(id, row); else map.delete(id);
+  };
   let cursor = 0;
   for (;;) {
     const page = await server.pull(cursor, pageSize);
     for (const p of page.rows) {
-      if (p.entity === 'goal') { if (p.deletedAt === null) goals.set(p.row.id, p.row); else goals.delete(p.row.id); }
-      if (p.entity === 'sticker') { if (p.deletedAt === null) stickers.set(p.row.id, p.row); else stickers.delete(p.row.id); }
-      if (p.entity === 'record') { if (p.deletedAt === null) records.set(p.row.id, p.row); else records.delete(p.row.id); }
+      if (p.entity === 'goal') keep(goals, p.row.id, p.row, p.deletedAt);
+      if (p.entity === 'member' && !('gone' in p.row)) keep(members, p.row.goal_id, p.row, p.row.left_at);
+      if (p.entity === 'sticker') keep(stickers, p.row.id, p.row, p.deletedAt);
+      if (p.entity === 'record') keep(records, p.row.id, p.row, p.deletedAt);
     }
     cursor = page.cursor;
     if (!page.more) break;
   }
-  // 부모가 없는 행은 버린다 (표식이 부모에만 있을 때를 대비)
-  for (const [id, s] of stickers) if (!goals.has(s.goal_id)) stickers.delete(id);
-  for (const [id, r] of records) if (!stickers.has(r.sticker_id)) records.delete(id);
-  return { goals: [...goals.values()], stickers: [...stickers.values()], records: [...records.values()], cursor };
+  // 복원은 아직 혼자 목표만 1.1.0 목표 행 모양으로 다룬다. 부모가 없는 행은 버린다 (표식이 부모에만 있을 때를 대비)
+  const solo = [...goals.values()].flatMap((g) => {
+    const m = members.get(g.id);
+    return g.mode === 'solo' && m ? [toGoalRow(g, m)] : [];
+  });
+  const soloIds = new Set(solo.map((g) => g.id));
+  const keptStickers = [...stickers.values()].filter((s) => soloIds.has(s.goal_id)).map(toStickerRow);
+  const stickerIds = new Set(keptStickers.map((s) => s.id));
+  const keptRecords = [...records.values()].filter((r) => stickerIds.has(r.sticker_id)).map(toRecordRow);
+  return { goals: solo, stickers: keptStickers, records: keptRecords, cursor };
 }
+
+/** 혼자 목표와 내 멤버 행을 1.1.0 목표 행 하나로 (api_v1.sql pull_changes와 같은 합치기). */
+function toGoalRow(g: V2GoalRow, m: V2MemberRow): GoalRow {
+  return {
+    id: g.id, name: g.name, board_type: g.board_type, total_slots: g.total_slots, default_sticker_id: m.sticker_id ?? DEFAULT_STICKER_ID,
+    created_at: g.created_at, end_date: g.end_date, completed_at: m.completed_at ?? null, completion_seen: m.completion_seen ?? 0,
+    last_placed_at: m.last_placed_at ?? null, initial_slots: g.initial_slots, updated_at: Math.max(g.updated_at, m.updated_at),
+    sort_order: m.sort_order ?? null,
+  };
+}
+const toStickerRow = (s: V2StickerRow): StickerRow => ({
+  id: s.id, goal_id: s.goal_id, placed_at: s.placed_at, slot_index: s.slot_index, sticker_type: s.sticker_type ?? '',
+  updated_at: s.updated_at, date_key: s.date_key, tz_offset_min: s.tz_offset_min,
+});
+const toRecordRow = (r: V2RecordRow): RecordRow => ({
+  id: r.id, sticker_id: r.sticker_id, memo: r.memo, photo_remote_path: r.photo_remote_path, created_at: r.created_at, updated_at: r.updated_at,
+});
 
 const recentAt = (goal: GoalRow) => goal.last_placed_at ?? goal.created_at;
 

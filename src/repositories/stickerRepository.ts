@@ -1,5 +1,8 @@
 import { getDb } from '../db/client';
+import type { DbDriver } from '../db/driver';
 import { ME, newId } from './ids';
+import { deleteRecordRow } from './recordRepository';
+import type { RemovedRecord } from './recordRepository';
 import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { Sticker } from '../domain/types';
 import { localDateKey, monthKeyOf, tzOffsetMinutes } from '../domain/dates';
@@ -149,22 +152,27 @@ export async function getSticker(id: string): Promise<Sticker | null> {
 export async function removeSticker(id: string): Promise<string | null> {
   const db = await getDb();
   return db.transaction(async (tx) => {
-    const row = await tx.first<{ photo_uri: string | null; photo_remote_path: string | null; record_id: string | null; placed_by: string | null }>(
-      `SELECT r.photo_uri, r.photo_remote_path, r.id AS record_id, s.placed_by FROM stickers s
-         LEFT JOIN records r ON r.sticker_id = s.id
-        WHERE s.id = ?`,
-      id,
-    );
+    const row = await tx.first<{ placed_by: string | null }>('SELECT placed_by FROM stickers WHERE id = ?', id);
     if (!row) return null;
     if (row.placed_by !== ME) throw new Error('내가 붙인 칸만 뗄 수 있습니다.');
-    await tx.run('DELETE FROM records WHERE sticker_id = ?', id);
-    await tx.run('DELETE FROM stickers WHERE id = ?', id);
+    const record = await deleteStickerRow(tx, id);
     // 기록은 서버가 스티커와 함께 표식한다. 사진 파일은 기록 id로 따로 지운다.
     const now = Date.now();
     await enqueue(tx, 'sticker', id, now);
-    if (row.record_id && (row.photo_uri || row.photo_remote_path)) await enqueue(tx, 'photo', row.record_id, now);
-    return row.photo_uri;
+    if (record && (record.photoUri || record.photoRemotePath)) await enqueue(tx, 'photo', record.recordId, now);
+    return record?.photoUri ?? null;
   });
+}
+
+/**
+ * 칸 하나와 그 기록을 기기에서만 지운다(outbox를 만들지 않는다). 지운 기록을 돌려준다.
+ * 칸 떼기, 목표 지우기, 올리기의 칸 겹침(slot_taken), 받아 오기가 함께 쓴다.
+ * 트랜잭션 연결에서는 CASCADE가 꺼져 있을 수 있어 기록도 직접 지운다.
+ */
+export async function deleteStickerRow(tx: DbDriver, id: string): Promise<RemovedRecord | null> {
+  const record = await deleteRecordRow(tx, 'sticker_id', id);
+  await tx.run('DELETE FROM stickers WHERE id = ?', id);
+  return record;
 }
 
 /** 그 목표에 **현재 붙어 있는** 스티커 수(내가 보는 판). 뗀 스티커는 행이 지워지므로 빠진다. */

@@ -6,6 +6,8 @@ import type { Goal, BoardType, GoalMode, MemberRole } from '../domain/types';
 import { localDateKey, monthKeyOf } from '../domain/dates';
 import { periodEndAt, progressBasis } from '../domain/board';
 import { enqueue } from '../sync/outbox';
+import { deleteStickerRow } from './stickerRepository';
+import type { RemovedRecord } from './recordRepository';
 import { track } from '../analytics';
 
 type GoalRow = {
@@ -267,30 +269,37 @@ export async function countGoalContents(id: string): Promise<{ stickers: number;
 /**
  * 목표와 그 스티커·기록을 지운다. 지운 기록의 사진 경로를 돌려준다.
  * 사진 파일은 호출자가 DB 삭제가 성공한 뒤에 정리한다.
- * expo의 트랜잭션은 별도 연결이라 `PRAGMA foreign_keys`가 꺼져 있을 수 있다. CASCADE에 기대지 않고 직접 지운다.
  */
 export async function deleteGoal(id: string): Promise<string[]> {
   const db = await getDb();
   return db.transaction(async (tx) => {
     await requireSolo(tx, id);
-    // 복원 뒤 사진을 아직 못 받은 기록(서버 경로만 있음)도 서버 사진을 지워야 한다.
-    const photos = await tx.all<{ id: string; photo_uri: string | null }>(
-      `SELECT r.id, r.photo_uri FROM records r JOIN stickers s ON s.id = r.sticker_id
-        WHERE s.goal_id = ? AND (r.photo_uri IS NOT NULL OR r.photo_remote_path IS NOT NULL)`,
-      id,
-    );
-    await tx.run('DELETE FROM records WHERE sticker_id IN (SELECT id FROM stickers WHERE goal_id = ?)', id);
-    await tx.run('DELETE FROM stickers WHERE goal_id = ?', id);
-    await tx.run('DELETE FROM goal_members WHERE goal_id = ?', id);
-    await tx.run('DELETE FROM goals WHERE id = ?', id);
+    const records = await deleteGoalRows(tx, id);
     // 멤버 행은 목표와 함께 서버가 지운다. 올리지 못한 멤버 항목이 남으면 이미 없는 행의 삭제를 따로 보내게 된다.
     await tx.run("DELETE FROM outbox WHERE entity = 'member' AND row_id = ?", id);
     // 딸린 스티커·기록은 서버가 연쇄 표식한다. 사진 파일은 기록 id로 따로 지운다.
+    // 복원 뒤 사진을 아직 못 받은 기록(서버 경로만 있음)도 서버 사진을 지워야 한다.
     const now = Date.now();
     await enqueue(tx, 'goal', id, now);
-    for (const p of photos) await enqueue(tx, 'photo', p.id, now);
-    return photos.flatMap((p) => (p.photo_uri ? [p.photo_uri] : []));
+    for (const r of records) if (r.photoUri || r.photoRemotePath) await enqueue(tx, 'photo', r.recordId, now);
+    return records.flatMap((r) => (r.photoUri ? [r.photoUri] : []));
   });
+}
+
+/**
+ * 목표와 그 멤버, 칸, 기록을 기기에서만 지운다(outbox를 만들지 않는다). 지운 기록을 돌려준다.
+ * 목표 지우기와 받아 오기(지운 목표, 나간 목표)가 함께 쓴다.
+ * expo의 트랜잭션은 별도 연결이라 `PRAGMA foreign_keys`가 꺼져 있을 수 있다. CASCADE에 기대지 않고 직접 지운다.
+ */
+export async function deleteGoalRows(tx: DbDriver, id: string): Promise<RemovedRecord[]> {
+  const records: RemovedRecord[] = [];
+  for (const { id: stickerId } of await tx.all<{ id: string }>('SELECT id FROM stickers WHERE goal_id = ?', id)) {
+    const record = await deleteStickerRow(tx, stickerId);
+    if (record) records.push(record);
+  }
+  await tx.run('DELETE FROM goal_members WHERE goal_id = ?', id);
+  await tx.run('DELETE FROM goals WHERE id = ?', id);
+  return records;
 }
 
 export type GoalSummary = {

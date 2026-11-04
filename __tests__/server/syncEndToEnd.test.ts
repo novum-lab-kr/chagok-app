@@ -43,8 +43,8 @@ describeIfServer('기기 ↔ 서버 왕복', () => {
 
     const result = await pushOnce({ server, photos: new FakePhotos(), deviceId: 'phone' });
 
-    expect(result.held).toBe(1);
-    expect(await pendingCount()).toEqual({ pending: 0, held: 1 });
+    expect(result.held).toBe(2); // 그 목표의 스티커와 내 멤버 행(sync_push가 멤버 행이 없으면 23503)
+    expect(await pendingCount()).toEqual({ pending: 0, held: 2 });
     const rows = (await server.pull(0, 100)).rows;
     expect(rows.filter((r) => r.entity === 'goal').map((r) => r.row.id)).toEqual([kept.id]);
     expect(rows.filter((r) => r.entity === 'sticker').map((r) => r.row.id)).toEqual([keptSticker.id]);

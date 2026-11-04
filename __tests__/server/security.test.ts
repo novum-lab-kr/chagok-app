@@ -1,10 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SyncRejected } from '../../src/sync/contract';
-import { SupabaseSyncServer } from '../../src/sync/supabaseServer';
-import { goal, liveIds, record, snapshot, sticker } from '../support/syncServerContract';
+import { goal, liveIds, record, snapshot, sticker, V1Server } from './v1';
 import { adminClient, anonClient, describeIfServer, newUser } from './support';
 
-const serverOf = (client: SupabaseClient) => new SupabaseSyncServer({ rpc: (fn, args) => client.rpc(fn, args) });
+const serverOf = (client: SupabaseClient) => new V1Server({ rpc: (fn, args) => client.rpc(fn, args) });
 
 describeIfServer('서버 보안·경계', () => {
   it('다른 사용자의 행은 받을 수 없다', async () => {

@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { deleteAccountOnServer } from '../../src/sync/account';
-import { SupabaseSyncServer } from '../../src/sync/supabaseServer';
-import { goal } from '../support/syncServerContract';
+import { goal, V1Server } from './v1';
 import { adminClient, anonClient, describeIfServer, newUser } from './support';
 
 // 서버 2판: 목표는 하나, 사람은 멤버로 (docs/superpowers/specs/2026-11-04-server-v2-plan.md, PRD 4.15).
@@ -244,7 +243,7 @@ describeIfServer('함께 목표 (서버 2판)', () => {
     expect((await pullGoal(b, goal_id)).stickers.map((s) => s.id)).not.toContain(aSticker);
     expect((await b.client.from('goals').select('owner_id').eq('id', goal_id)).data).toEqual([{ owner_id: b.userId }]);
     // 1.1.0도 새 혼자 목표를 받는다
-    const v1 = await new SupabaseSyncServer({ rpc: (fn, args) => a.client.rpc(fn, args) }).pull(0, 100);
+    const v1 = await new V1Server({ rpc: (fn, args) => a.client.rpc(fn, args) }).pull(0, 100);
     expect(v1.rows.find((r) => r.entity === 'goal' && r.row.id === solo_goal_id)?.row).toMatchObject({ name: '같이 걷기' });
   });
 
@@ -275,7 +274,7 @@ describeIfServer('함께 목표 (서버 2판)', () => {
 
   it('1.1.0(push_changes)로 올린 혼자 목표가 sync_pull에 보인다', async () => {
     const a = await newUser();
-    await new SupabaseSyncServer({ rpc: (fn, args) => a.client.rpc(fn, args) })
+    await new V1Server({ rpc: (fn, args) => a.client.rpc(fn, args) })
       .push('phone', [{ entity: 'goal', op: 'upsert', row: { ...goal('1730000000000-ab12cd34', 5, '산책'), sort_order: 2 } }]);
     const { rows } = await syncPull(a);
     const g = rows.find((r) => r.entity === 'goal')?.row;
