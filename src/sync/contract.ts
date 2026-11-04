@@ -6,6 +6,11 @@ export type GoalRow = {
   id: string; name: string; board_type: 'calendar' | 'tally'; total_slots: number | null; default_sticker_id: string;
   created_at: number; end_date: string | null; completed_at: number | null; completion_seen: number;
   last_placed_at: number | null; initial_slots: number | null; updated_at: number;
+  /**
+   * 내 목표 순서, 작을수록 위 (PRD 4.1, 2026-10-30). 서버에 칸이 생기기 전 기록이나 옛 서버의 응답에는 없거나 null이다 —
+   * 복원할 때 첫 순서 규칙(최근순)으로 채운다. 옛 앱이 이 키 없이 올려도 서버는 저장된 값을 지우지 않는다.
+   */
+  sort_order?: number | null;
 };
 export type StickerRow = {
   id: string; goal_id: string; placed_at: number; slot_index: number; sticker_type: string; updated_at: number;

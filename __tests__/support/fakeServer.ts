@@ -24,6 +24,17 @@ export class FakeServer implements SyncServer {
     const s = this.rows.get(this.key(entity, id));
     if (s && s.deletedAt === null) this.rows.set(this.key(entity, id), { ...s, deletedAt: at, seq: ++this.seq });
   }
+  /** apply_upsert의 where. 목표는 updated_at이 같으면 지운 행을 되살리지 않는다(20261030000001). */
+  private upsertWins(entity: RowEntity, cur: Stored, updatedAt: number): boolean {
+    if (entity !== 'goal') return cur.row.updated_at <= updatedAt;
+    return cur.row.updated_at < updatedAt || (cur.row.updated_at === updatedAt && cur.deletedAt === null);
+  }
+  /** apply_upsert의 coalesce. sort_order가 없거나 null이면 저장된 값을 지우지 않고, 저장된 값도 없으면 null이다. */
+  private keepSortOrder(entity: RowEntity, row: AnyRow): AnyRow {
+    if (entity !== 'goal') return row;
+    const stored = this.rows.get(this.key(entity, row.id))?.row as GoalRow | undefined;
+    return { ...row, sort_order: (row as GoalRow).sort_order ?? stored?.sort_order ?? null };
+  }
   private children(entity: 'sticker' | 'record', parentKey: 'goal_id' | 'sticker_id', parentId: string): string[] {
     return [...this.rows.values()]
       .filter((s) => s.entity === entity && (s.row as unknown as Record<string, string>)[parentKey] === parentId)
@@ -40,7 +51,7 @@ export class FakeServer implements SyncServer {
     for (const c of changes) {
       if (c.op === 'upsert') {
         const cur = this.rows.get(this.key(c.entity, c.row.id));
-        if (!cur || cur.row.updated_at <= c.row.updated_at) this.put(c.entity, c.row, null);
+        if (!cur || this.upsertWins(c.entity, cur, c.row.updated_at)) this.put(c.entity, this.keepSortOrder(c.entity, c.row), null);
         continue;
       }
       this.tombstone(c.entity, c.id, c.deletedAt);
@@ -79,7 +90,7 @@ export class FakeServer implements SyncServer {
     if (this.failNext > 0) { this.failNext--; throw new Error('network'); }
     const now = Date.now();
     for (const s of [...this.rows.values()]) if (s.deletedAt === null) this.tombstone(s.entity, s.row.id, now);
-    for (const r of rows.goals) this.put('goal', r, null);
+    for (const r of rows.goals) this.put('goal', this.keepSortOrder('goal', r), null);
     for (const r of rows.stickers) this.put('sticker', r, null);
     for (const r of rows.records) this.put('record', r, null);
   }

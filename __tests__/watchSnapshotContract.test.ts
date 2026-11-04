@@ -9,7 +9,7 @@ const FIXTURE = '__tests__/watch-logic/snapshot.fixture.json';
 const t = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).getTime();
 const base: Goal = {
   id: 'cal', name: '일기 쓰기', boardType: 'calendar', totalSlots: null, defaultStickerId: 'objects_normal.notebook',
-  createdAt: t(2026, 10, 3), endDate: '2026-10-31', completedAt: null, completionSeen: false, lastPlacedAt: t(2026, 10, 15), initialSlots: null,
+  createdAt: t(2026, 10, 3), endDate: '2026-10-31', completedAt: null, completionSeen: false, lastPlacedAt: t(2026, 10, 15), initialSlots: null, sortOrder: null,
 };
 const tally: Goal = { ...base, id: 'tally', name: '산책', boardType: 'tally', totalSlots: 12, defaultStickerId: 'sports_normal.walk', endDate: null, lastPlacedAt: t(2026, 10, 16, 9) };
 

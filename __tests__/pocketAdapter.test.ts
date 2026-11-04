@@ -5,12 +5,12 @@ import { localDateKey } from '../src/domain/dates';
 const tally: Goal = {
   id: 'g1', name: '러닝', boardType: 'tally', totalSlots: 20,
   defaultStickerId: 'shoe', createdAt: 0,
-  endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: 20,
+  endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: 20, sortOrder: null,
 };
 const cal: Goal = {
   id: 'g2', name: '독서', boardType: 'calendar', totalSlots: null,
   defaultStickerId: 'book', createdAt: 0,
-  endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: null,
+  endDate: null, completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: null, sortOrder: null,
 };
 const stk = (over: Partial<Sticker>): Sticker => {
   const placedAt = over.placedAt ?? 0;

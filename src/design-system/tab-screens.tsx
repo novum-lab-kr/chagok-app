@@ -290,13 +290,16 @@ export function TrialReadyCard({days,onChoose,onClose}:{/** 넘긴 문턱(7, 14,
     <CloseButton onPress={onClose}/>
   </PixelFrame>;
 }
-/** 판을 완성하고 [닫기]로 보관한 순간 한 번 (2026-10-12). [스티커 보기]는 스티커 탭으로. */
-export function CompletionNudge({onStickers,onClose}:{onStickers:()=>void;onClose:()=>void}) {
+/** 판을 완성하고 [닫기]로 보관한 순간 한 번 (2026-10-12). [스티커 보기]는 스티커 탭으로, [홈으로]는 목표 탭으로 (2026-10-30). 폭이 좁으면 버튼이 줄을 바꾼다. */
+export function CompletionNudge({onStickers,onHome,onClose}:{onStickers:()=>void;onHome:()=>void;onClose:()=>void}) {
   return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:12,flexDirection:'row',alignItems:'center',gap:10}}>
     <Mascot pose="sparkle" size={44}/>
     <View style={{flex:1,gap:8,paddingRight:16}}>
       <PixelText style={{fontSize:16,lineHeight:22,color:c.buttonText}}>{'다음 판은\n새 스티커로 시작해 볼까요?'}</PixelText>
-      <View style={{alignSelf:'flex-start'}}><PixelButton label="스티커 보기" minHeight={40} onPress={onStickers}/></View>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+        <PixelButton label="스티커 보기" minHeight={40} onPress={onStickers}/>
+        <PixelButton label="홈으로" variant="secondary" minHeight={40} onPress={onHome}/>
+      </View>
     </View>
     <CloseButton onPress={onClose}/>
   </PixelFrame>;

@@ -5,7 +5,7 @@ import type { Goal } from '../src/domain/types';
 const now = Date.UTC(2026, 9, 8, 14);
 const goal = (defaultStickerId: string): Goal => ({
   id: 'g', name: '목표', boardType: 'tally', totalSlots: 10, defaultStickerId, createdAt: 0, endDate: null,
-  completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: 10,
+  completedAt: null, completionSeen: false, lastPlacedAt: null, initialSlots: 10, sortOrder: null,
 });
 
 describe('placeGate', () => {

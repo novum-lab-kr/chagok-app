@@ -1,6 +1,6 @@
-import React,{memo,useCallback,useContext,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+import React,{memo,useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
-import {PanResponder,Pressable,View} from 'react-native';
+import {Animated,PanResponder,Pressable,View} from 'react-native';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {CompletionSticker,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickerGrid} from './components';
@@ -21,25 +21,110 @@ function Small({children}:{children:ReactNode}) {
 
 // ── 목록 ──────────────────────────────────────────────────────────
 export type GoalCardItem={id:string;name:string;sticker:StickerId;/** 배지: 적립판 / 달력판 */kind:string;percent:number;/** 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[]};
+/** 목록 카드 사이 간격. 끌어 옮길 때 자리 계산에도 쓴다. */
+const GOAL_GAP=12;
+/**
+ * 끌고 있는 카드가 놓일 자리. 다른 카드의 가운데를 지나면 그 자리로 간다.
+ * heights는 지금 보이는 순서의 카드 높이, dy는 누른 곳에서 손가락이 움직인 거리다.
+ */
+export function goalDropIndex(heights:readonly number[],from:number,dy:number):number {
+  const tops:number[]=[];
+  let top=0;
+  for(const height of heights){tops.push(top);top+=height+GOAL_GAP;}
+  const center=(tops[from]??0)+(heights[from]??0)/2+dy;
+  return heights.filter((height,index)=>index!==from&&(tops[index]??0)+height/2<center).length;
+}
+/** 끄는 동안 다른 카드가 비켜서는 거리. 끄는 카드가 지나간 카드만 그 카드 높이(간격 포함)만큼 움직인다. */
+export function goalDragShift(index:number,from:number,to:number,size:number):number {
+  if(from<to&&index>from&&index<=to) return -size;
+  if(to<from&&index>=to&&index<from) return size;
+  return 0;
+}
+/**
+ * 내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30). 카드를 꾹 누르면 들리고, 그대로 끌면 손가락을 따라온다.
+ * 지나가는 카드는 비켜서고, 손을 떼면 그 자리로 옮긴다. 끄는 동안은 목록 스크롤과 탭 넘김을 멈춘다(onDragChange).
+ * 화면 읽기는 카드의 「위로 옮기기」 「아래로 옮기기」 동작으로 한 칸씩 옮긴다.
+ * 손이 화면 끝에 닿아도 목록을 저절로 스크롤하지 않는다. 화면 밖 자리로는 두 번에 나눠 옮긴다.
+ */
+function ReorderableGoals({items,onOpen,onMove,onDragChange}:{items:readonly GoalCardItem[];onOpen:(id:string)=>void;onMove:(from:number,to:number)=>void;onDragChange:(dragging:boolean)=>void}) {
+  const heights=useRef(new Map<string,number>());
+  const [drag,setDrag]=useState<{from:number;to:number;/** 끄는 카드 높이와 간격 */size:number}|null>(null);
+  const [offset]=useState(()=>new Animated.Value(0));
+  // 응답자 콜백은 렌더 밖에서 불린다. 지금 끄는 상태와 최신 콜백을 ref로 읽는다.
+  const current=useRef<{from:number;to:number;startY:number;moving:boolean;heights:number[];size:number}|null>(null);
+  const latest=useRef({onMove,onDragChange});
+  useEffect(()=>{latest.current={onMove,onDragChange};});
+  const finish=useCallback((commit:boolean)=>{
+    const ended=current.current;
+    if(!ended) return;
+    current.current=null;
+    offset.setValue(0);
+    setDrag(null);
+    latest.current.onDragChange(false);
+    if(commit&&ended.to!==ended.from) latest.current.onMove(ended.from,ended.to);
+  },[offset]);
+  // 탭 바의 끌어서 고르기와 같이 응답자 콜백을 직접 단다. 꾹 누른 뒤 첫 움직임에서 카드의 응답을 넘겨받고,
+  // 끄는 동안은 스크롤이나 탭 넘김에 넘기지 않는다.
+  const move=(pageY:number)=>{
+    const dragging=current.current;
+    if(!dragging) return;
+    const dy=pageY-dragging.startY;
+    offset.setValue(dy);
+    const to=goalDropIndex(dragging.heights,dragging.from,dy);
+    if(to!==dragging.to){dragging.to=to;setDrag({from:dragging.from,to,size:dragging.size});}
+  };
+  const start=(from:number,pageY:number)=>{
+    const measured=items.map(item=>heights.current.get(item.id)??0);
+    const size=(measured[from]??0)+GOAL_GAP;
+    current.current={from,to:from,startY:pageY,moving:false,heights:measured,size};
+    setDrag({from,to:from,size});
+    onDragChange(true);
+  };
+  // 꾹 누르고 움직이지 않은 채 떼면 그대로 내려놓는다
+  const release=()=>{if(current.current&&!current.current.moving) finish(false);};
+  return <View style={{gap:GOAL_GAP}}
+    onMoveShouldSetResponderCapture={()=>current.current!==null} onResponderTerminationRequest={()=>false}
+    onResponderGrant={event=>{if(current.current) current.current.moving=true;move(event.nativeEvent.pageY);}}
+    onResponderMove={event=>move(event.nativeEvent.pageY)}
+    onResponderRelease={()=>finish(true)} onResponderTerminate={()=>finish(false)}>
+    {items.map((item,index)=>{
+      const lifted=drag?.from===index;
+      const shift=drag&&!lifted?goalDragShift(index,drag.from,drag.to,drag.size):0;
+      return <Animated.View key={item.id} onLayout={event=>{heights.current.set(item.id,event.nativeEvent.layout.height);}}
+        style={lifted?{zIndex:1,transform:[{translateY:offset}]}:{transform:[{translateY:shift}]}}>
+        <GoalSummaryCard name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} lifted={lifted}
+          onPress={()=>onOpen(item.id)} onLongPress={pageY=>start(index,pageY)} onPressOut={release}
+          onMoveUp={index>0?()=>onMove(index,index-1):undefined}
+          onMoveDown={index<items.length-1?()=>onMove(index,index+1):undefined}/>
+      </Animated.View>;
+    })}
+  </View>;
+}
 /**
  * 목표 목록. 목표가 하나도 없으면 탭 아래 안내 상자만 둔다(2026-09-30 A안). 만드는 동작은 `+`다.
  * 완성한 판만 있고 진행 중인 목표가 없을 때의 문구는 시안이 없어 목록 안내와 같은 결로 두었다.
+ * onMove를 주면 내 목표를 꾹 눌러 끌어 옮긴다(PRD 4.1, 2026-10-30). 완성한 판은 완성 시각 순이라 옮기지 않는다.
  */
-export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettings,addTargetRef,footer,notice}:{/** 스크롤 밖 맨 아래. 광고 배너 자리(광고 제거를 샀으면 비움, PRD 4.12) */footer?:ReactNode;/** 목록 맨 위 안내(체험 열림 카드, 2026-10-12) */notice?:ReactNode;tab:GoalListTab;onTab:(tab:GoalListTab)=>void;active:readonly GoalCardItem[];completed:readonly GoalCardItem[];onOpen:(id:string)=>void;onAdd:()=>void;onSettings?:()=>void;addTargetRef?:React.Ref<View>}) {
+export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettings,addTargetRef,footer,notice,onMove,onDragChange}:{/** 내 목표를 옮겼다. 보이는 순서의 자리 번호(0부터) */onMove?:(from:number,to:number)=>void;/** 끌기 시작과 끝. 앱은 진동과 탭 넘김 멈춤에 쓴다 */onDragChange?:(dragging:boolean)=>void;/** 스크롤 밖 맨 아래. 광고 배너 자리(광고 제거를 샀으면 비움, PRD 4.12) */footer?:ReactNode;/** 목록 맨 위 안내(체험 열림 카드, 2026-10-12) */notice?:ReactNode;tab:GoalListTab;onTab:(tab:GoalListTab)=>void;active:readonly GoalCardItem[];completed:readonly GoalCardItem[];onOpen:(id:string)=>void;onAdd:()=>void;onSettings?:()=>void;addTargetRef?:React.Ref<View>}) {
   const shown=tab==='active'?active:completed;
   const empty=tab==='completed'
     ?<EmptyState title="아직 완성한 판이 없어요" description="판을 다 채우거나 달력판을 완성하면 여기에 모여요."/>
     :completed.length===0
       ?<EmptyState title="아직 목표가 없어요" description="오른쪽 위 ＋를 눌러 첫 목표를 만들어요."/>
       :<EmptyState title="진행 중인 목표가 없어요" description="오른쪽 위 ＋를 눌러 새 목표를 만들어요."/>;
+  const [dragging,setDragging]=useState(false);
+  const dragChange=useCallback((value:boolean)=>{setDragging(value);onDragChange?.(value);},[onDragChange]);
+  const list=tab==='active'&&onMove
+    ?<ReorderableGoals items={shown} onOpen={onOpen} onMove={onMove} onDragChange={dragChange}/>
+    :<View style={{gap:GOAL_GAP}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>;
   // 앱 헤더와 탭·+ 줄을 함께 고정한다. 목표가 많아도 새 목표와 탭 전환에 바로 닿는다 (2026-09-30).
   return <View style={{flex:1}}>
-    <RetroScreen style={{gap:16}} header={<View style={{gap:16}}>
+    <RetroScreen style={{gap:16}} scrollEnabled={!dragging} header={<View style={{gap:16}}>
     <AppHeader onSettings={onSettings}/>
     <GoalListHeader tab={tab} onTab={onTab} onAdd={onAdd} addTargetRef={addTargetRef} counts={{active:active.length,completed:completed.length}}/>
   </View>}>
     {notice}
-    {shown.length?<View style={{gap:12}}>{shown.map(item=><GoalSummaryCard key={item.id} name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} onPress={()=>onOpen(item.id)}/>)}</View>:empty}
+    {shown.length?list:empty}
     </RetroScreen>
     {footer}
   </View>;
