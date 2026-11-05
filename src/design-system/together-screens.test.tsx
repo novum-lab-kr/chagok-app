@@ -269,7 +269,7 @@ describe('고르기 시트 (차단, 신고)',()=>{
 });
 
 describe('차단한 사람 (앱 설정)',()=>{
-  it('sticker와 goalName이 없어도 이름과 [풀기]가 보이고, [풀기] 접근성 이름은 「지우님 차단 풀기」',()=>{
+  it('이름과 [풀기]만 보이고, [풀기] 접근성 이름은 「지우님 차단 풀기」',()=>{
     const released:string[]=[];
     render(<BlockedPeopleScreen people={[{id:'j',name:'지우'}]} onUnblock={id=>released.push(id)} onBack={()=>{}}/>);
     expect(screen.getByText('지우')).toBeTruthy();

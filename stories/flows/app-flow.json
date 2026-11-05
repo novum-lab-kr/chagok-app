@@ -1265,10 +1265,6 @@
           {
             "id": "screens-함께-목표--blocked-people-empty",
             "label": "없을 때"
-          },
-          {
-            "id": "screens-함께-목표--blocked-people-name-only",
-            "label": "이름만 (지금 앱)"
           }
         ],
         "scenarios": [

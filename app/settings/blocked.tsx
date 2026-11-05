@@ -19,7 +19,7 @@ const listOf = async (d: ActionDeps): Promise<BlockedPerson[]> =>
   (await blockedPeople(d)).map((r) => ({ id: r.userId, name: r.displayName }));
 
 /**
- * 앱 설정 → 차단한 사람 (PRD 4.15). 최근 차단 먼저, 이름만 보인다(서버가 스티커와 목표 이름을 주지 않는다).
+ * 앱 설정 → 차단한 사람 (PRD 4.15). 최근 차단 먼저, 이름만 보인다(2026-11-05 사용자 결정).
  * 목록은 서버에서 그때그때 읽고 기기에 두지 않는다.
  */
 export default function BlockedPeople() {

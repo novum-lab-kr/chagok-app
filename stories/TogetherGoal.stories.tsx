@@ -215,7 +215,6 @@ export const BlockConfirmOnSheet: Story = {name: '차단 확인 시트 위', ren
     overlay={<PixelDialogModal visible {...togetherDialogs.blockConfirm('지우')} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/>}/></Stage>};
 export const BlockConfirm: Story = {name: '차단 확인', render: () => <Stage><MemberSettings/>
   <PixelDialogModal visible {...togetherDialogs.blockConfirm('지우')} onPrimary={noop} onSecondary={noop} onRequestClose={noop}/></Stage>};
-export const BlockedPeople: Story = {name: '차단한 사람', render: () => <Stage><BlockedPeopleScreen people={[{id: 'jiwoo', name: '지우', sticker: 'basic.flower', goalName: walk.name}]} onUnblock={noop} onBack={noop}/></Stage>};
-/** 지금 앱: 서버가 이름만 준다(아침 질문 2, C안). 스티커와 「…에서 차단」 줄이 없다 */
-export const BlockedPeopleNameOnly: Story = {name: '차단한 사람 이름만', render: () => <Stage><BlockedPeopleScreen people={[{id: 'jiwoo', name: '지우'}, {id: 'min', name: '민'}]} onUnblock={noop} onBack={noop}/></Stage>};
+/** 이름만 보인다(2026-11-05 사용자: 이름만). 스티커와 차단한 목표 이름은 그리지 않는다 */
+export const BlockedPeople: Story = {name: '차단한 사람', render: () => <Stage><BlockedPeopleScreen people={[{id: 'jiwoo', name: '지우'}, {id: 'min', name: '민'}]} onUnblock={noop} onBack={noop}/></Stage>};
 export const BlockedPeopleEmpty: Story = {name: '차단한 사람 없음', render: () => <Stage><BlockedPeopleScreen people={[]} onUnblock={noop} onBack={noop}/></Stage>};

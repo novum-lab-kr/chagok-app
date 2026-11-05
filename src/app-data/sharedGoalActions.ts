@@ -23,6 +23,8 @@ import { removeManagedRecordPhoto } from './recordPhotos';
  */
 export type ActionDeps = {
   client: SharedClient; userId: string; sync: PushDeps; currentUserId: () => Promise<string | null>;
+  /** 서버가 지운 기록의 사진 파일을 저장소에서 지우게 한다(Edge Function purge-photos). 없으면 부르지 않는다 */
+  purgePhotos?: () => Promise<unknown>;
 };
 
 /** 로그인한 사용자 id. 서버 설정이 없거나 세션이 없으면 null이다(화면이 로그인을 권한다). */
@@ -44,7 +46,16 @@ export async function actionDeps(): Promise<ActionDeps | null> {
     userId,
     currentUserId,
     sync: { ...(await syncDepsFor(supabase, userId)), userId, currentUserId },
+    purgePhotos: () => supabase.functions.invoke('purge-photos'),
   };
+}
+
+/**
+ * 나가기, 내보내기, 차단으로 서버의 기록 행이 지워진 뒤 부른다. 서버는 지운 기록의 사진 경로를 모아 두고
+ * purge-photos가 저장소에서 지운다(20261105000006_together_fixes.sql). 기다리지 않고, 실패하면 다음에 부를 때 함께 지운다.
+ */
+function purgeServerPhotos(d: ActionDeps): void {
+  d.purgePhotos?.().catch(() => { /* 모아 둔 경로는 서버에 남아 다음 호출이 지운다 */ });
 }
 
 /** 목표 하나를 서버 것으로 다시 받는다. 실패하면 다음 회차가 받도록 깨우고 false를 돌려준다. */
@@ -117,6 +128,7 @@ export async function leave(d: ActionDeps, goalId: string): Promise<{ soloGoalId
     throw error instanceof AccountChanged ? error : new SharedGoalError('network');
   }
   const { soloGoalId } = await onGoal(d, goalId, () => leaveSharedGoal(d.client, goalId));
+  purgeServerPhotos(d);
   await tryRefetch(d, goalId);
   if (soloGoalId) await tryRefetch(d, soloGoalId);
   return { soloGoalId };
@@ -143,12 +155,14 @@ export async function kick(d: ActionDeps, goalId: string, userId: string): Promi
     }
     throw error;
   }
+  purgeServerPhotos(d);
   await tryRefetch(d, goalId);
 }
 
 /** 차단한다. 서버가 차단 관계인 사람과 그 판을 빼고 주므로, 그 사람이 있는 목표마다 다시 받는다. */
 export async function block(d: ActionDeps, userId: string): Promise<void> {
   await blockUser(d.client, userId);
+  purgeServerPhotos(d);
   for (const goalId of await listGoalsWith(userId)) await tryRefetch(d, goalId);
 }
 

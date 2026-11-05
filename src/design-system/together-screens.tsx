@@ -359,16 +359,15 @@ export function BlockPickSheet({visible,title=t('block.pickTitle'),extraRows=[],
     <PixelButton label={t('common.close')} variant="secondary" onPress={onRequestClose}/>
   </PixelBottomSheet>;
 }
-/** 이름은 차단할 때 남긴 이름이라 없을 수 있다. 스티커와 목표 이름은 서버가 아직 주지 않아 없으면 그리지 않는다. */
-export type BlockedPerson={id:string;name:string|null;sticker?:StickerId;/** 차단한 함께 목표 이름 */goalName?:string};
+/** 이름은 차단할 때 남긴 이름이라 없을 수 있다. 목록에는 이름만 보인다(2026-11-05 사용자: 이름만). */
+export type BlockedPerson={id:string;name:string|null};
 /** 앱 설정 「차단한 사람」과 [풀기]. 이름이 없으면 이름 줄을 비우고 [풀기] 접근성 이름은 「풀기」만. */
 export function BlockedPeopleScreen({people,onUnblock,onBack}:{people:readonly BlockedPerson[];onUnblock:(id:string)=>void;onBack:()=>void}) {
   return <RetroScreen style={{gap:16}} header={<ScreenHeader title={t('block.title')} onBack={onBack}/>}>
     <Small>{t('block.hint')}</Small>
     {people.length
       ?<PixelPanel><View>{people.map(person=><View key={person.id} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:56}}>
-        {person.sticker&&<StickerGlyph id={person.sticker} size={24}/>}
-        <View style={{flex:1}}><PixelText>{person.name??''}</PixelText>{person.goalName&&<Small>{t('block.where',person.goalName)}</Small>}</View>
+        <View style={{flex:1}}><PixelText>{person.name??''}</PixelText></View>
         <PixelButton label={t('block.unblock')} accessibilityLabel={person.name?t('block.unblockA11y',person.name):t('block.unblock')} variant="secondary" minHeight={40} onPress={()=>onUnblock(person.id)}/>
       </View>)}</View></PixelPanel>
       :<EmptyState title={t('block.empty')}/>}

@@ -251,6 +251,35 @@ describe('shareInvite', () => {
   });
 });
 
+// 서버가 지운 기록의 사진 파일은 purge-photos 함수가 저장소에서 지운다(20261105000006_together_fixes.sql).
+// 기록 행이 지워지는 동작(나가기, 내보내기, 차단으로 내보내기) 뒤에 부른다. 실패해도 동작은 끝난 것이다.
+describe('지운 기록의 서버 사진 지우기', () => {
+  it('나가기, 내보내기, 차단이 서버에서 끝나면 purgePhotos를 부른다', async () => {
+    const { server, d } = setup();
+    const purge = jest.fn(async () => undefined);
+    const deps = { ...d, purgePhotos: purge };
+    const other = await joined(server, 'one');
+    await leave(deps, other.goalId);
+    expect(purge).toHaveBeenCalledTimes(1);
+    const goalId = await owned(server);
+    await kick(deps, goalId, FRIEND);
+    expect(purge).toHaveBeenCalledTimes(2);
+    await block(deps, FRIEND);
+    expect(purge).toHaveBeenCalledTimes(3);
+  });
+
+  it('서버가 거절하면 부르지 않고, 지우기가 실패해도 동작은 성공으로 끝난다', async () => {
+    const { server, d } = setup();
+    const purge = jest.fn(async () => { throw new Error('offline'); });
+    const deps = { ...d, purgePhotos: purge };
+    const { goalId } = await joined(server, 'one');
+    await expect(kick(deps, goalId, FRIEND)).rejects.toEqual(new SharedGoalError('not_owner'));
+    expect(purge).not.toHaveBeenCalled();
+    await expect(leave(deps, goalId)).resolves.toEqual({ soloGoalId: null });
+    expect(purge).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('actionDeps', () => {
   it('서버 설정이 없거나 세션이 없으면 null', async () => {
     (getSupabase as jest.Mock).mockReturnValueOnce(null);
