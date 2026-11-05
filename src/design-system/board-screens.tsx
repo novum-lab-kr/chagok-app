@@ -450,8 +450,12 @@ function HiddenCell() {
   </View>;
 }
 const HIDDEN_OPACITY=0.4;
-/** 하루 두 장: 둘째 장을 오른쪽 아래로 이만큼 비껴 첫 장 위에 겹친다. 둘 다 24pt 그대로(24의 정수배 규칙) */
-const SECOND_OFFSET={x:9,y:7};
+/**
+ * 하루 두 장: 둘째 장을 오른쪽 아래로 이만큼 비껴 첫 장 위에 겹친다. 둘 다 24pt 그대로(24의 정수배 규칙).
+ * 묶음(27x26)은 칸 가운데에 놓여 오늘 표시 꺾쇠 안쪽에 든다. 402pt 폰 날 칸(41x52, 꺾쇠 팔 13 두께 7)에서
+ * 가로 3, 440pt 폰 날 칸(47x52, 팔 15 두께 8)에서 세로 2가 한계다(2026-11-05 QA: 9, 7은 꺾쇠를 가렸다).
+ */
+export const SECOND_OFFSET={x:3,y:2};
 /** 작은 달력판의 날짜 한 칸. 판 상세 달력과 같이 빈 날 한 번 = 붙이기, 붙은 날 한 번 = 기록 열기, 꾹 = 떼기. second가 있으면 두 장을 겹쳐 그린다. */
 function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;second?:StickerId;/** 한 번 누르면 내 스티커가 붙는다 */placeable?:boolean;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
   const month=Number(date.slice(5,7)),day=Number(date.slice(8,10));

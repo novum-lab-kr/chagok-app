@@ -82,8 +82,9 @@ function OneCalendar() {
   if (base.board.kind !== 'calendar') return null;
   const {records} = base.board;
   const dates = Object.keys(records).sort();
-  const records2 = Object.fromEntries(dates.filter((_, i) => i % 3 === 1).map(date => [date, 'basic.star' as StickerId]));
-  return <BoardDetailScreen {...base} board={{...base.board, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={2}
+  // 오늘 칸도 두 장: 겹친 두 장이 오늘 표시 꺾쇠 안쪽에 드는지 본다(2026-11-05 QA)
+  const records2 = {...Object.fromEntries(dates.filter((_, i) => i % 3 === 1).map(date => [date, 'basic.star' as StickerId])), [TODAY]: 'basic.star' as StickerId};
+  return <BoardDetailScreen {...base} board={{...base.board, records: {[TODAY]: 'basic.cat', ...records}, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={2}
     members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 2)]}/>}
     below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
 }
@@ -98,8 +99,8 @@ function ShowBoard() {
     below={<Note>{t('together.viewOnlyNote', '지우')}</Note>} onBack={noop} onSettings={noop}/>;
 }
 /** 넓은 폰(440pt): 내 판 5칸, 친구 판 8칸 */
-function Wide({children}: {children: ReactNode}) {
-  return <View style={{width: 440, height: 956, backgroundColor: c.screen}}>{children}</View>;
+function Wide({children, width = 440}: {children: ReactNode; width?: number}) {
+  return <View style={{width, height: 956, backgroundColor: c.screen}}>{children}</View>;
 }
 
 export const SharedBoard390: Story = {name: '각자 판 390 폭', render: () => <Stage><SharedBoard/></Stage>};
@@ -115,6 +116,9 @@ export const FriendDialogCalendar: Story = {name: '친구 판 크게 달력판',
 export const OneBoardScreen: Story = {name: '한 판에 같이', render: () => <Stage><OneBoard/></Stage>};
 /** 2026-11-05 시안 T1 A안: 각자 판과 같은 기다림 카드를 판 위에, 둘째 줄만 한 판 문구 */
 export const OneBoardCalendarTwo: Story = {name: '한 판 달력판 하루 두 장', render: () => <Stage><OneCalendar/></Stage>};
+/** 작은 폰(402pt)과 큰 폰(440pt): 오늘 칸의 두 장이 꺾쇠 안쪽에 든다 */
+export const OneBoardCalendarTwo402: Story = {name: '한 판 달력판 하루 두 장 402 폭', render: () => <Wide width={402}><OneCalendar/></Wide>};
+export const OneBoardCalendarTwo440: Story = {name: '한 판 달력판 하루 두 장 440 폭', render: () => <Wide><OneCalendar/></Wide>};
 export const OneBoardWaitingScreen: Story = {name: '한 판 친구를 기다릴 때', render: () => <Stage><OneBoard waiting/></Stage>};
 /** 새 조립(사용자 확인 전): 차단한 사람이 붙인 칸은 이름과 스티커 없이 흐리게(투명도 0.4), 누를 수 없다. 판 칸 수에는 든다 */
 export const OneBoardHidden: Story = {name: '한 판에 같이 가려진 칸', render: () => <Stage><OneBoard hidden={new Set([4, 9])}/></Stage>};

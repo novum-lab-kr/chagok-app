@@ -1,7 +1,8 @@
 import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
-import {BoardDetailScreen} from './board-screens';
+import {BoardDetailScreen,SECOND_OFFSET} from './board-screens';
+import {retro} from './tokens';
 import type {CalendarBoardView,TallyBoardView} from './board-screens';
 
 // 붙인 칸은 크기 48의 스티커 그림을 그린다(2026-10-08 44 → 48). 그 그림이 몇 번 그려지는지 세어 칸이 다시 그려졌는지 본다.
@@ -130,5 +131,28 @@ describe('한 판 달력판 하루 두 장 (2026-11-05 시안 T2 B안)',()=>{
     render(<Small b={{...cal(),placeable:new Set(['2026-09-23'])}}/>);
     expect(screen.getByRole('button',{name:/^9월 23일/}).getAttribute('aria-label')).toContain('누르면 내 스티커를 붙여요');
     expect(screen.getByRole('button',{name:/^9월 22일/}).getAttribute('aria-label')).not.toContain('누르면');
+  });
+});
+
+describe('한 판 달력판 하루 두 장은 오늘 꺾쇠 안쪽에 든다 (2026-11-05 QA)',()=>{
+  // 정적 Storybook에서 잰 오늘 칸: 402pt 폰 41.1x52, 440pt 폰 46.6x52. 스티커 묶음 위쪽은 칸 위에서 18(날짜 숫자 아래).
+  const GLYPH=24,TOP=18,H=52;
+  // PixelFocusRing(cornersOnly)의 모서리 L자: 팔 길이 arm, 두께 thickness
+  const corner=(w:number)=>{const f=retro.focus;const arm=Math.min(f.cornerSize,Math.floor(Math.min(w,H)/3));return {arm,thickness:Math.min(f.cornerThickness,Math.floor(arm/2)+1)};};
+  /** 칸 안 상자가 네 모서리 L자 어느 것과도 겹치지 않는가 */
+  const clear=(w:number,box:{x:number;y:number;w:number;h:number})=>{
+    const {arm,thickness:t}=corner(w);
+    const rects=[[0,0,arm,t],[0,0,t,arm]].flatMap(([x,y,rw,rh])=>[[x,y,rw,rh],[w-x-rw,y,rw,rh],[x,H-y-rh,rw,rh],[w-x-rw,H-y-rh,rw,rh]]);
+    return rects.every(([x,y,rw,rh])=>box.x+box.w<=x||x+rw<=box.x||box.y+box.h<=y||y+rh<=box.y);
+  };
+  it.each([41.1,46.6])('날 칸 폭 %s에서 두 장 묶음이 가운데에 놓여 꺾쇠를 가리지 않는다',w=>{
+    const gw=GLYPH+SECOND_OFFSET.x,gh=GLYPH+SECOND_OFFSET.y,x=(w-gw)/2;
+    expect(clear(w,{x,y:TOP,w:GLYPH,h:GLYPH})).toBe(true);
+    expect(clear(w,{x:x+SECOND_OFFSET.x,y:TOP+SECOND_OFFSET.y,w:GLYPH,h:GLYPH})).toBe(true);
+    expect(TOP+gh).toBeLessThanOrEqual(H);
+  });
+  it('둘째 장은 여전히 비껴 보인다',()=>{
+    expect(SECOND_OFFSET.x).toBeGreaterThan(0);
+    expect(SECOND_OFFSET.y).toBeGreaterThan(0);
   });
 });
