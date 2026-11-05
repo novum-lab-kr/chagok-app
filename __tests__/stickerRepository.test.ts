@@ -1,5 +1,5 @@
 import { createGoal, getGoal } from '../src/repositories/goalRepository';
-import { placeSticker, listStickers, listStickersInMonth, listBoardStickers, countAllStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
+import { placeSticker, listStickers, listStickersInMonth, listBoardStickers, countAllStickers, getSticker, removeSticker, hasHiddenStickers } from '../src/repositories/stickerRepository';
 import { withFreshDb } from './support/setup';
 import { getDb } from '../src/db/client';
 import { localDateKey } from '../src/domain/dates';
@@ -209,6 +209,15 @@ describe('stickerRepository: 판 주인과 붙인 사람', () => {
       row.id as string, goalId, row.placed_at as number, row.slot_index as number, row.date_key as string, row.board_user_id, row.placed_by,
     );
   }
+
+  it('hasHiddenStickers: 차단으로 가려진 칸(붙인 사람 null)이 있을 때만 true', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    await friendSticker(g.id, { id: 'f1', slot_index: 1 });
+    expect(await hasHiddenStickers(g.id)).toBe(false);
+    await friendSticker(g.id, { id: 'f2', slot_index: 2, placed_by: null });
+    expect(await hasHiddenStickers(g.id)).toBe(true);
+  });
 
   it('혼자 목표에 붙이면 판 주인과 붙인 사람이 나다', async () => {
     const g = await goal();

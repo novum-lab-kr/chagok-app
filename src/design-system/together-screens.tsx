@@ -292,9 +292,9 @@ export function MemberList({members,max,onKick,onInvite,onRotate}:{members:reado
 }
 /**
  * 만든 사람 [삭제하기] 안내. 각자 판은 내 판이 지워지고, 한 판은 내가 붙인 칸이 지워진다(서버 remove_member). 확인 창도 같은 문구.
- * 한 판에 나 말고 아무도 없으면(alone) 지워지지 않고 남는 칸이 없어 혼자 목표의 안내를 쓴다.
+ * 나 말고 아무도 없으면(alone, 차단한 사람도 센다) 남는 판과 칸이 없어 두 방식 모두 혼자 목표의 안내를 쓴다.
  */
-export const deleteOwnerDescription=(mode:TogetherMode,alone=false)=>mode==='each'?t('together.deleteOwner'):alone?t('delete.goalDescription'):t('together.deleteOwnerOne');
+export const deleteOwnerDescription=(mode:TogetherMode,alone=false)=>alone?t('delete.goalDescription'):mode==='each'?t('together.deleteOwner'):t('together.deleteOwnerOne');
 /** 「문제가 있을 때」: 신고, 차단, 나가기. 줄마다 누르면 무슨 일이 생기는지 한 줄씩 (App Store 심사 지침 1.2). */
 function ProblemSection({mode,onReport,onBlock,onLeave}:{mode:TogetherMode;onReport?:()=>void;onBlock?:()=>void;onLeave:()=>void}) {
   return <PixelPanel title={t('together.problems')}><View>
@@ -318,7 +318,7 @@ export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goal
   /** MemberList */members?:ReactNode;onSave:()=>void;saveDisabled?:boolean;
   /** 저장이 거절된 칸의 문구를 [저장하기] 바로 위에도 한 번 더(그 칸이 화면 밖이어도 보이게, 친구와 함께 만들기의 error와 같은 자리) */saveError?:string;
   /** 둘 다 없으면(나 말고 다른 사람이 없음) 그 줄을 그리지 않는다 */onReport?:()=>void;onBlock?:()=>void;onLeave:()=>void;/** 만든 사람만 */onDelete?:()=>void;
-  /** 나 말고 다른 사람이 없다. 한 판의 [삭제하기] 안내가 혼자 목표와 같아진다 */alone?:boolean;onBack:()=>void}) {
+  /** 나 말고 다른 사람이 없다(차단한 사람도 센다). [삭제하기] 안내가 혼자 목표와 같아진다 */alone?:boolean;onBack:()=>void}) {
   const owner=role==='owner';
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
     {owner

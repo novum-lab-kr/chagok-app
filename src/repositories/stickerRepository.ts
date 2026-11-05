@@ -181,3 +181,12 @@ export async function countAllStickers(): Promise<number> {
   const row = await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM stickers WHERE placed_by = ?', ME);
   return row?.n ?? 0;
 }
+
+/**
+ * 차단으로 가려진 칸(붙인 사람 null)이 있는가. 한 판에서 차단한 사람은 멤버 행이 기기에 없어도 서버에는 남아 있다는 표시다
+ * (목표 설정 [삭제하기]가 혼자 목표 안내를 쓸지 고를 때).
+ */
+export async function hasHiddenStickers(goalId: string): Promise<boolean> {
+  const db = await getDb();
+  return (await db.first<{ x: number }>('SELECT 1 AS x FROM stickers WHERE goal_id = ? AND placed_by IS NULL LIMIT 1', goalId)) !== null;
+}
