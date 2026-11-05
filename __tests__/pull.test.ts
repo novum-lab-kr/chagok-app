@@ -113,6 +113,19 @@ describe('pullOnce', () => {
     expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
   });
 
+  it('같은 계정의 다른 기기에서 마지막으로 나가 서버가 목표를 지우면, 이 기기도 내 멤버 행의 나감 표시를 받아 목표를 지운다', async () => {
+    const server = new FakeServer();
+    const { goalId, inviteCode } = server.createSharedGoal({ mode: 'one', displayName: '은주', stickerId: 'basic.clover' });
+    server.as(FRIEND).join(inviteCode, '지우', 'basic.star');
+    await pullOnce(depsOf(server));
+    expect(await getGoal(goalId)).not.toBeNull();
+    server.as(FRIEND).leave(goalId);
+    server.leave(goalId); // 다른 기기. 마지막 사람이라 서버가 목표를 지운다
+    expect(server.goalRow(goalId)).toBeUndefined();
+    await pullOnce(depsOf(server));
+    expect(await getGoal(goalId)).toBeNull();
+  });
+
   it('각자 판에서 내보내지면 새 혼자 목표가 들어오고 내 칸과 기록 사진이 그대로 옮겨 간다', async () => {
     const server = new FakeServer();
     const { friend, goalId } = joinShared(server, 'each');

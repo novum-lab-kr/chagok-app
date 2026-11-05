@@ -25,13 +25,18 @@ type R = {
   id: string; sticker_id: string; user_id: string; memo: string | null; photo_remote_path: string | null;
   visibility: 'self' | 'members'; created_at: number; updated_at: number; deleted_at: number | null; seq: number;
 };
-type Tables = { goals: Map<string, G>; members: Map<string, M>; stickers: Map<string, S>; records: Map<string, R>; blocks: Set<string> };
+/** private.goal_exits: 목표를 지울 때 그 목표에 있던 사람마다 남기는 나감 표시(20261105000006_together_fixes.sql) */
+type E = { goal_id: string; user_id: string; left_at: number; left_reason: 'left' | 'kicked'; seq: number };
+type Tables = {
+  goals: Map<string, G>; members: Map<string, M>; stickers: Map<string, S>; records: Map<string, R>; blocks: Set<string>;
+  exits: Map<string, E>;
+};
 
 const copy = <V extends object>(m: Map<string, V>) => new Map([...m].map(([k, v]) => [k, { ...v }]));
 
 /** 여러 사용자가 함께 쓰는 서버 상태. */
 class World {
-  t: Tables = { goals: new Map(), members: new Map(), stickers: new Map(), records: new Map(), blocks: new Set() };
+  t: Tables = { goals: new Map(), members: new Map(), stickers: new Map(), records: new Map(), blocks: new Set(), exits: new Map() };
   invites = new Map<string, string>(); // 초대 코드 → 목표 id
   private seq = 0;
   next = () => ++this.seq;
@@ -42,7 +47,7 @@ class World {
   tx<T>(fn: () => T): T {
     const saved: Tables = {
       goals: copy(this.t.goals), members: copy(this.t.members), stickers: copy(this.t.stickers), records: copy(this.t.records),
-      blocks: new Set(this.t.blocks),
+      blocks: new Set(this.t.blocks), exits: copy(this.t.exits),
     };
     try {
       return fn();
@@ -276,6 +281,9 @@ export class FakeServer implements SyncServer {
     for (const r of this.t.records.values()) {
       if (r.user_id === uid && r.seq > since) changed.push({ seq: r.seq, row: { entity: 'record', row: recordJson(r), deletedAt: r.deleted_at } });
     }
+    for (const e of this.t.exits.values()) {
+      if (e.user_id === uid && e.seq > since) changed.push({ seq: e.seq, row: { entity: 'member', row: exitJson(e), deletedAt: null } });
+    }
     changed.sort((a, b) => a.seq - b.seq);
     const page = changed.slice(0, limit);
     return { rows: page.map((c) => c.row), cursor: page.length ? page[page.length - 1].seq : since, more: changed.length > limit };
@@ -367,7 +375,6 @@ export class FakeServer implements SyncServer {
     if (!g || g.deleted_at !== null || g.mode === 'solo') return { error: 'closed' };
     const m = this.t.members.get(mkey(g.id, uid));
     if (m && m.left_at === null) return { goal_id: g.id };
-    if (m && m.left_reason === 'kicked') return { error: 'closed' };
     if (this.blocked(uid, g.owner_id)) return { error: 'closed' };
     const active = [...this.t.members.values()].filter((x) => x.goal_id === g.id && x.left_at === null);
     if (active.length >= g.max_members) return { error: 'full' };
@@ -461,13 +468,22 @@ export class FakeServer implements SyncServer {
     return solo;
   }
 
-  /** private.hand_off: 가장 먼저 들어온 남은 멤버가 이어받고, 없으면 목표를 지운다(행 삭제, 멤버와 칸과 기록이 함께) */
+  /**
+   * private.hand_off: 가장 먼저 들어온 남은 멤버가 이어받고, 없으면 목표를 지운다(행 삭제, 멤버와 칸과 기록이 함께).
+   * 지우기 전에 그 목표에 있던 사람마다 나감 표시(goal_exits)를 남겨 같은 계정의 다른 기기가 sync_pull로 받게 한다.
+   */
   private handOff(goalId: string, leaving: string): void {
     const g = this.t.goals.get(goalId)!;
     const next = [...this.t.members.values()]
       .filter((m) => m.goal_id === goalId && m.user_id !== leaving && m.left_at === null && m.role !== 'viewer')
       .sort((a, b) => (a.joined_at ?? 0) - (b.joined_at ?? 0) || (a.user_id < b.user_id ? -1 : 1))[0];
     if (!next) {
+      const now = this.world.now();
+      for (const m of this.t.members.values()) {
+        if (m.goal_id === goalId) this.t.exits.set(mkey(goalId, m.user_id), {
+          goal_id: goalId, user_id: m.user_id, left_at: m.left_at ?? now, left_reason: m.left_reason ?? 'left', seq: this.world.next(),
+        });
+      }
       for (const s of [...this.t.stickers.values()]) if (s.goal_id === goalId) this.hardDeleteSticker(s.id);
       for (const [k, m] of [...this.t.members]) if (m.goal_id === goalId) this.t.members.delete(k);
       this.t.goals.delete(goalId);
@@ -556,6 +572,14 @@ function goalJson(g: G): V2GoalRow {
   return {
     id: g.id, client_id: null, mode: g.mode, owner_id: g.owner_id, name: g.name, board_type: g.board_type, total_slots: g.total_slots,
     initial_slots: g.initial_slots, end_date: g.end_date, max_members: g.max_members, created_at: g.created_at, updated_at: g.updated_at,
+  };
+}
+
+/** sync_pull이 나감 표시를 보내는 모양. 나간 내 멤버 행과 같다(remove_member가 비운 값) */
+function exitJson(e: E): V2MemberRow {
+  return {
+    goal_id: e.goal_id, user_id: e.user_id, role: 'member', display_name: null, sticker_id: null, joined_at: null, left_at: e.left_at,
+    updated_at: e.left_at, sort_order: null, completed_at: null, completion_seen: 0, last_placed_at: null, left_reason: e.left_reason,
   };
 }
 
