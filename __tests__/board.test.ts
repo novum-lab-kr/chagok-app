@@ -3,9 +3,10 @@ import {
 } from '../src/domain/dates';
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
-  canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
-  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount,
+  canPlace, completesBoard, filledCount, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
+  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount, SHARED_SLOTS_MAX,
   GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, shownGoalNameError,
+  MEMBER_NAME_MAX, memberNameError, shownMemberNameError,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
 
@@ -14,7 +15,7 @@ const at = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m -
 const NOW = new Date(2026, 8, 29, 10); // 2026-09-29 10:00
 
 const base: Goal = {
-  id: 'g', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
+  id: 'g', mode: 'solo', role: 'owner', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
   createdAt: at(2026, 9, 10), endDate: null, completedAt: null, completionSeen: false,
   lastPlacedAt: null, initialSlots: 15, sortOrder: null,
 };
@@ -22,7 +23,7 @@ const tally = (over: Partial<Goal> = {}): Goal => ({ ...base, ...over });
 const calendar = (over: Partial<Goal> = {}): Goal =>
   ({ ...base, boardType: 'calendar', totalSlots: null, initialSlots: null, ...over });
 const stk = (slotIndex: number, placedAt = at(2026, 9, 20)): Sticker =>
-  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
+  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me' });
 const onDay = (d: number, m = 9) => stk(d - 1, at(2026, m, d));
 
 describe('dates', () => {
@@ -290,6 +291,13 @@ describe('목표 설정 칸 수 입력 (2026-09-30)', () => {
     expect(parseSlotCount('abc', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
     expect(parseSlotCount('0', 0)).toEqual({ ok: false, reason: '1칸 이상이어야 해요.' });
   });
+  it('함께 목표는 1000칸까지만 받는다', () => {
+    expect(parseSlotCount('1000', 30, SHARED_SLOTS_MAX)).toEqual({ ok: true, value: 1000 });
+    expect(parseSlotCount('1001', 30, SHARED_SLOTS_MAX)).toEqual({ ok: false, reason: '1000칸까지 만들 수 있어요.' });
+  });
+  it('상한을 주지 않으면(혼자 목표) 5000도 받는다', () => {
+    expect(parseSlotCount('5000', 30)).toEqual({ ok: true, value: 5000 });
+  });
 });
 
 describe('입력 글자 수 (2026-10-08)', () => {
@@ -319,3 +327,40 @@ describe('입력 글자 수 (2026-10-08)', () => {
     expect(shownGoalNameError('가'.repeat(25), false)).toBe('20자까지 입력할 수 있어요.');
   });
 });
+
+describe('함께 목표 내 이름 (2026-11-04)', () => {
+  test('비었거나 띄어쓰기만 있으면 적어 달라고 한다', () => {
+    expect(memberNameError('')).toBe('이름을 적어 주세요.');
+    expect(memberNameError('   ')).toBe('이름을 적어 주세요.');
+  });
+  test('10자에 닿으면 한도를 알린다', () => {
+    expect(MEMBER_NAME_MAX).toBe(10);
+    expect(memberNameError('은주')).toBeUndefined();
+    expect(memberNameError('가'.repeat(9))).toBeUndefined();
+    expect(memberNameError('가'.repeat(10))).toBe('10자까지 입력할 수 있어요.');
+  });
+  test('처음 연 빈 칸에는 문구가 없고, 건드린 뒤 비면 보인다', () => {
+    expect(shownMemberNameError('', false)).toBeUndefined();
+    expect(shownMemberNameError('', true)).toBe('이름을 적어 주세요.');
+    expect(shownMemberNameError(' ', false)).toBe('이름을 적어 주세요.');
+  });
+});
+
+describe('filledCount (완성과 남은 칸을 셀 때 찬 칸 수)', () => {
+  const g = (over: Partial<Goal>): Goal => ({
+    id: 'g', mode: 'solo', role: 'owner', name: '걷기', boardType: 'calendar', totalSlots: null, initialSlots: null, defaultStickerId: 'basic.shoe',
+    createdAt: 0, endDate: '2026-09-30', completedAt: null, completionSeen: true, lastPlacedAt: null, sortOrder: null, ...over,
+  });
+  const on = (id: string, dateKey: string, placedBy = 'me'): Sticker =>
+    ({ id, goalId: 'g', placedAt: 0, slotIndex: 0, stickerType: 'basic.shoe', dateKey, tzOffsetMin: 540, boardUserId: null, placedBy });
+  const list = [on('a', '2026-09-03'), on('b', '2026-09-03', 'u-min'), on('c', '2026-09-04', 'u-gone')];
+  it('한 판 달력판은 스티커가 있는 날 수(가려진 칸 포함)', () => {
+    expect(filledCount(g({ mode: 'one' }), list)).toBe(2);
+  });
+  it('그 밖의 판은 스티커 수', () => {
+    expect(filledCount(g({}), list)).toBe(3);
+    expect(filledCount(g({ mode: 'each' }), list)).toBe(3);
+    expect(filledCount(g({ mode: 'one', boardType: 'tally', totalSlots: 10, endDate: null }), list)).toBe(3);
+  });
+});
+

@@ -6,7 +6,6 @@ import { notifyBuyFailure, restoreWithDialog } from '../src/app-data/purchaseDia
 import { useDialog } from '../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../src/app-data/goBack';
 import { createSingleFlight } from '../src/app-data/singleFlight';
-import { FREE_GOAL_LIMIT } from '../src/domain/subscription';
 import { loadSubscriptionPrices, refreshSubscription, subscribe } from '../src/purchases';
 import type { StorePrice } from '../src/purchases/price';
 import { openPolicy } from '../src/policy/openPolicy';
@@ -63,7 +62,7 @@ export default function Subscription() {
       <SubscriptionScreen
         month={views.month}
         year={views.year}
-        goalLimit={from === 'goals' ? FREE_GOAL_LIMIT : undefined}
+        goalLimit={from === 'goals'}
         busy={busy}
         onSubscribe={(plan) => { void once(() => buy(plan)); }}
         onRestore={() => { void once(restore); }}

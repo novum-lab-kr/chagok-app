@@ -14,6 +14,10 @@
     {
       "id": "slots",
       "label": "칸 수"
+    },
+    {
+      "id": "together",
+      "label": "함께 목표"
     }
   ],
   "nodes": [
@@ -119,6 +123,72 @@
         ],
         "scenarios": [
           "name"
+        ]
+      }
+    },
+    {
+      "id": "name-together--full",
+      "data": {
+        "label": "목표 이름, 친구와 함께, 20자",
+        "tags": [
+          "「20자까지 입력할 수 있어요.」",
+          "20자",
+          "PRD 4.15",
+          "app/goal/together"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--name-together-full",
+            "label": "20자까지 입력할 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "name",
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "slots-together--max",
+      "data": {
+        "label": "칸 수, 친구와 함께, 1000칸 넘음",
+        "tags": [
+          "「1000칸까지 만들 수 있어요.」",
+          "1000칸까지",
+          "PRD 4.15",
+          "app/goal/together"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-together-max",
+            "label": "1000칸까지 만들 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "slots",
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "slots-together--settings-max",
+      "data": {
+        "label": "칸 수, 함께 목표 설정, 1000칸 넘음",
+        "tags": [
+          "「1000칸까지 만들 수 있어요.」",
+          "1000칸까지",
+          "PRD 4.15",
+          "app/goal/[id]/settings"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--slots-together-settings-max",
+            "label": "1000칸까지 만들 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "slots",
+          "together"
         ]
       }
     },
@@ -329,6 +399,153 @@
         ],
         "scenarios": [
           "slots"
+        ]
+      }
+    },
+    {
+      "id": "member-name-join--full",
+      "data": {
+        "label": "내 이름, 함께하기, 10자",
+        "tags": [
+          "「10자까지 입력할 수 있어요.」",
+          "10자",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--member-name-full",
+            "label": "10자까지 입력할 수 있어요."
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "member-name-join--blank",
+      "data": {
+        "label": "내 이름, 함께하기, 비움",
+        "tags": [
+          "「이름을 적어 주세요.」",
+          "10자",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--member-name-blank",
+            "label": "이름을 적어 주세요."
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "member-name-join--banned",
+      "data": {
+        "label": "내 이름, 함께하기, 금칙어",
+        "tags": [
+          "「다른 이름을 써 주세요.」",
+          "서버 금칙어",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--member-name-banned",
+            "label": "다른 이름을 써 주세요."
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "member-name-join--typing",
+      "data": {
+        "label": "내 이름, 함께하기, 쓰는 중",
+        "tags": [
+          "「문구 없음」",
+          "10자",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--member-name-typing",
+            "label": "문구 없음"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "sticker-join--taken",
+      "data": {
+        "label": "내 스티커, 함께하기, 이미 쓰는 스티커",
+        "tags": [
+          "「이 목표에서 이미 누가 쓰는 스티커예요.」",
+          "서버 스티커 겹침",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "rules-입력-검사--sticker-taken",
+            "label": "이 목표에서 이미 누가 쓰는 스티커예요."
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-code--full",
+      "data": {
+        "label": "초대 링크, 초대 받기, 자리가 다 참",
+        "tags": [
+          "「자리가 다 찼어요」",
+          "6명",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--invite-full",
+            "label": "자리가 다 찼어요"
+          }
+        ],
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
+      "id": "invite-code--closed",
+      "data": {
+        "label": "초대 링크, 초대 받기, 들어갈 수 없음",
+        "tags": [
+          "「이 목표에는 들어갈 수 없어요」",
+          "지움, 링크 바뀜, 내보내짐, 차단",
+          "PRD 4.15",
+          "app/invite/[code]"
+        ],
+        "stories": [
+          {
+            "id": "screens-함께-목표--invite-closed",
+            "label": "이 목표에는 들어갈 수 없어요"
+          }
+        ],
+        "scenarios": [
+          "together"
         ]
       }
     }

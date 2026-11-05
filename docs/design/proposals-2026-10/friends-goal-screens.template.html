@@ -1,0 +1,239 @@
+<title>함께 목표 화면 확인</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 레이아웃: 고를 것 세 개(안 세 개씩 나란히) → 확인할 화면(묶음별 캡처 줄, 묶음마다 괜찮아요/고쳐 주세요와 메모) → 아래 고정 요약 줄 */
+@font-face{font-family:"NeoDGM";src:url(__FONT__) format("truetype");font-display:swap}
+:root{
+  --bg:#EEF6F0; --panel:#FFFFFF; --fg:#06261C; --muted:#4B6358; --line:#C9DCCF; --accent:#FD855F; --pick:#C7DE94; --soft:#FEF1D1;
+  --f-body:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --f-pixel:"NeoDGM","Apple SD Gothic Neo",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1D17;--panel:#16281F;--fg:#E4F1E8;--muted:#9DB5A8;--line:#2B4537;--pick:#3D5228;--soft:#2A2618;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1D17;--panel:#16281F;--fg:#E4F1E8;--muted:#9DB5A8;--line:#2B4537;--pick:#3D5228;--soft:#2A2618;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.65}
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+h1{font-family:var(--f-pixel);font-weight:400;font-size:30px;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-family:var(--f-pixel);font-weight:400;font-size:22px;line-height:1.35;margin:0}
+h3{font-size:16px;margin:0}
+p{margin:0;max-width:72ch}
+.lede{color:var(--muted)}
+section{display:grid;gap:14px}
+.q{border-top:3px solid var(--fg);padding-top:18px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start}
+.opt{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.opt.on{border-color:var(--fg);background:linear-gradient(var(--pick),var(--pick)) top/100% 6px no-repeat,var(--panel)}
+.opt img{width:100%;max-width:100%;border:1px solid var(--line);border-radius:8px;display:block}
+.opt ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--accent);color:#06261C;margin-left:6px;vertical-align:2px}
+.strip{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}
+figure{margin:0;flex:none;width:200px;display:grid;gap:6px;align-content:start}
+figure img{width:100%;border:1px solid var(--line);border-radius:8px;display:block}
+figcaption{font-size:13px;color:var(--muted);line-height:1.45}
+.group{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:12px;min-width:0}
+.group ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button.pick{font:inherit;font-weight:700;padding:8px 14px;border-radius:6px;border:2px solid var(--fg);background:var(--panel);color:var(--fg);cursor:pointer}
+button.pick[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea{width:100%;box-sizing:border-box;min-height:60px;font:inherit;font-size:14px;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+label.note{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.state{font-size:12px;color:var(--muted)}
+.src{font-size:13px;color:var(--muted)}
+.bar{position:sticky;bottom:0;background:var(--panel);border:2px solid var(--fg);border-radius:10px;padding:12px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.bar button{font:inherit;font-weight:700;padding:8px 14px;border-radius:6px;border:2px solid var(--fg);background:var(--accent);color:#06261C;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:10px">
+  <h1>함께 목표 화면 확인</h1>
+  <p class="lede">함께 목표 2단계 화면이에요. 위의 세 가지는 안을 하나씩 골라 주세요. 아래 화면은 이미 만들어 둔 것이라 괜찮은지만 봐 주시면 돼요. 고른 것과 메모는 쓰는 대로 저장돼요.</p>
+  <p class="src">캡처: 고를 안은 실제 컴포넌트를 Storybook으로 렌더한 것(임시 스토리), 확인할 화면은 iOS 26.5 시뮬레이터(iPhone 16e, 17 Pro Max)에서 찍은 것. 신고와 차단은 App Store 심사 지침 1.2(사용자 생성 콘텐츠: 신고, 차단, 연락처)를 따르는 지난 시안 9판 그대로이고, 이번 안들은 새로 닿는 규정이 없어요.</p>
+</header>
+
+<section class="q">
+  <h2>1. 한 판에서 친구를 기다릴 때</h2>
+  <p class="lede">각자 판에는 친구가 들어오기 전에 「친구를 기다리고 있어요」와 [링크 다시 보내기]가 있어요. 한 판에는 아직 없어요.</p>
+  <div class="opts">
+    <div class="opt" id="opt-t1-a"><h3>A. 각자 판과 같은 안내 카드<span class="tag">추천</span></h3><img src="__IMG_t1-a__" alt="한 판 위에 친구를 기다리는 안내 카드"><ul><li>각자 판과 같은 조립이라 새로 익힐 것이 없어요.</li><li>둘째 줄은 한 판에 맞게 「친구가 들어오면 이 판에 같이 붙여요.」로 바꿔요(캡처는 각자 판 문구 그대로).</li><li>판이 조금 아래로 내려가요.</li></ul><button class="pick" type="button" data-q="t1" data-v="a" aria-pressed="false">A로</button><label class="note">메모<textarea id="note-fs-t1-a" data-k="note-fs-t1-a"></textarea><span class="state" id="state-note-fs-t1-a"></span></label></div>
+    <div class="opt" id="opt-t1-b"><h3>B. 제목 아래 한 줄</h3><img src="__IMG_t1-b__" alt="판 제목 아래 한 줄 안내와 글자 버튼"><ul><li>판 자리가 거의 그대로예요.</li><li>새 조립이라 디자인 시스템에 한 줄 더해요.</li></ul><button class="pick" type="button" data-q="t1" data-v="b" aria-pressed="false">B로</button><label class="note">메모<textarea id="note-fs-t1-b" data-k="note-fs-t1-b"></textarea><span class="state" id="state-note-fs-t1-b"></span></label></div>
+    <div class="opt" id="opt-t1-c"><h3>C. 넣지 않기(지금)</h3><img src="__IMG_t1-c__" alt="안내 없는 지금 한 판"><ul><li>링크는 목표 설정의 [친구 초대하기]로 보내요.</li><li>친구가 아직 없다는 것을 알기 어려워요.</li></ul><button class="pick" type="button" data-q="t1" data-v="c" aria-pressed="false">C로</button><label class="note">메모<textarea id="note-fs-t1-c" data-k="note-fs-t1-c"></textarea><span class="state" id="state-note-fs-t1-c"></span></label></div>
+  </div>
+</section>
+
+<section class="q">
+  <h2>2. 한 판 달력판에서 하루에 두 장일 때</h2>
+  <p class="lede">한 판 달력판은 하루에 두 장까지, 한 사람이 한 장씩 붙여요. 지금은 먼저 붙인 한 장만 그리고, 날을 누르면 붙인 사람이 모두 보여요.</p>
+  <div class="opts">
+    <div class="opt" id="opt-t2-a"><h3>A. 먼저 붙인 한 장만(지금)__REC_A__</h3><img src="__IMG_t2-a__" alt="하루에 한 장만 그린 달력"><ul><li>칸이 가장 깔끔해요.</li><li>두 장인 날을 눌러 봐야 알 수 있어요.</li></ul><button class="pick" type="button" data-q="t2" data-v="a" aria-pressed="false">A로</button><label class="note">메모<textarea id="note-fs-t2-a" data-k="note-fs-t2-a"></textarea><span class="state" id="state-note-fs-t2-a"></span></label></div>
+    <div class="opt" id="opt-t2-b"><h3>B. 겹쳐 그리기__REC_B__</h3><img src="__IMG_t2-b__" alt="두 장을 겹쳐 그린 달력"><ul><li>함께 붙인 날이 한눈에 보여요.</li><li>두 장 모두 24pt 그대로이고, 둘째 장을 오른쪽 아래로 비껴 겹쳐요. 앞 장이 뒤 장을 조금 가려요.</li></ul><button class="pick" type="button" data-q="t2" data-v="b" aria-pressed="false">B로</button><label class="note">메모<textarea id="note-fs-t2-b" data-k="note-fs-t2-b"></textarea><span class="state" id="state-note-fs-t2-b"></span></label></div>
+    <div class="opt" id="opt-t2-c"><h3>C. 칸을 반으로 나누기__REC_C__</h3><img src="__IMG_t2-c__" alt="칸을 둘로 나눠 한 장씩 그린 달력"><ul><li>두 장이 모두 온전히 보여요.</li><li>스티커가 12pt로 작아져 누구 것인지 알아보기 어렵고, 큰 화면에서 흐려질 수 있어요(디자인 시스템의 24 배수 규칙을 벗어나요).</li></ul><button class="pick" type="button" data-q="t2" data-v="c" aria-pressed="false">C로</button><label class="note">메모<textarea id="note-fs-t2-c" data-k="note-fs-t2-c"></textarea><span class="state" id="state-note-fs-t2-c"></span></label></div>
+  </div>
+</section>
+
+<section class="q">
+  <h2>3. 큰 폰의 혼자 판 칸 크기</h2>
+  <p class="lede">혼자 판과 함께 판이 같은 규칙으로 칸 수를 정하게 했어요. 판 안쪽 폭이 330pt 이상이면 5칸, 아니면 4칸이에요. 그래서 큰 폰의 혼자 판 칸이 전보다 작아졌어요(430pt 폰 기준 69pt에서 52pt). 아래는 440pt 폰(17 Pro Max)이에요.</p>
+  <div class="opts">
+    <div class="opt" id="opt-t3-b"><h3>B. 5칸, 여백 그대로(지금)<span class="tag">추천</span></h3><img src="__IMG_t3-b__" alt="440pt 5칸 혼자 판"><ul><li>__CELL_B__</li><li>혼자 판과 함께 판이 같은 모양이에요.</li></ul><button class="pick" type="button" data-q="t3" data-v="b" aria-pressed="false">B로</button><label class="note">메모<textarea id="note-fs-t3-b" data-k="note-fs-t3-b"></textarea><span class="state" id="state-note-fs-t3-b"></span></label></div>
+    <div class="opt" id="opt-t3-a"><h3>A. 5칸, 양옆 여백 빼기</h3><img src="__IMG_t3-a__" alt="440pt 5칸 여백 없는 혼자 판"><ul><li>__CELL_A__</li><li>판 테두리와 칸이 가까워져요.</li></ul><button class="pick" type="button" data-q="t3" data-v="a" aria-pressed="false">A로</button><label class="note">메모<textarea id="note-fs-t3-a" data-k="note-fs-t3-a"></textarea><span class="state" id="state-note-fs-t3-a"></span></label></div>
+    <div class="opt" id="opt-t3-c"><h3>C. 큰 폰도 4칸</h3><img src="__IMG_t3-c__" alt="440pt 4칸 혼자 판"><ul><li>__CELL_C__</li><li>쪽을 더 자주 넘겨요. 함께 판과 열 수가 달라져요.</li></ul><button class="pick" type="button" data-q="t3" data-v="c" aria-pressed="false">C로</button><label class="note">메모<textarea id="note-fs-t3-c" data-k="note-fs-t3-c"></textarea><span class="state" id="state-note-fs-t3-c"></span></label></div>
+  </div>
+</section>
+
+<section class="q">
+  <h2>확인할 화면</h2>
+  <p class="lede">시안에 없던 문구와 조립이에요. 묶음마다 괜찮은지, 고칠 곳이 있으면 메모로 알려 주세요. 캡처 몇 장은 마지막 수정 전이라 문구가 조금 다를 수 있어서 따로 적었어요.</p>
+
+  <div class="group" id="g-entry">
+    <h3>들어가는 길</h3>
+    <div class="strip">
+      <figure><img src="__IMG_plus__" alt=""><figcaption>+ 시트: 혼자 목표, 친구와 함께</figcaption></figure>
+      <figure><img src="__IMG_login__" alt=""><figcaption>로그인 안 했을 때 「로그인이 필요해요」(시트는 닫힌 뒤)</figcaption></figure>
+      <figure><img src="__IMG_together__" alt=""><figcaption>친구와 함께 만들기</figcaption></figure>
+      <figure><img src="__IMG_share__" alt=""><figcaption>공유 본문: 목표 이름과 초대 주소만</figcaption></figure>
+      <figure><img src="__IMG_limit__" alt=""><figcaption>목표 5개 한도에 함께 목표도 들어가요</figcaption></figure>
+    </div>
+    <div class="btns"><button class="pick" type="button" data-q="c-entry" data-v="ok" aria-pressed="false">괜찮아요</button><button class="pick" type="button" data-q="c-entry" data-v="fix" aria-pressed="false">고쳐 주세요</button></div>
+    <label class="note">메모<textarea id="note-fs-c-entry" data-k="note-fs-c-entry"></textarea><span class="state" id="state-note-fs-c-entry"></span></label>
+  </div>
+
+  <div class="group" id="g-board">
+    <h3>목록과 판</h3>
+    <div class="strip">
+      <figure><img src="__IMG_card__" alt=""><figcaption>목표 카드 「n명이 함께」(수정 전 캡처: 이제 혼자 남으면 숨김)</figcaption></figure>
+      <figure><img src="__IMG_each-waiting__" alt=""><figcaption>각자 판: 친구를 기다릴 때</figcaption></figure>
+      <figure><img src="__IMG_day-two__" alt=""><figcaption>한 판 날 창: 「나와 Bob님이 붙였어요」</figcaption></figure>
+      <figure><img src="__IMG_friend-large__" alt=""><figcaption>친구 판 크게 보기</figcaption></figure>
+    </div>
+    <div class="btns"><button class="pick" type="button" data-q="c-board" data-v="ok" aria-pressed="false">괜찮아요</button><button class="pick" type="button" data-q="c-board" data-v="fix" aria-pressed="false">고쳐 주세요</button></div>
+    <label class="note">메모<textarea id="note-fs-c-board" data-k="note-fs-c-board"></textarea><span class="state" id="state-note-fs-c-board"></span></label>
+  </div>
+
+  <div class="group" id="g-settings">
+    <h3>목표 설정</h3>
+    <ul><li>새 조립: 칸 수 칸(늘리기만)과 [초대 링크 새로 만들기]를 기존 버튼과 칸 고르기로 더했어요.</li><li>만든 사람을 차단해 이름을 모를 때 「만든 사람만 바꿀 수 있어요.」</li></ul>
+    <div class="strip">
+      <figure><img src="__IMG_owner-1__" alt=""><figcaption>만든 사람: 이름, 칸 수, 함께하는 사람</figcaption></figure>
+      <figure><img src="__IMG_owner-2__" alt=""><figcaption>만든 사람: [친구 초대하기], [초대 링크 새로 만들기], 문제가 있을 때</figcaption></figure>
+      <figure><img src="__IMG_owner-3__" alt=""><figcaption>만든 사람: 삭제 안내</figcaption></figure>
+      <figure><img src="__IMG_member-1__" alt=""><figcaption>함께하는 사람의 설정</figcaption></figure>
+      <figure><img src="__IMG_owner-hint__" alt=""><figcaption>「만든 사람만 바꿀 수 있어요.」</figcaption></figure>
+      <figure><img src="__IMG_count-error__" alt=""><figcaption>칸 수 오류는 칸 바로 아래(입력 중에도 보이게 고치는 중)</figcaption></figure>
+      <figure><img src="__IMG_sticker-taken__" alt=""><figcaption>스티커 겹침은 [저장하기] 바로 위</figcaption></figure>
+    </div>
+    <div class="btns"><button class="pick" type="button" data-q="c-settings" data-v="ok" aria-pressed="false">괜찮아요</button><button class="pick" type="button" data-q="c-settings" data-v="fix" aria-pressed="false">고쳐 주세요</button></div>
+    <label class="note">메모<textarea id="note-fs-c-settings" data-k="note-fs-c-settings"></textarea><span class="state" id="state-note-fs-c-settings"></span></label>
+  </div>
+
+  <div class="group" id="g-dialogs">
+    <h3>확인 창</h3>
+    <div class="strip">
+      <figure><img src="__IMG_dlg-leave__" alt=""><figcaption>나가기</figcaption></figure>
+      <figure><img src="__IMG_dlg-kick__" alt=""><figcaption>내보내기</figcaption></figure>
+      <figure><img src="__IMG_dlg-rotate__" alt=""><figcaption>초대 링크 새로 만들기</figcaption></figure>
+      <figure><img src="__IMG_dlg-block__" alt=""><figcaption>차단</figcaption></figure>
+      <figure><img src="__IMG_dlg-report__" alt=""><figcaption>신고</figcaption></figure>
+      <figure><img src="__IMG_dlg-delete-owner-with-friend__" alt=""><figcaption>만든 사람 삭제(수정 전 캡처: 한 판은 이제 한 판용 문구, 혼자 남으면 혼자 목표 문구)</figcaption></figure>
+      <figure><img src="__IMG_dlg-gone__" alt=""><figcaption>이 목표를 볼 수 없어요</figcaption></figure>
+    </div>
+    <div class="btns"><button class="pick" type="button" data-q="c-dialogs" data-v="ok" aria-pressed="false">괜찮아요</button><button class="pick" type="button" data-q="c-dialogs" data-v="fix" aria-pressed="false">고쳐 주세요</button></div>
+    <label class="note">메모<textarea id="note-fs-c-dialogs" data-k="note-fs-c-dialogs"></textarea><span class="state" id="state-note-fs-c-dialogs"></span></label>
+  </div>
+
+  <div class="group" id="g-safety">
+    <h3>신고와 차단</h3>
+    <ul><li>신고는 시트에서 「목표 이름」이나 사람을 고르고, 사유는 「이름」 하나로 보내요.</li><li>차단한 사람 목록은 지금 이름만 보여요(스티커와 목표 이름은 서버 결정 뒤).</li><li>앱 설정 「차단한 사람」 줄은 계정 패널 맨 아래, 로그인했을 때만 보여요.</li></ul>
+    <div class="strip">
+      <figure><img src="__IMG_report-sheet__" alt=""><figcaption>무엇을 신고할까요</figcaption></figure>
+      <figure><img src="__IMG_report-done__" alt=""><figcaption>신고한 뒤</figcaption></figure>
+      <figure><img src="__IMG_block-sheet__" alt=""><figcaption>누구를 차단할까요</figcaption></figure>
+      <figure><img src="__IMG_blocked-entry__" alt=""><figcaption>앱 설정의 「차단한 사람」 자리</figcaption></figure>
+      <figure><img src="__IMG_blocked-list__" alt=""><figcaption>차단한 사람 목록</figcaption></figure>
+    </div>
+    <div class="btns"><button class="pick" type="button" data-q="c-safety" data-v="ok" aria-pressed="false">괜찮아요</button><button class="pick" type="button" data-q="c-safety" data-v="fix" aria-pressed="false">고쳐 주세요</button></div>
+    <label class="note">메모<textarea id="note-fs-c-safety" data-k="note-fs-c-safety"></textarea><span class="state" id="state-note-fs-c-safety"></span></label>
+  </div>
+</section>
+
+<section>
+  <label class="note">그 밖에 아무 메모<textarea id="note-fs-all" data-k="note-fs-all"></textarea><span class="state" id="state-note-fs-all"></span></label>
+</section>
+
+<div class="bar"><span id="summary">아직 고른 게 없어요</span><span class="state" id="store-state">저장소 연결 중…</span><button id="copy" type="button">메모까지 복사</button></div>
+</div>
+
+<script>
+// 고르기 review/choice-fs-<t1|t2|t3>(a, b, c), review/choice-fs-c-<entry|board|settings|dialogs|safety>(ok, fix).
+// 메모 review/note-fs-<t1|t2|t3>-<a|b|c>, review/note-fs-c-<묶음>, review/note-fs-all. 입력하면 0.8초 뒤, 칸을 벗어나면 바로 자동 저장
+const $ = id => document.getElementById(id);
+const QS = ['t1','t2','t3','c-entry','c-board','c-settings','c-dialogs','c-safety'];
+const QN = {t1:'한 판 기다림', t2:'하루 두 장', t3:'큰 폰 칸', 'c-entry':'들어가는 길', 'c-board':'목록과 판', 'c-settings':'목표 설정', 'c-dialogs':'확인 창', 'c-safety':'신고와 차단'};
+const VN = {a:'A', b:'B', c:'C', ok:'괜찮아요', fix:'고쳐 주세요'};
+const KEYS = [...document.querySelectorAll('textarea[data-k]')].map(t => t.dataset.k);
+const PRE = 'choice-fs-';
+const state = {pick:{}, notes:{}};
+const LS = 'chagok-friends-goal-screens-1';
+try { const l = JSON.parse(localStorage.getItem(LS) || '{}'); Object.assign(state.pick, l.pick || {}); Object.assign(state.notes, l.notes || {}); } catch (e) {}
+let db = null; const writing = {}, queued = {}, timers = {};
+function paint() {
+  for (const b of document.querySelectorAll('[data-q]')) {
+    const on = state.pick[b.dataset.q] === b.dataset.v;
+    b.setAttribute('aria-pressed', String(on));
+    const o = $(`opt-${b.dataset.q}-${b.dataset.v}`); if (o) o.classList.toggle('on', on);
+  }
+  for (const k of KEYS) { const t = $(k); const x = state.notes[k] || ''; if (document.activeElement !== t && t.value !== x) t.value = x; }
+  const parts = QS.filter(q => state.pick[q]).map(q => `${QN[q]} ${VN[state.pick[q]]}`);
+  const n = Object.values(state.notes).filter(x => x && x.trim()).length;
+  if (n) parts.push(`메모 ${n}개`);
+  $('summary').textContent = parts.length ? parts.join(', ') : '아직 고른 게 없어요';
+}
+function setStatus(k, t) { const el = $(`state-${k}`); if (el) el.textContent = t; }
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+async function persist(k) {
+  saveLocal();
+  if (!db) { setStatus(k, '이 브라우저에만 저장됐어요'); return; }
+  if (writing[k]) { queued[k] = true; return; }
+  writing[k] = true; setStatus(k, '저장 중…');
+  const at = new Date().toISOString();
+  const isChoice = k.startsWith(PRE);
+  try {
+    await db.doc(`review/${k}`).set(isChoice ? {value: state.pick[k.slice(PRE.length)] || '', updatedAt: at} : {note: state.notes[k] || '', updatedAt: at});
+    setStatus(k, isChoice ? '고른 것을 저장했어요' : '저장했어요');
+  } catch (e) { setStatus(k, '저장하지 못했어요. 메모까지 복사로 보내 주세요'); }
+  finally { writing[k] = false; if (queued[k]) { queued[k] = false; persist(k); } }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-q]'); if (!b) return;
+  const q = b.dataset.q; state.pick[q] = state.pick[q] === b.dataset.v ? '' : b.dataset.v; paint(); persist(PRE + q);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest('textarea[data-k]'); if (!t) return;
+  const k = t.dataset.k; state.notes[k] = t.value; setStatus(k, '적는 중…'); paint();
+  clearTimeout(timers[k]); timers[k] = setTimeout(() => persist(k), 800);
+});
+document.addEventListener('focusout', e => {
+  const t = e.target.closest && e.target.closest('textarea[data-k]'); if (!t) return;
+  clearTimeout(timers[t.dataset.k]); persist(t.dataset.k);
+});
+$('copy').addEventListener('click', () => {
+  const text = '함께 목표 화면 확인\n' + QS.map(q => `${QN[q]}: ${VN[state.pick[q]] || '아직'}`).join('\n') + '\n' + KEYS.filter(k => (state.notes[k] || '').trim()).map(k => `${k}: ${state.notes[k].trim()}`).join('\n');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('summary')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(() => { $('copy').textContent = '복사했어요'; setTimeout(() => { $('copy').textContent = '메모까지 복사'; }, 1500); }, fallback); } catch (err) { fallback(); }
+});
+paint();
+(async () => {
+  const got = window.claude && window.claude.use ? await window.claude.use('db').catch(() => null) : null;
+  if (!got) { $('store-state').textContent = '이 브라우저에만 저장돼요. 메모까지 복사로 보내 주세요'; return; }
+  db = got; $('store-state').textContent = '쓰는 대로 저장돼요';
+  db.collection('review').onSnapshot(snap => {
+    for (const d of snap.docs) {
+      const v = d.data(); if (!v || writing[d.id]) continue;
+      if (d.id.startsWith(PRE)) { if (typeof v.value === 'string') state.pick[d.id.slice(PRE.length)] = v.value; continue; }
+      if (!KEYS.includes(d.id)) continue;
+      const t = document.activeElement; state.notes[d.id] = t && t.dataset && t.dataset.k === d.id ? t.value : String(v.note || '');
+    }
+    saveLocal(); paint();
+  }, () => { $('store-state').textContent = '저장소를 읽지 못했어요. 메모까지 복사로 보내 주세요'; });
+})();
+</script>

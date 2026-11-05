@@ -7,7 +7,6 @@ import { getPocketSticker, type PocketStickerId } from '../stickers/pocket/catal
 import { ColorStickerArtwork } from '../stickers/color/ColorStickerArtwork';
 import { getColorSticker, type ColorStickerId } from '../stickers/color/catalog';
 import { stickerName } from '../i18n/stickerNames';
-export { pocketStickers } from '../stickers/pocket/catalog';
 export type { PocketStickerId } from '../stickers/pocket/catalog';
 export type { ColorStickerId } from '../stickers/color/catalog';
 

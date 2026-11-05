@@ -31,8 +31,8 @@ describe('구독 화면',()=>{
     expect([h.onRestore,h.onTerms,h.onPrivacy].every(f=>f.mock.calls.length===1)).toBe(true);
   });
   it('목표 탭 [+]에서 열면 맨 위 안내가 목표 한도로 바뀐다',()=>{
-    open({goalLimit:5});
-    expect(screen.getByText('목표는 5개까지 만들 수 있어요. 구독하면 개수 제한 없이 만들 수 있어요.')).toBeTruthy();
+    open({goalLimit:true});
+    expect(screen.getByText('구독하면 목표를 개수 제한 없이 만들 수 있어요.')).toBeTruthy();
     expect(screen.queryByText(t('sub.intro'))).toBeNull();
   });
   it('영어에서도 자동 갱신과 환불 안내가 나온다',()=>{

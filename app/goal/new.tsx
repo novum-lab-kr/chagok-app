@@ -50,7 +50,7 @@ export default function NewGoal() {
   async function submit() {
     // 목표 탭 [+]가 막지만, 링크로 바로 열어도 한도를 지킨다 (구독 설계 4.8, 보안 검토 2026-11-02 L3)
     const [goals, pack] = await Promise.all([listGoals(), loadPackState()]);
-    if (!canCreateGoal(goals.length, pack.subscribed)) {
+    if (!canCreateGoal(goals, pack.subscribed)) {
       router.replace({ pathname: '/subscription', params: { from: 'goals' } });
       return;
     }

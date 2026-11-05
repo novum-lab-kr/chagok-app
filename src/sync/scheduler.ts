@@ -41,6 +41,8 @@ export function createSyncScheduler(run: () => Promise<void>, options: { debounc
     poke() { failures = 0; schedule(debounceMs); },
     /** 앱이 앞으로 왔다. */
     foreground() { if (stopped) return; failures = 0; clear(); void attempt(); },
+    /** 주기 확인(앱이 앞에 있는 동안). 다시 시도나 모아 보내기를 기다리는 중이면 그 타이머에 맡긴다 — 늘린 간격을 지킨다. */
+    poll() { if (stopped || timer) return; void attempt(); },
     stop() { stopped = true; clear(); },
   };
 }

@@ -8,6 +8,8 @@ import { startAnalytics } from '../src/analytics/posthog';
 import { reportScreenError, setErrorUser, startSentry, wrapRoot } from '../src/analytics/sentry';
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
+import { removeManagedRecordPhoto } from '../src/app-data/recordPhotos';
+import { signedInUserId } from '../src/app-data/sharedGoalActions';
 import { applyDeviceLanguage, useDeviceLanguage } from '../src/i18n/device';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
@@ -18,11 +20,11 @@ import { signOutLocal } from '../src/sync/account';
 import { recordSyncFailure, recordSyncSuccess } from '../src/sync/accountStatus';
 import { syncDepsFor } from '../src/sync/appSync';
 import { subscribeLocalChange } from '../src/sync/changes';
-import { connectSync } from '../src/sync/connect';
+import { connectSync, syncRound } from '../src/sync/connect';
+import { AccountChanged } from '../src/sync/pull';
 import { recoverInterruptedConnect, rememberAccount } from '../src/sync/connectMarker';
-import { pushOnce } from '../src/sync/push';
 import { clearStoredSession, getSupabase } from '../src/sync/supabaseClient';
-import { isSyncPaused, kickSync, subscribeResume } from '../src/sync/syncGate';
+import { isSyncPaused, requestSync, subscribeResume } from '../src/sync/syncGate';
 import { startWidgetSync } from '../src/widgets/syncWidgets';
 import { startWatchSync } from '../src/watch/syncWatch';
 
@@ -150,7 +152,7 @@ function RootLayout() {
       .then(() => {
         const wasFailed = recoveryFailed;
         recoveryFailed = false;
-        if (wasFailed) kickSync(); // 잠긴 동안 미룬 전송을 보낸다
+        if (wasFailed) requestSync(); // 잠긴 동안 미룬 전송을 보낸다
       })
       .catch(() => { recoveryFailed = true; });
     // 되돌리지 못했으면 앱이 앞으로 올 때 다시 되돌려 본다. 사용자가 연결하는 중이면(잠금) 그 연결을 건드리지 않는다.
@@ -169,6 +171,7 @@ function RootLayout() {
           const sub = AppState.addEventListener('change', (state) => fn(state === 'active'));
           return () => sub.remove();
         },
+        isAppActive: () => AppState.currentState === 'active',
         onLocalChange: subscribeLocalChange,
         makeRun: (userId) => async () => {
           try {
@@ -177,8 +180,11 @@ function RootLayout() {
             if (error) throw error;
             // 로그아웃이 실패해 세션 정리만 했으면 이 스케줄러는 지난 사용자 것이다 — 보내지 않는다
             if (data.session?.user.id !== userId) return;
-            await pushOnce(await syncDepsFor(supabase, userId));
+            // 도는 사이 연결 화면이 계정을 바꾸면 받은 것을 쓰기 전에 멈춘다(AccountChanged)
+            await syncRound({ ...await syncDepsFor(supabase, userId), currentUserId: signedInUserId }, userId, removeManagedRecordPhoto);
           } catch (error) {
+            // 지난 계정의 회차다. 실패도 성공도 남기지 않는다 — 새 계정 스케줄러가 다시 돈다
+            if (error instanceof AccountChanged) return;
             await recordSyncFailure();
             throw error; // 스케줄러가 다시 시도한다
           }
@@ -209,6 +215,7 @@ function RootLayout() {
         >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="goal/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="goal/together" options={{ presentation: 'modal' }} />
           {/* 판을 좌우로 밀어 쪽과 달을 넘긴다. iOS 26은 화면 안쪽에서 오른쪽으로 밀어도 뒤로 가서 판 밀기를 가로챈다. 가장자리 뒤로 가기는 남긴다 (2026-11-03) */}
           <Stack.Screen name="goal/[id]/index" options={{ fullScreenGestureEnabled: false }} />
           <Stack.Screen name="goal/[id]/settings" />
@@ -220,6 +227,7 @@ function RootLayout() {
           <Stack.Screen name="subscription" options={{ presentation: 'modal' }} />
           <Stack.Screen name="tutorial" />
           <Stack.Screen name="send-info" />
+          <Stack.Screen name="settings/blocked" />
           <Stack.Screen name="policies/index" />
           <Stack.Screen name="policies/[license]" />
           <Stack.Screen name="account/connect" />

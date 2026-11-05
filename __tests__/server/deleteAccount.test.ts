@@ -1,7 +1,6 @@
 import { generateKeyPairSync, sign } from 'node:crypto';
-import { SupabaseSyncServer } from '../../src/sync/supabaseServer';
 import { deleteAccountOnServer } from '../../src/sync/account';
-import { goal } from '../support/syncServerContract';
+import { goal, V1Server } from './v1';
 import { adminClient, anonClient, describeIfServer, newUser } from './support';
 
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
@@ -9,7 +8,7 @@ const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
 describeIfServer('delete-account', () => {
   it('사진·행·인증 계정을 모두 지운다', async () => {
     const a = await newUser();
-    await new SupabaseSyncServer({ rpc: (fn, args) => a.client.rpc(fn, args) })
+    await new V1Server({ rpc: (fn, args) => a.client.rpc(fn, args) })
       .push('d1', [{ entity: 'goal', op: 'upsert', row: goal('g1') }]);
     await a.client.storage.from('record-photos').upload(`${a.userId}/r1.jpg`, jpeg, { contentType: 'image/jpeg' });
 

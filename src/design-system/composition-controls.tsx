@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Dimensions, Modal, StyleSheet,type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
-import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
+import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,InlineModalContext,InlineModalLayer} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
@@ -66,12 +66,12 @@ export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(valu
  * 칸 수 고르기. min을 주면 그보다 작은 버튼은 비활성이다 — 목표 설정의 적립판 칸 수는 늘리기만 된다 (2026-09-30).
  * 직접 입력 자릿수는 min이 담기도록 늘린다. 칸 늘리기로 999칸을 넘긴 판도 지금 값을 보여줄 수 있어야 한다.
  */
-export function SlotCountPicker({value,onChange,label=t('slotCount.label'),min=0}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number}) {
+export function SlotCountPicker({value,onChange,label=t('slotCount.label'),min=0,max}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number;/** 상한(함께 목표 1000). 넘는 값도 한 자리 더 쳐서 상한 문구를 볼 수 있게 직접 입력 길이를 늘린다 */max?:number}) {
   const [custom,setCustom]=useState(!['15','20','30'].includes(value));
   return <View style={{gap:8}}><PixelText>{label}</PixelText><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
     {['15','20','30'].map(n=><PixelButton key={n} label={n} disabled={Number(n)<min} variant={!custom&&value===n?'primary':'secondary'} onPress={()=>{setCustom(false);onChange(n)}} style={{flex:1}}/>)}
     <PixelButton label={t('slotCount.custom')} variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
-  </View>{custom&&<PixelInput label={t('slotCount.customLabel',label)} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1)}/>}</View>;
+  </View>{custom&&<PixelInput label={t('slotCount.customLabel',label)} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1,max===undefined?0:String(max).length+1)}/>}</View>;
 }
 export function StickerSummary({value,onChange}:{value:StickerId;onChange?:()=>void}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',gap:12,alignItems:'center'}}>
@@ -93,7 +93,7 @@ export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,on
   </View>;
 }
 export function MemoEditor({value,onChange,maxLength,error}:{value:string;onChange:(value:string)=>void;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
-  return <View style={{gap:8}}><PixelPanel title={t('memo.title')}><TextInput allowFontScaling={false} accessibilityLabel={t('memo.title')} value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder={t('memo.placeholder')} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
+  return <View style={{gap:8}}><PixelPanel title={t('memo.title')} invalid={!!error}><TextInput allowFontScaling={false} accessibilityLabel={t('memo.title')} value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder={t('memo.placeholder')} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={touchSlop({height:retro.layout.touch})} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
@@ -104,6 +104,13 @@ export function SettingRow({label,value,onPress,navigates=true,disabled=false}:{
     {value&&<PixelText style={{fontSize:14,lineHeight:20}}>{value}</PixelText>}
     {navigates&&<PixelIcon name="chevron" size={14}/>}
   </Pressable>;
+}
+/** 아래에 설명 한 줄이 붙는 SettingRow. 누르면 무슨 일이 생기는지 미리 알린다 (함께 목표 「문제가 있을 때」, 2026-11-04). */
+export function SettingHint({label,hint,onPress}:{label:string;hint:string;onPress:()=>void}) {
+  return <View>
+    <SettingRow label={label} onPress={onPress}/>
+    <View style={{marginTop:-10,paddingBottom:6}}><PixelText variant="caption" style={caption}>{hint}</PixelText></View>
+  </View>;
 }
 /** 누를 수 없는 「항목 · 값」 줄. SettingRow와 같은 높이 (앱 설정 계정과 백업, 2026-10-08). */
 export function InfoRow({label,value}:{label:string;value:string}) {
@@ -175,6 +182,21 @@ export function CenteringScrollView({children,style,testID}:{children:ReactNode;
     <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider></View>
   </ScrollView>;
 }
+/** 키보드가 떠 있으면 대상의 아래 끝이 키보드 위로 오게 RetroScreen을 내린다. 키보드가 없거나 RetroScreen 밖이면 아무것도 안 한다. */
+type RevealAboveKeyboard=(target:Pick<View,'measureInWindow'>)=>void;
+const RevealAboveKeyboardContext=createContext<RevealAboveKeyboard>(()=>{});
+/**
+ * 안의 내용이 키보드에 가리지 않게 둔다. watch가 새 값으로 나타날 때마다(입력칸 아래 오류 문구 등) 이 묶음 끝까지 보이게 내린다.
+ * 포커스한 입력칸만 올리는 RetroScreen의 처리로는 그 아래에 새로 생긴 문구가 키보드에 가렸다(2026-11-05 친구와 함께 만들기 칸 수).
+ */
+export function KeepAboveKeyboard({watch,children,style}:{watch?:string;children:ReactNode;style?:StyleProp<ViewStyle>}) {
+  const reveal=useContext(RevealAboveKeyboardContext);
+  const box=useRef<View>(null);
+  useEffect(()=>{
+    if(watch&&box.current) reveal(box.current);
+  },[watch,reveal]);
+  return <View ref={box} style={style}>{children}</View>;
+}
 /**
  * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
  *
@@ -201,15 +223,18 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
   // Android는 키보드 이벤트가 KeyboardAvoidingView가 스크롤 영역을 줄이기 전에 와서, 그때는 내릴 자리가 없어 덜 내려간다.
   // 영역이 줄어든 뒤(onLayout)에 한 번 더 맞춘다 (2026-10-11).
   const keyboardTop=useRef<number|null>(null);
-  const revealFocused=useCallback(()=>{
+  const reveal=useCallback<RevealAboveKeyboard>(target=>{
     const top=keyboardTop.current;
-    const input=TextInput.State.currentlyFocusedInput?.();
-    if(top===null||!input) return;
-    input.measureInWindow((_x,y,_width,height)=>{
+    if(top===null) return;
+    target.measureInWindow((_x,y,_width,height)=>{
       const overlap=sheetTop+y+height+SCREEN_PADDING-top;
       if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
     });
   },[offset,scroll,sheetTop]);
+  const revealFocused=useCallback(()=>{
+    const input=TextInput.State.currentlyFocusedInput?.();
+    if(input) reveal(input);
+  },[reveal]);
   useEffect(()=>{
     const show=Keyboard.addListener('keyboardDidShow',event=>{keyboardTop.current=event.endCoordinates.screenY;revealFocused();});
     const hide=Keyboard.addListener('keyboardDidHide',()=>{keyboardTop.current=null;});
@@ -232,7 +257,7 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
     <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()} style={column}>
-      <ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider>
+      <ScrollToCenterContext.Provider value={scrollToCenter}><RevealAboveKeyboardContext.Provider value={reveal}>{children}</RevealAboveKeyboardContext.Provider></ScrollToCenterContext.Provider>
     </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
@@ -263,7 +288,8 @@ export function SheetSafeArea({children}:{children:ReactNode}) {
  */
 export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay,children}:{visible:boolean;title:string;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;/** 시트 위에 띄울 다이얼로그. iOS는 떠 있는 Modal 옆에 둔 Modal을 띄우지 못해서 시트 Modal 안에 그린다 */overlay?:ReactNode;children:ReactNode}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
-  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
+  const inline=useContext(InlineModalContext);
+  const body=<>
     <View style={{flex:1,justifyContent:'flex-end',alignItems:'center',paddingHorizontal:12,paddingBottom:Math.max(insets.bottom,12)}}>
       <Pressable testID="sheet-scrim" accessibilityLabel={t('common.close')} onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
       <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>
@@ -274,7 +300,8 @@ export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay
       </View>
     </View>
     {overlay}
-  </Modal>;
+  </>;
+  return inline?<InlineModalLayer visible={visible}>{body}</InlineModalLayer>:<Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>{body}</Modal>;
 }
 
 export function SelectionBadge() {

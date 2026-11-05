@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { track } from '../../src/analytics';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import {
   AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
@@ -23,7 +23,7 @@ import { decideConnection } from '../../src/sync/connectAccount';
 import { enqueueAll } from '../../src/sync/outbox';
 import type { PushDeps } from '../../src/sync/push';
 import {
-  applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, summarizeDevice, summarizeSnapshot,
+  applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, resetForNewAccount, summarizeDevice, summarizeSnapshot,
   type RecordSummary, type ServerSnapshot,
 } from '../../src/sync/restore';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
@@ -41,7 +41,8 @@ import { t } from '../../src/i18n';
 const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
 const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD;
 
-type From = 'start' | 'settings' | 'relogin';
+/** together: 목표 탭 + 시트 [친구와 함께]에서 왔다. 연결이 끝나면 친구와 함께 만들기로 간다(PRD 4.15) */
+type From = 'start' | 'settings' | 'relogin' | 'together';
 type Step =
   | { kind: 'login' }
   | { kind: 'restoring' }
@@ -154,6 +155,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     await endConnect();
     resumeSync();
     if (from === 'start') onDone?.(restored);
+    else if (from === 'together') router.replace('/goal/together');
     else goBackOrHome();
   };
 
@@ -213,7 +215,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     const s = session.current!;
     setStep({ kind: 'restoring' });
     try {
-      const data = snap ?? await pullAll(s.deps.server);
+      const data = snap ?? await pullAll({ server: s.deps.server, userId: s.userId });
       const { photos, oldPhotoUris } = await applyRestore(data);
       // 기기가 이제 이 계정 기록이다. 이 뒤에서 실패해 취소해도 이전 계정 표시로 되돌리지 않게 먼저 연결한다.
       await link(s.userId);
@@ -231,8 +233,9 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     const s = session.current!;
     setStep({ kind: 'restoring' });
     try {
-      await replaceServerWithDevice(s.deps.server, s.deps.deviceId);
+      const { removedPhotoUris } = await replaceServerWithDevice({ server: s.deps.server, userId: s.userId }, s.deps.deviceId);
       await link(s.userId);
+      removedPhotoUris.forEach(removeManagedRecordPhoto);
       await finish(false); // 사진은 잠금이 풀린 뒤 자동 전송이 올린다
     } catch {
       setFailed(() => () => { setFailed(null); void keepDevice(); });
@@ -315,6 +318,11 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         const deviceHasData = await hasLocalData();
         check();
         const plan = decideConnection({ previousUserId: previous.current, userId: user.id, deviceHasData, serverHasData });
+        if (plan === 'linkOnly' || plan === 'firstBackup') {
+          // 다른 계정이다. 지난 계정의 커서와 함께 목표를 비워 이 계정으로 처음부터 받는다
+          const { removedPhotoUris } = await resetForNewAccount();
+          removedPhotoUris.forEach(removeManagedRecordPhoto);
+        }
         if (plan === 'same' || plan === 'linkOnly') {
           await link(user.id);
           await finish(false);
@@ -326,7 +334,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         } else if (plan === 'restore') {
           await runRestore(null);
         } else {
-          const snap = await pullAll(deps.server);
+          const snap = await pullAll({ server: deps.server, userId: user.id });
           setStep({ kind: 'conflict', snap, server: toCard(summarizeSnapshot(snap)), device: toCard(await summarizeDevice()), choice: 'server' });
         }
       } catch (e) {

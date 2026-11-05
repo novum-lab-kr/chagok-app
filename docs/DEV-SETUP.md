@@ -304,15 +304,27 @@ secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는�
 
 ```sh
 supabase db query --linked "select 1"              # 연결 확인
-supabase db reset --linked                         # 개발 서버를 비우고 supabase/migrations를 처음부터 다시 적용한다
+supabase db push --linked --dry-run                # 새 마이그레이션 파일만 들어가는지 먼저 본다
+supabase db push --linked                          # 새 마이그레이션 파일을 개발 서버에 올린다
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
 supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함수
 supabase functions deploy kakao-unlink --use-api   # 카카오 연결 해제 웹훅 (토큰 없이 받는다, config.toml verify_jwt = false)
+supabase functions deploy purge-photos --use-api   # 서버가 지운 기록의 사진 파일 지우기 (나가기, 내보내기, 차단 뒤 앱이 부른다)
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
+npm run server:dev-friend -- setup                 # 두 번째 개발 계정 dev2@chagok.test 만들기 (비밀번호는 .env.local DEV2_PASSWORD)
+npm run server:dev-friend -- --help                # 함께 목표의 친구 쪽 시험 도구(들어오기, 붙이기, 이름 바꾸기, 나가기, 차단, 목표 목록과 지우기, 정리)
 ```
 
-**1.0.0 심사 제출 전(2026-10-12~, 끝남):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **지금은** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`). 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
+**두 번째 개발 계정 (2026-11-05~):** 함께 목표는 두 사람이 있어야 시험할 수 있고 초대 받기 화면은 아직 없다. `scripts/dev-friend.mjs`가 `dev2@chagok.test`로 로그인해 앱이 쓰는 공개 RPC(`join_goal`, `sync_push`, `update_member`, `leave_goal`, `block_user`, `unblock_user`, `pull_goal`, `sync_pull`, `my_blocks`)만 부른다. SQL로 고치지 않는다. 비밀번호는 `.env.local`의 `DEV2_PASSWORD`(저장소에 넣지 않는다. `EXPO_PUBLIC_`이 아니라 앱 번들에 들어가지 않는다)에 두고 `setup`이 service 키로 계정을 한 번 만든다. 시험이 끝나면 `cleanup`(dev2가 든 함께 목표에서 나가고 차단을 모두 푼다). 목표 자체와 dev 계정 쪽 데이터는 `cleanup`이 지우지 않고, 각자 판에서 나가면 dev2 쪽에 그 판을 옮긴 혼자 목표가 남는다. 남은 혼자 목표는 `goals`로 id와 이름을 보고 `delete <goalId>`로 지운다(앱이 혼자 목표를 지울 때와 같은 `sync_push` 목표 삭제. 함께 목표는 서버가 `not_allowed`로 거절한다).
+
+- **초대 코드**는 시뮬레이터 클립보드로 못 받는 일이 많다. 서버 `invites`(`goal_id`가 그 목표, `revoked_at is null`)에서 읽어 `join <코드> <이름> <스티커>`로 들어온다. 스티커는 `basic.cat`처럼 `basic.<이름>`.
+- **`place <goalId> <칸 번호|YYYY-MM-DD> [스티커]`:** 칸 번호는 화면 번호(1부터)다. 스티커는 세 번째 인자(기본 `basic.clover`)이고 멤버 스티커를 쓰지 않는다. 한 판은 칸의 스티커를 그리므로 친구 스티커로 보이게 하려면 그 값을 넘긴다.
+- **dev(A)를 「함께하는 사람」으로 넣기:** 같은 스크립트를 셸 환경 `EXPO_PUBLIC_DEV2_EMAIL=dev@chagok.test DEV2_PASSWORD=<.env.local의 dev 비밀번호>`로 돌리면 dev@로 `join`과 `leave`가 된다(셸 값이 파일 값보다 먼저다).
+- **내보내진 사람(`kicked`)은 새 링크로도 그 목표에 돌아오지 못한다.** 만든 사람이 차단하면 그 사람은 내 모든 함께 목표에서 `kicked`된다. 내보내기 시험은 차단보다 먼저 하거나 새 목표에서 한다.
+- **무료 목표 5개 한도에 함께 목표도 든다.** 개발 계정에 혼자 목표가 있으면 새로 만들 수 있는 수가 그만큼 준다.
+
+**서버 구조 바꾸기:** 올린 마이그레이션 파일을 고치지 않고 새 파일을 더해 `db push`로 올린다. 기기 DB도 `src/db/schema.ts` `MIGRATIONS` 끝에 새 판을 더한다. **서버를 비우고 처음부터 다시 만드는 일은 2026-11-05(서버 2판, 운영 사용자 0명)가 마지막이다.** 앞으로는 운영 데이터를 옮기는 마이그레이션으로 바꾼다. 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
 
 **Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
 
@@ -410,13 +422,11 @@ delete from private.account_deletions where completed_at < now() - interval '1 y
 
 `supabase/migrations`를 운영 DB에 올리는 방법은 1.0.0 심사 제출 전과 뒤가 다르다. 지금은 제출 뒤다(AGENTS.md 「서버와 약관 규칙」).
 
-**주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 `20260930000004_account_admin.sql`을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
+**주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 계정 관리 마이그레이션(당시 `20260930000004`)을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
 
-**1.0.0 심사 제출 전까지만 쓴 방법 (지금은 하지 않는다): 통째로 다시 넣는다**
+**통째로 다시 넣는 방법 (2026-10-29, 2026-11-05에 썼다. 이제 하지 않는다)**
 
-심사와 승인 직후 사용이 운영 서버를 쓰므로 다시 하면 안 된다. 기록으로만 남긴다.
-
-마이그레이션 파일을 고쳐도 된다. 운영은 DB와 사진을 비우고 main의 파일 전체를 다시 넣는다(2026-10-29에 이 순서로 했다). 운영의 사용자, 기록, 사진이 모두 사라진다.
+운영의 사용자, 기록, 사진이 모두 사라진다. 2026-11-05 서버 2판(운영 사용자 0명 확인)이 마지막이다. 기록으로만 남긴다. 그때 맞춘 것: `log_min_error_statement` 다시 걸기, 함수 네 폴더 다시 올리기, 컨테이너 11개 healthy, Healthchecks 7개 초록.
 
 ```sh
 # 서버 (ssh chagok@<운영 서버 주소>)
@@ -465,11 +475,11 @@ docker exec supabase-db psql -U supabase_admin -d postgres \
 
 ## 운영 서버 함수 올리기
 
-셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
+셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`, `purge-photos`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
 
 ```sh
 # 이 맥 (main 체크아웃)
-COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink
+COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink purge-photos
 scp /tmp/fn.tgz chagok@<운영 서버 주소>:~/fn.tgz && rm /tmp/fn.tgz
 
 # 서버

@@ -17,7 +17,7 @@ const screen=(props:Partial<React.ComponentProps<typeof SubscriptionScreen>>={})
 
 // 1. 구독 화면
 export const Subscribe:Story={name:'1 구독 화면',render:()=>screen()};
-export const SubscribeGoalLimit:Story={name:'1 구독 화면, 목표 탭 [+]에서 열었을 때',render:()=>screen({goalLimit:5})};
+export const SubscribeGoalLimit:Story={name:'1 구독 화면, 목표 탭 [+]에서 열었을 때',render:()=>screen({goalLimit:true})};
 export const SubscribeBuying:Story={name:'1 구독 화면, 결제 기다리는 중',render:()=>screen({busy:'year'})};
 
 // 2. 앱 설정 「구매」

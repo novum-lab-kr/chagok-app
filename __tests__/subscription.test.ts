@@ -1,4 +1,5 @@
 import { FREE_GOAL_LIMIT, UNVERIFIED_GRACE_MS, canCreateGoal, isSubscribed, nextStoredSubscription, planPeriod, subscriptionEnd, yearlySaving, type StoredSubscription } from '../src/domain/subscription';
+import type { MemberRole } from '../src/domain/types';
 import { packStatus, type PackAccess } from '../src/domain/packs';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -41,12 +42,17 @@ describe('스토어 결과를 기기 값으로', () => {
 });
 
 describe('목표 한도 (D9, D10)', () => {
+  const goals = (...roles: MemberRole[]) => roles.map((role) => ({ role }));
   it('구독이 아니면 5개까지, 구독 중이면 제한 없음', () => {
     expect(FREE_GOAL_LIMIT).toBe(5);
-    expect(canCreateGoal(4, false)).toBe(true);
-    expect(canCreateGoal(5, false)).toBe(false);
-    expect(canCreateGoal(9, false)).toBe(false);
-    expect(canCreateGoal(9, true)).toBe(true);
+    expect(canCreateGoal(goals('owner', 'owner', 'owner', 'owner'), false)).toBe(true);
+    expect(canCreateGoal(goals('owner', 'owner', 'owner', 'owner', 'owner'), false)).toBe(false);
+    expect(canCreateGoal(goals(...Array<MemberRole>(9).fill('owner')), false)).toBe(false);
+    expect(canCreateGoal(goals(...Array<MemberRole>(9).fill('owner')), true)).toBe(true);
+  });
+  it('내가 만든 목표(혼자 목표, 지금 만든 사람이 나인 함께 목표)만 센다. 초대받아 들어간 목표와 보여주기 받은 목표는 세지 않는다', () => {
+    expect(canCreateGoal(goals('owner', 'owner', 'owner', 'owner', 'member', 'member', 'viewer'), false)).toBe(true);
+    expect(canCreateGoal(goals('owner', 'owner', 'owner', 'owner', 'owner', 'member'), false)).toBe(false);
   });
 });
 

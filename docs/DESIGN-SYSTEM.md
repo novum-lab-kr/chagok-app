@@ -60,6 +60,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | Viewport background | `#AFE1CB` |
 | Main frame / LCD background | `#C7DE94` |
 | Primary button | `#FD855F` |
+| Invalid (입력 검사 실패: 입력칸 테두리와 검사 문구, 2026-11-04) | `#A61E1E` |
 | Secondary button / dialog / input | `#FEF1D1` |
 | Main text / frame / sticker ink | `#06261C` |
 | Button text | `#01241C` |
@@ -108,7 +109,9 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | TrialReadyCard / CompletionNudge | 목표 탭 맨 위 체험 열림 카드 / 판 완성 뒤 판 아래에 뜨는 「다음 판은 새 스티커로」. 둘 다 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 ×(44pt, 모서리에서 4pt 안쪽, 2026-11-02, 글자 폭을 빼앗지 않게 겹쳐 둔다) |
 | GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대. 내 목표 탭에서는 꾹 누르면 눌린 모양(`lifted`)으로 들어 올려 끌어 옮기고, 화면 읽기 동작 「위로 옮기기」 「아래로 옮기기」를 단다(2026-10-30, PRD 4.1). 옮기는 동안 목록 스크롤과 탭 넘김을 멈춘다 |
 | BoardProgressRow | 판 상세 진행 줄: `ProgressBar`와 그 위 차곡이(크기 40, 25%마다 블록 `b0`~`b3`), 오른쪽 `m%`, 완성하면 완성 스티커. 판 패널은 `titleRule={false}`로 제목 아래 줄을 뺀다 |
-| TallyPageNavigation | 적립판 쪽 넘김 줄(`board-screens.tsx` 안). `MonthNavigation`과 같은 44pt 버튼 둘과 가운데 제목 20/28, 아래 간격 8. 한 쪽 칸 수는 `tallyPageSize`가 칸 영역 높이로 정한다 |
+| TallyPageNavigation | 적립판 쪽 넘김 줄(`board-screens.tsx` 안). `MonthNavigation`과 같은 44pt 버튼 둘과 가운데 제목 20/28, 아래 간격 8. 한 쪽 칸 수는 `tallyPageSize`가 칸 영역 높이로 정한다(한 줄 3칸) |
+| 함께 목표 화면 조각 (`together-screens.tsx`, 2026-11-05) | 판 화면과 설정은 이미 있던 조각에 선택 prop만 더해 이었다(기존 값은 그대로). `FriendBoardList.onResend`(없으면 [링크 다시 보내기] 없음), `MemberList.onRotate`([초대 링크 새로 만들기]), `TogetherSettingsScreen.slots`(만든 사람만 칸 수 칸, 혼자 목표와 같은 `SlotsField`), `SlotCountPicker.max`(직접 입력 상한, 함께 목표 1000), `BlockPickSheet.title`과 `extraRows`(신고 고르기에서 「목표 이름」 줄), `BlockedPerson`은 `id`와 `name`(null 가능)뿐이다(2026-11-05 사용자: 이름만, 스티커와 차단한 목표 이름 자리는 없앴다), `AddGoalSheet.onDismiss`(로그인 창은 시트를 닫은 뒤 띄우므로 `overlay`는 뺐다), `TogetherSettingsScreen.saveError`와 `TogetherGoalScreen.error`(서버가 거절한 칸 문구를 버튼 바로 위에도), `TogetherGoalScreen.countError`(칸 수 칸 바로 아래), `TogetherSettingsScreen.onReport`는 선택(없으면 신고 줄 없음), `deleteOwnerDescription(mode)`, `AccountBackupPanel.onBlocked`(맨 아래 「차단한 사람」 줄), `TallyBoardView.hidden`(가려진 칸: 붙은 칸 바탕만 투명도 0.4, 누를 수 없음), `CalendarBoardView.records2`(한 판 달력판 그날 둘째 장: 작은 판 날 칸에서 둘 다 24pt, `dayStickerSpot` 지그재그 자리: 첫 장은 칸 왼쪽, 날짜 숫자 아래(위 18pt), 마지막 장은 칸 오른쪽 끝, 위아래를 번갈아 칸 아래 끝까지. 그날 칸 테두리와 오늘 꺾쇠에는 걸쳐도 되고 옆 칸은 넘지 않는다. 나중에 붙인 장이 위. 2~6장까지 같은 규칙, 2026-11-05 시안 「한 날 여러 장」 B), 함께 목표 날 칸의 오늘 꺾쇠만 두께 5pt(`PixelFocusRing.cornerThickness`, 토큰 값 8은 그대로, 2026-11-05 사용자), `BoardDetailScreen.above`(판 패널 위, 한 판 기다림 카드 `OneBoardWaiting`), `CalendarBoardView.placeable`(한 번 누르면 붙는 날, 화면 읽기에 「누르면 내 스티커를 붙여요」). `togetherDialogs`에 login, offlineOne, slotTaken, leave(mode), kick(name), rotate, report(target), reportDone, gone, ownerOnly, failed |
+| 함께 목표 새 조립 (2026-11-05, 사용자 확인 전) | 확정 시안 9판에 없는 모양을 기존 조각으로 조립했다: 더하기 시트를 닫은 뒤 목표 탭 위 로그인 창(`AddSheetLogin`), [저장하기] 위 거절 문구 한 줄, 가려진 칸, 한 판 창 둘(연결 없음, 칸 겹침), 기다리는 자리의 [링크 다시 보내기] 없는 모양, [초대 링크 새로 만들기]와 만든 사람 칸 수 칸, 신고 고르기 시트와 확인 창, 계정 칸 맨 아래 「차단한 사람」 줄, 이름만 있는 차단한 사람 줄 |
 | GuideCard | 한 번짜리 안내 카드. 체험 카드와 같은 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 ×. 첫 스티커 안내, 기록 저장 뒤 안내 |
 | EmptyState | 목록이 비었을 때의 안내 상자 |
 | OptionButtons | 둘 이상 중 하나를 고르는 버튼 줄 |

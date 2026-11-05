@@ -1,7 +1,7 @@
 import { listGoals } from '../repositories/goalRepository';
 import { listStickers, listStickersInMonth } from '../repositories/stickerRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
-import { isCompleted } from '../domain/board';
+import { filledCount, isCompleted } from '../domain/board';
 import { localDateKey } from '../domain/dates';
 import type { Sticker } from '../domain/types';
 import { listPackAccess } from '../repositories/packRepository';
@@ -31,7 +31,7 @@ export async function loadWidgetInputs(now: Date): Promise<WidgetInput[]> {
       continue;
     }
     const month = await listStickersInMonth(goal.id, now.getFullYear(), now.getMonth() + 1);
-    const placedAll = goal.endDate === null ? month.length : (await listStickers(goal.id)).length;
+    const placedAll = goal.endDate === null ? month.length : filledCount(goal, await listStickers(goal.id));
     inputs.push({ goal, placedAll, placedDates: month.map((s) => s.dateKey), slotIndexes: [], todaySticker: todaySticker(month), usableUntil });
   }
   return inputs;

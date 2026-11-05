@@ -3,7 +3,7 @@ import { listStickers, listStickersInMonth } from '../repositories/stickerReposi
 import { listRecordedStickerIds } from '../repositories/recordRepository';
 import { listPackAccess } from '../repositories/packRepository';
 import { stickerUsableUntil } from '../app-data/placeGate';
-import { isCompleted } from '../domain/board';
+import { filledCount, isCompleted } from '../domain/board';
 import { nextMidnight } from '../widgets/widgetProps';
 import { readHandledRequestIds } from '../widgets/applyRequests';
 import { buildWatchSnapshot } from './snapshot';
@@ -21,7 +21,7 @@ export async function loadWatchInputs(date: Date): Promise<WatchInput[]> {
     inputs.push({
       goal,
       stickers: shown.map((s) => ({ slotIndex: s.slotIndex, dateKey: s.dateKey, recorded: recorded.has(s.id) })),
-      placedAll: all.length,
+      placedAll: filledCount(goal, all),
       usableUntil: stickerUsableUntil(goal, access, date.getTime()),
     });
   }

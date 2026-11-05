@@ -44,11 +44,14 @@ describe('outbox', () => {
     expect((await takeBatch(2)).map((e) => e.rowId)).toEqual(['a', 'b']);
   });
 
-  it('enqueueAll은 모든 행과 사진 있는 기록을 넣는다', async () => {
+  it('enqueueAll은 내 행(혼자 목표, 내가 붙인 칸과 기록, 사진)만 넣는다', async () => {
     const db = await getDb();
     await db.exec(`
       INSERT INTO goals (id, name, board_type, total_slots, created_at) VALUES ('g', '목표', 'tally', 3, 1);
-      INSERT INTO stickers (id, goal_id, placed_at, slot_index, date_key, tz_offset_min) VALUES ('s1', 'g', 2, 0, '1970-01-01', 0), ('s2', 'g', 3, 1, '1970-01-01', 0);
+      INSERT INTO goals (id, mode, name, board_type, total_slots, created_at) VALUES ('f', 'each', '같이', 'tally', 3, 1);
+      INSERT INTO stickers (id, goal_id, placed_at, slot_index, date_key, tz_offset_min, board_user_id, placed_by) VALUES
+        ('s1', 'g', 2, 0, '1970-01-01', 0, 'me', 'me'), ('s2', 'g', 3, 1, '1970-01-01', 0, 'me', 'me'),
+        ('s3', 'f', 3, 0, '1970-01-01', 0, 'friend', 'friend');
       INSERT INTO records (id, sticker_id, photo_uri, created_at) VALUES ('r1', 's1', 'record-photo:a.jpg', 4);
       INSERT INTO records (id, sticker_id, memo, created_at) VALUES ('r2', 's2', '메모', 5);
     `);

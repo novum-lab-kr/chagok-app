@@ -3,7 +3,7 @@
  * 시각은 `now`로 받아 테스트에서 고정한다. 날짜는 모두 로컬 날짜 키다.
  * 적립판 칸 번호는 0부터(slotIndex)다. 화면의 1부터 번호는 어댑터가 바꾼다.
  */
-import { dateKeyOf, dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
+import { dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
 import type { DateKey } from './dates';
 import type { Goal, Sticker } from './types';
 import { t } from '../i18n';
@@ -114,6 +114,14 @@ export function placedAtFor(date: DateKey, now: number): number {
 }
 
 /**
+ * 완성과 남은 칸을 셀 때 판에 찬 칸 수. 한 판 달력판은 하루에 두 장까지 붙으므로 스티커가 있는 날 수로 센다
+ * (가려진 칸 포함, 2026-11-05 판정). 그 밖의 판은 스티커 수다.
+ */
+export function filledCount(goal: Goal, stickers: readonly Sticker[]): number {
+  return goal.mode === 'one' && goal.boardType === 'calendar' ? new Set(stickers.map(stickerDate)).size : stickers.length;
+}
+
+/**
  * 이번에 붙이면 판이 다 차는가. placedTotal은 붙이기 전 그 목표에 붙어 있는 전체 스티커 수다.
  * 기간 없는 달력판은 붙여서 완성되지 않는다 (목표 설정에서 수동 완성, PRD 4.3).
  */
@@ -211,12 +219,13 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
  * 목표 설정의 적립판 칸 수 입력 (2026-09-30). 늘리기만 된다 — 지금 칸 수 이상의 정수만 받는다.
  * 앞의 0은 무시한다("030" → 30). reason은 입력칸 아래에 그대로 보여준다.
  */
-export function parseSlotCount(input: string, current: number): { ok: true; value: number } | { ok: false; reason: string } {
+export function parseSlotCount(input: string, current: number, max?: number): { ok: true; value: number } | { ok: false; reason: string } {
   const text = input.trim();
   if (text === '') return { ok: false, reason: t('validation.slotCountEmpty') };
   if (!/^\d+$/.test(text)) return { ok: false, reason: t('validation.digitsOnly') };
   const value = Number(text);
   if (value < 1) return { ok: false, reason: t('validation.slotCountMin') };
+  if (max !== undefined && value > max) return { ok: false, reason: t('validation.slotCountMax', max) };
   if (value < current) return { ok: false, reason: t('validation.slotCountBelowCurrent', current) };
   return { ok: true, value };
 }
@@ -243,5 +252,22 @@ export function memoError(memo: string): string | undefined {
 export function shownGoalNameError(name: string, touched: boolean): string | undefined {
   return name === '' && !touched ? undefined : goalNameError(name);
 }
+/** 함께 목표 적립판의 칸 수 상한. 서버 private.check_slots와 같은 값이다(혼자 목표는 상한이 없다). */
+export const SHARED_SLOTS_MAX = 1000;
+/** 함께 목표 최대 인원(만든 사람 포함). 서버 goals.max_members 기본값이다. 문구 「친구를 n명까지」는 여기서 1을 뺀다. */
+export const SHARED_MAX_MEMBERS = 6;
+/**
+ * 함께 목표에서 다른 사람에게 보이는 내 이름 (PRD 4.15, 2026-11-04). 1~10자, 저장할 때 앞뒤 공백을 뺀다.
+ * 10자는 판 화면 이름 배지(폭 56) 두 줄을 생각한 값이다. 금칙어는 서버가 거른다(문구는 서버 응답에 따라 화면이 넘긴다).
+ */
+export const MEMBER_NAME_MAX = 10;
+export function memberNameError(name: string): string | undefined {
+  if (name.trim() === '') return t('validation.memberNameEmpty');
+  if (name.length >= MEMBER_NAME_MAX) return t('validation.maxLength', MEMBER_NAME_MAX);
+  return undefined;
+}
+/** 목표 이름과 같이, 처음 연 빈 칸에는 문구를 보이지 않는다. */
+export function shownMemberNameError(name: string, touched: boolean): string | undefined {
+  return name === '' && !touched ? undefined : memberNameError(name);
+}
 
-export { dateKeyOf };

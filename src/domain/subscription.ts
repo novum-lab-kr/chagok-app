@@ -3,6 +3,8 @@
  * 구독은 스토어(RevenueCat 권한 `all_access`)가 원본이다. 기기에는 마지막으로 확인한 상태만 둔다(app_settings `subscription`).
  * 구독 중에는 유료 묶음 모두를 쓰고, 목표를 개수 제한 없이 만들고, 광고가 없다. 산 묶음과 광고 제거는 구독과 따로 영구다.
  */
+import type { MemberRole } from './types';
+
 export type SubscriptionPlan = 'month' | 'year';
 
 /** 마지막으로 확인한 상태. expiresAt은 스토어가 알려 준 끝나는 시각(결제 유예 중이면 유예가 끝나는 시각). */
@@ -40,9 +42,13 @@ export function nextStoredSubscription(
   return { ...prev, expiresAt: Math.min(prev.expiresAt, now), willRenew: false, verifiedAt: now };
 }
 
-/** 새 목표를 만들 수 있는가. 이미 한도를 넘었어도 있는 목표는 그대로 쓴다 — 새로 만들기만 막는다 (설계 D10). */
-export function canCreateGoal(goalCount: number, subscribed: boolean): boolean {
-  return subscribed || goalCount < FREE_GOAL_LIMIT;
+/**
+ * 새 목표를 만들 수 있는가. 이미 한도를 넘었어도 있는 목표는 그대로 쓴다 — 새로 만들기만 막는다 (설계 D10).
+ * 내가 만든 목표만 센다: 혼자 목표와 지금 만든 사람이 나인 함께 목표(role 'owner'). 만든 사람이 나가 넘겨받은 목표도 이때부터 센다.
+ * 초대받아 들어간 목표(member)와 보여주기로 받은 목표(viewer)는 세지 않는다 (2026-11-05 사용자, PRD 4.15).
+ */
+export function canCreateGoal(goals: readonly { role: MemberRole }[], subscribed: boolean): boolean {
+  return subscribed || goals.filter((g) => g.role === 'owner').length < FREE_GOAL_LIMIT;
 }
 
 /** 연 구독이 월 구독 12번보다 얼마나 싼가. 통화가 다르거나 싸지 않으면 null. 할인율은 내림 (57.65% → 57%). */

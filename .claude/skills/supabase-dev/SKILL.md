@@ -27,7 +27,7 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 1. 올린 파일을 고치지 않고 새 마이그레이션 파일을 더한다. 기기 DB(`src/db/schema.ts`)도 버전을 올린다. 1.0.0과 함께 돌 수 있게 칸 추가부터 생각한다.
 2. 새 테이블은 RLS를 켜고 본인 행만 읽고 쓰게 한다. 다른 사용자 행이 보이는 정책을 만들지 않는다.
 3. 개발 서버에는 `supabase db push --linked`로 새 파일만 올린다. 개발 서버는 다른 세션(출시 시험)도 쓰므로 이미 있는 RPC는 옛 앱이 보내는 모양을 그대로 받게 고친다.
-4. `supabase db reset --linked`(개발 서버를 비우고 처음부터 다시)는 사용자가 허락할 때만. 리셋하면 로그인 사용자도 지워져 `npm run server:dev-user`로 개발 계정을 다시 만들고 `record-photos`를 비워야 한다. `public.change_seq`가 남는 함정은 PITFALLS.
+4. `supabase db reset --linked`(개발 서버를 비우고 처음부터 다시)는 사용자가 허락할 때만. 리셋하면 로그인 사용자도 지워져 `npm run server:dev-user`로 개발 계정을(함께 목표 시험용 두 번째 계정은 `npm run server:dev-friend -- setup`) 다시 만들고 `record-photos`를 비워야 한다. `public.change_seq`가 남는 함정은 PITFALLS.
 5. 운영 반영은 이 스킬 밖이다([DEV-SETUP](../../../docs/DEV-SETUP.md) 「운영 DB 바꾸기」).
 
 ## Edge Function
@@ -43,5 +43,7 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 - 앱 쪽 확인이 필요하면 `sim-qa` 스킬로 넘긴다.
 
 ## Gotchas
+
+- **서버를 비우고 다시 만드는 일은 2026-11-05(서버 2판)가 마지막이다.** 사용자: 「이런 방식은 이번까지만 할꺼고, 나중에는 마이그레이션과 수정하는 방법들을 택해야 할꺼야.」 개발 서버도 리셋하지 않고 새 파일로만 바꾼다.
 
 - 2026-11-04: 「구조 바꾸기」가 새 파일을 더하라면서 3번에 `db reset`을 남겨 두어 출시 뒤 규칙과 어긋났다. `db push`로 고쳤다. 리셋은 다른 세션이 쓰는 개발 서버 데이터를 모두 지운다.

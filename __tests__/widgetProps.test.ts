@@ -6,7 +6,7 @@ import type { Goal } from '../src/domain/types';
 
 const at = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h);
 const goal = (over: Partial<Goal>): Goal => ({
-  id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'shoe',
+  id: 'g', mode: 'solo', role: 'owner', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'shoe',
   createdAt: at(2026, 10, 1).getTime(), endDate: null, completedAt: null, completionSeen: false,
   lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });

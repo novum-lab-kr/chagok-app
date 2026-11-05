@@ -13,21 +13,30 @@ const clear = async () => (await getDb()).run('DELETE FROM outbox');
 describe('저장소 → outbox', () => {
   it('목표를 만들고 고치면 goal 한 줄이고 updated_at이 바뀐다', async () => {
     const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
-    expect(await keys()).toEqual([`goal:${g.id}`]);
+    expect(await keys()).toEqual([`goal:${g.id}`, `member:${g.id}`]); // 만들 때는 내 멤버 행도 함께
     const db = await getDb();
     const before = (await db.first<{ updated_at: number }>('SELECT updated_at FROM goals'))!.updated_at;
     await new Promise((r) => setTimeout(r, 2));
     await updateGoal(g.id, { name: '걷기' });
     const after = (await db.first<{ updated_at: number }>('SELECT updated_at FROM goals'))!.updated_at;
     expect(after).toBeGreaterThan(before);
+    expect(await keys()).toEqual([`goal:${g.id}`, `member:${g.id}`]);
+    await clear();
+    await updateGoal(g.id, { name: '걷기 2' }); // 목표 자체의 값만 바꾸면 goal 한 줄
     expect(await keys()).toEqual([`goal:${g.id}`]);
+    await clear();
+    await updateGoal(g.id, { defaultStickerId: 'basic.star' }); // 사람마다의 값만 바꾸면 member 한 줄
+    expect(await keys()).toEqual([`member:${g.id}`]);
+    await clear();
+    await updateGoal(g.id, { name: '걷기 3', defaultStickerId: 'basic.cat' }); // 둘 다 바꾸면 둘 다
+    expect(await keys()).toEqual([`goal:${g.id}`, `member:${g.id}`]);
   });
 
-  it('붙이기는 sticker와 goal을 남긴다', async () => {
+  it('붙이기는 sticker와 member를 남긴다 (마지막으로 붙인 시각이 멤버 행에 있다)', async () => {
     const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
     await clear();
     const s = await placeSticker(g.id, 0);
-    expect(await keys()).toEqual([`goal:${g.id}`, `sticker:${s.id}`].sort());
+    expect(await keys()).toEqual([`member:${g.id}`, `sticker:${s.id}`].sort());
   });
 
   it('사진 있는 스티커를 떼면 sticker와 photo를 남긴다 (서버 사진 정리)', async () => {
@@ -81,13 +90,13 @@ describe('저장소 → outbox', () => {
     expect(await keys()).toEqual([]);
   });
 
-  it('완성과 칸 늘리기도 goal을 남긴다', async () => {
+  it('완성은 member, 칸 늘리기는 goal과 member를 남긴다', async () => {
     const c = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
     const t = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 2 });
     await clear();
     await completeGoal(c.id, 5);
     await extendSlots(t.id, 2);
-    expect(await keys()).toEqual([`goal:${c.id}`, `goal:${t.id}`].sort());
+    expect(await keys()).toEqual([`goal:${t.id}`, `member:${c.id}`, `member:${t.id}`].sort());
   });
 
   it('칸 늘리기는 달력판에 아무것도 하지 않는다', async () => {

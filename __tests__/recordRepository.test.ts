@@ -121,3 +121,24 @@ describe('기록 모아보기 (하단 탭 「기록」, 2026-10-12)', () => {
     expect((await listRecordTimeline()).map((e) => e.memo)).toEqual(['남음']);
   });
 });
+
+describe('recordRepository: 내가 붙인 칸에만', () => {
+  it('기록의 공개 범위는 늘 self다', async () => {
+    const { sticker } = await stickerOnGoal();
+    await upsertRecord(sticker.id, { photoUri: null, memo: '메모' });
+    const db = await (await import('../src/db/client')).getDb();
+    expect((await db.first<{ visibility: string }>('SELECT visibility FROM records'))?.visibility).toBe('self');
+  });
+
+  it('친구가 붙인 칸에는 기록하지 못한다', async () => {
+    const { goal } = await stickerOnGoal();
+    const db = await (await import('../src/db/client')).getDb();
+    await db.run(
+      `INSERT INTO stickers (id, goal_id, placed_at, slot_index, updated_at, date_key, tz_offset_min, board_user_id, placed_by)
+       VALUES ('f1', ?, 1, 5, 1, '2026-10-12', 540, 'u2', 'u2')`, goal.id,
+    );
+    await expect(upsertRecord('f1', { photoUri: null, memo: '메모' })).rejects.toThrow('내가 붙인 칸');
+    expect(await getRecord('f1')).toBeNull();
+  });
+});
+

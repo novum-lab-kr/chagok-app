@@ -1,28 +1,93 @@
 import { getDb } from '../db/client';
 import { ack, enqueue, hold, takeBatch } from './outbox';
 import type { OutboxEntry } from './outbox';
+import { DEFAULT_STICKER_ID } from '../domain/types';
+import type { GoalMode } from '../domain/types';
+import { ME } from '../repositories/ids';
+import { deleteStickerRow } from '../repositories/stickerRepository';
 import { PhotoRejected, SyncRejected } from './contract';
-import type { Change, GoalRow, PhotoStore, RecordRow, RowEntity, StickerRow, SyncServer } from './contract';
+import { ensureSameAccount } from './pull';
+import type { PullDeps } from './pull';
+import type { GoalRow, MemberChangeRow, PhotoStore, PushRejection, RecordRow, StickerRow, SyncServer, V2Change } from './contract';
 
-const TABLE: Record<RowEntity, string> = { goal: 'goals', sticker: 'stickers', record: 'records' };
-const COLUMNS: Record<RowEntity, string> = {
-  goal: 'id, name, board_type, total_slots, default_sticker_id, created_at, end_date, completed_at, completion_seen, last_placed_at, initial_slots, updated_at, sort_order',
-  sticker: 'id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min',
-  // 기기 경로 photo_uri는 보내지 않는다
-  record: 'id, sticker_id, memo, photo_remote_path, created_at, updated_at',
+/**
+ * 혼자 목표 한 줄의 열과 FROM. 기기의 goals와 내 goal_members를 합친 모양이다(api_v1.sql upsert_solo_goal, replace_all).
+ * 올리기와 「이 기기 기록 유지」(restore.ts)가 같이 쓰고, 쓰는 곳이 WHERE를 붙인다.
+ */
+export const SOLO_GOAL_ROW = `g.id, g.name, g.board_type, g.total_slots, COALESCE(m.sticker_id, '${DEFAULT_STICKER_ID}') AS default_sticker_id,
+        g.created_at, g.end_date, m.completed_at, m.completion_seen, m.last_placed_at, g.initial_slots, g.updated_at, m.sort_order
+   FROM goals g JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}'`;
+// mode는 보내지 않는다. 함께 목표의 목표 행을 거르는 데만 쓴다.
+const GOAL_SQL = `SELECT g.mode, ${SOLO_GOAL_ROW} WHERE g.id = ?`;
+// 내 멤버 행(api_v2.sql sync_push의 member). 기본 스티커는 혼자 목표만 보낸다.
+const MEMBER_SQL = `SELECT g.mode, m.goal_id, m.sort_order, m.completed_at, m.completion_seen, m.last_placed_at, m.updated_at, m.sticker_id
+   FROM goal_members m JOIN goals g ON g.id = m.goal_id WHERE m.goal_id = ? AND m.user_id = '${ME}'`;
+const STICKER_SQL = 'SELECT id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min FROM stickers WHERE id = ?';
+// 기기 경로 photo_uri는 보내지 않는다
+const RECORD_SQL = 'SELECT id, sticker_id, memo, photo_remote_path, created_at, updated_at FROM records WHERE id = ?';
+
+export type PushDeps = Partial<Pick<PullDeps, 'userId' | 'currentUserId'>> & {
+  server: SyncServer; photos: PhotoStore; deviceId: string; batchSize?: number; now?: () => number;
+  /**
+   * 한 판에서 다른 사람이 먼저 붙인 칸이라 기기에서 지웠다(slot_taken). 화면이 안내하고,
+   * 지운 기록의 기기 사진(removedPhotoUri)이 있으면 그 파일을 지운다. 목표 id는 지우기 전에 읽어 둔 것이다.
+   * DB에서는 이미 지운 뒤에 부른다.
+   */
+  onSlotTaken?: (stickerId: string, removedPhotoUri: string | null, goalId: string) => void;
+  /** 함께 목표 달력판에서 기간 밖 날짜라(out_of_period) 기기에서 칸을 지웠다. 알림 없이 지운 기록의 기기 사진만 지운다. */
+  onOutOfPeriod?: (stickerId: string, removedPhotoUri: string | null, goalId: string) => void;
 };
 
-export type PushDeps = { server: SyncServer; photos: PhotoStore; deviceId: string; batchSize?: number; now?: () => number };
+/** 올리는 사이 로그인한 계정이 바뀌었으면 던진다(AccountChanged). userId를 주지 않으면 확인하지 않는다. */
+async function ensureSameAccountFor(deps: PushDeps): Promise<void> {
+  if (deps.userId !== undefined) await ensureSameAccount({ userId: deps.userId, currentUserId: deps.currentUserId });
+}
 
-/** 지금 행 상태로 바꾼다. 행이 없으면 삭제다 — 쪽지에 내용을 담지 않아 쪽지와 DB가 어긋나지 않는다. */
-async function toChange(e: OutboxEntry, now: number): Promise<Change> {
-  const entity = e.entity as RowEntity;
+/**
+ * 지금 행 상태로 바꾼다. 행이 없으면 삭제다 — 쪽지에 내용을 담지 않아 쪽지와 DB가 어긋나지 않는다.
+ * 보낼 것이 없으면 null: 함께 목표의 목표 행(update_goal로 바꾼다), 지운 목표의 멤버 행(서버가 멤버 삭제를 받지 않는다).
+ * 보내는 행에는 사용자 id가 없다. 붙인 사람과 기록 주인은 서버가 로그인 사용자로 정한다.
+ */
+async function toChange(e: OutboxEntry, now: number): Promise<V2Change | null> {
   const db = await getDb();
-  const row = await db.first<GoalRow | StickerRow | RecordRow>(
-    `SELECT ${COLUMNS[entity]} FROM ${TABLE[entity]} WHERE id = ?`, e.rowId,
-  );
+  if (e.entity === 'goal') {
+    const row = await db.first<GoalRow & { mode: GoalMode }>(GOAL_SQL, e.rowId);
+    if (!row) return { entity: 'goal', op: 'delete', id: e.rowId, deletedAt: now };
+    if (row.mode !== 'solo') return null;
+    const { mode: _mode, ...goal } = row;
+    return { entity: 'goal', op: 'upsert', row: goal };
+  }
+  if (e.entity === 'member') {
+    const row = await db.first<Omit<MemberChangeRow, 'sticker_id'> & { mode: GoalMode; sticker_id: string | null }>(MEMBER_SQL, e.rowId);
+    if (!row) return null;
+    const { mode, sticker_id, ...member } = row;
+    return { entity: 'member', op: 'upsert', row: mode === 'solo' && sticker_id ? { ...member, sticker_id } : member };
+  }
+  const entity = e.entity === 'sticker' ? 'sticker' : 'record';
+  const row = await db.first<StickerRow | RecordRow>(entity === 'sticker' ? STICKER_SQL : RECORD_SQL, e.rowId);
   if (!row) return { entity, op: 'delete', id: e.rowId, deletedAt: now };
-  return { entity, op: 'upsert', row } as Change;
+  return { entity, op: 'upsert', row } as V2Change;
+}
+
+/** 서버가 rejected에 싣는 id. member는 목표 id다(sync_push의 coalesce(r->>'id', c->>'id', r->>'goal_id')). */
+const changeId = (c: V2Change): string => (c.op === 'delete' ? c.id : c.entity === 'member' ? c.row.goal_id : c.row.id);
+
+/**
+ * 한 판에서 다른 사람이 먼저 붙인 칸(slot_taken)이나 기간 밖 날짜(out_of_period). 기기에서 그 칸과 기록을 지우고 다시 보내지 않는다.
+ * 사진을 먼저 올렸으면 서버 파일은 지운다(기록이 없으면 pushPhoto가 지운다).
+ * 지운 기록의 기기 사진 경로와, 지우기 전에 읽어 둔 목표 id를 돌려준다.
+ */
+async function dropTakenSticker(id: string, now: number): Promise<{ photoUri: string | null; goalId: string | null }> {
+  const db = await getDb();
+  return db.transaction(async (tx) => {
+    const goalId = (await tx.first<{ goal_id: string }>('SELECT goal_id FROM stickers WHERE id = ?', id))?.goal_id ?? null;
+    const record = await deleteStickerRow(tx, id);
+    await tx.run("DELETE FROM outbox WHERE entity = 'sticker' AND row_id = ?", id);
+    if (!record) return { photoUri: null, goalId };
+    await tx.run("DELETE FROM outbox WHERE entity IN ('record', 'photo') AND row_id = ?", record.recordId);
+    if (record.photoRemotePath) await enqueue(tx, 'photo', record.recordId, now);
+    return { photoUri: record.photoUri, goalId };
+  });
 }
 
 async function setRemotePath(recordId: string, path: string | null, now: number): Promise<void> {
@@ -56,13 +121,19 @@ async function pushPhoto(e: OutboxEntry, photos: PhotoStore, now: number): Promi
   if (path !== rec.photo_remote_path) await setRemotePath(e.rowId, path, now);
 }
 
-/** 한 묶음을 보낸다. 거부되면 한 건씩 나눠 문제 항목만 보류한다. 네트워크 오류는 던진다. 보류한 수를 돌려준다. */
+/**
+ * 한 묶음을 보낸다. 네트워크 오류는 던진다. 보류한 수를 돌려준다.
+ * 묶음 전체가 거부되면(SyncRejected) 한 건씩 나눠 문제 항목만 보류한다.
+ * 행 하나만 빠진 거절(rejected)은 그 항목만: 칸 겹침(slot_taken)과 기간 밖 날짜(out_of_period)는 기기에서 칸을 지우고,
+ * 내 행이 아님(not_allowed)은 보류한다.
+ */
 async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Promise<number> {
-  const changes = await Promise.all(entries.map((e) => toChange(e, now)));
+  const built = await Promise.all(entries.map(async (entry) => ({ entry, change: await toChange(entry, now) })));
+  const sending = built.flatMap(({ entry, change }) => (change ? [{ entry, change }] : []));
+  let rejected: PushRejection[] = [];
   try {
-    await deps.server.push(deps.deviceId, changes);
-    await ack(entries);
-    return 0;
+    await ensureSameAccountFor(deps); // 보내는 묶음은 지금 계정 것이어야 한다
+    if (sending.length) ({ rejected } = await deps.server.push(deps.deviceId, sending.map((s) => s.change)));
   } catch (error) {
     if (!(error instanceof SyncRejected)) throw error;
     if (entries.length === 1) {
@@ -73,6 +144,27 @@ async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Pr
     for (const e of entries) held += await pushRows([e], deps, now);
     return held;
   }
+  if (rejected.length) await ensureSameAccountFor(deps); // 거절 반영(칸 지우기, 보류)은 기기에 쓴다
+  let held = 0;
+  const handled = new Set<OutboxEntry>();
+  for (const r of rejected) {
+    const hit = sending.find((s) => s.change.entity === r.entity && changeId(s.change) === r.id);
+    if (!hit) continue;
+    handled.add(hit.entry);
+    if (r.reason === 'slot_taken' && r.entity === 'sticker') {
+      const { photoUri, goalId } = await dropTakenSticker(r.id, now);
+      if (goalId) deps.onSlotTaken?.(r.id, photoUri, goalId);
+    } else if (r.reason === 'out_of_period' && r.entity === 'sticker') {
+      // 기간 밖 날짜는 다시 보내도 받지 않는다. 앱은 붙이지 않는 날이라(기기 시계가 크게 틀린 때뿐) 알리지 않고 칸만 지운다.
+      const { photoUri, goalId } = await dropTakenSticker(r.id, now);
+      if (goalId) deps.onOutOfPeriod?.(r.id, photoUri, goalId);
+    } else {
+      await hold(hit.entry, r.reason);
+      held += 1;
+    }
+  }
+  await ack(entries.filter((e) => !handled.has(e)));
+  return held;
 }
 
 /**
