@@ -7,7 +7,7 @@ import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
-import {pixelOutline,progressRatio} from './geometry';
+import {photoFrameRatio,pixelOutline,progressRatio} from './geometry';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 import {t} from '../i18n';
 import type {MascotBlocks} from './mascot';
@@ -82,10 +82,35 @@ export function StickerSummary({value,onChange}:{value:StickerId;onChange?:()=>v
 export function RecordSummary({goalName,date,sticker}:{goalName:string;date:string;sticker:StickerId}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',alignItems:'center',gap:16}}><StickerGlyph id={sticker} size={56}/><View style={{width:retro.shape.border,height:56,backgroundColor:retro.color.ink}}/><View style={{flex:1,gap:4}}><PixelText variant="title">{goalName}</PixelText><PixelText>{date}</PixelText></View></PixelFrame>;
 }
+/** 사진이 없거나 크기를 알기 전의 틀 비율 (2026-10-17 시안 3판 B) */
+export const PHOTO_FRAME_DEFAULT_RATIO=586/494;
+function photoUri(source?:ImageSourcePropType){
+  if(source==null||typeof source==='number') return null;
+  return (Array.isArray(source)?source[0]:source)?.uri??null;
+}
+/**
+ * 크게 보는 사진 틀 비율. 기록에 사진 크기를 저장하지 않아서 Image.getSize로 읽어 바꾼다. 그 전에는 기본 틀 (2026-11-05 A안).
+ * onLoad가 아닌 getSize를 쓰는 건 웹(Storybook)의 onLoad 이벤트에 크기가 없어서다.
+ */
+export function usePhotoFrameRatio(source?:ImageSourcePropType) {
+  const uri=photoUri(source);
+  const [loaded,setLoaded]=useState<{uri:string;ratio:number}|null>(null);
+  useEffect(()=>{
+    if(!uri) return;
+    let live=true;
+    Image.getSize(uri,(width,height)=>{
+      const ratio=photoFrameRatio(width,height);
+      if(live&&ratio!=null) setLoaded({uri,ratio});
+    },()=>{});
+    return ()=>{live=false;};
+  },[uri]);
+  return loaded&&loaded.uri===uri?loaded.ratio:PHOTO_FRAME_DEFAULT_RATIO;
+}
 export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,onPhotoError,actionsInFrame:inFrame=false}:{source?:ImageSourcePropType;preview?:ReactNode;/** 앨범에서 고르기 */onChoose:()=>void;/** 카메라로 찍기. 주면 빈 프레임에 [사진 찍기]·[앨범에서 고르기]를 함께 둔다 (2026-10-11 시안 B) */onTakePhoto?:()=>void;onRemove:()=>void;onPhotoError?:()=>void;actionsInFrame?:boolean}) {
   const attached=!!source||!!preview;
+  const frameRatio=usePhotoFrameRatio(source);
   return <View style={{gap:12}}>
-    <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:586/494,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
+    <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:frameRatio,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
       {source?<Image source={source} onError={onPhotoError} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label={t('photo.take')} variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label={t('photo.choose')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label={t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>{t('photo.prompt')}</PixelText></View>)}
       {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel={t('photo.remove')} onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
     </View></PixelFrame>
@@ -104,13 +129,6 @@ export function SettingRow({label,value,onPress,navigates=true,disabled=false}:{
     {value&&<PixelText style={{fontSize:14,lineHeight:20}}>{value}</PixelText>}
     {navigates&&<PixelIcon name="chevron" size={14}/>}
   </Pressable>;
-}
-/** 아래에 설명 한 줄이 붙는 SettingRow. 누르면 무슨 일이 생기는지 미리 알린다 (함께 목표 「문제가 있을 때」, 2026-11-04). */
-export function SettingHint({label,hint,onPress}:{label:string;hint:string;onPress:()=>void}) {
-  return <View>
-    <SettingRow label={label} onPress={onPress}/>
-    <View style={{marginTop:-10,paddingBottom:6}}><PixelText variant="caption" style={caption}>{hint}</PixelText></View>
-  </View>;
 }
 /** 누를 수 없는 「항목 · 값」 줄. SettingRow와 같은 높이 (앱 설정 계정과 백업, 2026-10-08). */
 export function InfoRow({label,value}:{label:string;value:string}) {
@@ -167,6 +185,23 @@ function useCenteringScroll() {
   };
   return {scroll,content,offset,scrollProps,scrollToCenter};
 }
+/** 안쪽 판 밀기가 손가락을 잡은 동안 바깥 세로 스크롤을 멈춘다(true) 풀어 준다(false). */
+type ScrollLock=(locked:boolean)=>void;
+const ScrollLockContext=createContext<ScrollLock>(()=>{});
+/**
+ * 판 밀기가 쓴다. iOS 세로 스크롤(UIScrollView)은 안쪽에서 JS가 손가락을 잡아도 멈추지 않아,
+ * 가로로 밀어도 판이 위아래로 같이 끌렸다(2026-11-05 실기기 녹화). 감싼 스크롤을 모두 멈춘다.
+ */
+export function useScrollLock() {
+  return useContext(ScrollLockContext);
+}
+/** 이 스크롤의 잠금 상태와, 바깥 스크롤까지 함께 잠그는 함수 */
+function useNestedScrollLock() {
+  const parent=useContext(ScrollLockContext);
+  const [locked,setLocked]=useState(false);
+  const lock=useCallback<ScrollLock>(on=>{setLocked(on);parent(on);},[parent]);
+  return {locked,lock};
+}
 /**
  * 화면 일부만 스크롤하는 영역. 안에서 useScrollToCenter를 부르면 이 영역을 옮긴다.
  * 판 상세는 제목·진행 줄을 고정하고 칸만 이 안에서 스크롤한다 (2026-09-30).
@@ -176,10 +211,11 @@ export function CenteringScrollView({children,style,testID}:{children:ReactNode;
   // 내용이 영역보다 클 때만 스크롤한다. 다 들어가는데도 끌리면 실기기에서 달력 머리가 위로 밀려 사라졌다 (2026-11-03 녹화).
   const [sizes,setSizes]=useState({viewport:0,content:0});
   const overflow=sizes.viewport>0&&sizes.content>sizes.viewport+1;
-  return <ScrollView testID={testID} {...scrollProps} style={style} scrollEnabled={overflow} bounces={overflow}
+  const {locked,lock}=useNestedScrollLock();
+  return <ScrollView testID={testID} {...scrollProps} style={style} scrollEnabled={overflow&&!locked} bounces={overflow}
     onLayout={event=>{scrollProps.onLayout(event);const viewport=event.nativeEvent.layout.height;setSizes(previous=>previous.viewport===viewport?previous:{...previous,viewport});}}
     onContentSizeChange={(width,height)=>{scrollProps.onContentSizeChange(width,height);setSizes(previous=>previous.content===height?previous:{...previous,content:height});}}>
-    <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider></View>
+    <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}><ScrollLockContext.Provider value={lock}>{children}</ScrollLockContext.Provider></ScrollToCenterContext.Provider></View>
   </ScrollView>;
 }
 /** 키보드가 떠 있으면 대상의 아래 끝이 키보드 위로 오게 RetroScreen을 내린다. 키보드가 없거나 RetroScreen 밖이면 아무것도 안 한다. */
@@ -211,6 +247,7 @@ const HEADER_GAP=24;
 export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap=HEADER_GAP,scrollable=true,scrollEnabled=true}:{/** false면 잠시 스크롤을 멈춘다. 내 목표를 끄는 동안(PRD 4.1) */scrollEnabled?:boolean;children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** 헤더와 본문 사이. 헤더 끝이 제목이 아니라 탭이면 본문 간격으로 줄인다 (2026-10-10) */headerGap?:number;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
   const {scroll,content,offset,scrollProps,scrollToCenter}=useCenteringScroll();
+  const {locked:swipeLocked,lock}=useNestedScrollLock();
   // iOS 시트(모달)는 화면 아래에 붙어 위가 비어 있다. 시트 안에서는 measureInWindow·layout이 시트 기준이고 키보드 위치는
   // 화면 기준이라, 그 빈 높이만큼 키보드와 겹침을 적게 잡아 새 목표의 「칸 수 직접 입력」이 키패드에 가려졌다 (2026-10-10).
   // 화면 높이 − 이 화면 높이로 빈 높이를 구해 두 계산에 더한다. 전체 화면은 0이다.
@@ -243,6 +280,11 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
   // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
+  // 넘치는 것이 아래 여백뿐이면 스크롤하지 않는다. 몇 pt만 넘쳐도 스크롤이 켜져, 보이지 않는 것이 없는데
+  // 판 전체가 손가락을 따라 크게 끌렸다가 돌아왔다(2026-11-05 시뮬레이터, 친구를 기다리는 한 판). 아직 못 쟀으면 스크롤을 둔다.
+  const [viewHeight,setViewHeight]=useState(0);
+  const [contentHeight,setContentHeight]=useState(0);
+  const overflows=viewHeight===0||contentHeight===0||contentHeight-viewHeight>insets.bottom+SCREEN_PADDING;
   const column=[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20} as const,style,header?{paddingTop:0}:null];
   // 스크롤하지 않는 화면: 본문이 남은 높이 안에 들어가고, 넘치는 부분은 본문이 직접 스크롤한다(판 상세).
   const body=!scrollable
@@ -250,14 +292,18 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     : <ScrollView
     testID="retro-scroll"
     {...scrollProps}
-    scrollEnabled={scrollEnabled}
-    onLayout={event=>{scrollProps.onLayout(event);revealFocused();}}
+    scrollEnabled={scrollEnabled&&!swipeLocked&&overflows}
+    // 내용이 화면에 다 들어가면 위아래로 튕기지 않는다. iOS 기본값(늘 튕김)이면 스크롤할 것이 없어도
+    // 세로 스크롤이 손가락을 먼저 잡아, 판 가로 밀기가 판 전체를 위아래로 끄는 것이 되었다(2026-11-05 실기기 녹화).
+    alwaysBounceVertical={false}
+    onLayout={event=>{scrollProps.onLayout(event);setViewHeight(event.nativeEvent.layout.height);revealFocused();}}
+    onContentSizeChange={(width,height)=>{scrollProps.onContentSizeChange(width,height);setContentHeight(height);}}
     style={{flex:1}}
     contentContainerStyle={{flexGrow:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
     <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()} style={column}>
-      <ScrollToCenterContext.Provider value={scrollToCenter}><RevealAboveKeyboardContext.Provider value={reveal}>{children}</RevealAboveKeyboardContext.Provider></ScrollToCenterContext.Provider>
+      <ScrollToCenterContext.Provider value={scrollToCenter}><RevealAboveKeyboardContext.Provider value={reveal}><ScrollLockContext.Provider value={lock}>{children}</ScrollLockContext.Provider></RevealAboveKeyboardContext.Provider></ScrollToCenterContext.Provider>
     </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
@@ -380,7 +426,7 @@ export function BoardProgressRow({value,total,percentLabel,completed=false,stick
       {/* 폭을 재기 전(첫 그림)에는 비율로 둔다 */}
       <View pointerEvents="none" style={{position:'absolute',top:0,...(width>0?{left:progressMascotLeft(ratio,width)}:{left:`${ratio*100}%`,marginLeft:-ratio*PROGRESS_MASCOT})}}><Mascot pose={progressBlockPose(ratio)} size={PROGRESS_MASCOT}/></View>
     </View>
-    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel}</PixelText>}
+    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion} withSticker={false}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel}</PixelText>}
   </View>;
 }
 /** 목록이 비었을 때의 안내 상자. */
@@ -426,10 +472,12 @@ export function PeriodField({startDate,endDate,lastPlacedDate,picking,onPick,onC
     {picking&&<EndDatePicker firstAllowed={dayAfter(last)} selected={endDate} onSelect={onChange} hint={lastPlacedDate?t('period.hintAfterLast',longDate(lastPlacedDate)):t('period.hintAfterStart')}/>}
   </View>;
 }
-/** 화면 맨 아래 삭제 영역: 구분선, [삭제하기] 보조 버튼, 무엇이 지워지는지 안내. 누르면 호스트가 삭제 확인 다이얼로그를 띄운다. */
-export function DeleteSection({onDelete,description=t('delete.goalDescription')}:{onDelete:()=>void;description?:string}) {
+/**
+ * 화면 맨 아래 삭제 영역: 구분선, [삭제하기] 보조 버튼. 누르면 호스트가 삭제 확인 다이얼로그를 띄우고, 무엇이 지워지는지는 그 창이 말한다.
+ * 버튼 아래에 같은 안내를 또 두지 않는다(2026-11-05 사용자).
+ */
+export function DeleteSection({onDelete}:{onDelete:()=>void}) {
   return <View style={{gap:8,marginTop:8,paddingTop:16,borderTopWidth:retro.shape.cellBorder,borderColor:retro.color.ink}}>
     <PixelButton label={t('common.delete')} variant="secondary" icon={<ActionSymbol name="trash" size={18}/>} onPress={onDelete}/>
-    <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{description}</PixelText>
   </View>;
 }

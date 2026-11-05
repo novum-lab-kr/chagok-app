@@ -239,7 +239,7 @@ describe('shareInvite', () => {
     const { d } = setup();
     d.client = withCode('K7Q2MXAB');
     expect(await shareInvite(d, 'g1', '걷기')).toBe(true);
-    expect(Share.share).toHaveBeenCalledWith({ message: '「걷기」 같이 채워요\nhttps://chagok.novum-lab.com/invite/K7Q2MXAB' });
+    expect(Share.share).toHaveBeenCalledWith({ message: '같이 「걷기」 해 볼래요? 스티커를 한 칸씩 붙이며 함께 채워요.\nhttps://chagok.novum-lab.com/invite/K7Q2MXAB' });
   });
 
   it('쓰는 코드가 없으면 공유 창을 열지 않고 false', async () => {

@@ -1,7 +1,7 @@
 import React,{useState,type ReactNode} from 'react';
 import {Pressable,ScrollView,View} from 'react-native';
 import {DIALOG_MAX_WIDTH,FieldError,ModalHost,PixelBadge,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,useContentWidth} from './components';
-import {BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,KeepAboveKeyboard,OptionButtons,PixelBottomSheet,RetroScreen,ScreenHeader,SettingHint,SlotCountPicker,StickerSummary,type BoardKind} from './composition-controls';
+import {BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,KeepAboveKeyboard,OptionButtons,PixelBottomSheet,RetroScreen,ScreenHeader,SettingRow,SlotCountPicker,StickerSummary,type BoardKind} from './composition-controls';
 import {SlotsField,useSwipePages,type EndDateMode,type SlotsFieldView} from './board-screens';
 import {monthCells,calendarDateKey} from './calendar';
 import {Mascot,type MascotPose} from './mascot';
@@ -295,16 +295,19 @@ export function MemberList({members,max,onKick,onInvite,onRotate}:{members:reado
   </View></PixelPanel>;
 }
 /**
- * 만든 사람 [삭제하기] 안내. 각자 판은 내 판이 지워지고, 한 판은 내가 붙인 칸이 지워진다(서버 remove_member). 확인 창도 같은 문구.
- * 나 말고 아무도 없으면(alone, 차단한 사람도 센다) 남는 판과 칸이 없어 두 방식 모두 혼자 목표의 안내를 쓴다.
+ * 만든 사람 [삭제하기] 확인 창 문구. 각자 판은 내 판이 지워지고, 한 판은 내가 붙인 칸이 지워진다(서버 remove_member).
+ * 나 말고 아무도 없으면 호스트가 혼자 목표와 같은 문구(지워질 스티커와 기록 수)를 쓴다.
  */
-export const deleteOwnerDescription=(mode:TogetherMode,alone=false)=>alone?t('delete.goalDescription'):mode==='each'?t('together.deleteOwner'):t('together.deleteOwnerOne');
-/** 「문제가 있을 때」: 신고, 차단, 나가기. 줄마다 누르면 무슨 일이 생기는지 한 줄씩 (App Store 심사 지침 1.2). */
-function ProblemSection({mode,onReport,onBlock,onLeave}:{mode:TogetherMode;onReport?:()=>void;onBlock?:()=>void;onLeave:()=>void}) {
+export const deleteOwnerDescription=(mode:TogetherMode)=>mode==='each'?t('together.deleteOwner'):t('together.deleteOwnerOne');
+/**
+ * 「문제가 있을 때」: 신고, 차단, 나가기 (App Store 심사 지침 1.2).
+ * 무슨 일이 생기는지는 누른 뒤의 확인 창이 말한다. 줄 아래에 같은 설명을 또 두지 않는다(2026-11-05 사용자).
+ */
+function ProblemSection({onReport,onBlock,onLeave}:{onReport?:()=>void;onBlock?:()=>void;onLeave:()=>void}) {
   return <PixelPanel title={t('together.problems')}><View>
-    {onReport&&<SettingHint label={t('together.report')} hint={t('together.reportHint')} onPress={onReport}/>}
-    {onBlock&&<SettingHint label={t('together.block')} hint={t('together.blockHint')} onPress={onBlock}/>}
-    <SettingHint label={t('together.leave')} hint={mode==='each'?t('together.leaveHintEach'):t('together.leaveHintOne')} onPress={onLeave}/>
+    {onReport&&<SettingRow label={t('together.report')} onPress={onReport}/>}
+    {onBlock&&<SettingRow label={t('together.block')} onPress={onBlock}/>}
+    <SettingRow label={t('together.leave')} onPress={onLeave}/>
   </View></PixelPanel>;
 }
 /**
@@ -312,7 +315,7 @@ function ProblemSection({mode,onReport,onBlock,onLeave}:{mode:TogetherMode;onRep
  * 「목표 이름과 칸 수는 만든 사람이 바꿔요」. 모두 내 이름, 내 스티커, 함께하는 사람(members), 문제가 있을 때를 본다.
  * 완성한 판은 만든 사람에게도 onChangeGoalName과 slots를 넘기지 않는다(이름과 칸 수 칸이 없다).
  */
-export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,completed=false,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,saveError,onReport,onBlock,onLeave,onDelete,alone=false,onBack}:{
+export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,completed=false,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,saveError,onReport,onBlock,onLeave,onDelete,onBack}:{
   role:'owner'|'member';mode:TogetherMode;
   goalName:string;/** 만든 사람만 */onChangeGoalName?:(name:string)=>void;goalNameMaxLength?:number;goalNameError?:string;
   /** 만든 사람의 진행 중인 적립판만. 늘리기만 된다(새 조립, GoalSettingsScreen과 같은 칸) */slots?:SlotsFieldView;
@@ -321,8 +324,7 @@ export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goal
   sticker:StickerId;onChooseSticker:()=>void;stickerError?:string;
   /** MemberList */members?:ReactNode;onSave:()=>void;saveDisabled?:boolean;
   /** 저장이 거절된 칸의 문구를 [저장하기] 바로 위에도 한 번 더(그 칸이 화면 밖이어도 보이게, 친구와 함께 만들기의 error와 같은 자리) */saveError?:string;
-  /** 둘 다 없으면(나 말고 다른 사람이 없음) 그 줄을 그리지 않는다 */onReport?:()=>void;onBlock?:()=>void;onLeave:()=>void;/** 만든 사람만 */onDelete?:()=>void;
-  /** 나 말고 다른 사람이 없다(차단한 사람도 센다). [삭제하기] 안내가 혼자 목표와 같아진다 */alone?:boolean;onBack:()=>void}) {
+  /** 둘 다 없으면(나 말고 다른 사람이 없음) 그 줄을 그리지 않는다 */onReport?:()=>void;onBlock?:()=>void;onLeave:()=>void;/** 만든 사람만 */onDelete?:()=>void;onBack:()=>void}) {
   const owner=role==='owner';
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
     {owner
@@ -334,8 +336,8 @@ export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goal
     {/* 칸 아래 문구가 이미 알림이라 여기는 알림으로 두지 않는다(화면 읽기가 두 번 읽지 않게) */}
     {saveError&&<PixelText>{saveError}</PixelText>}
     <PixelButton label={t('goal.save')} disabled={saveDisabled} onPress={onSave}/>
-    <ProblemSection mode={mode} onReport={onReport} onBlock={onBlock} onLeave={onLeave}/>
-    {owner&&onDelete&&<DeleteSection onDelete={onDelete} description={deleteOwnerDescription(mode,alone)}/>}
+    <ProblemSection onReport={onReport} onBlock={onBlock} onLeave={onLeave}/>
+    {owner&&onDelete&&<DeleteSection onDelete={onDelete}/>}
   </RetroScreen>;
 }
 

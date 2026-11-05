@@ -110,11 +110,13 @@ export function SplashAnimation({onDone,reduceMotion,at}:{onDone?:()=>void;reduc
   useEffect(()=>{
     if (at!==undefined||reduced===null) return;
     if (reduced) {onDone?.();return;}
-    // 장면이 바뀌는 시각마다 타이머를 건다(가짜 타이머로 테스트할 수 있게 rAF 대신 setTimeout).
-    const timers=tl.events.slice(1).map((e,i)=>setTimeout(()=>setIndex(i+1),e.t));
-    timers.push(setTimeout(()=>onDone?.(),tl.total));
-    return ()=>timers.forEach(clearTimeout);
-  },[at,reduced,tl,onDone]);
+    // 지금 장면을 그린 뒤에 다음 장면 하나만 건다(가짜 타이머로 테스트할 수 있게 rAF 대신 setTimeout).
+    // 시각을 처음에 다 걸어 두면, 시작 직후 아래 홈 화면을 그리느라 JS가 0.5초쯤 막힐 때 밀린 장면이
+    // 한꺼번에 처리돼 색이 한 번에 찼다(2026-11-05 실기기 개발 빌드). 막히면 그만큼 기다렸다가 한 줄씩 이어 간다.
+    const next=tl.events[index+1];
+    const id=setTimeout(()=>{if (next) setIndex(index+1); else onDone?.();},(next?.t??tl.total)-tl.events[index].t);
+    return ()=>clearTimeout(id);
+  },[at,reduced,tl,onDone,index]);
   const frame=at!==undefined?splashFrameAt(tl,at):reduced?tl.events[tl.events.length-1]:tl.events[index];
   return <View accessible accessibilityLabel={word} style={{flex:1,backgroundColor:retro.color.screen,alignItems:'center',justifyContent:'center'}}>
     {/* Svg 위쪽 12칸은 떨어지는 판 자리다. 그림 24칸의 가운데(Svg 위에서 24칸)가 화면 정가운데에 오게 옮긴다. */}

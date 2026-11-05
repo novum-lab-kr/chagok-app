@@ -55,7 +55,8 @@ export function PixelFrame({ children, variant = 'panel', fill = c.lcd, pressed 
   const thin = variant === 'thin';
   const padding = variant === 'panel' ? 10 : thin ? THIN_FRAME.padding : border;
   const unit = variant === 'panel' || variant === 'dialog' ? retro.shape.panelUnit : variant === 'button' || variant === 'input' ? retro.shape.controlUnit : retro.shape.unit;
-  const w = Math.round(size.width - (raised ? 1 : 0)), h = Math.round(size.height - depth);
+  // 내림한다. 올림하면 Svg(실제 크기) 밖으로 나간 오른쪽, 아래 테두리가 잘려 얇게 보였다(2026-11-05 실기기, 함께 달력판 날짜 칸).
+  const w = Math.floor(size.width - (raised ? 1 : 0)), h = Math.floor(size.height - depth);
   const outline = (inset = 0) => pixelOutline(w, h, inset, unit);
   // Surface and shadow must share the same contour, including stroke joins.
   const surfaceOutline = outline(border / 2);
@@ -380,9 +381,9 @@ export function PixelBadge({label,tone='ink',large=false}:{label:string;tone?:Ba
   </PixelFrame>;
 }
 /** 판이 100%가 되면 붙는 완성 스티커: 그 판의 기본 스티커 + 「완성」 배지. */
-export function CompletionSticker({sticker,size=36,tilted=false,animate=false}:{sticker:StickerId;size?:number;/** 스티커를 붙인 듯 비스듬히 (완성한 판 설정) */tilted?:boolean;/** 완성 순간: 붙이기 모션 한 번 (PRD 4.7) */animate?:boolean}) {
+export function CompletionSticker({sticker,size=36,tilted=false,animate=false,withSticker=true}:{sticker:StickerId;size?:number;/** 스티커를 붙인 듯 비스듬히 (완성한 판 설정) */tilted?:boolean;/** 완성 순간: 붙이기 모션 한 번 (PRD 4.7) */animate?:boolean;/** false면 [완성] 배지만 (판 진행 줄, 2026-11-05 사용자) */withSticker?:boolean}) {
   const body=<View accessible accessibilityLabel={t('common.completedBadge')} style={{flexDirection:'row',alignItems:'center',gap:4,transform:tilted?[{rotate:'-10deg'}]:undefined}}>
-    <StickerGlyph id={sticker} size={size}/><PixelBadge label={t('common.completedBadge')} tone="primary" large/>
+    {withSticker&&<StickerGlyph id={sticker} size={size}/>}<PixelBadge label={t('common.completedBadge')} tone="primary" large/>
   </View>;
   return animate?<StickMotion from={1.8}>{body}</StickMotion>:body;
 }

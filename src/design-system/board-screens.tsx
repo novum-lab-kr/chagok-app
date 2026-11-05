@@ -6,7 +6,7 @@ import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {CompletionSticker,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickMotion,StickerGrid,removeStickerAction,stickerCellSize,useContentWidth,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
-import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
+import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,useScrollLock,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
 import {CalendarBoard,MonthNavigation,calendarDateKey} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 import {getLanguage,t} from '../i18n';
@@ -45,10 +45,30 @@ export function goalDragShift(index:number,from:number,to:number,size:number):nu
   if(to<from&&index>=to&&index<from) return size;
   return 0;
 }
-/** 비켜서는 카드는 바로 뛰지 않고 짧게 미끄러진다. 들린 카드는 손가락을 그대로 따른다. */
-function ShiftingCard({lifted,offset,shift,onLayout,children}:{lifted:boolean;offset:Animated.Value;shift:number;onLayout:(event:LayoutChangeEvent)=>void;children:ReactNode}) {
-  const [slide]=useState(()=>new Animated.Value(shift));
-  useEffect(()=>{Animated.timing(slide,{toValue:shift,duration:140,useNativeDriver:true}).start();},[shift,slide]);
+/** 목록 순서 표시. 앱 목록(given)이 놓기 전 그대로면 놓은 순서(pending)로, 바뀌었으면 앱 목록으로 그린다 */
+export function pendingOrder<T extends {id:string}>(given:readonly T[],pending:{base:string;ids:string[]}|null):readonly T[] {
+  if(!pending||pending.base!==given.map(item=>item.id).join('\n')) return given;
+  const byId=new Map(given.map(item=>[item.id,item]));
+  const out=pending.ids.map(id=>byId.get(id)).filter((item):item is T=>item!==undefined);
+  return out.length===given.length?out:given;
+}
+/** from 자리 카드를 to 자리로 옮긴 순서. base는 옮기기 전 목록 */
+export function movedOrder(items:readonly {id:string}[],from:number,to:number):{base:string;ids:string[]} {
+  const ids=items.map(item=>item.id);
+  const [picked]=ids.splice(from,1);
+  ids.splice(to,0,picked);
+  return {base:items.map(item=>item.id).join('\n'),ids};
+}
+/**
+ * 비켜서는 카드는 바로 뛰지 않고 짧게 미끄러진다. 들린 카드는 손가락을 그대로 따른다.
+ * 미끄럼 값(slide)은 목록이 카드마다 들고 있다. 놓아서 순서가 바뀌면 값을 버리고 새 순서를 새 값(0)으로 그린다.
+ * 새 순서에서 지나간 카드는 이미 비켜선 자리에 놓이므로, 옛 미끄럼이 남으면 한 칸 더 밀렸다가 돌아와 튕겨 보였다(2026-11-05 실기기 녹화).
+ * 값을 다시 그리기 전에 0으로 되돌리면 그 사이 한 프레임 동안 카드들이 옛 자리로 튀어 깜빡였다(2026-11-05 실기기).
+ */
+function ShiftingCard({lifted,offset,slide,shift,onLayout,children}:{lifted:boolean;offset:Animated.Value;slide:Animated.Value;shift:number;onLayout:(event:LayoutChangeEvent)=>void;children:ReactNode}) {
+  // 미끄럼과 끌기를 모두 JS로 움직인다. 미끄럼만 네이티브로 돌리면, 들린 카드가 끄는 값(offset)으로 바뀐 뒤에도
+  // 네이티브가 쥔 옛 위치에 머물러 손가락을 따라오지 않았고, 비켜선 카드가 그 밑으로 숨었다(2026-11-05 시뮬레이터).
+  useEffect(()=>{Animated.timing(slide,{toValue:shift,duration:140,useNativeDriver:false}).start();},[shift,slide]);
   return <Animated.View onLayout={onLayout} style={lifted?{zIndex:1,transform:[{translateY:offset}]}:{transform:[{translateY:slide}]}}>{children}</Animated.View>;
 }
 /**
@@ -57,10 +77,23 @@ function ShiftingCard({lifted,offset,shift,onLayout,children}:{lifted:boolean;of
  * 화면 읽기는 카드의 「위로 옮기기」 「아래로 옮기기」 동작으로 한 칸씩 옮긴다.
  * 손이 화면 끝에 닿아도 목록을 저절로 스크롤하지 않는다. 화면 밖 자리로는 두 번에 나눠 옮긴다.
  */
-function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순서 안내 중: 첫 카드를 끌어 한 칸 내렸다가 되돌리는 모션을 되풀이한다 (2026-11-02) */demo?:boolean;items:readonly GoalCardItem[];onOpen:(id:string)=>void;onMove:(from:number,to:number)=>void;onDragChange:(dragging:boolean)=>void}) {
+function ReorderableGoals({items:given,onOpen,onMove,onDragChange,demo=false}:{/** 순서 안내 중: 첫 카드를 끌어 한 칸 내렸다가 되돌리는 모션을 되풀이한다 (2026-11-02) */demo?:boolean;items:readonly GoalCardItem[];onOpen:(id:string)=>void;onMove:(from:number,to:number)=>void;onDragChange:(dragging:boolean)=>void}) {
+  // 놓은 순서는 앱이 저장해 새 목록을 줄 때까지 이 목록이 먼저 그린다. 그사이 옛 순서로 한 번 그려져
+  // 놓은 카드가 제자리로 튀었다가 새 자리로 가는 것이 보였다(2026-11-05 실기기 녹화).
+  const [pending,setPending]=useState<{base:string;ids:string[]}|null>(null);
+  const items=pendingOrder(given,pending);
+  const shown=useRef({items,given});
+  useEffect(()=>{shown.current={items,given};});
   const heights=useRef(new Map<string,number>());
   const [drag,setDrag]=useState<{from:number;to:number;/** 끄는 카드 높이와 간격 */size:number}|null>(null);
   const [offset]=useState(()=>new Animated.Value(0));
+  /** 카드 id마다 비켜서는 미끄럼 값. 놓을 때 한꺼번에 0으로 되돌리려고 목록이 들고 있다 */
+  const [slides]=useState(()=>new Map<string,Animated.Value>());
+  const slideFor=(id:string)=>{
+    let slide=slides.get(id);
+    if(!slide){slide=new Animated.Value(0);slides.set(id,slide);}
+    return slide;
+  };
   // 응답자 콜백은 렌더 밖에서 불린다. 지금 끄는 상태와 최신 콜백을 ref로 읽는다.
   const current=useRef<{from:number;to:number;startY:number;moving:boolean;heights:number[];size:number}|null>(null);
   const latest=useRef({onMove,onDragChange});
@@ -69,11 +102,20 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순
     const ended=current.current;
     if(!ended) return;
     current.current=null;
-    offset.setValue(0);
+    const moved=commit&&ended.to!==ended.from;
+    // 순서가 바뀌면 끄는 값과 미끄럼 값을 건드리지 않고, 다음 그리기에서 새 순서를 새 미끄럼 값으로 그린다.
+    // 들린 카드도 끄는 값을 떼고 제 미끄럼(0)으로 그린다. 끄는 값은 다음에 들 때 0으로 되돌린다.
+    // 취소면 들린 카드는 제자리로, 비켜선 카드는 제자리로 미끄러져 돌아간다
+    if(!moved) offset.setValue(0);
+    if(moved){
+      slides.clear();
+      // 기준은 앱 목록(given)이다. 저장이 오기 전에 또 옮겨도 화면 순서에서 이어 옮긴다
+      setPending({...movedOrder(shown.current.items,ended.from,ended.to),base:shown.current.given.map(item=>item.id).join('\n')});
+    }
     setDrag(null);
     latest.current.onDragChange(false);
-    if(commit&&ended.to!==ended.from) latest.current.onMove(ended.from,ended.to);
-  },[offset]);
+    if(moved) latest.current.onMove(ended.from,ended.to);
+  },[offset,slides]);
   // 탭 바의 끌어서 고르기와 같이 응답자 콜백을 직접 단다. 꾹 누른 뒤 첫 움직임에서 카드의 응답을 넘겨받고,
   // 끄는 동안은 스크롤이나 탭 넘김에 넘기지 않는다.
   const move=(pageY:number)=>{
@@ -88,6 +130,7 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순
     const measured=items.map(item=>heights.current.get(item.id)??0);
     const size=(measured[from]??0)+GOAL_GAP;
     current.current={from,to:from,startY:pageY,moving:false,heights:measured,size};
+    offset.setValue(0);
     setDrag({from,to:from,size});
     onDragChange(true);
   };
@@ -97,10 +140,11 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순
     if(!showDemo) return;
     let alive=true;
     let timer:ReturnType<typeof setTimeout>|undefined;
-    const glide=(toValue:number,done:()=>void)=>Animated.timing(offset,{toValue,duration:700,useNativeDriver:true}).start(({finished})=>{if(alive&&finished&&!current.current) done();});
+    const glide=(toValue:number,done:()=>void)=>Animated.timing(offset,{toValue,duration:700,useNativeDriver:false}).start(({finished})=>{if(alive&&finished&&!current.current) done();});
     const run=()=>{
       if(!alive||current.current) return;
       const size=(heights.current.get(items[0].id)??0)+GOAL_GAP;
+      offset.setValue(0);
       setDrag({from:0,to:0,size});
       glide(size,()=>{
         setDrag({from:0,to:1,size});
@@ -120,7 +164,7 @@ function ReorderableGoals({items,onOpen,onMove,onDragChange,demo=false}:{/** 순
     {items.map((item,index)=>{
       const lifted=drag?.from===index;
       const shift=drag&&!lifted?goalDragShift(index,drag.from,drag.to,drag.size):0;
-      return <ShiftingCard key={item.id} lifted={lifted} offset={offset} shift={shift} onLayout={event=>{heights.current.set(item.id,event.nativeEvent.layout.height);}}>
+      return <ShiftingCard key={item.id} lifted={lifted} offset={offset} slide={slideFor(item.id)} shift={shift} onLayout={event=>{heights.current.set(item.id,event.nativeEvent.layout.height);}}>
         <GoalSummaryCard name={item.name} sticker={item.sticker} kind={item.kind} percent={item.percent} status={item.status} lifted={lifted}
           onPress={()=>onOpen(item.id)} onLongPress={pageY=>start(index,pageY)} onPressOut={release}
           onMoveUp={index>0?()=>onMove(index,index-1):undefined}
@@ -253,11 +297,7 @@ function CalendarSwipe({board,children}:{board:CalendarBoardView;children:ReactN
     if(delta<0?!canGoPrev:!canGoNext) return;
     const d=new Date(year,month-1+delta,1);onMonthChange(d.getFullYear(),d.getMonth()+1);
   },[year,month,canGoPrev,canGoNext,onMonthChange]);
-  // PanResponder는 첫 렌더 값을 가두지 않도록 useMemo로 만든다.
-  const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponder:(_,g)=>startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
-    onPanResponderRelease:(_,g)=>{if(g.dx<=-48)shift(1);else if(g.dx>=48)shift(-1);},
-  }),[shift]);
+  const swipe=useSwipePages(canGoPrev?()=>shift(-1):undefined,canGoNext?()=>shift(1):undefined);
   return <View {...swipe.panHandlers}>{children}</View>;
 }
 function assignRef<T>(ref:React.Ref<T>|undefined,value:T|null) {
@@ -331,12 +371,7 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
     const id=setTimeout(()=>setAnchor(next),TALLY_PAGE_TURN_DELAY_MS);
     return ()=>clearTimeout(id);
   },[justPlaced,next,paged,first,last]);
-  // 칸(Pressable)이 손가락을 먼저 잡으면 판 밀기가 받지 못한다(2026-11-03 실기기). 가로로 분명히 움직이면 캡처 단계에서 판이 가져온다.
-  const swipe=useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponderCapture:(_,g)=>paged&&startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
-    onMoveShouldSetPanResponder:(_,g)=>paged&&startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
-    onPanResponderRelease:(_,g)=>{if(g.dx<=-48&&page<pages-1) go(page+1);else if(g.dx>=48&&page>0) go(page-1);},
-  }),[paged,page,pages,go]);
+  const swipe=useSwipePages(paged&&page>0?()=>go(page-1):undefined,paged&&page<pages-1?()=>go(page+1):undefined);
   const scrollToCenter=useScrollToCenter();
   const nextNode=useRef<View|null>(null);
   /** 마지막으로 가운데로 옮긴 때의 칸 수 */
@@ -394,12 +429,36 @@ function CompactBoardHeader({label,range,onPrev,onNext,prevLabel,nextLabel}:{lab
     {onNext?<Pressable accessibilityRole="button" accessibilityLabel={nextLabel} onPress={onNext} hitSlop={touchSlop({width:24,height:24})} style={slot}><PixelIcon name="chevron" size={12}/></Pressable>:<View style={slot}/>}
   </View>;
 }
-/** 가로로 분명히 밀면 쪽을 넘긴다. 화면 왼쪽 끝은 뒤로 가기에 맡긴다(판 상세와 같은 규칙). 친구 판 줄도 쓴다. */
+/** 이만큼 움직이면 방향을 정한다. iOS 세로 스크롤이 손가락을 잡기(약 10pt) 전에 판이 먼저 정해야 가로 밀기가 이긴다 */
+export const SWIPE_CLAIM_DISTANCE=8;
+/** 가로가 세로의 이 배수를 넘어야 가로로 본다. 대각선은 세로 스크롤에 맡긴다 */
+export const SWIPE_HORIZONTAL_RATIO=1.2;
+/** 이만큼 밀고 떼면 쪽을 넘긴다 */
+export const SWIPE_TURN_DISTANCE=48;
+/** 판 밀기가 손가락을 가져갈지. 화면 왼쪽 끝에서 시작했으면 뒤로 가기에 맡긴다. */
+export function isHorizontalSwipe(g:{moveX:number;dx:number;dy:number}):boolean {
+  return startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>SWIPE_CLAIM_DISTANCE&&Math.abs(g.dx)>Math.abs(g.dy)*SWIPE_HORIZONTAL_RATIO;
+}
+/**
+ * 가로로 분명히 밀면 쪽을 넘긴다. 혼자 판(적립판 쪽, 달력 달)과 함께 판(작은 판, 친구 판 줄)이 모두 쓴다.
+ * - 캡처 단계에서 잡는다. 칸(Pressable)이 손가락을 먼저 잡으면 판 밀기가 받지 못했다(2026-11-03 실기기).
+ * - 24pt를 기다리면 그 전에 iOS 세로 스크롤이 손가락을 가져가 가로 밀기가 거의 안 됐다(2026-11-05 실기기 녹화). 8pt에서 정한다.
+ * - 잡은 뒤에는 세로 스크롤이 달라고 해도 놓지 않고, 뗄 때까지 바깥 세로 스크롤을 멈춘다.
+ * - 넘길 쪽이 없으면 잡지 않는다. 세로 스크롤이 그대로 움직인다.
+ */
 export function useSwipePages(onPrev?:()=>void,onNext?:()=>void) {
-  return useMemo(()=>PanResponder.create({
-    onMoveShouldSetPanResponderCapture:(_,g)=>startX(g)>EDGE_BACK_WIDTH&&Math.abs(g.dx)>24&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,
-    onPanResponderRelease:(_,g)=>{if(g.dx<=-48) onNext?.();else if(g.dx>=48) onPrev?.();},
-  }),[onPrev,onNext]);
+  const lockScroll=useScrollLock();
+  // 잠금은 스크롤 화면의 상태만 바꾼다. 판은 다시 그려지지 않아 미는 중에 PanResponder가 바뀌지 않는다.
+  return useMemo(()=>{
+    const release=()=>lockScroll(false);
+    return PanResponder.create({
+      onMoveShouldSetPanResponderCapture:(_,g)=>(onPrev!==undefined||onNext!==undefined)&&isHorizontalSwipe(g),
+      onPanResponderGrant:()=>lockScroll(true),
+      onPanResponderTerminationRequest:()=>false,
+      onPanResponderRelease:(_,g)=>{release();if(g.dx<=-SWIPE_TURN_DISTANCE) onNext?.();else if(g.dx>=SWIPE_TURN_DISTANCE) onPrev?.();},
+      onPanResponderTerminate:release,
+    });
+  },[onPrev,onNext,lockScroll]);
 }
 /**
  * 작은 적립판: 4칸(판 안 폭 330 이상이면 5칸) × rows줄씩 쪽을 나눠 ‹ ›와 밀기로 넘긴다.
@@ -464,7 +523,7 @@ export function dayStickerSpot(index:number,count:number,height:number):{left:`$
 /** 함께 목표 날 칸의 오늘 꺾쇠 두께(토큰 8보다 가늘게, 2026-11-05 사용자 5pt) */
 const TODAY_CORNER_THICKNESS=5;
 /** 작은 달력판의 날짜 한 칸. 판 상세 달력과 같이 빈 날 한 번 = 붙이기, 붙은 날 한 번 = 기록 열기, 꾹 = 떼기. second가 있으면 두 장을 겹쳐 그린다. */
-function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;second?:StickerId;/** 한 번 누르면 내 스티커가 붙는다 */placeable?:boolean;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
+function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,popIn,width,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;second?:StickerId;/** 한 번 누르면 내 스티커가 붙는다 */placeable?:boolean;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;/** 정수 폭. flex로 나누면 칸마다 x.33, x.67 같은 폭이 섞여 일부 칸 오른쪽 테두리가 얇게 그려졌다(2026-11-05 실기기) */width:number;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
   const month=Number(date.slice(5,7)),day=Number(date.slice(8,10));
   const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
   const select=()=>onSelect(date);
@@ -474,7 +533,7 @@ function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,
   return <Pressable accessibilityRole="button" accessibilityLabel={`${t('date.monthDay',month,day)}${stuck}${sticker&&recorded?`, ${t('calendar.hasRecord')}`:''}`}
     accessibilityState={{selected,disabled:!enabled}} disabled={!enabled} onPress={open??select} onLongPress={open?select:ignoreLongPress}
     accessibilityActions={open?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(open&&e.nativeEvent.actionName===removeStickerAction.name) select();}}
-    style={{flex:1,height,opacity:enabled||sticker?1:retro.opacity.disabled}}>
+    style={{width,height,opacity:enabled||sticker?1:retro.opacity.disabled}}>
     <PixelFrame variant="thinSlot" style={{height:'100%'}} contentStyle={{height:'100%',alignItems:'center',paddingTop:3,gap:1}}>
       <PixelText style={{fontSize:12,lineHeight:14}}>{day}</PixelText>
       {glyph&&(popIn?<StickMotion>{glyph}</StickMotion>:glyph)}
@@ -488,6 +547,12 @@ function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,
       </View>;
     })}
   </Pressable>;
+}
+/** 작은 달력판 날짜 칸 사이 */
+const COMPACT_DAY_GAP=3;
+/** 작은 달력판 날짜 칸 폭. 정수로 내림하고 남는 폭은 양옆으로 나눈다. */
+export function compactDayWidth(width:number):number {
+  return Math.max(0,Math.floor((width-COMPACT_DAY_GAP*6)/7));
 }
 /** 길게 누르기 처리기는 빈 날에도 둔다(달력판과 같은 까닭: 떼자마자 빈칸으로 바뀐 칸에서 손을 떼면 붙이기로 처리됐다). */
 const ignoreLongPress=()=>{};
@@ -511,15 +576,18 @@ function CompactCalendar({board,label,weeks,readOnly}:{board:CalendarBoardView;l
   const prev=usable(weekWindow(anchor,weeks,offset-1))?()=>move(-1):undefined;
   const after=offset<0?()=>move(1):undefined;
   const swipe=useSwipePages(prev,after);
+  const [measured,setMeasured]=useState<number|null>(null);
+  const day=compactDayWidth(useContentWidth(measured));
+  const rowStyle={flexDirection:'row' as const,gap:COMPACT_DAY_GAP,width:day*7+COMPACT_DAY_GAP*6,alignSelf:'center' as const};
   const from=dates[0],to=dates[dates.length-1];
   const range=t('board.weekRange',Number(from.slice(5,7)),Number(from.slice(8,10)),Number(to.slice(5,7)),Number(to.slice(8,10)));
   return <View style={{gap:8}}>
     <CompactBoardHeader label={label} range={range} onPrev={prev} onNext={after} prevLabel={t('board.previousWeeks')} nextLabel={t('board.nextWeeks')}/>
-    <View {...swipe.panHandlers} style={{gap:4}}>
-      <View style={{flexDirection:'row',gap:3}}>{[0,1,2,3,4,5,6].map(day=><PixelText key={day} variant="caption" style={[caption,{flex:1,textAlign:'center'}]}>{t('date.weekdayShort',day)}</PixelText>)}</View>
-      {Array.from({length:weeks},(_,row)=><View key={row} style={{flexDirection:'row',gap:3}}>
+    <View {...swipe.panHandlers} onLayout={event=>setMeasured(event.nativeEvent.layout.width)} style={{gap:4}}>
+      <View style={rowStyle}>{[0,1,2,3,4,5,6].map(weekday=><PixelText key={weekday} variant="caption" style={[caption,{width:day,textAlign:'center'}]}>{t('date.weekdayShort',weekday)}</PixelText>)}</View>
+      {Array.from({length:weeks},(_,row)=><View key={row} style={rowStyle}>
         {dates.slice(row*7,row*7+7).map(date=><WeekDay key={date} date={date} sticker={board.records[date]} second={board.records2?.[date]} placeable={board.placeable?.has(date)} recorded={board.recordedDates?.has(date)??false}
-          selected={!readOnly&&date===board.selectedDate} enabled={!readOnly&&board.isDateEnabled(date)} popIn={date===board.justPlaced} height={52}
+          selected={!readOnly&&date===board.selectedDate} enabled={!readOnly&&board.isDateEnabled(date)} popIn={date===board.justPlaced} width={day} height={52}
           onSelect={board.onSelect} onOpenRecord={readOnly?undefined:board.onOpenRecord}/>)}
       </View>)}
     </View>

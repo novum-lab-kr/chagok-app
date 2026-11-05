@@ -5,7 +5,7 @@ import Svg,{Path} from 'react-native-svg';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {PixelButton,PixelFrame,PixelText} from './components';
-import {EmptyState,RetroScreen,ScreenHeader} from './composition-controls';
+import {EmptyState,RetroScreen,ScreenHeader,usePhotoFrameRatio} from './composition-controls';
 import {ActionSymbol,StickerGlyph,type StickerId} from './sticker-glyphs';
 import {Mascot} from './mascot';
 import {PackCard,PackViewSwitch,RewardProgress,type PackView} from './sticker-shop';
@@ -233,10 +233,10 @@ export function RecordTimelineScreen({days,goals,goal,onGoal,onOpen,view='timeli
 
 /** 펼친 화면의 기록 하나. date는 「10월 12일」. */
 export type FeedPostView=TimelineEntryView&{date:string};
-/** 사진 틀은 기록 화면 사진 칸과 같은 586:494 (2026-10-17 시안 3판 B). 사진은 원래 비율로 저장돼 있고 여기서만 맞춰 자른다. */
-const FEED_PHOTO_RATIO=586/494;
 function FeedPost({post,onPress}:{post:FeedPostView;onPress:()=>void}) {
   const memo=post.memo?.trim();
+  /** 사진 틀은 사진 비율을 따른다(세로 4:5, 가로 16:9까지). 기록 화면 사진 칸과 같은 규칙 (2026-11-05 A안) */
+  const frameRatio=usePhotoFrameRatio(post.photo);
   return <Pressable accessibilityRole="button" accessibilityLabel={`${post.goalName}, ${post.date}, ${memo||t('record.photo')}`} onPress={onPress} style={{gap:10}}>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
       <StickerGlyph id={post.sticker} size={32}/>
@@ -246,7 +246,7 @@ function FeedPost({post,onPress}:{post:FeedPostView;onPress:()=>void}) {
       <PixelText variant="caption" style={caption}>{post.date}</PixelText>
     </View>
     {post.photo
-      ?<View style={{width:'100%',aspectRatio:FEED_PHOTO_RATIO,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.screen}}><Image source={post.photo} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/></View>
+      ?<View style={{width:'100%',aspectRatio:frameRatio,borderWidth:retro.shape.border,borderColor:c.ink,backgroundColor:c.screen,overflow:'hidden'}}><Image source={post.photo} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/></View>
       :<PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:16,minHeight:120,justifyContent:'center'}}><PixelText style={memo?{fontSize:18,lineHeight:26,color:c.ink}:caption}>{memo||t('record.photoOnly')}</PixelText></PixelFrame>}
     {post.photo&&memo&&<PixelText style={{fontSize:16,lineHeight:22,color:c.ink}}>{memo}</PixelText>}
   </Pressable>;

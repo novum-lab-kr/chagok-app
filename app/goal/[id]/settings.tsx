@@ -438,7 +438,6 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
         onBlock={noOthers ? undefined : () => { setPick('block'); setSheetOpen(true); }}
         onLeave={() => { void actOnce(leaveGoal); }}
         onDelete={owner ? () => { void actOnce(remove); } : undefined}
-        alone={alone}
         onBack={goBack}
       />
       <BlockPickSheet
