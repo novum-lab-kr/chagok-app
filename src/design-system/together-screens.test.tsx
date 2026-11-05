@@ -289,6 +289,8 @@ describe('목표 설정 창 문구',()=>{
     expect(togetherDialogs.leave('one').description).toBe('판에 붙인 내 스티커가 떨어지고, 이 목표가 내 목록에서 사라져요.');
     expect(togetherDialogs.kick('지우').title).toBe('지우님을 내보낼까요?');
     expect(togetherDialogs.report('지우님의 이름').title).toBe('지우님의 이름을 신고할까요?');
+    expect(togetherDialogs.report('목표 이름').description).toBe('신고 내용을 확인하고 필요하면 이름을 지우거나 내보내요. 신고한 것은 다른 사람에게 보이지 않아요.');
+    expect(togetherDialogs.reportDone.description).toBe('알려 주셔서 고마워요. 신고 내용을 꼼꼼히 확인해 볼게요.');
   });
   it('결과와 실패 창은 [확인] 하나',()=>{
     for(const spec of [togetherDialogs.reportDone,togetherDialogs.gone,togetherDialogs.ownerOnly,togetherDialogs.failed('나가지 못했어요','인터넷 연결을 확인하고 다시 시도해 주세요.')]) {

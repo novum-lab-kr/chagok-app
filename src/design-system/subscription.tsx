@@ -59,10 +59,10 @@ function LinkText({label,onPress}:{label:string;onPress:()=>void}){
  * 목표가 5개일 때 목표 탭 [+]에서 연다. [+]에서 열면 맨 위 안내를 목표 한도 문구로 바꿔 왜 열렸는지 알린다(시안 C안 보완).
  * 결제 전 고지는 이 화면에 모두 두고 따로 확인 창을 띄우지 않는다(Athena 구독 설계 D4).
  */
-export function SubscriptionScreen({month,year,goalLimit,busy,onSubscribe,onRestore,onTerms,onPrivacy,onBack}:{month:SubscriptionPlanView;year:SubscriptionPlanView;/** 목표 탭 [+]에서 열었을 때 그 한도 */goalLimit?:number;busy?:SubscriptionPlan|'restore';onSubscribe:(plan:SubscriptionPlan)=>void;onRestore:()=>void;onTerms:()=>void;onPrivacy:()=>void;onBack:()=>void}){
+export function SubscriptionScreen({month,year,goalLimit,busy,onSubscribe,onRestore,onTerms,onPrivacy,onBack}:{month:SubscriptionPlanView;year:SubscriptionPlanView;/** 목표 탭 [+]에서 열었을 때(목표 한도에 닿음) */goalLimit?:boolean;busy?:SubscriptionPlan|'restore';onSubscribe:(plan:SubscriptionPlan)=>void;onRestore:()=>void;onTerms:()=>void;onPrivacy:()=>void;onBack:()=>void}){
   const notice=[t('legal.subscriptionAutoRenew',refundStore()),t('sub.keepPurchases'),t('legal.subscriptionNoRefund',refundStore(),SUPPORT_EMAIL),t('legal.minorCancel').replace(/\n/g,' ')];
   return <RetroScreen style={{gap:14}} header={<ScreenHeader title={t('sub.title')} onBack={onBack}/>}>
-    <PixelPanel><PixelText lineBreakStrategyIOS="hangul-word" style={[{paddingVertical:6},wordWrap]}>{goalLimit?t('sub.introGoalLimit',goalLimit):t('sub.intro')}</PixelText></PixelPanel>
+    <PixelPanel><PixelText lineBreakStrategyIOS="hangul-word" style={[{paddingVertical:6},wordWrap]}>{goalLimit?t('sub.introGoalLimit'):t('sub.intro')}</PixelText></PixelPanel>
     <SubscriptionPlanCard plan="month" view={month} busy={busy==='month'} disabled={busy!==undefined&&busy!=='month'} onPress={()=>onSubscribe('month')}/>
     <SubscriptionPlanCard plan="year" view={year} busy={busy==='year'} disabled={busy!==undefined&&busy!=='year'} onPress={()=>onSubscribe('year')}/>
     <View style={{gap:8}}>{notice.map(text=><PixelText key={text} lineBreakStrategyIOS="hangul-word" style={[small,wordWrap]}>{text}</PixelText>)}</View>

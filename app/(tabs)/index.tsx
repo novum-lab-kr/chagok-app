@@ -208,11 +208,11 @@ export default function GoalList() {
   };
 
   /**
-   * 구독이 아니면 목표는 5개까지(완성한 목표, 함께 목표 포함). 넘으면 [+]가 구독 화면을 열고, 그 화면이 이유를 알린다 (2026-11-02 시안 C안).
+   * 구독이 아니면 내가 만든 목표는 5개까지(완성한 목표, 내가 만든 함께 목표 포함, 초대받아 들어간 목표는 빼고). 넘으면 [+]가 구독 화면을 열고, 그 화면이 이유를 알린다 (2026-11-02 시안 C안).
    * 넘지 않으면 + 시트를 연다 (PRD 4.15).
    */
   const addGoal = () => {
-    if (canCreateGoal(summaries.length, subscribed)) setSheet(true);
+    if (canCreateGoal(summaries.map((s) => s.goal), subscribed)) setSheet(true);
     else router.push({ pathname: '/subscription', params: { from: 'goals' } });
   };
   const runAfterSheet = () => {

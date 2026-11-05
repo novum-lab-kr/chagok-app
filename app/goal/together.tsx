@@ -98,9 +98,9 @@ export default function TogetherGoal() {
     setSubmitting(true);
     let d: Awaited<ReturnType<typeof actionDeps>>;
     try {
-      // 목표 탭 [+]가 막지만, 링크로 바로 열어도 한도를 지킨다. 함께 목표도 목표 수에 든다
+      // 목표 탭 [+]가 막지만, 링크로 바로 열어도 한도를 지킨다. 내가 만든 함께 목표도 목표 수에 든다
       const [goals, pack] = await Promise.all([listGoals(), loadPackState()]);
-      if (!canCreateGoal(goals.length, pack.subscribed)) {
+      if (!canCreateGoal(goals, pack.subscribed)) {
         router.replace({ pathname: '/subscription', params: { from: 'goals' } });
         return;
       }
