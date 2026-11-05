@@ -16,6 +16,8 @@ const HELP = `사용: node scripts/dev-friend.mjs <명령> [인자]   (npm run s
   leave <goalId>                         leave_goal
   block <userId> / unblock <userId>      block_user / unblock_user
   show <goalId>                          pull_goal 요약(멤버 이름과 user id, 칸)
+  goals                                  dev2의 목표 목록(id, 이름, 방식). 지운 것과 나간 것은 빼고
+  delete <goalId>                        dev2의 혼자 목표를 지운다(앱과 같은 sync_push 목표 삭제). 함께 목표는 서버가 거절한다
   cleanup                                dev2가 든 함께 목표에서 나가고 차단을 모두 푼다
   whoami                                 dev2의 user id
 
@@ -78,6 +80,23 @@ const must = async (fn, params) => {
   return r.data;
 };
 
+/** sync_pull을 끝까지 받아 dev2에게 보이는 목표 행과 내 멤버 행을 목표 id별로 모은다. */
+async function pullAll() {
+  const goals = new Map();
+  const mine = new Map();
+  let since = 0;
+  for (let guard = 0; guard < 100; guard += 1) {
+    const page = await must('sync_pull', { p_since: since, p_limit: 500 });
+    for (const entry of page.rows ?? []) {
+      // 지운 행은 deletedAt이 있다. 같은 행은 나중 것이 이긴다
+      if (entry.entity === 'goal' && entry.row) goals.set(entry.row.id, { ...entry.row, deletedAt: entry.deletedAt });
+      if (entry.entity === 'member' && entry.row?.user_id === me) mine.set(entry.row.goal_id, { ...entry.row, deletedAt: entry.deletedAt });
+    }
+    since = page.cursor ?? since;
+    if (!page.more) break;
+  }
+  return { goals, mine };
+}
 const need = (n) => { if (args.length < n) fail(`인자가 모자랍니다.\n\n${HELP}`); };
 const today = () => {
   const d = new Date();
@@ -141,23 +160,26 @@ switch (cmd) {
     });
     break;
   }
+  case 'goals': {
+    const { goals, mine } = await pullAll();
+    out([...goals.values()]
+      .filter((g) => g.deletedAt == null && mine.get(g.id) && mine.get(g.id).left_at == null)
+      .map((g) => ({ id: g.id, name: g.name, mode: g.mode })));
+    break;
+  }
+  case 'delete': {
+    need(1);
+    // 앱이 혼자 목표를 지울 때 올리는 것과 같은 모양(src/sync/push.ts)
+    const r = await rpc('sync_push', { p_device_id: 'dev-friend', p_changes: [{ entity: 'goal', op: 'delete', id: args[0], deletedAt: Date.now() }] });
+    out(r.error ? { error: r.error } : { goalId: args[0], rejected: r.data.rejected });
+    break;
+  }
   case 'cleanup': {
-    // sync_pull로 dev2가 든 함께 목표를 찾는다(내 멤버 행이 있고 나가지 않았고 목표가 혼자 목표가 아닌 것).
-    const shared = new Set();
-    const seen = new Map();
-    let since = 0;
-    for (let guard = 0; guard < 100; guard += 1) {
-      const page = await must('sync_pull', { p_since: since, p_limit: 500 });
-      for (const entry of page.rows ?? []) {
-        if (entry.entity === 'goal' && entry.row) seen.set(entry.row.id, entry.row.mode);
-        if (entry.entity === 'member' && entry.row?.user_id === me && entry.row.left_at == null) shared.add(entry.row.goal_id);
-      }
-      since = page.cursor ?? since;
-      if (!page.more) break;
-    }
+    // dev2가 든 함께 목표(내 멤버 행이 있고 나가지 않았고 목표가 혼자 목표가 아닌 것)에서 나간다.
+    const { goals, mine } = await pullAll();
     const left = [];
-    for (const goalId of shared) {
-      if (seen.get(goalId) === 'solo') continue;
+    for (const [goalId, member] of mine) {
+      if (member.left_at != null || member.deletedAt != null || goals.get(goalId)?.mode === 'solo') continue;
       const r = await rpc('leave_goal', { p_goal_id: goalId });
       left.push(r.error ? { goalId, error: r.error } : { goalId });
     }
