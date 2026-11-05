@@ -63,6 +63,7 @@ Apple Watch: the watch app shows the goals created on the iPhone and lets you ad
 - Apple Watch(416×496) 2~3장: 목표 목록, 붙이기, 차곡이와 블록.
 - 개발용 표시(Expo 톱니, 개발 계정 버튼)가 없는 출시 빌드로 찍는다. 배너 광고 자리는 비어 있어도 된다.
 - 시안은 `chagok-wt-store-shots` worktree에서 진행 중(커밋 전). 문구를 넣은 스크린샷이면 그 시안을 따른다.
+- **1.1.0 제출본(2026-11-05 확정):** `docs/design/proposals-2026-10/store-shots/final-1.1.0/`의 iPhone 6.9와 6.3 각 10장(함께 목표 2장 추가, 바뀐 4장 교체), Watch 4장은 1.0.0 그대로. 바뀐 장과 새 장만 `changed/`.
 
 ## 5. 스토어 등록정보 초안
 
