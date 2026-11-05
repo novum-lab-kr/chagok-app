@@ -309,6 +309,7 @@ supabase db push --linked                          # 새 마이그레이션 파�
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
 supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함수
 supabase functions deploy kakao-unlink --use-api   # 카카오 연결 해제 웹훅 (토큰 없이 받는다, config.toml verify_jwt = false)
+supabase functions deploy purge-photos --use-api   # 서버가 지운 기록의 사진 파일 지우기 (나가기, 내보내기, 차단 뒤 앱이 부른다)
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
 npm run server:dev-friend -- setup                 # 두 번째 개발 계정 dev2@chagok.test 만들기 (비밀번호는 .env.local DEV2_PASSWORD)
@@ -474,11 +475,11 @@ docker exec supabase-db psql -U supabase_admin -d postgres \
 
 ## 운영 서버 함수 올리기
 
-셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
+셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`, `purge-photos`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
 
 ```sh
 # 이 맥 (main 체크아웃)
-COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink
+COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink purge-photos
 scp /tmp/fn.tgz chagok@<운영 서버 주소>:~/fn.tgz && rm /tmp/fn.tgz
 
 # 서버
