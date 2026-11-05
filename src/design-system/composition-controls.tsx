@@ -358,13 +358,27 @@ export function progressBlockPose(ratio:number):MascotBlocks {
   return ratio>=0.75?'b3':ratio>=0.5?'b2':ratio>=0.25?'b1':'b0';
 }
 const PROGRESS_MASCOT=40;
+/** 차곡이 그림(24칸)에서 몸이 차지하는 가로 범위: 4~19칸. 양옆은 투명한 여백이다. */
+const MASCOT_BODY_LEFT=PROGRESS_MASCOT*4/24, MASCOT_BODY_RIGHT=PROGRESS_MASCOT*20/24;
+/** 막대 오른쪽 끝에서 차곡이 몸이 더 나가는 거리(4칸). 몸 위쪽 모서리가 둥글어, 몸 끝을 막대 끝에 맞추면 둥근 막대 끝이 비져 보였다 */
+const MASCOT_END_OVERHANG=PROGRESS_MASCOT*4/24;
+/**
+ * 진행 막대 위 차곡이의 왼쪽 위치. 막대 끝에 차곡이 가운데를 두되, 왼쪽은 몸이 막대 시작을 넘지 않게,
+ * 오른쪽은 막대 끝이 몸 안쪽(4칸)에 묻히게 멈춘다. 그래서 100%에서는 차곡이가 막대 끝을 덮는다.
+ * 예전에는 막대 끝이 그림 왼쪽 여백에 떨어져 낮은 %에서 막대와 차곡이 사이가 떠 보였고, 100%에서는 막대 끝이 차곡이 오른쪽으로 나왔다 (2026-11-05 사용자).
+ */
+export function progressMascotLeft(ratio:number,width:number):number {
+  return Math.min(width-MASCOT_BODY_RIGHT+MASCOT_END_OVERHANG,Math.max(-MASCOT_BODY_LEFT,ratio*width-PROGRESS_MASCOT/2));
+}
 /** 판 상세 상단 한 줄: 진행 막대와 그 위 차곡이, 오른쪽 `m%`. 완성하면 오른쪽이 완성 스티커로 바뀐다. 화면 읽기에는 칸 수까지 읽어 준다. */
 export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:StickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
   const ratio=completed?1:progressRatio(value,total);
+  const [width,setWidth]=useState(0);
   return <View accessible accessibilityLabel={t('board.progressA11y',value,total,percentLabel)} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:48}}>
-    <View style={{flex:1,height:PROGRESS_MASCOT,justifyContent:'center'}}>
+    <View onLayout={e=>setWidth(e.nativeEvent.layout.width)} style={{flex:1,height:PROGRESS_MASCOT,justifyContent:'center'}}>
       <ProgressBar value={completed?1:value} total={completed?1:total}/>
-      <View pointerEvents="none" style={{position:'absolute',top:0,left:`${ratio*100}%`,marginLeft:-ratio*PROGRESS_MASCOT}}><Mascot pose={progressBlockPose(ratio)} size={PROGRESS_MASCOT}/></View>
+      {/* 폭을 재기 전(첫 그림)에는 비율로 둔다 */}
+      <View pointerEvents="none" style={{position:'absolute',top:0,...(width>0?{left:progressMascotLeft(ratio,width)}:{left:`${ratio*100}%`,marginLeft:-ratio*PROGRESS_MASCOT})}}><Mascot pose={progressBlockPose(ratio)} size={PROGRESS_MASCOT}/></View>
     </View>
     {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel}</PixelText>}
   </View>;

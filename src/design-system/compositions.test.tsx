@@ -1,5 +1,5 @@
 import React from 'react';
-import {BoardProgressRow,GuideCard,progressBlockPose,tallyPageSize} from './index';
+import {BoardProgressRow,GuideCard,progressBlockPose,progressMascotLeft,tallyPageSize} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
@@ -287,6 +287,22 @@ describe('영어 문구 (공통 부품)',()=>{
 describe('판 진행 표시와 안내 (2026-11-02)',()=>{
   it('차곡이 머리 위 블록은 25%마다 하나씩 늘어난다',()=>{
     expect([0,0.24,0.25,0.49,0.5,0.74,0.75,1].map(progressBlockPose)).toEqual(['b0','b0','b1','b1','b2','b2','b3','b3']);
+  });
+  it('진행 막대 끝은 늘 차곡이 몸에 닿고, 100%에서는 몸 안쪽에 묻힌다 (2026-11-05 사용자)',()=>{
+    // 차곡이 40pt, 몸은 24칸 중 4~19칸 = 6.67pt~33.33pt. 오른쪽 끝에서는 몸이 막대 끝보다 4칸(6.67pt) 더 나간다
+    const bodyLeft=40*4/24, bodyRight=40*20/24, overhang=40*4/24, width=250;
+    for(const ratio of [0.02,0.08,0.2,0.5,0.9,0.97,1]){
+      const left=progressMascotLeft(ratio,width);
+      const fillEnd=ratio*width-left;
+      expect(fillEnd).toBeGreaterThanOrEqual(bodyLeft-1e-9);
+      expect(fillEnd).toBeLessThanOrEqual(bodyRight+1e-9);
+      expect(left+bodyLeft).toBeGreaterThanOrEqual(-1e-9);
+      expect(left+bodyRight).toBeLessThanOrEqual(width+overhang+1e-9);
+    }
+    const full=progressMascotLeft(1,width);
+    expect(width-full).toBeCloseTo(bodyRight-overhang); // 100%: 막대 끝이 몸 오른쪽 끝에서 4칸 안쪽
+    expect(progressMascotLeft(0.2,width)).toBe(30); // 막대 끝 50pt가 차곡이 가운데
+    expect(progressMascotLeft(0,width)).toBeCloseTo(-bodyLeft);
   });
   it('진행 줄은 %만 보이고 화면 읽기에는 칸 수를 함께 읽어 준다',()=>{
     render(<BoardProgressRow value={3} total={15} percentLabel="20%" sticker="basic.sprout"/>);
