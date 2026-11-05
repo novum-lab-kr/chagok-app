@@ -96,7 +96,8 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
     if (days[i] === undefined || days[i] === 'outside') continue;
     days[i] = r.kind === 'add' ? 'filled' : r.dateKey < todayKey ? 'missed' : 'future';
   }
-  const todayDay = sameMonth ? day.getDate() : 0;
+  // 칸이 다른 달이면 오늘 칸은 없다. 0을 쓰면 앞쪽 빈칸(day 0)마다 오늘 꺾쇠가 그려졌다(2026-11-05, 1.0.0부터).
+  const todayDay = sameMonth ? day.getDate() : -1;
   const cells: { day: number; state: string }[] = [];
   for (let i = 0; i < g.firstWeekday; i++) cells.push({ day: 0, state: 'blank' });
   days.forEach((state, i) => cells.push({ day: i + 1, state }));
