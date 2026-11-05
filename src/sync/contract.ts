@@ -63,7 +63,8 @@ export type V2Change =
   | { entity: 'goal' | 'sticker' | 'record'; op: 'delete'; id: string; deletedAt: number };
 
 /** 그 행만 빠지고 나머지는 반영됐다. member의 id는 목표 id다. */
-export type PushRejection = { entity: string; id: string; reason: 'slot_taken' | 'not_allowed' };
+/** out_of_period: 함께 목표 달력판에서 목표 기간 밖 날짜(20261105000007). 다시 보내도 받지 않는다 */
+export type PushRejection = { entity: string; id: string; reason: 'slot_taken' | 'not_allowed' | 'out_of_period' };
 
 export type V2Pulled =
   | { entity: 'goal'; row: V2GoalRow; deletedAt: number | null }
@@ -84,7 +85,7 @@ export class NotMember extends Error {}
 export class PhotoRejected extends Error {}
 
 export interface SyncServer {
-  /** sync_push. 한 트랜잭션, 더 최근 updated_at 우선, 멱등. 내 행이 아니거나 칸이 겹친 행만 rejected로 빠진다. */
+  /** sync_push. 한 트랜잭션, 더 최근 updated_at 우선, 멱등. 내 행이 아니거나 칸이 겹치거나 기간 밖 날짜인 행만 rejected로 빠진다. */
   push(deviceId: string, changes: V2Change[]): Promise<{ rejected: PushRejection[] }>;
   /** sync_pull. since 이후 바뀐 행(지운 표시 포함). cursor를 다음 since로 쓴다. */
   pull(since: number, limit: number): Promise<{ rows: V2Pulled[]; cursor: number; more: boolean }>;

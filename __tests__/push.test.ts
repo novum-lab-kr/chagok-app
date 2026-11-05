@@ -251,6 +251,31 @@ describe('2판 행 (api_v2.sql sync_push)', () => {
     expect(deps.server.pushes).toBe(pushes);
   });
 
+  it('함께 목표 달력판에서 기간 밖 날짜라 거절되면(out_of_period) 기기에서 칸을 지우고 다시 보내지 않는다', async () => {
+    const deps = setup();
+    const owner = deps.server.as('friend');
+    const { goalId, inviteCode } = owner.createSharedGoal({ mode: 'one', boardType: 'calendar' });
+    deps.server.join(inviteCode, '지우', 'basic.star');
+    await refetchGoal({ server: deps.server, userId: deps.server.userId }, goalId);
+    const before = Date.now() - 5 * 86_400_000; // 목표를 만들기 닷새 전(서버 여유 하루 밖)
+    const mine = await placeSticker(goalId, new Date(before).getDate() - 1, 'basic.star', { placedAt: before });
+    const r = await upsertRecord(mine.id, { photoUri: 'record-photo:a.jpg', memo: '메모' });
+    const taken: string[] = [];
+    const dropped: [string, string | null, string][] = [];
+    const result = await pushOnce({ ...deps, onSlotTaken: (id) => taken.push(id), onOutOfPeriod: (...a) => dropped.push(a) });
+    expect(taken).toEqual([]); // 「이미 누가 붙였어요」는 띄우지 않는다
+    expect(dropped).toEqual([[mine.id, 'record-photo:a.jpg', goalId]]); // 기기 사진은 appSync가 지운다
+    expect(result.held).toBe(0);
+    expect(await getSticker(mine.id)).toBeNull();
+    expect(deps.server.recordRow(r.id)).toBeUndefined();
+    expect(deps.photos.remote.size).toBe(0);
+    expect(await pendingCount()).toEqual({ pending: 0, held: 0 });
+    expect(deps.server.live('sticker')).toEqual([]);
+    const pushes = deps.server.pushes;
+    await pushOnce(deps);
+    expect(deps.server.pushes).toBe(pushes);
+  });
+
   it('보내기 전에 계정이 바뀌었으면 서버를 부르지 않고 AccountChanged로 멈춘다', async () => {
     const deps = setup();
     await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });

@@ -34,6 +34,8 @@ export type PushDeps = Partial<Pick<PullDeps, 'userId' | 'currentUserId'>> & {
    * DB에서는 이미 지운 뒤에 부른다.
    */
   onSlotTaken?: (stickerId: string, removedPhotoUri: string | null, goalId: string) => void;
+  /** 함께 목표 달력판에서 기간 밖 날짜라(out_of_period) 기기에서 칸을 지웠다. 알림 없이 지운 기록의 기기 사진만 지운다. */
+  onOutOfPeriod?: (stickerId: string, removedPhotoUri: string | null, goalId: string) => void;
 };
 
 /** 올리는 사이 로그인한 계정이 바뀌었으면 던진다(AccountChanged). userId를 주지 않으면 확인하지 않는다. */
@@ -71,7 +73,7 @@ async function toChange(e: OutboxEntry, now: number): Promise<V2Change | null> {
 const changeId = (c: V2Change): string => (c.op === 'delete' ? c.id : c.entity === 'member' ? c.row.goal_id : c.row.id);
 
 /**
- * 한 판에서 다른 사람이 먼저 붙인 칸(slot_taken). 기기에서 그 칸과 기록을 지우고 다시 보내지 않는다.
+ * 한 판에서 다른 사람이 먼저 붙인 칸(slot_taken)이나 기간 밖 날짜(out_of_period). 기기에서 그 칸과 기록을 지우고 다시 보내지 않는다.
  * 사진을 먼저 올렸으면 서버 파일은 지운다(기록이 없으면 pushPhoto가 지운다).
  * 지운 기록의 기기 사진 경로와, 지우기 전에 읽어 둔 목표 id를 돌려준다.
  */
@@ -122,7 +124,8 @@ async function pushPhoto(e: OutboxEntry, photos: PhotoStore, now: number): Promi
 /**
  * 한 묶음을 보낸다. 네트워크 오류는 던진다. 보류한 수를 돌려준다.
  * 묶음 전체가 거부되면(SyncRejected) 한 건씩 나눠 문제 항목만 보류한다.
- * 행 하나만 빠진 거절(rejected)은 그 항목만: 칸 겹침(slot_taken)은 기기에서 칸을 지우고, 내 행이 아님(not_allowed)은 보류한다.
+ * 행 하나만 빠진 거절(rejected)은 그 항목만: 칸 겹침(slot_taken)과 기간 밖 날짜(out_of_period)는 기기에서 칸을 지우고,
+ * 내 행이 아님(not_allowed)은 보류한다.
  */
 async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Promise<number> {
   const built = await Promise.all(entries.map(async (entry) => ({ entry, change: await toChange(entry, now) })));
@@ -151,6 +154,10 @@ async function pushRows(entries: OutboxEntry[], deps: PushDeps, now: number): Pr
     if (r.reason === 'slot_taken' && r.entity === 'sticker') {
       const { photoUri, goalId } = await dropTakenSticker(r.id, now);
       if (goalId) deps.onSlotTaken?.(r.id, photoUri, goalId);
+    } else if (r.reason === 'out_of_period' && r.entity === 'sticker') {
+      // 기간 밖 날짜는 다시 보내도 받지 않는다. 앱은 붙이지 않는 날이라(기기 시계가 크게 틀린 때뿐) 알리지 않고 칸만 지운다.
+      const { photoUri, goalId } = await dropTakenSticker(r.id, now);
+      if (goalId) deps.onOutOfPeriod?.(r.id, photoUri, goalId);
     } else {
       await hold(hit.entry, r.reason);
       held += 1;

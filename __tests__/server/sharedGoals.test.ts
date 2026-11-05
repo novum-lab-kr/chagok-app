@@ -399,6 +399,40 @@ describeIfServer('함께 목표 (서버 2판)', () => {
       .toBe('invalid_sticker');
   });
 
+  it('함께 목표 달력판은 기간 밖 날짜의 스티커를 그 행만 out_of_period로 거절한다 (시간대 하루 여유)', async () => {
+    const a = await newUser(); const b = await newUser();
+    // 서버는 UTC 날짜로 본다. 앱은 기기 시간대 날짜라 시작일과 오늘에 하루씩 여유를 둔다.
+    const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    const calendarGoal = (mode: 'each' | 'one', end: string | null) => call<{ goal_id: string; invite_code: string }>(a.client, 'create_shared_goal', {
+      p_mode: mode, p_name: '물 마시기', p_board_type: 'calendar', p_total_slots: null, p_end_date: end, p_display_name: '은주', p_sticker_id: 'basic.clover',
+    });
+    const push = (u: User, goalId: string, date: string, id = randomUUID()) => call<{ rejected: { entity: string; id: string; reason: string }[] }>(u.client, 'sync_push', {
+      p_device_id: 'd', p_changes: [{ entity: 'sticker', op: 'upsert', row: { ...stickerRow(goalId, Number(date.slice(8, 10)) - 1, id), date_key: date } }],
+    }).then((r) => r.rejected.map((x) => x.reason).join(',') || 'ok');
+    const one = await calendarGoal('one', null);
+    await join(b, one.invite_code, '지우', 'basic.star');
+    expect(await push(b, one.goal_id, day(-2))).toBe('out_of_period'); // 시작 전
+    expect(await push(b, one.goal_id, day(-1))).toBe('ok'); // 시작일 하루 여유
+    expect(await push(b, one.goal_id, day(0))).toBe('ok');
+    expect(await push(a, one.goal_id, day(1))).toBe('ok'); // 오늘 하루 여유(UTC보다 앞선 시간대)
+    expect(await push(a, one.goal_id, day(2))).toBe('out_of_period'); // 미래
+    const each = await calendarGoal('each', day(0)); // 종료일 오늘
+    expect(await push(a, each.goal_id, day(0))).toBe('ok');
+    expect(await push(a, each.goal_id, day(1))).toBe('out_of_period'); // 종료일 다음 날
+    // 다른 행과 한 묶음이어도 거절된 행만 빠진다
+    const okId = randomUUID(); const badId = randomUUID();
+    const mixed = await call<{ rejected: { id: string; reason: string }[] }>(a.client, 'sync_push', { p_device_id: 'd', p_changes: [
+      { entity: 'sticker', op: 'upsert', row: { ...stickerRow(each.goal_id, 0, badId), date_key: day(-5) } },
+      { entity: 'sticker', op: 'upsert', row: { ...stickerRow(one.goal_id, 0, okId), date_key: day(0) } },
+    ] });
+    expect(mixed.rejected).toEqual([{ entity: 'sticker', id: badId, reason: 'out_of_period' }]);
+    expect((await pullGoal(a, one.goal_id)).stickers.map((x) => x.id)).toContain(okId);
+    expect((await pullGoal(a, each.goal_id)).stickers.map((x) => x.id)).not.toContain(badId);
+    // 적립판은 날짜를 보지 않는다
+    const tally = await createGoal(a, 'each');
+    expect(await push(a, tally.goal_id, '2020-01-01')).toBe('ok');
+  });
+
   it('신고하면 그때의 대상 이름(사람 이름이나 목표 이름)을 신고 행에 남긴다', async () => {
     const a = await newUser(); const b = await newUser();
     const { goal_id, invite_code } = await createGoal(a, 'one');

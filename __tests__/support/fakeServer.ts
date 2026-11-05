@@ -181,6 +181,10 @@ export class FakeServer implements SyncServer {
         if (!m || m.left_at !== null || m.role === 'viewer') return 'not_allowed';
         if (r.slot_index < 0 || (g.board_type === 'tally' && r.slot_index >= (g.total_slots ?? 0))
           || (g.board_type === 'calendar' && r.slot_index > 30)) throw new SyncRejected('invalid_input');
+        // 20261105000007: 함께 목표 달력판은 기간 밖 날짜를 거절(UTC 날짜에 하루 여유)
+        const utcDay = (ms: number, shift: number) => new Date(ms + shift * 86_400_000).toISOString().slice(0, 10);
+        if (g.board_type === 'calendar' && (r.date_key < utcDay(g.created_at, -1) || r.date_key > utcDay(Date.now(), 1)
+          || (g.end_date !== null && r.date_key > g.end_date))) return 'out_of_period';
       } else if (m && (m.left_at !== null || m.role === 'viewer')) {
         throw new SyncRejected('not an active member');
       }
