@@ -384,13 +384,13 @@ function TallyGrid({board,sticker,onSettled,maxHeight=null}:{board:TallyBoardVie
 // ── 작은 판 (함께 목표, PRD 4.15) ──────────────────────────────────
 /** 작은 판 칸 사이 */
 const COMPACT_GAP=6;
-/** 작은 판 위 이름 줄: [이름][범위 글자][‹][›]. 끝 쪽에서는 그 방향 버튼 자리를 비운다. */
+/** 작은 판 머리: 이름, 그리고 달 넘기기(MonthNavigation)와 같은 순서로 [이전] 범위 [다음]. 갈 수 없는 쪽은 같은 크기 빈 자리(2026-11-05 사용자). */
 function CompactBoardHeader({label,range,onPrev,onNext,prevLabel,nextLabel}:{label:string;range:string;onPrev?:()=>void;onNext?:()=>void;prevLabel:string;nextLabel:string}) {
   const slot={width:24,height:24,alignItems:'center' as const,justifyContent:'center' as const};
   return <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
     <PixelText numberOfLines={1} style={{flex:1,fontSize:16,lineHeight:22}}>{label}</PixelText>
-    <PixelText variant="caption" style={caption}>{range}</PixelText>
     {onPrev?<Pressable accessibilityRole="button" accessibilityLabel={prevLabel} onPress={onPrev} hitSlop={touchSlop({width:24,height:24})} style={slot}><ActionSymbol name="back" size={12}/></Pressable>:<View style={slot}/>}
+    <PixelText variant="caption" style={caption}>{range}</PixelText>
     {onNext?<Pressable accessibilityRole="button" accessibilityLabel={nextLabel} onPress={onNext} hitSlop={touchSlop({width:24,height:24})} style={slot}><PixelIcon name="chevron" size={12}/></Pressable>:<View style={slot}/>}
   </View>;
 }

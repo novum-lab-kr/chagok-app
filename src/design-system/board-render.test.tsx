@@ -156,3 +156,20 @@ describe('한 판 달력판 하루 두 장은 오늘 꺾쇠 안쪽에 든다 (20
     expect(SECOND_OFFSET.y).toBeGreaterThan(0);
   });
 });
+
+describe('작은 판 넘기기는 달 넘기기와 같은 모양 (2026-11-05 사용자)',()=>{
+  const before=(a:Element,b:Element)=>Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
+  it('달력판: [이전] 날짜 범위 [다음] 순서이고, 갈 수 없는 쪽은 자리만 남는다',()=>{
+    const board={kind:'calendar' as const,year:2026,month:9,records:{'2026-09-22':'shoe' as const},selectedDate:'2026-09-29',
+      isDateEnabled:()=>true,canGoPrev:true,canGoNext:false,onSelect:()=>{},onMonthChange:()=>{},onOpenRecord:()=>{}};
+    render(<BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:0,percentLabel:''}} board={board}
+      hideProgress boardRows={2} onBack={()=>{}} onSettings={()=>{}}/>);
+    const prev=screen.getByRole('button',{name:'이전 주'});
+    const range=screen.getByText('9월 20일~10월 3일');
+    expect(before(prev,range)).toBe(true);
+    expect(screen.queryByRole('button',{name:'다음 주'})).toBeNull(); // 이번 주보다 뒤로는 가지 않는다
+    fireEvent.click(prev);
+    const next=screen.getByRole('button',{name:'다음 주'});
+    expect(before(screen.getByText('9월 6일~19일'),next)).toBe(true);
+  });
+});
