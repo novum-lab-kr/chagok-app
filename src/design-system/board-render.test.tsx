@@ -60,7 +60,7 @@ describe('완성한 판 고치기 (2026-10-08)',()=>{
   });
 });
 
-describe('혼자 적립판 한 줄 칸 수 (2026-11-05 4칸, 큰 폰 5칸)',()=>{
+describe('혼자 적립판은 한 줄 3칸, 함께 목표 작은 판만 4칸이나 5칸 (2026-11-05)',()=>{
   // jsdom은 창 폭이 0이다. RN Web의 Dimensions는 documentElement 폭을 읽는다.
   const phone=(width:number)=>{
     Object.defineProperty(document.documentElement,'clientWidth',{configurable:true,value:width});
@@ -68,32 +68,27 @@ describe('혼자 적립판 한 줄 칸 수 (2026-11-05 4칸, 큰 폰 5칸)',()=>
   };
   afterEach(()=>phone(0));
   // 칸을 감싼 것 가운데 폭을 숫자로 정한 첫 상자가 칸 자리다.
-  const cellWidth=()=>{
+  const cellSize=()=>{
     let node:HTMLElement|null=screen.getByRole('button',{name:/^1번 칸/});
     while(node&&!getComputedStyle(node).width.endsWith('px')) node=node.parentElement;
-    return node&&getComputedStyle(node).width;
+    return node&&[getComputedStyle(node).width,getComputedStyle(node).height];
   };
-  it('390 폭 적립판은 한 줄 4칸: 판 안 W 294, 여백 뺀 282 → 칸 한 변 59',()=>{
+  it('390 폭 혼자 적립판: 판 안 294, 한 줄 3칸 84:64',()=>{
     phone(390);
     render(<Screen b={board(15,0)}/>);
-    expect(cellWidth()).toBe('59px');
+    expect(cellSize()).toEqual(['84px','64px']);
   });
-  it('430 폭 폰(판 안 W 334)은 혼자 판도 함께 목표 작은 판도 한 줄 5칸',()=>{
-    phone(430);
-    // 혼자 판: 좌우 여백 6을 둔 322 안에 5칸 → 칸 한 변 52
-    render(<Screen b={board(15,0)}/>);
-    expect(cellWidth()).toBe('52px');
-    cleanup();
-    // 작은 판(boardRows=2): 다음 빈칸 12가 든 쪽이 5칸 두 줄이면 11~20칸
-    const b=board(30,11);
-    render(<BoardDetailScreen name="내 판" sticker="shoe" completed={false} progress={{value:11,total:30,percentLabel:'36%'}} board={b}
-      hideProgress boardRows={2} onBack={()=>{}} onSettings={()=>{}}/>);
-    expect(screen.getByText('11~20칸 / 30')).toBeTruthy();
-  });
-  it('440 폭 적립판은 한 줄 5칸: 판 안 W 344, 여백 뺀 332 → 칸 한 변 54',()=>{
+  it('440 폭 혼자 적립판도 한 줄 3칸: 판 안 344 → 100:76',()=>{
     phone(440);
     render(<Screen b={board(15,0)}/>);
-    expect(cellWidth()).toBe('54px');
+    expect(cellSize()).toEqual(['100px','76px']);
+  });
+  it('430 폭 함께 목표 작은 판(boardRows=2)은 한 줄 5칸',()=>{
+    phone(430);
+    // 다음 빈칸 12가 든 쪽이 5칸 두 줄이면 11~20칸
+    render(<BoardDetailScreen name="내 판" sticker="shoe" completed={false} progress={{value:11,total:30,percentLabel:'36%'}} board={board(30,11)}
+      hideProgress boardRows={2} onBack={()=>{}} onSettings={()=>{}}/>);
+    expect(screen.getByText('11~20칸 / 30')).toBeTruthy();
   });
 });
 
