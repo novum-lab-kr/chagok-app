@@ -41,8 +41,21 @@ describe('스플래시 화면',()=>{
     const onDone=vi.fn();
     render(<SplashAnimation reduceMotion={false} onDone={onDone}/>);
     expect(onDone).not.toHaveBeenCalled();
-    act(()=>{vi.advanceTimersByTime(3200);});
+    // 장면이 바뀔 때마다 다음 장면을 건다. 화면이 그려질 틈을 주며 10ms씩 보낸다
+    for (let t=0;t<3200;t+=10) act(()=>{vi.advanceTimersByTime(10);});
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+  it('시작 직후 JS가 막혀도 색은 아래 줄부터 한 줄씩 찬다 (2026-11-05 실기기 개발 빌드)',()=>{
+    const html=(at:number)=>{const r=render(<SplashAnimation at={at}/>);const h=r.container.innerHTML;r.unmount();return h;};
+    const row22=html(200),row21=html(228),full=html(200+28*12);
+    vi.useFakeTimers();
+    const {container}=render(<SplashAnimation reduceMotion={false}/>);
+    // 아래 홈 화면을 그리느라 0.5초 동안 타이머가 못 돈 것처럼, 한 번에 0.5초를 보낸다
+    act(()=>{vi.advanceTimersByTime(500);});
+    expect(container.innerHTML).toBe(row22);
+    expect(container.innerHTML).not.toBe(full);
+    act(()=>{vi.advanceTimersByTime(28);});
+    expect(container.innerHTML).toBe(row21);
   });
   it('멈춘 장면(at)을 그릴 수 있다 — 시작은 글자 없음',()=>{
     render(<SplashAnimation at={0}/>);
