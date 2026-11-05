@@ -82,7 +82,7 @@ function OneCalendar() {
   if (base.board.kind !== 'calendar') return null;
   const {records} = base.board;
   const dates = Object.keys(records).sort();
-  // 오늘 칸도 두 장: 겹친 두 장이 오늘 표시 꺾쇠 안쪽에 드는지 본다(2026-11-05 QA)
+  // 오늘 칸도 두 장: 겹친 두 장과 오늘 꺾쇠(5pt)가 함께 어떻게 보이는지 본다(2026-11-05 시안 「한 날 여러 장」 B)
   const records2 = {...Object.fromEntries(dates.filter((_, i) => i % 3 === 1).map(date => [date, 'basic.star' as StickerId])), [TODAY]: 'basic.star' as StickerId};
   return <BoardDetailScreen {...base} board={{...base.board, records: {[TODAY]: 'basic.cat', ...records}, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={2}
     members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 2)]}/>}
@@ -116,7 +116,7 @@ export const FriendDialogCalendar: Story = {name: '친구 판 크게 달력판',
 export const OneBoardScreen: Story = {name: '한 판에 같이', render: () => <Stage><OneBoard/></Stage>};
 /** 2026-11-05 시안 T1 A안: 각자 판과 같은 기다림 카드를 판 위에, 둘째 줄만 한 판 문구 */
 export const OneBoardCalendarTwo: Story = {name: '한 판 달력판 하루 두 장', render: () => <Stage><OneCalendar/></Stage>};
-/** 작은 폰(402pt)과 큰 폰(440pt): 오늘 칸의 두 장이 꺾쇠 안쪽에 든다 */
+/** 작은 폰(402pt)과 큰 폰(440pt): 두 장이 그날 칸 안에 들고 옆 칸을 넘지 않는다 */
 export const OneBoardCalendarTwo402: Story = {name: '한 판 달력판 하루 두 장 402 폭', render: () => <Wide width={402}><OneCalendar/></Wide>};
 export const OneBoardCalendarTwo440: Story = {name: '한 판 달력판 하루 두 장 440 폭', render: () => <Wide><OneCalendar/></Wide>};
 export const OneBoardWaitingScreen: Story = {name: '한 판 친구를 기다릴 때', render: () => <Stage><OneBoard waiting/></Stage>};

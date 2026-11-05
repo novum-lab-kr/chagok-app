@@ -450,23 +450,26 @@ function HiddenCell() {
   </View>;
 }
 const HIDDEN_OPACITY=0.4;
+/** 날 칸의 스티커 자리 위쪽: 날짜 숫자 아래 */
+const DAY_STICKER_TOP=18;
 /**
- * 하루 두 장: 둘째 장을 오른쪽 아래로 이만큼 비껴 첫 장 위에 겹친다. 둘 다 24pt 그대로(24의 정수배 규칙).
- * 묶음(27x26)은 칸 가운데에 놓여 오늘 표시 꺾쇠 안쪽에 든다. 402pt 폰 날 칸(41x52, 꺾쇠 팔 13 두께 7)에서
- * 가로 3, 440pt 폰 날 칸(47x52, 팔 15 두께 8)에서 세로 2가 한계다(2026-11-05 QA: 9, 7은 꺾쇠를 가렸다).
+ * 하루 여러 장의 i번째 자리(2026-11-05 시안 「한 날 여러 장」 B 지그재그). 둘 다 24pt 그대로(24의 정수배 규칙).
+ * 왼쪽에서 오른쪽으로 고르게 나누고 위아래를 번갈아, 첫 장은 칸 왼쪽 위, 마지막 장은 칸 오른쪽 끝에 닿는다.
+ * 그날 칸의 테두리 선과 오늘 꺾쇠에는 걸쳐도 되고 옆 칸으로는 넘지 않는다. 날짜 숫자는 가리지 않는다. 나중에 붙인 장이 위에 온다.
  */
-export const SECOND_OFFSET={x:3,y:2};
+export function dayStickerSpot(index:number,count:number,height:number):{left:`${number}%`;marginLeft:number;top:number} {
+  const ratio=count<2?0:index/(count-1);
+  return {left:`${ratio*100}%`,marginLeft:-ratio*24,top:index%2?height-24:DAY_STICKER_TOP};
+}
+/** 함께 목표 날 칸의 오늘 꺾쇠 두께(토큰 8보다 가늘게, 2026-11-05 사용자 5pt) */
+const TODAY_CORNER_THICKNESS=5;
 /** 작은 달력판의 날짜 한 칸. 판 상세 달력과 같이 빈 날 한 번 = 붙이기, 붙은 날 한 번 = 기록 열기, 꾹 = 떼기. second가 있으면 두 장을 겹쳐 그린다. */
 function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;second?:StickerId;/** 한 번 누르면 내 스티커가 붙는다 */placeable?:boolean;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
   const month=Number(date.slice(5,7)),day=Number(date.slice(8,10));
   const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
   const select=()=>onSelect(date);
-  const glyph=sticker&&(second
-    ?<View style={{width:24+SECOND_OFFSET.x,height:24+SECOND_OFFSET.y}}>
-      <View style={{position:'absolute',left:0,top:0}}><StickerGlyph id={sticker} size={24}/></View>
-      <View testID="day-second-sticker" style={{position:'absolute',left:SECOND_OFFSET.x,top:SECOND_OFFSET.y}}><StickerGlyph id={second} size={24}/></View>
-    </View>
-    :<StickerGlyph id={sticker} size={24}/>);
+  const glyph=sticker&&!second&&<StickerGlyph id={sticker} size={24}/>;
+  const pile=sticker&&second?[sticker,second]:[];
   const stuck=sticker?`, ${second?t('calendar.twoPeople'):t('calendar.hasSticker')}${placeable?`, ${t('calendar.tapToPlace')}`:''}`:'';
   return <Pressable accessibilityRole="button" accessibilityLabel={`${t('date.monthDay',month,day)}${stuck}${sticker&&recorded?`, ${t('calendar.hasRecord')}`:''}`}
     accessibilityState={{selected,disabled:!enabled}} disabled={!enabled} onPress={open??select} onLongPress={open?select:ignoreLongPress}
@@ -477,7 +480,13 @@ function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,
       {glyph&&(popIn?<StickMotion>{glyph}</StickMotion>:glyph)}
     </PixelFrame>
     {sticker&&recorded&&<View pointerEvents="none" accessibilityLabel={t('calendar.hasRecord')} style={{position:'absolute',right:3,top:3,width:8,height:8,backgroundColor:retro.color.primary,borderColor:retro.color.ink,borderWidth:2}}/>}
-    {selected&&<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0}}><PixelFocusRing cornersOnly/></View>}
+    {selected&&<View pointerEvents="none" style={{position:'absolute',left:0,right:0,top:0,bottom:0}}><PixelFocusRing cornersOnly cornerThickness={TODAY_CORNER_THICKNESS}/></View>}
+    {pile.map((id,i)=>{
+      const art=<StickerGlyph id={id} size={24}/>;
+      return <View key={i} testID={i>0?'day-second-sticker':undefined} pointerEvents="none" style={{position:'absolute',...dayStickerSpot(i,pile.length,height)}}>
+        {popIn&&i===pile.length-1?<StickMotion>{art}</StickMotion>:art}
+      </View>;
+    })}
   </Pressable>;
 }
 /** 길게 누르기 처리기는 빈 날에도 둔다(달력판과 같은 까닭: 떼자마자 빈칸으로 바뀐 칸에서 손을 떼면 붙이기로 처리됐다). */

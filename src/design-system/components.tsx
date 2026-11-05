@@ -208,12 +208,12 @@ export function SproutSticker({size=48}: {size?:number}) {
  * Corner dimensions stay fixed as the parent grows; only the straight lines extend.
  */
 /** `cornersOnly`: 네 모서리만, 사이 선 없이 (함께하는 판의 좁은 두 주 달력 칸, 2026-11-04 사용자 요청). */
-export function PixelFocusRing({style,cornersOnly=false}: {style?:StyleProp<ViewStyle>;cornersOnly?:boolean}) {
+export function PixelFocusRing({style,cornersOnly=false,cornerThickness}: {style?:StyleProp<ViewStyle>;cornersOnly?:boolean;/** 모서리 L자 두께. 없으면 토큰 값(함께 목표 날 칸의 오늘 표시만 5, 2026-11-05 사용자) */cornerThickness?:number}) {
   const {ref,size,onLayout}=useLayoutSize();
   const w=Math.round(size.width), h=Math.round(size.height);
   const f=retro.focus;
   const arm=Math.min(f.cornerSize, Math.floor(Math.min(w,h)/3));
-  const thickness=Math.min(f.cornerThickness, Math.floor(arm/2)+1);
+  const thickness=Math.min(cornerThickness??f.cornerThickness, Math.floor(arm/2)+1);
   const cut=Math.min(f.cornerCut, thickness);
   const start=arm+f.gap;
   // Odd-width strokes need half-pixel centres to keep both edges on whole pixels.
