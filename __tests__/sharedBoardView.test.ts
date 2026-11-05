@@ -1,4 +1,4 @@
-import { canPlaceOn, friendBoardsOf, memberBadgesOf, memberRowsOf, oneBoardCells, oneBoardDay, oneBoardShown, placeCompletes, placedWhen } from '../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, memberRowsOf, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes, placedWhen } from '../src/app-data/sharedBoardView';
 import type { Goal, GoalMember, Sticker } from '../src/domain/types';
 
 const at = (day: number, hour = 9, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
@@ -92,16 +92,15 @@ describe('한 판 달력판 (하루 두 장까지)', () => {
   const calendar = goal({ boardType: 'calendar', totalSlots: null, initialSlots: null, endDate: '2026-09-30' });
   const now = new Date(2026, 8, 10, 12);
 
-  it('oneBoardShown: 날마다 먼저 붙인 한 장, 가려진 칸은 빼고', () => {
+  it('oneBoardShown: 날마다 붙인 순서로 두 장까지(둘째 장은 겹쳐 그린다), 가려진 칸은 빼고', () => {
     const shown = oneBoardShown(days);
-    expect(Object.fromEntries(Object.entries(shown).map(([date, s]) => [date, s.id]))).toEqual({ '2026-09-03': 'early', '2026-09-04': 'after' });
+    expect(Object.fromEntries(Object.entries(shown).map(([date, list]) => [date, list.map((s) => s.id)]))).toEqual({ '2026-09-03': ['early', 'late'], '2026-09-04': ['after'] });
   });
 
-  it('oneBoardDay: 그날 붙인 사람을 먼저 붙인 순서로, 그날 내 스티커는 둘째여도 mine', () => {
-    const day = oneBoardDay(days, MEMBERS, '2026-09-03');
-    expect(day.people).toEqual([{ name: '은주', at: at(3, 7), me: false }, { name: '소라', at: at(3, 20), me: true }]);
-    expect(day.mine?.id).toBe('late');
-    expect(oneBoardDay(days, MEMBERS, '2026-09-04').mine).toBeUndefined();
+  it('oneDayTap: 붙은 날을 한 번 누르면 내 스티커는 기록을 열고, 친구 것만 있고 붙일 수 있으면 붙이고, 아니면 아무 일도 없다', () => {
+    expect(oneDayTap(calendar, days, '2026-09-03', now)).toEqual({ open: days[0] });
+    expect(oneDayTap(calendar, [sticker('x', 'u-min', 9, at(10))], '2026-09-10', now)).toBe('place');
+    expect(oneDayTap(calendar, days, '2026-09-04', now)).toBeNull();
   });
 
   it('canPlaceOn: 친구 한 장만 있는 날, 가려진 칸만 있는 날은 붙인다', () => {

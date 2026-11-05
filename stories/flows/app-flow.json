@@ -1104,6 +1104,14 @@
             "label": "한 판에 같이"
           },
           {
+            "id": "screens-함께-목표--one-board-waiting-screen",
+            "label": "친구를 기다릴 때"
+          },
+          {
+            "id": "screens-함께-목표--one-board-calendar-two",
+            "label": "달력판 하루 두 장"
+          },
+          {
             "id": "screens-함께-목표--one-board-hidden",
             "label": "가려진 칸"
           },

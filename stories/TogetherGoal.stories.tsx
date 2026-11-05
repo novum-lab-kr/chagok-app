@@ -3,7 +3,7 @@ import {View} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {
   AddGoalSheet, BlockPickSheet, BlockedPeopleScreen, BoardDetailScreen, FriendBoardList, FriendBoardModal, GoalListScreen, GoogleLoginButton,
-  InviteJoinScreen, InviteLoginPrompt, InviteProblemScreen, KakaoLoginButton, MemberBadgeRow, MemberList, OneBoardNote, PixelDialogModal, PixelText,
+  InviteJoinScreen, InviteLoginPrompt, InviteProblemScreen, KakaoLoginButton, MemberBadgeRow, MemberList, OneBoardNote, OneBoardWaiting, PixelDialogModal, PixelText,
   TogetherGoalScreen, TogetherSettingsScreen, retro, togetherDialogs,
   type BoardKind, type FriendBoard, type FriendBoardItem, type GoalCardItem, type MemberRow, type StickerId, type TogetherMode,
 } from '../src/design-system';
@@ -68,13 +68,24 @@ function SharedCalendar() {
 /** 한 판: 칸마다 붙인 사람의 스티커 */
 const ONE_FILLED: Record<number, StickerId> = {1: 'basic.shoe', 2: 'basic.flower', 3: 'basic.flower', 4: 'basic.star', 5: 'basic.shoe', 6: 'basic.cat', 7: 'basic.flower',
   8: 'basic.shoe', 9: 'basic.star', 10: 'basic.star', 11: 'basic.shoe', 12: 'basic.flower', 13: 'basic.cat'};
-function OneBoard({hidden}: {/** 가려진 칸(차단한 사람이 붙인 칸) */hidden?: ReadonlySet<number>}) {
+function OneBoard({hidden, waiting = false}: {/** 가려진 칸(차단한 사람이 붙인 칸) */hidden?: ReadonlySet<number>;/** 아직 나만 있다 */waiting?: boolean}) {
   const base = boardOf(walk, []);
-  const filled = Object.fromEntries(Object.entries(ONE_FILLED).filter(([n]) => !hidden?.has(Number(n))));
+  const filled = waiting ? {1: ME.sticker, 2: ME.sticker, 3: ME.sticker} : Object.fromEntries(Object.entries(ONE_FILLED).filter(([n]) => !hidden?.has(Number(n))));
   const board = base.board.kind === 'tally' ? {...base.board, filled, hidden, recorded: new Set([1, 5])} : base.board;
   return <BoardDetailScreen {...base} board={board} title={walk.name} name={t('together.ourBoard')} hideProgress boardRows={4}
-    members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 3)]}/>}
-    below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
+    members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...(waiting ? [] : FRIENDS.slice(0, 3))]}/>}
+    above={waiting ? <OneBoardWaiting onResend={noop}/> : undefined} below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
+}
+/** 한 판 달력판: 하루 두 장이면 둘째 장을 오른쪽 아래로 비껴 겹친다(2026-11-05 시안 T2 B안) */
+function OneCalendar() {
+  const base = boardOf(goals.water, stickersOf.water);
+  if (base.board.kind !== 'calendar') return null;
+  const {records} = base.board;
+  const dates = Object.keys(records).sort();
+  const records2 = Object.fromEntries(dates.filter((_, i) => i % 3 === 1).map(date => [date, 'basic.star' as StickerId]));
+  return <BoardDetailScreen {...base} board={{...base.board, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={2}
+    members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 2)]}/>}
+    below={<OneBoardNote calendar/>} onBack={noop} onSettings={noop}/>;
 }
 /** 앱(app/goal/[id]/index.tsx)이 띄우는 한 판 창. 문구는 togetherDialogs 그대로 */
 function OneBoardWith({dialog}: {dialog: {title: string; description: string; primaryLabel: string; secondaryLabel?: string}}) {
@@ -102,6 +113,9 @@ export const FriendDialog: Story = {name: '친구 판 크게', render: () => <St
 export const FriendDialogCalendar: Story = {name: '친구 판 크게 달력판', render: () => <Stage><SharedCalendar/>
   <FriendBoardModal visible name="지우" sticker="basic.star" board={calendarOf([10, 11, 13, 15, 16, 17, 20, 21, 22, 24, 25, 27, 28, 29])} onRequestClose={noop}/></Stage>};
 export const OneBoardScreen: Story = {name: '한 판에 같이', render: () => <Stage><OneBoard/></Stage>};
+/** 2026-11-05 시안 T1 A안: 각자 판과 같은 기다림 카드를 판 위에, 둘째 줄만 한 판 문구 */
+export const OneBoardCalendarTwo: Story = {name: '한 판 달력판 하루 두 장', render: () => <Stage><OneCalendar/></Stage>};
+export const OneBoardWaitingScreen: Story = {name: '한 판 친구를 기다릴 때', render: () => <Stage><OneBoard waiting/></Stage>};
 /** 새 조립(사용자 확인 전): 차단한 사람이 붙인 칸은 이름과 스티커 없이 흐리게(투명도 0.4), 누를 수 없다. 판 칸 수에는 든다 */
 export const OneBoardHidden: Story = {name: '한 판에 같이 가려진 칸', render: () => <Stage><OneBoard hidden={new Set([4, 9])}/></Stage>};
 /** 새 문구(사용자 확인 전): 친구 칸을 한 번 누르면 누가 언제 붙였는지 */

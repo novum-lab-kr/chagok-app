@@ -111,3 +111,19 @@ describe('한 판 가려진 칸 (PRD 4.15, 차단)',()=>{
     expect(screen.getByRole('button',{name:/^3번 칸/})).toBeTruthy();
   });
 });
+
+describe('한 판 달력판 하루 두 장 (2026-11-05 시안 T2 B안)',()=>{
+  const cal=(records2?:Record<string,'shoe'|'star'>)=>({kind:'calendar' as const,year:2026,month:9,records:{'2026-09-22':'shoe' as const,'2026-09-23':'star' as const},records2,
+    selectedDate:'2026-09-29',isDateEnabled:()=>true,canGoPrev:true,canGoNext:false,onSelect:()=>{},onMonthChange:()=>{},onOpenRecord:()=>{}});
+  const Small=({b}:{b:ReturnType<typeof cal>})=><BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:0,percentLabel:''}} board={b}
+    hideProgress boardRows={2} onBack={()=>{}} onSettings={()=>{}}/>;
+  it('둘째 장이 있는 날은 두 장을 겹쳐 그리고, 두 사람이 붙인 날로 읽힌다',()=>{
+    render(<Small b={cal({'2026-09-22':'star'})}/>);
+    const two=screen.getByRole('button',{name:/^9월 22일/});
+    expect(two.getAttribute('aria-label')).toContain('두 사람이 붙였어요');
+    expect(two.querySelector('[data-testid="day-second-sticker"]')).not.toBeNull();
+    const one=screen.getByRole('button',{name:/^9월 23일/});
+    expect(one.getAttribute('aria-label')).not.toContain('두 사람');
+    expect(one.querySelector('[data-testid="day-second-sticker"]')).toBeNull();
+  });
+});

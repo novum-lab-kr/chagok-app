@@ -4,7 +4,7 @@ import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/reac
 import {Keyboard} from 'react-native';
 import {PixelFrame,PixelText,SCREEN_PADDING} from './components';
 import {BoardDetailScreen,type TallyBoardView} from './board-screens';
-import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,TogetherGoalScreen,TogetherSettingsScreen,deleteOwnerDescription,togetherDialogs,type FriendBoard} from './together-screens';
+import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,OneBoardNote,OneBoardWaiting,TogetherGoalScreen,TogetherSettingsScreen,deleteOwnerDescription,togetherDialogs,type FriendBoard} from './together-screens';
 import {SlotsField} from './board-screens';
 import {t} from '../i18n';
 afterEach(cleanup);
@@ -76,6 +76,18 @@ describe('친구 판 줄 (PRD 4.15)',()=>{
     expect(screen.getByText('친구를 기다리고 있어요')).toBeTruthy();
     expect(screen.queryByRole('button',{name:'링크 다시 보내기'})).toBeNull();
   });
+  it('한 판 기다림 안내(A안)는 같은 카드에 둘째 줄만 한 판 문구이고, 판 패널 위에 놓인다',()=>{
+    let resent=0;
+    render(<BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:12,percentLabel:''}}
+      board={{kind:'tally',total:12,filled:{},onPress:()=>{},onOpenRecord:()=>{}}} hideProgress boardRows={4}
+      above={<OneBoardWaiting onResend={()=>{resent++;}}/>} onBack={()=>{}} onSettings={()=>{}}/>);
+    const title=screen.getByText('친구를 기다리고 있어요');
+    expect(screen.getByText('친구가 들어오면 이 판에 같이 붙여요.')).toBeTruthy();
+    expect(screen.queryByText('들어오면 친구 판이 여기에 모여요.')).toBeNull();
+    expect(title.compareDocumentPosition(screen.getByTestId('board-panel'))&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'링크 다시 보내기'}));
+    expect(resent).toBe(1);
+  });
 });
 
 describe('판 상세의 함께 목표 prop',()=>{
@@ -139,19 +151,15 @@ describe('한 판 창 문구 (판 화면이 띄운다)',()=>{
     expect(togetherDialogs.offlineOne).not.toHaveProperty('secondaryLabel');
     expect(togetherDialogs.slotTaken).toMatchObject({title:'이미 누가 붙였어요',primaryLabel:'확인'});
   });
-  it('하루 창: 붙일 수 있으면 [나도 붙이기], 나도 붙였으면 [내 기록 보기], 아니면 [확인]만',()=>{
-    expect(togetherDialogs.placedOnDay([{name:'지우'}],['지우 9월 3일 7:00'],'placeToo')).toMatchObject({primaryLabel:'나도 붙이기',secondaryLabel:'닫기'});
-    expect(togetherDialogs.placedOnDay([{name:'지우'},{name:'소라',me:true}],[],'myRecord')).toMatchObject({primaryLabel:'내 기록 보기',secondaryLabel:'닫기'});
-    expect(togetherDialogs.placedOnDay([{name:'지우'}],[],null)).not.toHaveProperty('secondaryLabel');
+  it('한 판 적립판 친구 칸 창: 「이름님이 붙였어요」와 붙인 시각',()=>{
+    expect(togetherDialogs.placedBy('지우','9월 3일 7:00')).toMatchObject({title:'지우님이 붙였어요',description:'9월 3일 7:00에 붙였어요'});
   });
-  it('붙인 사람 제목: 다른 사람은 「이름님」, 내가 있으면 앞에 「나와 」, 나만이면 「내가 붙였어요」',()=>{
-    const title=(people:{name:string;me?:boolean}[])=>togetherDialogs.placedOnDay(people,[],null).title;
-    expect(title([{name:'Bob'}])).toBe('Bob님이 붙였어요');
-    expect(title([{name:'Ann',me:true},{name:'Bob'}])).toBe('나와 Bob님이 붙였어요');
-    expect(title([{name:'Bob'},{name:'Ann',me:true}])).toBe('나와 Bob님이 붙였어요');
-    expect(title([{name:'Bob'},{name:'Cid'}])).toBe('Bob님, Cid님이 붙였어요');
-    expect(title([{name:'Ann',me:true}])).toBe('내가 붙였어요');
-    expect(togetherDialogs.placedBy('지우','9월 3일 7:00').title).toBe('지우님이 붙였어요');
+  it('한 판 안내 글: 적립판은 친구 칸을 누르는 법까지, 달력판은 누르는 창이 없어 첫 문장만',()=>{
+    render(<OneBoardNote/>);
+    expect(screen.getByText('칸마다 붙인 사람의 스티커예요. 친구 칸을 누르면 누가 언제 붙였는지 보여요.')).toBeTruthy();
+    cleanup();
+    render(<OneBoardNote calendar/>);
+    expect(screen.getByText('칸마다 붙인 사람의 스티커예요.')).toBeTruthy();
   });
 });
 

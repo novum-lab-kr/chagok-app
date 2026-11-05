@@ -4,14 +4,14 @@ import * as Haptics from 'expo-haptics';
 import { track } from '../../../src/analytics';
 import { hasAnsweredAnalytics, saveAnalyticsEnabled } from '../../../src/analytics/posthog';
 import {
-  AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, FriendBoardList, FriendBoardModal, GuideCard, LoadingScreen, MemberBadgeRow, OneBoardNote, PixelButton,
+  AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, FriendBoardList, FriendBoardModal, GuideCard, LoadingScreen, MemberBadgeRow, OneBoardNote, OneBoardWaiting, PixelButton,
   boardDialogs, stickerShopDialogs, togetherDialogs, useLoadRetry,
 } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
 import { percentLabel } from '../../../src/app-data/pocketAdapter';
-import { canPlaceOn, friendBoardsOf, memberBadgesOf, oneBoardCells, oneBoardDay, oneBoardShown, placeCompletes, placedWhen } from '../../../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, myStickerOn, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes, placedWhen } from '../../../src/app-data/sharedBoardView';
 import { oneBoardOnline, watchSlotTaken } from '../../../src/app-data/sharedBoardGuards';
 import { actionDeps, shareInvite } from '../../../src/app-data/sharedGoalActions';
 import { normalizeStickerId } from '../../../src/stickers/stickerIds';
@@ -264,10 +264,10 @@ export default function Board() {
   }
 
   const one = goal.mode === 'one';
-  // 한 판 달력판은 하루에 두 장까지다. 판에 보이는 것은 그날 먼저 붙인 한 장이다(sharedBoardView).
+  // 한 판 달력판은 하루에 두 장까지다. 둘째 장은 첫 장에 겹쳐 그린다(sharedBoardView).
   const oneShown = one && goal.boardType === 'calendar' ? oneBoardShown(stickers) : null;
   const bySlot = (n: number) => stickers.find((s) => s.slotIndex === n - 1);
-  const byDate = (date: string) => (oneShown ? oneShown[date] : stickers.find((s) => stickerDate(s) === date));
+  const byDate = (date: string) => (oneShown ? oneShown[date]?.[0] : stickers.find((s) => stickerDate(s) === date));
   /** 적립판: 빈칸 = 붙이기, 붙인 칸 꾹 = 떼기. 한 판은 내가 붙인 칸만 뗀다. */
   function onSlotPress(n: number) {
     void actOnce(async () => {
@@ -284,7 +284,7 @@ export default function Board() {
   function onDateSelect(date: string) {
     void actOnce(async () => {
       const placed = byDate(date);
-      if (placed) { const own = one ? oneBoardDay(stickers, members, date).mine : placed; if (own) await remove(own); return; }
+      if (placed) { const own = one ? myStickerOn(stickers, date) : placed; if (own) await remove(own); return; }
       if (goal && canPlaceOn(goal, stickers, { date }, new Date())) await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
     });
   }
@@ -296,22 +296,12 @@ export default function Board() {
     else openRecord(bySlot(n));
   }
 
-  /**
-   * 한 판 달력판의 붙은 날: 친구가 붙인 날이면 그날 붙인 사람을 모두 보이고, 내가 더 붙일 수 있으면 [나도 붙이기].
-   * 나만 붙인 날은 기록을 연다 (계획 「아침에 물을 것」 1의 A).
-   */
+  /** 한 판 달력판의 붙은 날 한 번: 내 스티커면 기록, 친구 것만 있고 붙일 수 있으면 붙이기, 아니면 아무 일도 없다(sharedBoardView oneDayTap). */
   function onOneDateOpen(date: string) {
     if (!goal) return;
-    const day = oneBoardDay(stickers, members, date);
-    if (!day.people.some((p) => !p.me)) { openRecord(day.mine); return; }
-    const names = day.people.map((p) => (p.me ? t('together.meName', p.name) : p.name));
-    const action = canPlaceOn(goal, stickers, { date }, new Date()) ? 'placeToo' : day.mine ? 'myRecord' : null;
-    void actOnce(async () => {
-      const choice = await ask(togetherDialogs.placedOnDay(day.people, day.people.map((p, i) => `${names[i]} ${placedWhen(p.at)}`), action));
-      if (choice !== 'primary') return;
-      if (action === 'placeToo') await place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now()));
-      else if (action === 'myRecord') openRecord(day.mine);
-    });
+    const tap = oneDayTap(goal, stickers, date, new Date());
+    if (tap === 'place') void actOnce(() => place(Number(date.slice(8, 10)) - 1, { date }, data, placedAtFor(date, Date.now())));
+    else if (tap) openRecord(tap.open);
   }
 
   /** 각자 판 [링크 다시 보내기]: 만든 사람만. 초대 코드는 그때그때 서버에서 읽는다. */
@@ -344,7 +334,13 @@ export default function Board() {
       if (recordedIds.has(s.id)) recordedDates.add(stickerDate(s));
     }
   }
-  if (oneShown) for (const [date, s] of Object.entries(oneShown)) records[date] = normalizeStickerId(s.stickerType);
+  const records2: Record<string, StickerId> = {};
+  if (oneShown) {
+    for (const [date, [first, second]] of Object.entries(oneShown)) {
+      records[date] = normalizeStickerId(first.stickerType);
+      if (second) records2[date] = normalizeStickerId(second.stickerType);
+    }
+  }
   const nav = monthNav(goal, shown.year, shown.month);
   const friends = goal.mode === 'each' ? friendBoardsOf(goal, members, data.friendStickers, localDateKey(now.getTime())) : [];
   const openFriend = friends.find((f) => f.id === friendOpen);
@@ -353,7 +349,9 @@ export default function Board() {
       below: <FriendBoardList friends={friends} onOpen={setFriendOpen} onResend={goal.role === 'owner' ? onResend : undefined} /> }
     : one
       ? { title: goal.name, name: t('together.ourBoard'), hideProgress: true, boardRows: 4,
-        members: <MemberBadgeRow people={memberBadgesOf(members)} />, below: <OneBoardNote /> }
+        members: <MemberBadgeRow people={memberBadgesOf(members)} />, below: <OneBoardNote calendar={goal.boardType === 'calendar'} />,
+        // 친구가 아직 없으면 판 위에 각자 판과 같은 기다림 안내(2026-11-05 시안 T1 A안)
+        above: members.some((m) => !m.isMe) ? undefined : <OneBoardWaiting onResend={goal.role === 'owner' ? onResend : undefined} /> }
       : { name: goal.name };
 
   return (
@@ -376,7 +374,7 @@ export default function Board() {
         board={goal.boardType === 'tally'
           ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: oneCells ? onOneSlotOpen : (n) => openRecord(bySlot(n)), hidden: oneCells?.hidden }
           : {
-            kind: 'calendar', year: shown.year, month: shown.month, records, recordedDates, justPlaced: justPlaced.date,
+            kind: 'calendar', year: shown.year, month: shown.month, records, records2: oneShown ? records2 : undefined, recordedDates, justPlaced: justPlaced.date,
             selectedDate: done ? undefined : localDateKey(now.getTime()),
             isDateEnabled: (date) => isDateEnabled(goal, date, Boolean(records[date])),
             canGoPrev: nav.canGoPrev, canGoNext: nav.canGoNext,

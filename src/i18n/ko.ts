@@ -51,6 +51,7 @@ export const ko = {
   'calendar.nextMonth': '다음 달',
   'calendar.label': (month: string) => `${month} 달력`,
   'calendar.hasSticker': '스티커 있음',
+  'calendar.twoPeople': '두 사람이 붙였어요',
   'calendar.hasRecord': '사진 또는 메모 기록 있음',
   'slot.label': (number: number) => `${number}번 칸`,
   'slot.available': '붙일 수 있음',
@@ -482,6 +483,7 @@ export const ko = {
   'together.peopleOf': (count: number, max: number) => `함께하는 사람 ${count}/${max}`,
   'together.waiting': '친구를 기다리고 있어요',
   'together.waitingDetail': '들어오면 친구 판이 여기에 모여요.',
+  'together.waitingOneDetail': '친구가 들어오면 이 판에 같이 붙여요.',
   'together.resendLink': '링크 다시 보내기',
   'together.me': '나',
   'together.meName': (name: string) => `${name}(나)`,
@@ -490,6 +492,7 @@ export const ko = {
   'together.kickA11y': (name: string) => `${name}님 내보내기`,
   'together.inviteFriends': '친구 초대하기',
   'together.oneBoardNote': '칸마다 붙인 사람의 스티커예요. 친구 칸을 누르면 누가 언제 붙였는지 보여요.',
+  'together.oneBoardNoteCalendar': '칸마다 붙인 사람의 스티커예요.',
   'together.viewOnlyNote': (name: string) => `${name}님이 보여주는 판이에요. 보기만 할 수 있어요.`,
   'together.ownerEdits': (owner: string) => `목표 이름과 칸 수는 만든 사람(${owner})이 바꿔요.`,
   'together.ownerEditsNoName': '만든 사람만 바꿀 수 있어요.',
@@ -513,13 +516,8 @@ export const ko = {
   'together.slotTakenDescription': '친구가 먼저 붙인 칸이라 내 스티커는 떼었어요. 다른 칸에 붙여 주세요.',
   'together.offlineOne': '연결되면 붙일 수 있어요',
   'together.offlineOneDescription': '한 판은 다 같이 쓰는 판이라 인터넷에 연결된 때에만 붙여요.',
-  /** 붙인 사람(나 빼고)과 나도 붙였는지. 나에게는 「님」을 붙이지 않는다 */
-  'together.placedBy': (others: readonly string[], withMe: boolean = false) => (others.length === 0
-    ? '내가 붙였어요'
-    : `${withMe ? '나와 ' : ''}${others.map((name) => `${name}님`).join(', ')}이 붙였어요`),
+  'together.placedBy': (name: string) => `${name}님이 붙였어요`,
   'together.placedAt': (when: string) => `${when}에 붙였어요`,
-  'together.placeToo': '나도 붙이기',
-  'together.myRecord': '내 기록 보기',
   'together.hiddenCell': '가려진 칸',
   'together.leaveTitle': '이 목표에서 나갈까요?',
   'together.leaveConfirm': '나가기',

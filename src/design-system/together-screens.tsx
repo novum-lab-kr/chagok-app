@@ -90,12 +90,12 @@ export function FriendBoardStrip({name,sticker,board,onPress}:{name:string;stick
     ?<Pressable accessibilityRole="button" accessibilityLabel={t('together.boardOf',name)} accessibilityHint={t('together.openBoard',name)} onPress={onPress}>{row}</Pressable>
     :<View accessible accessibilityLabel={t('together.boardOf',name)}>{row}</View>;
 }
-/** 친구를 기다리는 자리: 차곡이 + 안내 + [링크 다시 보내기]. */
-function WaitingForFriends({onResend}:{/** 만든 사람만. 없으면 버튼을 그리지 않는다 */onResend?:()=>void}) {
+/** 친구를 기다리는 자리: 차곡이 + 안내 + [링크 다시 보내기]. 둘째 줄(detail)만 각자 판과 한 판이 다르다. */
+function WaitingForFriends({detail,onResend}:{detail:string;/** 만든 사람만. 없으면 버튼을 그리지 않는다 */onResend?:()=>void}) {
   return <PixelFrame variant="thin"><View style={{alignItems:'center',gap:10,paddingVertical:18,paddingHorizontal:10}}>
     <Mascot pose="curious" size={64}/>
     <PixelText style={{textAlign:'center'}}>{t('together.waiting')}</PixelText>
-    <Small center>{t('together.waitingDetail')}</Small>
+    <Small center>{detail}</Small>
     {onResend&&<PixelButton label={t('together.resendLink')} variant="secondary" minHeight={40} onPress={onResend}/>}
   </View></PixelFrame>;
 }
@@ -105,12 +105,16 @@ export function FriendBoardList({friends,onOpen,onResend}:{friends:readonly Frie
     <PixelText accessibilityRole="header" style={sectionTitle}>{friends.length?t('together.peopleCount',friends.length+1):t('together.people')}</PixelText>
     {friends.length
       ?<View style={{gap:10}}>{friends.map(friend=><FriendBoardStrip key={friend.id} name={friend.name} sticker={friend.sticker} board={friend.board} onPress={()=>onOpen(friend.id)}/>)}</View>
-      :<WaitingForFriends onResend={onResend}/>}
+      :<WaitingForFriends detail={t('together.waitingDetail')} onResend={onResend}/>}
   </View>;
 }
-/** 한 판 아래 안내 글: 칸마다 붙인 사람의 스티커이고, 친구 칸을 누르면 누가 언제 붙였는지 보인다. */
-export function OneBoardNote() {
-  return <Small>{t('together.oneBoardNote')}</Small>;
+/** 한 판에 아직 친구가 없을 때 판 위에 두는 안내. 각자 판과 같은 카드, 둘째 줄만 한 판 문구 (2026-11-05 시안 T1 A안). */
+export function OneBoardWaiting({onResend}:{/** 만든 사람만 */onResend?:()=>void}) {
+  return <WaitingForFriends detail={t('together.waitingOneDetail')} onResend={onResend}/>;
+}
+/** 한 판 아래 안내 글: 칸마다 붙인 사람의 스티커. 적립판은 친구 칸을 누르면 누가 언제 붙였는지 보인다고 덧붙인다(달력판은 그 창이 없다, 2026-11-05). */
+export function OneBoardNote({calendar=false}:{calendar?:boolean}) {
+  return <Small>{calendar?t('together.oneBoardNoteCalendar'):t('together.oneBoardNote')}</Small>;
 }
 const BIG_CELL=44;
 /** 친구 판 전체(적립판 모든 칸, 달력판 그 달)를 얇은 판에 크게. 보기만 한다. */
@@ -376,18 +380,7 @@ export const togetherDialogs={
   /** + 시트 [친구와 함께], 친구와 함께 만들기에서 로그인 전. [로그인]은 계정 연결로 간다. */
   get login(){return {title:t('together.loginTitle'),description:t('together.loginDescription'),primaryLabel:t('account.login'),secondaryLabel:t('common.close')};},
   /** 한 판 친구 칸을 눌렀을 때: 누가 언제 붙였는지. when은 「9월 3일 15:05」. */
-  placedBy:(name:string,when:string)=>({title:t('together.placedBy',[name]),description:t('together.placedAt',when),primaryLabel:t('common.ok')}),
-  /**
-   * 한 판 달력판에서 친구가 붙인 날을 눌렀을 때. people은 붙인 순서, lines는 「지우 9월 3일 15:05」처럼 붙인 순서.
-   * 제목은 「나와 지우님이 붙였어요」처럼 나에게는 「님」을 붙이지 않는다.
-   * action: 내가 더 붙일 수 있으면 [나도 붙이기], 그날 나도 붙였으면 [내 기록 보기], 아니면 [확인]만.
-   */
-  placedOnDay:(people:readonly {name:string;me?:boolean}[],lines:readonly string[],action:'placeToo'|'myRecord'|null)=>{
-    const title=t('together.placedBy',people.filter(p=>!p.me).map(p=>p.name),people.some(p=>p.me));
-    return action
-      ?{title,description:lines.join('\n'),secondaryLabel:t('common.close'),primaryLabel:action==='placeToo'?t('together.placeToo'):t('together.myRecord')}
-      :{title,description:lines.join('\n'),primaryLabel:t('common.ok')};
-  },
+  placedBy:(name:string,when:string)=>({title:t('together.placedBy',name),description:t('together.placedAt',when),primaryLabel:t('common.ok')}),
   /** 한 판에 연결 없이 붙이려 할 때. 붙이지 않는다. */
   get offlineOne(){return {title:t('together.offlineOne'),description:t('together.offlineOneDescription'),primaryLabel:t('common.ok')};},
   /** 한 판에서 내가 붙인 칸을 다른 사람이 먼저 붙였다(slot_taken). 칸은 이미 지워졌다. */

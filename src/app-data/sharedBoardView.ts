@@ -70,13 +70,12 @@ export function oneBoardCells(stickers: readonly Sticker[], members: readonly Go
 }
 
 /**
- * 한 판 달력판: 날마다 판에 보이는 한 장(그날 먼저 붙인 것, 가려진 칸은 빼고).
- * 같은 날 두 장을 겹쳐 그리는 모양은 아직 없다(계획 「아침에 물을 것」 1).
+ * 한 판 달력판: 날마다 판에 보이는 스티커(붙인 순서, 가려진 칸은 빼고). 하루 두 장까지라 둘째 장은 겹쳐 그린다 (2026-11-05 시안 T2 B안).
  */
-export function oneBoardShown(stickers: readonly Sticker[]): Record<DateKey, Sticker> {
-  const shown: Record<DateKey, Sticker> = {};
+export function oneBoardShown(stickers: readonly Sticker[]): Record<DateKey, Sticker[]> {
+  const shown: Record<DateKey, Sticker[]> = {};
   for (const s of [...stickers].sort((a, b) => a.placedAt - b.placedAt)) {
-    if (!isHidden(s)) shown[stickerDate(s)] ??= s;
+    if (!isHidden(s)) (shown[stickerDate(s)] ??= []).push(s);
   }
   return shown;
 }
@@ -85,15 +84,9 @@ const dayOf = (stickers: readonly Sticker[], date: DateKey) => stickers.filter((
 /** 그날 내가 더 붙일 수 있는가: 하루 두 장까지(가려진 칸도 센다), 한 사람은 한 장(서버 트리거, stickerRepository placeSticker와 같은 규칙). */
 const dayOpen = (day: readonly Sticker[]) => day.length < 2 && !day.some((s) => s.placedBy === ME);
 
-/** 그날 붙인 사람(먼저 붙인 순서, 가려진 칸 빼고)과 그날 내 스티커. 한 판 달력판의 하루 창에 쓴다. */
-export function oneBoardDay(stickers: readonly Sticker[], members: readonly GoalMember[], date: DateKey): {
-  people: { name: string; at: number; me: boolean }[]; mine: Sticker | undefined;
-} {
-  const day = dayOf(stickers, date);
-  const people = day.filter((s) => !isHidden(s)).map((s) => ({
-    name: nameOf(memberOf(members, s.placedBy)), at: s.placedAt, me: s.placedBy === ME,
-  }));
-  return { people, mine: day.find((s) => s.placedBy === ME) };
+/** 한 판 달력판에서 그날 내 스티커(둘째로 붙였어도). 꾹 누르면 이것을 뗀다. */
+export function myStickerOn(stickers: readonly Sticker[], date: DateKey): Sticker | undefined {
+  return dayOf(stickers, date).find((s) => s.placedBy === ME);
 }
 
 /**
@@ -104,6 +97,16 @@ export function canPlaceOn(goal: Goal, stickers: readonly Sticker[], target: Pla
   if (goal.mode !== 'one' || goal.boardType !== 'calendar' || !('date' in target)) return canPlace(goal, stickers, target, now);
   const { date } = target;
   return date <= localDateKey(now.getTime()) && isDateEnabled(goal, date, false) && dayOpen(dayOf(stickers, date));
+}
+
+/**
+ * 한 판 달력판의 붙은 날을 한 번 눌렀을 때. 붙인 사람을 보이는 창은 두지 않는다(2026-11-05 사용자, 나중에 메모와 사진이 들어갈 자리).
+ * 내 스티커가 있으면 혼자 달력판처럼 기록을 열고, 친구 것만 있고 하루 두 장 규칙 안이면 붙이고(place), 아니면 아무 일도 없다(null).
+ */
+export function oneDayTap(goal: Goal, stickers: readonly Sticker[], date: DateKey, now: Date): { open: Sticker } | 'place' | null {
+  const mine = myStickerOn(stickers, date);
+  if (mine) return { open: mine };
+  return canPlaceOn(goal, stickers, { date }, now) ? 'place' : null;
 }
 
 /** 이번에 붙이면 완성되는가. 한 판 달력판에서 이미 스티커가 있는 날에 붙이면 찬 날 수(filledCount)가 늘지 않아 완성하지 않는다. */
