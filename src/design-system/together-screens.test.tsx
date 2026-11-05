@@ -1,7 +1,8 @@
 import React from 'react';
-import {afterEach,beforeEach,describe,expect,it} from 'vitest';
-import {cleanup,fireEvent,render,screen} from '@testing-library/react';
-import {PixelFrame,PixelText} from './components';
+import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
+import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {Keyboard} from 'react-native';
+import {PixelFrame,PixelText,SCREEN_PADDING} from './components';
 import {BoardDetailScreen,type TallyBoardView} from './board-screens';
 import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,TogetherGoalScreen,TogetherSettingsScreen,deleteOwnerDescription,togetherDialogs,type FriendBoard} from './together-screens';
 import {SlotsField} from './board-screens';
@@ -190,10 +191,17 @@ describe('함께 목표 설정 (PRD 4.15)',()=>{
     expect(screen.getByText('만든 사람만 바꿀 수 있어요.')).toBeTruthy();
     expect(document.body.textContent).not.toContain('()');
   });
-  it('onReport가 없으면(다른 사람이 없음) [불쾌한 이름 신고하기] 줄이 없다',()=>{
-    render(<TogetherSettingsScreen {...base} role="owner" onDelete={noop} onReport={undefined}/>);
+  it('onReport와 onBlock이 없으면(다른 사람이 없음) [불쾌한 이름 신고하기]와 [사람 차단하기] 줄이 없다',()=>{
+    render(<TogetherSettingsScreen {...base} role="owner" onDelete={noop} onReport={undefined} onBlock={undefined}/>);
     expect(screen.queryByText('불쾌한 이름 신고하기')).toBeNull();
-    expect(screen.getByText('사람 차단하기')).toBeTruthy();
+    expect(screen.queryByText('사람 차단하기')).toBeNull();
+    expect(screen.getByText('이 목표에서 나가기')).toBeTruthy();
+  });
+  it('saveError는 화면 읽기에 알림으로 한 번만 읽힌다(칸 아래 문구가 알림이라 버튼 위 문구는 알림이 아니다)',()=>{
+    const msg='이 목표에서 이미 누가 쓰는 스티커예요.';
+    render(<TogetherSettingsScreen {...base} role="member" stickerError={msg} saveError={msg}/>);
+    expect(screen.getAllByText(msg)).toHaveLength(2);
+    expect(screen.getAllByRole('alert').filter((el)=>el.textContent===msg)).toHaveLength(1);
   });
   it('saveError는 [저장하기] 바로 위에 보인다(위쪽 칸의 오류가 화면 밖이어도)',()=>{
     render(<TogetherSettingsScreen {...base} role="member" stickerError="이 목표에서 이미 누가 쓰는 스티커예요." saveError="이 목표에서 이미 누가 쓰는 스티커예요."/>);
@@ -207,6 +215,13 @@ describe('함께 목표 설정 (PRD 4.15)',()=>{
     render(<TogetherSettingsScreen {...base} mode="one" role="owner" onChangeGoalName={noop} onDelete={noop}/>);
     expect(screen.getByText(deleteOwnerDescription('one'))).toBeTruthy();
     expect(screen.queryByText(/친구들의 판은/)).toBeNull();
+  });
+  it('한 판에 나 말고 아무도 없으면 삭제 안내는 혼자 목표와 같다',()=>{
+    expect(deleteOwnerDescription('one',true)).toBe(t('delete.goalDescription'));
+    expect(deleteOwnerDescription('one',false)).toBe(t('together.deleteOwnerOne'));
+    render(<TogetherSettingsScreen {...base} mode="one" role="owner" alone onChangeGoalName={noop} onDelete={noop}/>);
+    expect(screen.getByText(t('delete.goalDescription'))).toBeTruthy();
+    expect(screen.queryByText(t('together.deleteOwnerOne'))).toBeNull();
   });
   it('완성한 판은 함께하는 사람에게도 안내가 없다',()=>{
     render(<TogetherSettingsScreen {...base} role="member" completed/>);
@@ -310,5 +325,41 @@ describe('칸 수 직접 입력 상한 (함께 목표 1000칸)',()=>{
     expect(text.indexOf('1000칸까지 만들 수 있어요.')).toBeGreaterThan(text.indexOf('직접 입력'));
     expect(text.indexOf('1000칸까지 만들 수 있어요.')).toBeLessThan(text.indexOf('내 이름'));
     expect(screen.getAllByText('1000칸까지 만들 수 있어요.')).toHaveLength(1);
+  });
+  it('친구와 함께 만들기에서 버튼 위 문구는 알림이 아니다(칸 아래 문구와 두 번 읽히지 않게)',()=>{
+    const msg='쓸 수 없는 낱말이 있어요.';
+    render(<TogetherGoalScreen mode="each" onChangeMode={noop} name="걷기" onChangeName={noop} nameError={msg} kind="tally" onChangeKind={noop} count="15" onChangeCount={noop}
+      myName="은주" onChangeMyName={noop} sticker="basic.shoe" onChooseSticker={noop} maxFriends={5} error={msg} onSubmit={noop} onBack={noop}/>);
+    expect(screen.getAllByText(msg)).toHaveLength(2);
+    expect(screen.getAllByRole('alert').filter((el)=>el.textContent===msg)).toHaveLength(1);
+  });
+  describe('칸 수 오류와 키보드',()=>{
+    const props={mode:'each' as const,onChangeMode:noop,name:'걷기',onChangeName:noop,kind:'tally' as const,onChangeKind:noop,count:'1001',onChangeCount:noop,countMax:1000,
+      myName:'은주',onChangeMyName:noop,sticker:'basic.shoe' as const,onChooseSticker:noop,maxFriends:5,onSubmit:noop,onBack:noop};
+    const msg='1000칸까지 만들 수 있어요.';
+    let showKeyboard:((event:{endCoordinates:{screenY:number}})=>void)|undefined;
+    let scroll:ReturnType<typeof vi.fn>;
+    beforeEach(()=>{
+      showKeyboard=undefined;
+      vi.spyOn(Keyboard,'addListener').mockImplementation(((name:string,fn:never)=>{if(name==='keyboardDidShow') showKeyboard=fn;return {remove:noop};}) as never);
+      scroll=vi.fn();
+      (Element.prototype as unknown as {scroll:unknown}).scroll=scroll;
+      // 칸 수 묶음(입력칸과 오류)이 화면 위 380에서 60 높이, 키보드 위 끝은 400
+      vi.spyOn(Element.prototype,'getBoundingClientRect').mockReturnValue({top:380,left:0,width:300,height:60,bottom:440,right:300,x:0,y:380,toJSON:noop} as DOMRect);
+    });
+    afterEach(()=>{vi.restoreAllMocks();delete (Element.prototype as unknown as {scroll?:unknown}).scroll;});
+    it('키보드가 떠 있을 때 칸 수 오류가 나타나면 문구 아래 끝이 키보드 위로 오게 내린다',async()=>{
+      const {rerender}=render(<TogetherGoalScreen {...props}/>);
+      act(()=>showKeyboard!({endCoordinates:{screenY:400}}));
+      rerender(<TogetherGoalScreen {...props} countError={msg}/>);
+      await waitFor(()=>expect(scroll).toHaveBeenCalled());
+      expect(scroll.mock.calls.at(-1)![0]).toMatchObject({top:380+60+SCREEN_PADDING-400});
+    });
+    it('키보드가 없으면 오류가 나타나도 옮기지 않는다',async()=>{
+      const {rerender}=render(<TogetherGoalScreen {...props}/>);
+      rerender(<TogetherGoalScreen {...props} countError={msg}/>);
+      await new Promise((resolve)=>setTimeout(resolve,10));
+      expect(scroll).not.toHaveBeenCalled();
+    });
   });
 });

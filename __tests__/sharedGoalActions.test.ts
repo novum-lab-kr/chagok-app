@@ -305,6 +305,14 @@ describe('kick', () => {
     expect((await listMembers(goalId)).map((m) => m.userId)).toEqual(['me']);
   });
 
+  it('not_member 뒤 다시 받기가 실패하면 끝난 것으로 보지 않고 연결 실패로 던진다', async () => {
+    const { server, d } = setup();
+    const goalId = await owned(server);
+    server.as(FRIEND).leave(goalId);
+    jest.spyOn(server, 'pullGoal').mockRejectedValueOnce(new Error('network'));
+    await expect(kick(d, goalId, FRIEND)).rejects.toMatchObject({ word: 'network' });
+  });
+
   it('그사이 목표에서 나왔으면(not_member) 다시 받아 기기에서 지운다', async () => {
     const { server, d } = setup();
     const goalId = await owned(server);

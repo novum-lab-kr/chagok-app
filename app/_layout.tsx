@@ -9,6 +9,7 @@ import { reportScreenError, setErrorUser, startSentry, wrapRoot } from '../src/a
 import { LoadingScreen, SheetSafeArea, SplashAnimation, retro } from '../src/design-system';
 import { goHome } from '../src/app-data/goBack';
 import { removeManagedRecordPhoto } from '../src/app-data/recordPhotos';
+import { signedInUserId } from '../src/app-data/sharedGoalActions';
 import { applyDeviceLanguage, useDeviceLanguage } from '../src/i18n/device';
 import { RetroFontProvider } from '../src/design-system/RetroFontProvider';
 import { configureAds } from '../src/purchases/admob';
@@ -180,8 +181,7 @@ function RootLayout() {
             // 로그아웃이 실패해 세션 정리만 했으면 이 스케줄러는 지난 사용자 것이다 — 보내지 않는다
             if (data.session?.user.id !== userId) return;
             // 도는 사이 연결 화면이 계정을 바꾸면 받은 것을 쓰기 전에 멈춘다(AccountChanged)
-            const currentUserId = async () => (await supabase.auth.getSession()).data.session?.user.id ?? null;
-            await syncRound({ ...await syncDepsFor(supabase, userId), currentUserId }, userId, removeManagedRecordPhoto);
+            await syncRound({ ...await syncDepsFor(supabase, userId), currentUserId: signedInUserId }, userId, removeManagedRecordPhoto);
           } catch (error) {
             // 지난 계정의 회차다. 실패도 성공도 남기지 않는다 — 새 계정 스케줄러가 다시 돈다
             if (error instanceof AccountChanged) return;

@@ -259,6 +259,8 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
   const mode = goal.mode === 'each' ? 'each' : 'one';
   const rows = memberRowsOf(goal, members);
   const others = rows.filter((r) => !r.me);
+  /** 나 말고 아무도 없다. 신고와 차단 줄을 숨기고, 한 판 [삭제하기]는 혼자 목표 안내를 쓴다 */
+  const alone = others.length === 0;
   const ownerName = rows.find((r) => r.owner)?.name ?? '';
 
   /** 세션이 없으면 로그인을 권하고 null. [로그인]은 다시 로그인으로 열어 돌아오면 입력이 그대로다. */
@@ -362,7 +364,7 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
     if (pick === 'report') {
       const target = id === 'goal' ? t('report.goalName') : t('report.personName', others.find((r) => r.id === id)?.name ?? '');
       if (!(await confirm(togetherDialogs.report(target)))) return;
-      if (await act(t('failed.report'), (d) => reportName(d, goalId, id === 'goal' ? null : id), 'person')) await ask(togetherDialogs.reportDone);
+      if (await act(t('failed.report'), (d) => reportName(d, goalId, id === 'goal' ? null : id), id === 'goal' ? 'goal' : 'person')) await ask(togetherDialogs.reportDone);
       setSheetOpen(false);
       return;
     }
@@ -381,7 +383,9 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
 
   /** 만든 사람 [삭제하기]: 나가고 옮겨 온 내 판까지 지운다(각자 판). 한 판은 내가 붙인 칸이 지워진다. 친구들 것은 그대로다. */
   async function remove() {
-    if (!(await confirm(boardDialogs.deleteGoal(deleteOwnerDescription(mode))))) return;
+    // 한 판에 혼자면 혼자 목표 삭제와 같은 확인 창(함께 지워질 수)
+    const description = mode === 'one' && alone ? deleteDescription(await countGoalContents(goalId)) : deleteOwnerDescription(mode);
+    if (!(await confirm(boardDialogs.deleteGoal(description)))) return;
     let photos: string[] = [];
     if (!(await act(t('failed.deleteGoal'), async (d) => { photos = await removeAsOwner(d, goalId); }))) return;
     track('goal_delete');
@@ -423,10 +427,11 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
           onRotate={owner ? () => { void actOnce(rotate); } : undefined} />}
         saveDisabled={busy || myName.trim() === '' || (editsGoal && name.trim() === '') || (slots !== null && !slots.ok)}
         onSave={() => { void actOnce(save); }}
-        onReport={others.length > 0 ? () => { setPick('report'); setSheetOpen(true); } : undefined}
-        onBlock={() => { setPick('block'); setSheetOpen(true); }}
+        onReport={alone ? undefined : () => { setPick('report'); setSheetOpen(true); }}
+        onBlock={alone ? undefined : () => { setPick('block'); setSheetOpen(true); }}
         onLeave={() => { void actOnce(leaveGoal); }}
         onDelete={owner ? () => { void actOnce(remove); } : undefined}
+        alone={alone}
         onBack={goBack}
       />
       <BlockPickSheet

@@ -68,11 +68,16 @@ const STALE: readonly ErrorWord[] = ['not_owner', 'not_member', 'not_shared'];
  * 그 목표에 대한 호출. 서버가 기기와 다르다고 답하면 다시 받아 맞춘 뒤 같은 오류를 던진다 —
  * 화면이 창을 띄운 뒤 다시 읽으면 바뀐 역할이 보이고, 나온 목표는 기기에서 지워져 있다.
  */
-async function onGoal<T>(d: ActionDeps, goalId: string, run: () => Promise<T>): Promise<T> {
+async function onGoal<T>(
+  d: ActionDeps, goalId: string, run: () => Promise<T>, onRefetched?: (ok: boolean) => void,
+): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    if (error instanceof SharedGoalError && STALE.includes(error.word)) await tryRefetch(d, goalId);
+    if (error instanceof SharedGoalError && STALE.includes(error.word)) {
+      const ok = await tryRefetch(d, goalId);
+      onRefetched?.(ok);
+    }
     throw error;
   }
 }
@@ -125,13 +130,17 @@ export async function removeAsOwner(d: ActionDeps, goalId: string): Promise<stri
 
 /**
  * 내보낸다(만든 사람만). 그 사람이 이미 나갔으면(not_member인데 다시 받은 뒤에도 목표가 기기에 있다) 바란 결과라 끝난 것으로 본다.
- * 목표가 기기에서 사라졌으면 내가 나온 것이라 그대로 던진다.
+ * 목표가 기기에서 사라졌으면 내가 나온 것이라 그대로 던진다. 다시 받지 못했으면 어느 쪽인지 몰라 연결 실패(network)로 던진다.
  */
 export async function kick(d: ActionDeps, goalId: string, userId: string): Promise<void> {
+  let refetched = true;
   try {
-    await onGoal(d, goalId, () => kickMember(d.client, goalId, userId));
+    await onGoal(d, goalId, () => kickMember(d.client, goalId, userId), (ok) => { refetched = ok; });
   } catch (error) {
-    if (error instanceof SharedGoalError && error.word === 'not_member' && (await getGoal(goalId))) return;
+    if (error instanceof SharedGoalError && error.word === 'not_member' && (await getGoal(goalId))) {
+      if (!refetched) throw new SharedGoalError('network');
+      return;
+    }
     throw error;
   }
   await tryRefetch(d, goalId);

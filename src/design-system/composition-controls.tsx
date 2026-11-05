@@ -182,6 +182,21 @@ export function CenteringScrollView({children,style,testID}:{children:ReactNode;
     <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider></View>
   </ScrollView>;
 }
+/** 키보드가 떠 있으면 대상의 아래 끝이 키보드 위로 오게 RetroScreen을 내린다. 키보드가 없거나 RetroScreen 밖이면 아무것도 안 한다. */
+type RevealAboveKeyboard=(target:Pick<View,'measureInWindow'>)=>void;
+const RevealAboveKeyboardContext=createContext<RevealAboveKeyboard>(()=>{});
+/**
+ * 안의 내용이 키보드에 가리지 않게 둔다. watch가 새 값으로 나타날 때마다(입력칸 아래 오류 문구 등) 이 묶음 끝까지 보이게 내린다.
+ * 포커스한 입력칸만 올리는 RetroScreen의 처리로는 그 아래에 새로 생긴 문구가 키보드에 가렸다(2026-11-05 친구와 함께 만들기 칸 수).
+ */
+export function KeepAboveKeyboard({watch,children,style}:{watch?:string;children:ReactNode;style?:StyleProp<ViewStyle>}) {
+  const reveal=useContext(RevealAboveKeyboardContext);
+  const box=useRef<View>(null);
+  useEffect(()=>{
+    if(watch&&box.current) reveal(box.current);
+  },[watch,reveal]);
+  return <View ref={box} style={style}>{children}</View>;
+}
 /**
  * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
  *
@@ -208,15 +223,18 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
   // Android는 키보드 이벤트가 KeyboardAvoidingView가 스크롤 영역을 줄이기 전에 와서, 그때는 내릴 자리가 없어 덜 내려간다.
   // 영역이 줄어든 뒤(onLayout)에 한 번 더 맞춘다 (2026-10-11).
   const keyboardTop=useRef<number|null>(null);
-  const revealFocused=useCallback(()=>{
+  const reveal=useCallback<RevealAboveKeyboard>(target=>{
     const top=keyboardTop.current;
-    const input=TextInput.State.currentlyFocusedInput?.();
-    if(top===null||!input) return;
-    input.measureInWindow((_x,y,_width,height)=>{
+    if(top===null) return;
+    target.measureInWindow((_x,y,_width,height)=>{
       const overlap=sheetTop+y+height+SCREEN_PADDING-top;
       if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
     });
   },[offset,scroll,sheetTop]);
+  const revealFocused=useCallback(()=>{
+    const input=TextInput.State.currentlyFocusedInput?.();
+    if(input) reveal(input);
+  },[reveal]);
   useEffect(()=>{
     const show=Keyboard.addListener('keyboardDidShow',event=>{keyboardTop.current=event.endCoordinates.screenY;revealFocused();});
     const hide=Keyboard.addListener('keyboardDidHide',()=>{keyboardTop.current=null;});
@@ -239,7 +257,7 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
     <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()} style={column}>
-      <ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider>
+      <ScrollToCenterContext.Provider value={scrollToCenter}><RevealAboveKeyboardContext.Provider value={reveal}>{children}</RevealAboveKeyboardContext.Provider></ScrollToCenterContext.Provider>
     </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
