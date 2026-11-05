@@ -7,7 +7,7 @@ import {boardDialogs} from './board-dialogs';
 import {removeStickerAction,PixelDialog,PixelText} from './components';
 import {setLanguage} from '../i18n';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
-import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen,goalDragShift,goalDropIndex} from './board-screens';
+import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen,goalDragShift,goalDropIndex,movedOrder,pendingOrder} from './board-screens';
 import {PhotoAttachment,SlotCountPicker,goalMoveActionList} from './composition-controls';
 import {retro} from './tokens';
 afterEach(cleanup);
@@ -171,10 +171,17 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     fireEvent.click(screen.getByRole('button',{name:'9월 29일'}));expect(change).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'9월 30일'}));expect(change).toHaveBeenCalledWith('2026-09-30');
   });
-  it('기간 없는 달력판 완성 안내는 계속하기로 다시 이어 쓸 수 있다고 알린다 (2026-09-30)',()=>{
+  it('기간 없는 달력판 완성: 계속하기로 이어 쓸 수 있다는 안내는 확인 창이 하고, 화면에는 다시 두지 않는다 (2026-09-30, 2026-11-05 사용자)',()=>{
+    expect(boardDialogs.confirmManual.description).toMatch(/계속하기로 다시 이어 쓸 수도 있어요/);
     render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} onComplete={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
-    expect(screen.getByText(/계속하기로 다시 이어 쓸 수 있어요/)).toBeTruthy();
+    expect(screen.getByText('종료일이 없는 달력판은 여기서 완성해요.')).toBeTruthy();
+    expect(screen.queryByText(/계속하기로/)).toBeNull();
     expect(screen.queryByText(/되돌릴 수 없어요/)).toBeNull();
+  });
+  it('[삭제하기] 아래에 지워지는 내용을 다시 쓰지 않는다. 확인 창이 지워질 스티커와 기록 수를 말한다 (2026-11-05 사용자)',()=>{
+    render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(screen.getByText('삭제하기')).toBeTruthy();
+    expect(screen.queryByText(/지워져요/)).toBeNull();
   });
   it('칸 수 선택: min보다 작은 버튼은 비활성이고, 버튼에 없는 값이면 직접 입력으로 연다 (2026-09-30)',()=>{
     const change=vi.fn();
@@ -239,6 +246,14 @@ describe('내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30)',()=>{
     expect([0,1,2,3].map(index=>goalDragShift(index,1,3,112))).toEqual([0,0,-112,-112]);
     expect([0,1,2,3].map(index=>goalDragShift(index,3,1,112))).toEqual([0,112,112,0]);
     expect([0,1,2].map(index=>goalDragShift(index,1,1,112))).toEqual([0,0,0]);
+  });
+  it('놓아서 순서가 바뀌면 비켜선 카드는 새 순서의 제자리와 같은 곳에 있어, 미끄럼 없이 새 값(0)으로 그린다 (2026-11-05 튕김)',()=>{
+    // 끄는 동안 보이던 자리(옛 자리 + 비켜선 거리)가 새 순서의 자리와 같다. 그래서 미끄럼이 남으면 한 칸 더 밀려 튕긴다
+    const size=112,ids=['a','b','c','d'];
+    for(const [from,to] of [[0,3],[3,0],[1,2],[2,1]] as const){
+      const next=ids.filter((_,index)=>index!==from);next.splice(to,0,ids[from]); // 앱의 moveItem과 같은 옮기기
+      ids.forEach((id,index)=>{if(index!==from) expect(index*size+goalDragShift(index,from,to,size)).toBe(next.indexOf(id)*size);});
+    }
   });
   it('화면 읽기 동작은 끝 자리에서 그 방향을 뺀다',()=>{
     expect(goalMoveActionList(true,true).map(action=>action.label)).toEqual(['위로 옮기기','아래로 옮기기']);
@@ -329,5 +344,17 @@ describe('적립판 쪽 넘기기 (2026-11-03 시안 P1)',()=>{
   });
   it('아주 작은 화면도 최소 3줄을 넣는다',()=>{
     expect(tallyPageSize(40,200,76,10)).toBe(9);
+  });
+});
+
+describe('목표 순서: 놓은 순서를 저장이 올 때까지 먼저 그린다 (2026-11-05 실기기)',()=>{
+  const g=(...ids:string[])=>ids.map(id=>({id}));
+  it('앱 목록이 그대로면 놓은 순서로, 새 목록이 오면 앱 목록으로',()=>{
+    const pending=movedOrder(g('a','b','c'),2,0);
+    expect(pending.ids).toEqual(['c','a','b']);
+    expect(pendingOrder(g('a','b','c'),pending).map(x=>x.id)).toEqual(['c','a','b']);
+    expect(pendingOrder(g('c','a','b'),pending).map(x=>x.id)).toEqual(['c','a','b']);
+    expect(pendingOrder(g('a','b'),pending).map(x=>x.id)).toEqual(['a','b']);
+    expect(pendingOrder(g('a','b','c'),null).map(x=>x.id)).toEqual(['a','b','c']);
   });
 });
