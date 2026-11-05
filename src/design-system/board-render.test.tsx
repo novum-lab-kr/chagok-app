@@ -2,7 +2,7 @@ import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {BoardDetailScreen} from './board-screens';
-import type {TallyBoardView} from './board-screens';
+import type {CalendarBoardView,TallyBoardView} from './board-screens';
 
 // 붙인 칸은 크기 48의 스티커 그림을 그린다(2026-10-08 44 → 48). 그 그림이 몇 번 그려지는지 세어 칸이 다시 그려졌는지 본다.
 const cellDraws=vi.hoisted(()=>({count:0}));
@@ -115,7 +115,7 @@ describe('한 판 가려진 칸 (PRD 4.15, 차단)',()=>{
 describe('한 판 달력판 하루 두 장 (2026-11-05 시안 T2 B안)',()=>{
   const cal=(records2?:Record<string,'shoe'|'star'>)=>({kind:'calendar' as const,year:2026,month:9,records:{'2026-09-22':'shoe' as const,'2026-09-23':'star' as const},records2,
     selectedDate:'2026-09-29',isDateEnabled:()=>true,canGoPrev:true,canGoNext:false,onSelect:()=>{},onMonthChange:()=>{},onOpenRecord:()=>{}});
-  const Small=({b}:{b:ReturnType<typeof cal>})=><BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:0,percentLabel:''}} board={b}
+  const Small=({b}:{b:CalendarBoardView})=><BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:0,percentLabel:''}} board={b}
     hideProgress boardRows={2} onBack={()=>{}} onSettings={()=>{}}/>;
   it('둘째 장이 있는 날은 두 장을 겹쳐 그리고, 두 사람이 붙인 날로 읽힌다',()=>{
     render(<Small b={cal({'2026-09-22':'star'})}/>);
@@ -125,5 +125,10 @@ describe('한 판 달력판 하루 두 장 (2026-11-05 시안 T2 B안)',()=>{
     const one=screen.getByRole('button',{name:/^9월 23일/});
     expect(one.getAttribute('aria-label')).not.toContain('두 사람');
     expect(one.querySelector('[data-testid="day-second-sticker"]')).toBeNull();
+  });
+  it('친구 것만 있고 한 번 누르면 붙는 날(placeable)은 화면 읽기가 누르면 붙는다고 알린다',()=>{
+    render(<Small b={{...cal(),placeable:new Set(['2026-09-23'])}}/>);
+    expect(screen.getByRole('button',{name:/^9월 23일/}).getAttribute('aria-label')).toContain('누르면 내 스티커를 붙여요');
+    expect(screen.getByRole('button',{name:/^9월 22일/}).getAttribute('aria-label')).not.toContain('누르면');
   });
 });

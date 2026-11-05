@@ -1116,10 +1116,6 @@
             "label": "가려진 칸"
           },
           {
-            "id": "screens-함께-목표--one-board-placed-by",
-            "label": "누가 언제"
-          },
-          {
             "id": "screens-함께-목표--slot-taken-dialog",
             "label": "이미 누가 붙였어요"
           },

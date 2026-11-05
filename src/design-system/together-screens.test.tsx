@@ -151,14 +151,8 @@ describe('한 판 창 문구 (판 화면이 띄운다)',()=>{
     expect(togetherDialogs.offlineOne).not.toHaveProperty('secondaryLabel');
     expect(togetherDialogs.slotTaken).toMatchObject({title:'이미 누가 붙였어요',primaryLabel:'확인'});
   });
-  it('한 판 적립판 친구 칸 창: 「이름님이 붙였어요」와 붙인 시각',()=>{
-    expect(togetherDialogs.placedBy('지우','9월 3일 7:00')).toMatchObject({title:'지우님이 붙였어요',description:'9월 3일 7:00에 붙였어요'});
-  });
-  it('한 판 안내 글: 적립판은 친구 칸을 누르는 법까지, 달력판은 누르는 창이 없어 첫 문장만',()=>{
+  it('한 판 안내 글은 한 문장: 칸마다 붙인 사람의 스티커(누르는 창은 없다, 2026-11-05)',()=>{
     render(<OneBoardNote/>);
-    expect(screen.getByText('칸마다 붙인 사람의 스티커예요. 친구 칸을 누르면 누가 언제 붙였는지 보여요.')).toBeTruthy();
-    cleanup();
-    render(<OneBoardNote calendar/>);
     expect(screen.getByText('칸마다 붙인 사람의 스티커예요.')).toBeTruthy();
   });
 });

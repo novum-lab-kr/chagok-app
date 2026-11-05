@@ -112,9 +112,9 @@ export function FriendBoardList({friends,onOpen,onResend}:{friends:readonly Frie
 export function OneBoardWaiting({onResend}:{/** 만든 사람만 */onResend?:()=>void}) {
   return <WaitingForFriends detail={t('together.waitingOneDetail')} onResend={onResend}/>;
 }
-/** 한 판 아래 안내 글: 칸마다 붙인 사람의 스티커. 적립판은 친구 칸을 누르면 누가 언제 붙였는지 보인다고 덧붙인다(달력판은 그 창이 없다, 2026-11-05). */
-export function OneBoardNote({calendar=false}:{calendar?:boolean}) {
-  return <Small>{calendar?t('together.oneBoardNoteCalendar'):t('together.oneBoardNote')}</Small>;
+/** 한 판 아래 안내 글: 칸마다 붙인 사람의 스티커. 친구 칸을 누르는 창은 없다(2026-11-05 사용자, 나중에 메모와 사진이 들어갈 자리). */
+export function OneBoardNote() {
+  return <Small>{t('together.oneBoardNote')}</Small>;
 }
 const BIG_CELL=44;
 /** 친구 판 전체(적립판 모든 칸, 달력판 그 달)를 얇은 판에 크게. 보기만 한다. */
@@ -379,8 +379,6 @@ export function BlockedPeopleScreen({people,onUnblock,onBack}:{people:readonly B
 export const togetherDialogs={
   /** + 시트 [친구와 함께], 친구와 함께 만들기에서 로그인 전. [로그인]은 계정 연결로 간다. */
   get login(){return {title:t('together.loginTitle'),description:t('together.loginDescription'),primaryLabel:t('account.login'),secondaryLabel:t('common.close')};},
-  /** 한 판 친구 칸을 눌렀을 때: 누가 언제 붙였는지. when은 「9월 3일 15:05」. */
-  placedBy:(name:string,when:string)=>({title:t('together.placedBy',name),description:t('together.placedAt',when),primaryLabel:t('common.ok')}),
   /** 한 판에 연결 없이 붙이려 할 때. 붙이지 않는다. */
   get offlineOne(){return {title:t('together.offlineOne'),description:t('together.offlineOneDescription'),primaryLabel:t('common.ok')};},
   /** 한 판에서 내가 붙인 칸을 다른 사람이 먼저 붙였다(slot_taken). 칸은 이미 지워졌다. */

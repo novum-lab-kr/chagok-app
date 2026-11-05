@@ -85,7 +85,7 @@ function OneCalendar() {
   const records2 = Object.fromEntries(dates.filter((_, i) => i % 3 === 1).map(date => [date, 'basic.star' as StickerId]));
   return <BoardDetailScreen {...base} board={{...base.board, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={2}
     members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 2)]}/>}
-    below={<OneBoardNote calendar/>} onBack={noop} onSettings={noop}/>;
+    below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
 }
 /** 앱(app/goal/[id]/index.tsx)이 띄우는 한 판 창. 문구는 togetherDialogs 그대로 */
 function OneBoardWith({dialog}: {dialog: {title: string; description: string; primaryLabel: string; secondaryLabel?: string}}) {
@@ -118,8 +118,6 @@ export const OneBoardCalendarTwo: Story = {name: '한 판 달력판 하루 두 �
 export const OneBoardWaitingScreen: Story = {name: '한 판 친구를 기다릴 때', render: () => <Stage><OneBoard waiting/></Stage>};
 /** 새 조립(사용자 확인 전): 차단한 사람이 붙인 칸은 이름과 스티커 없이 흐리게(투명도 0.4), 누를 수 없다. 판 칸 수에는 든다 */
 export const OneBoardHidden: Story = {name: '한 판에 같이 가려진 칸', render: () => <Stage><OneBoard hidden={new Set([4, 9])}/></Stage>};
-/** 새 문구(사용자 확인 전): 친구 칸을 한 번 누르면 누가 언제 붙였는지 */
-export const OneBoardPlacedBy: Story = {name: '한 판 누가 언제', render: () => <OneBoardWith dialog={togetherDialogs.placedBy('지우', '9월 28일 21:05')}/>};
 /** 새 문구(사용자 확인 전): 내가 붙인 칸을 다른 사람이 먼저 붙였다. 칸은 이미 떼어졌다 */
 export const SlotTakenDialog: Story = {name: '한 판 이미 누가 붙였어요', render: () => <OneBoardWith dialog={togetherDialogs.slotTaken}/>};
 /** 새 문구(사용자 확인 전): 연결 없이 빈칸을 눌렀다. 붙이지 않는다 */

@@ -1,4 +1,4 @@
-import { canPlaceOn, friendBoardsOf, memberBadgesOf, memberRowsOf, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes, placedWhen } from '../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, memberRowsOf, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes } from '../src/app-data/sharedBoardView';
 import type { Goal, GoalMember, Sticker } from '../src/domain/types';
 
 const at = (day: number, hour = 9, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
@@ -65,19 +65,13 @@ describe('oneBoardCells (한 판 적립판)', () => {
   ];
 
   it('가려진 칸은 hidden이고 filled에 없다', () => {
-    const cells = oneBoardCells(stickers, MEMBERS);
+    const cells = oneBoardCells(stickers);
     expect(cells.hidden).toEqual(new Set([3]));
     expect(cells.filled).toEqual({ 1: 'basic.shoe', 2: 'basic.sprout' });
   });
 
-  it('내 칸과 가려진 칸은 placedBy에 없고, 친구 칸은 이름과 시각이다', () => {
-    expect(oneBoardCells(stickers, MEMBERS).placedBy).toEqual({ 1: { name: '은주', at: at(2, 8, 5) } });
-  });
-
-  it('멤버 행을 아직 받지 못한 사람의 칸은 그리되 placedBy에는 없다(이름 없는 창을 띄우지 않는다)', () => {
-    const cells = oneBoardCells([sticker('n', 'u-new', 4, at(5))], MEMBERS);
-    expect(cells.filled).toEqual({ 5: 'basic.flower' });
-    expect(cells.placedBy).toEqual({});
+  it('멤버 행을 아직 받지 못한 사람의 칸도 그린다', () => {
+    expect(oneBoardCells([sticker('n', 'u-new', 4, at(5))]).filled).toEqual({ 5: 'basic.flower' });
   });
 });
 
@@ -125,11 +119,5 @@ describe('한 판 달력판 (하루 두 장까지)', () => {
     expect(placeCompletes(calendar, 29, [], '2026-09-10')).toBe(true);
     expect(placeCompletes(calendar, 29, [sticker('x', 'u-min', 9, at(10))], '2026-09-10')).toBe(false);
     expect(placeCompletes({ ...calendar, mode: 'solo' }, 29, [sticker('x', 'me', 8, at(9))], '2026-09-10')).toBe(true);
-  });
-});
-
-describe('placedWhen', () => {
-  it('「9월 3일 8:05」', () => {
-    expect(placedWhen(at(3, 8, 5))).toBe('9월 3일 8:05');
   });
 });

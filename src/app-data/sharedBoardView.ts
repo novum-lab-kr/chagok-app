@@ -7,7 +7,6 @@ import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { Goal, GoalMember, Sticker } from '../domain/types';
 import { ME } from '../repositories/ids';
 import { normalizeStickerId } from '../stickers/stickerIds';
-import { longDate } from './pocketAdapter';
 
 /**
  * 함께 목표 판 화면에 넘길 값 (PRD 4.15). 기기 DB 행에서 만든다. 라우트는 계산하지 않고 이 값만 넘긴다.
@@ -16,7 +15,6 @@ import { longDate } from './pocketAdapter';
 const isHidden = (s: Sticker) => s.stickerType === '';
 const nameOf = (m: GoalMember | undefined) => m?.displayName ?? '';
 const stickerOf = (m: GoalMember, fallback: string): StickerId => normalizeStickerId(m.stickerId ?? fallback);
-const memberOf = (members: readonly GoalMember[], userId: string | null) => members.find((m) => m.userId === userId);
 
 /** 각자 판 아래 친구 판 줄. 나는 빼고 들어온 순서(members 순서) 그대로. */
 export function friendBoardsOf(goal: Goal, members: readonly GoalMember[], friendStickers: Readonly<Record<string, readonly Sticker[]>>, today: DateKey): FriendBoardItem[] {
@@ -46,27 +44,16 @@ export function memberBadgesOf(members: readonly GoalMember[]): MemberBadge[] {
   return members.map((m) => ({ id: m.userId, name: nameOf(m), sticker: stickerOf(m, DEFAULT_STICKER_ID), ...(m.isMe ? { me: true } : {}) }));
 }
 
-export type PlacedBy = { name: string; at: number };
-
-/**
- * 한 판 적립판의 칸. filled는 칸 번호(1부터) → 붙인 사람의 스티커, hidden은 가려진 칸 번호.
- * placedBy는 친구가 붙인 칸만 담는다(내 칸은 기록을 열고, 가려진 칸은 누를 수 없다).
- */
-export function oneBoardCells(stickers: readonly Sticker[], members: readonly GoalMember[]): {
-  filled: Record<number, StickerId>; hidden: Set<number>; placedBy: Record<number, PlacedBy>;
-} {
+/** 한 판 적립판의 칸. filled는 칸 번호(1부터) → 붙인 사람의 스티커, hidden은 가려진 칸 번호. */
+export function oneBoardCells(stickers: readonly Sticker[]): { filled: Record<number, StickerId>; hidden: Set<number> } {
   const filled: Record<number, StickerId> = {};
   const hidden = new Set<number>();
-  const placedBy: Record<number, PlacedBy> = {};
   for (const s of stickers) {
     const n = s.slotIndex + 1;
-    if (isHidden(s)) { hidden.add(n); continue; }
-    filled[n] = normalizeStickerId(s.stickerType);
-    // 멤버 행을 아직 받지 못한 사람의 칸은 이름이 없어 창을 띄우지 않는다
-    const by = s.placedBy === ME ? undefined : memberOf(members, s.placedBy);
-    if (by) placedBy[n] = { name: nameOf(by), at: s.placedAt };
+    if (isHidden(s)) hidden.add(n);
+    else filled[n] = normalizeStickerId(s.stickerType);
   }
-  return { filled, hidden, placedBy };
+  return { filled, hidden };
 }
 
 /**
@@ -113,10 +100,4 @@ export function oneDayTap(goal: Goal, stickers: readonly Sticker[], date: DateKe
 export function placeCompletes(goal: Goal, placedAll: number, stickers: readonly Sticker[], date?: DateKey): boolean {
   if (goal.mode === 'one' && date !== undefined && stickers.some((s) => stickerDate(s) === date)) return false;
   return completesBoard(goal, placedAll);
-}
-
-/** 「9월 3일 15:05」. 누가 언제 붙였는지 창에 쓴다. */
-export function placedWhen(at: number): string {
-  const d = new Date(at);
-  return `${longDate(localDateKey(at))} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
 }

@@ -11,7 +11,7 @@ import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
 import { percentLabel } from '../../../src/app-data/pocketAdapter';
-import { canPlaceOn, friendBoardsOf, memberBadgesOf, myStickerOn, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes, placedWhen } from '../../../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, myStickerOn, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes } from '../../../src/app-data/sharedBoardView';
 import { oneBoardOnline, watchSlotTaken } from '../../../src/app-data/sharedBoardGuards';
 import { actionDeps, shareInvite } from '../../../src/app-data/sharedGoalActions';
 import { normalizeStickerId } from '../../../src/stickers/stickerIds';
@@ -289,11 +289,10 @@ export default function Board() {
     });
   }
 
-  /** 한 판 친구 칸: 누가 언제 붙였는지. 내 칸은 기록을 연다. */
+  /** 한 판 적립판 붙은 칸 한 번: 내 칸이면 기록을 연다. 친구 칸은 아무 일도 없다(2026-11-05 사용자). */
   function onOneSlotOpen(n: number) {
-    const by = oneCells?.placedBy[n];
-    if (by) void ask(togetherDialogs.placedBy(by.name, placedWhen(by.at)));
-    else openRecord(bySlot(n));
+    const placed = bySlot(n);
+    if (placed?.placedBy === ME) openRecord(placed);
   }
 
   /** 한 판 달력판의 붙은 날 한 번: 내 스티커면 기록, 친구 것만 있고 붙일 수 있으면 붙이기, 아니면 아무 일도 없다(sharedBoardView oneDayTap). */
@@ -318,7 +317,7 @@ export default function Board() {
   }
 
   // 한 판 적립판은 칸마다 붙인 사람의 스티커와 가려진 칸(sharedBoardView). 기록 표시는 내 칸만이다.
-  const oneCells = one && goal.boardType === 'tally' ? oneBoardCells(stickers, members) : null;
+  const oneCells = one && goal.boardType === 'tally' ? oneBoardCells(stickers) : null;
   const filled: Record<number, StickerId> = oneCells ? oneCells.filled : {};
   const records: Record<string, StickerId> = {};
   const recordedSlots = new Set<number>();
@@ -335,10 +334,13 @@ export default function Board() {
     }
   }
   const records2: Record<string, StickerId> = {};
+  // 한 판 달력판에서 친구 것만 있고 한 번 누르면 내 스티커가 붙는 날. 화면 읽기가 알린다
+  const placeable = new Set<string>();
   if (oneShown) {
     for (const [date, [first, second]] of Object.entries(oneShown)) {
       records[date] = normalizeStickerId(first.stickerType);
       if (second) records2[date] = normalizeStickerId(second.stickerType);
+      if (oneDayTap(goal, stickers, date, now) === 'place') placeable.add(date);
     }
   }
   const nav = monthNav(goal, shown.year, shown.month);
@@ -349,7 +351,7 @@ export default function Board() {
       below: <FriendBoardList friends={friends} onOpen={setFriendOpen} onResend={goal.role === 'owner' ? onResend : undefined} /> }
     : one
       ? { title: goal.name, name: t('together.ourBoard'), hideProgress: true, boardRows: 4,
-        members: <MemberBadgeRow people={memberBadgesOf(members)} />, below: <OneBoardNote calendar={goal.boardType === 'calendar'} />,
+        members: <MemberBadgeRow people={memberBadgesOf(members)} />, below: <OneBoardNote />,
         // 친구가 아직 없으면 판 위에 각자 판과 같은 기다림 안내(2026-11-05 시안 T1 A안)
         above: members.some((m) => !m.isMe) ? undefined : <OneBoardWaiting onResend={goal.role === 'owner' ? onResend : undefined} /> }
       : { name: goal.name };
@@ -374,7 +376,7 @@ export default function Board() {
         board={goal.boardType === 'tally'
           ? { kind: 'tally', total: goal.totalSlots ?? 0, filled, recorded: recordedSlots, justPlaced: justPlaced.slot, onPress: onSlotPress, onOpenRecord: oneCells ? onOneSlotOpen : (n) => openRecord(bySlot(n)), hidden: oneCells?.hidden }
           : {
-            kind: 'calendar', year: shown.year, month: shown.month, records, records2: oneShown ? records2 : undefined, recordedDates, justPlaced: justPlaced.date,
+            kind: 'calendar', year: shown.year, month: shown.month, records, records2: oneShown ? records2 : undefined, placeable: oneShown ? placeable : undefined, recordedDates, justPlaced: justPlaced.date,
             selectedDate: done ? undefined : localDateKey(now.getTime()),
             isDateEnabled: (date) => isDateEnabled(goal, date, Boolean(records[date])),
             canGoPrev: nav.canGoPrev, canGoNext: nav.canGoNext,

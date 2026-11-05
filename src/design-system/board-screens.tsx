@@ -174,7 +174,7 @@ export function GoalListScreen({tab,onTab,active,completed,onOpen,onAdd,onSettin
 
 // ── 판 상세 ──────────────────────────────────────────────────────
 export type TallyBoardView={kind:'tally';total:number;/** 방금 붙인 칸 번호: 붙이기 모션 */justPlaced?:number;/** 붙인 칸 번호(1부터) → 그 칸의 스티커 */filled:Readonly<Record<number,StickerId>>;/** 사진 또는 메모가 있는 칸 */recorded?:ReadonlySet<number>;onPress:(n:number)=>void;onOpenRecord:(n:number)=>void;/** 튜토리얼이 잴 칸: 다음 빈칸, 마지막 붙인 칸 */nextSlotRef?:React.Ref<View>;recordSlotRef?:React.Ref<View>;/** 가려진 칸(차단한 사람이 붙인 한 판 칸). 작은 판만 그린다: 이름과 스티커 없이 흐리게, 누를 수 없다 */hidden?:ReadonlySet<number>};
-export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방금 붙인 날 */justPlaced?:string;records:Record<string,StickerId>;/** 한 판 달력판: 그날 둘째로 붙인 스티커. 작은 판만 첫 장에 겹쳐 그린다 */records2?:Record<string,StickerId>;recordedDates?:ReadonlySet<string>;/** 오늘 칸 강조. 완성한 판은 두지 않는다 */selectedDate?:string;isDateEnabled:(date:string)=>boolean;canGoPrev:boolean;canGoNext:boolean;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;onOpenRecord:(date:string)=>void};
+export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방금 붙인 날 */justPlaced?:string;records:Record<string,StickerId>;/** 한 판 달력판: 그날 둘째로 붙인 스티커. 작은 판만 첫 장에 겹쳐 그린다 */records2?:Record<string,StickerId>;/** 한 판 달력판: 스티커가 있지만 한 번 누르면 내 스티커가 붙는 날(친구 것만 있고 두 장 미만). 화면 읽기가 알린다 */placeable?:ReadonlySet<string>;recordedDates?:ReadonlySet<string>;/** 오늘 칸 강조. 완성한 판은 두지 않는다 */selectedDate?:string;isDateEnabled:(date:string)=>boolean;canGoPrev:boolean;canGoNext:boolean;onSelect:(date:string)=>void;onMonthChange:(year:number,month:number)=>void;onOpenRecord:(date:string)=>void};
 /**
  * 판 상세. 판 조작: 빈칸 한 번 = 붙이기, 붙인 칸 한 번 = 기록 열기, 꾹 = 떼기 (PRD 4.5).
  * 완성한 판도 진행 중인 판처럼 붙이고 뗀다(2026-10-08) — 완성 표시는 그대로 (4.7).
@@ -453,7 +453,7 @@ const HIDDEN_OPACITY=0.4;
 /** 하루 두 장: 둘째 장을 오른쪽 아래로 이만큼 비껴 첫 장 위에 겹친다. 둘 다 24pt 그대로(24의 정수배 규칙) */
 const SECOND_OFFSET={x:9,y:7};
 /** 작은 달력판의 날짜 한 칸. 판 상세 달력과 같이 빈 날 한 번 = 붙이기, 붙은 날 한 번 = 기록 열기, 꾹 = 떼기. second가 있으면 두 장을 겹쳐 그린다. */
-function WeekDay({date,sticker,second,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;second?:StickerId;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
+function WeekDay({date,sticker,second,placeable=false,recorded,selected,enabled,popIn,height,onSelect,onOpenRecord}:{date:string;sticker?:StickerId;second?:StickerId;/** 한 번 누르면 내 스티커가 붙는다 */placeable?:boolean;recorded:boolean;selected:boolean;enabled:boolean;popIn:boolean;height:number;onSelect:(date:string)=>void;onOpenRecord?:(date:string)=>void}) {
   const month=Number(date.slice(5,7)),day=Number(date.slice(8,10));
   const open=sticker&&onOpenRecord?()=>onOpenRecord(date):undefined;
   const select=()=>onSelect(date);
@@ -463,7 +463,7 @@ function WeekDay({date,sticker,second,recorded,selected,enabled,popIn,height,onS
       <View testID="day-second-sticker" style={{position:'absolute',left:SECOND_OFFSET.x,top:SECOND_OFFSET.y}}><StickerGlyph id={second} size={24}/></View>
     </View>
     :<StickerGlyph id={sticker} size={24}/>);
-  const stuck=sticker?`, ${second?t('calendar.twoPeople'):t('calendar.hasSticker')}`:'';
+  const stuck=sticker?`, ${second?t('calendar.twoPeople'):t('calendar.hasSticker')}${placeable?`, ${t('calendar.tapToPlace')}`:''}`:'';
   return <Pressable accessibilityRole="button" accessibilityLabel={`${t('date.monthDay',month,day)}${stuck}${sticker&&recorded?`, ${t('calendar.hasRecord')}`:''}`}
     accessibilityState={{selected,disabled:!enabled}} disabled={!enabled} onPress={open??select} onLongPress={open?select:ignoreLongPress}
     accessibilityActions={open?[removeStickerAction]:undefined} onAccessibilityAction={e=>{if(open&&e.nativeEvent.actionName===removeStickerAction.name) select();}}
@@ -505,7 +505,7 @@ function CompactCalendar({board,label,weeks,readOnly}:{board:CalendarBoardView;l
     <View {...swipe.panHandlers} style={{gap:4}}>
       <View style={{flexDirection:'row',gap:3}}>{[0,1,2,3,4,5,6].map(day=><PixelText key={day} variant="caption" style={[caption,{flex:1,textAlign:'center'}]}>{t('date.weekdayShort',day)}</PixelText>)}</View>
       {Array.from({length:weeks},(_,row)=><View key={row} style={{flexDirection:'row',gap:3}}>
-        {dates.slice(row*7,row*7+7).map(date=><WeekDay key={date} date={date} sticker={board.records[date]} second={board.records2?.[date]} recorded={board.recordedDates?.has(date)??false}
+        {dates.slice(row*7,row*7+7).map(date=><WeekDay key={date} date={date} sticker={board.records[date]} second={board.records2?.[date]} placeable={board.placeable?.has(date)} recorded={board.recordedDates?.has(date)??false}
           selected={!readOnly&&date===board.selectedDate} enabled={!readOnly&&board.isDateEnabled(date)} popIn={date===board.justPlaced} height={52}
           onSelect={board.onSelect} onOpenRecord={readOnly?undefined:board.onOpenRecord}/>)}
       </View>)}
