@@ -212,25 +212,20 @@ describe('함께 목표 설정 (PRD 4.15)',()=>{
     const save=text.indexOf(t('goal.save'));
     expect(text.slice(save-msg.length,save)).toBe(msg);
   });
-  it('삭제 안내는 방식마다 다르다: 한 판은 내가 붙인 칸이 지워지고 친구들이 붙인 칸은 그대로',()=>{
+  it('삭제 확인 창 문구는 방식마다 다르다: 한 판은 내가 붙인 칸이 지워지고 친구들이 붙인 칸은 그대로',()=>{
     expect(deleteOwnerDescription('each')).toBe('내 판과 기록이 지워지고 이 목표에서 나가요. 친구들의 판은 그대로예요.');
-    render(<TogetherSettingsScreen {...base} mode="one" role="owner" onChangeGoalName={noop} onDelete={noop}/>);
-    expect(screen.getByText(deleteOwnerDescription('one'))).toBeTruthy();
-    expect(screen.queryByText(/친구들의 판은/)).toBeNull();
+    expect(deleteOwnerDescription('one')).toBe(t('together.deleteOwnerOne'));
   });
-  it('각자 판에 나 말고 아무도 없으면 삭제 안내는 혼자 목표와 같다',()=>{
-    expect(deleteOwnerDescription('each',true)).toBe(t('delete.goalDescription'));
-    expect(deleteOwnerDescription('each',false)).toBe(t('together.deleteOwner'));
-    render(<TogetherSettingsScreen {...base} mode="each" role="owner" alone onChangeGoalName={noop} onDelete={noop}/>);
-    expect(screen.getByText(t('delete.goalDescription'))).toBeTruthy();
-    expect(screen.queryByText(/친구들의 판은/)).toBeNull();
-  });
-  it('한 판에 나 말고 아무도 없으면 삭제 안내는 혼자 목표와 같다',()=>{
-    expect(deleteOwnerDescription('one',true)).toBe(t('delete.goalDescription'));
-    expect(deleteOwnerDescription('one',false)).toBe(t('together.deleteOwnerOne'));
-    render(<TogetherSettingsScreen {...base} mode="one" role="owner" alone onChangeGoalName={noop} onDelete={noop}/>);
-    expect(screen.getByText(t('delete.goalDescription'))).toBeTruthy();
-    expect(screen.queryByText(t('together.deleteOwnerOne'))).toBeNull();
+  it('확인 창에 있는 설명은 화면에 다시 두지 않는다: 신고, 차단, 나가기, 삭제 줄 아래 설명이 없다 (2026-11-05 사용자)',()=>{
+    for(const mode of ['each','one'] as const){
+      render(<TogetherSettingsScreen {...base} mode={mode} role="owner" onChangeGoalName={noop} onDelete={noop} onReport={noop} onBlock={noop}/>);
+      expect(screen.getByText('불쾌한 이름 신고하기')).toBeTruthy();
+      expect(screen.getByText('사람 차단하기')).toBeTruthy();
+      expect(screen.getByText('이 목표에서 나가기')).toBeTruthy();
+      for(const text of [deleteOwnerDescription(mode),t('together.leaveHintEach'),t('together.leaveHintOne'),t('block.confirmDescription','지우')]) expect(screen.queryByText(text)).toBeNull();
+      expect(screen.queryByText(/상대에게는 알리지 않아요|다른 사람에게는 보이지 않아요/)).toBeNull();
+      cleanup();
+    }
   });
   it('완성한 판은 함께하는 사람에게도 안내가 없다',()=>{
     render(<TogetherSettingsScreen {...base} role="member" completed/>);

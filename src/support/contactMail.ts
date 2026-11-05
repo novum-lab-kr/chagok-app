@@ -15,19 +15,27 @@ export type ContactAppInfo = { version: string | null; build: string | null; os:
 const subject = (kind: ContactKind): string =>
   kind === 'question' ? t('contact.subjectQuestion') : t('contact.subjectAdReport');
 
-const bodyTemplate = (kind: ContactKind): string =>
+/**
+ * 본문 줄. 문의하기는 안내 한 줄, 구분선, 사용자가 쓸 빈 줄, 구분선, 앱 정보 순서다(2026-11-05 사용자).
+ * 광고 신고는 질문마다 답을 쓸 빈 줄을 둔다.
+ */
+const bodyLines = (kind: ContactKind, info: ContactAppInfo): string[] =>
   kind === 'question'
-    ? t('contact.bodyQuestion')
-    : [t('contact.adWhat'), t('contact.adWhen'), t('contact.adWhere'), t('contact.adCapture')].join('\n');
+    ? [t('contact.bodyQuestion'), '--', '', '', '', '--', t('contact.infoNote'), appInfoLine(info)]
+    : [
+        ...[t('contact.adWhat'), t('contact.adWhen'), t('contact.adWhere'), t('contact.adCapture')].flatMap((q) => [q, '', '']),
+        '---',
+        appInfoLine(info),
+      ];
 
 export function appInfoLine({ version, build, os, osVersion }: ContactAppInfo): string {
   const app = version ? `${t('contact.appVersion', version)}${build ? ` (${build})` : ''}` : t('contact.app');
   return `${app}, ${os === 'ios' ? 'iOS' : 'Android'} ${osVersion}`;
 }
 
+/** 줄은 CRLF로 잇는다(RFC 6068). LF만 쓰면 Gmail 앱이 줄바꿈을 버려 한 줄로 붙었다(2026-11-05 실기기). */
 export function contactMailBody(kind: ContactKind, info: ContactAppInfo): string {
-  const tail = kind === 'question' ? `---\n${t('contact.infoNote')}\n` : '---\n';
-  return `${bodyTemplate(kind)}\n${tail}${appInfoLine(info)}`;
+  return bodyLines(kind, info).join('\r\n');
 }
 
 /** mailto 주소. 제목과 본문은 퍼센트 인코딩한다(공백은 + 대신 %20, RFC 6068). */

@@ -53,7 +53,7 @@ describe('purchases', () => {
 
   it('복원: 스토어가 돌려준 묶음과 광고 제거를 되살리고 이름을 묶음 순서 + 광고 제거로 돌려준다', async () => {
     setStoreForTest(fakeStore({ restore: async () => ({ packs: ['snack_normal', 'sports_normal'], adFree: true, subscription: null }) }));
-    expect(await restorePurchases(now)).toEqual(['운동 묶음', '간식 묶음', '광고 제거']);
+    expect(await restorePurchases(now)).toEqual(['운동 스티커 팩', '간식 스티커 팩', '광고 제거']);
     expect((await listPackAccess()).map((a) => [a.packId, a.expiresAt])).toEqual([['snack_normal', null], ['sports_normal', null]]);
     expect((await loadPackState()).adFree).toBe(true);
   });
@@ -67,7 +67,7 @@ describe('purchases', () => {
     await grantPurchase('sports_normal', now);
     const db = await getDb();
     await db.run("INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES ('snack_normal', 'ad', 1, 2)");
-    expect(await restorePurchases(now)).toEqual(['운동 묶음']);
+    expect(await restorePurchases(now)).toEqual(['운동 스티커 팩']);
   });
 });
 

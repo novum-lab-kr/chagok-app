@@ -52,18 +52,18 @@ describe('구독이 들어간 기존 화면',()=>{
     const pack={...colorPack('christmas_normal','locked'),price:'2,200원'};
     const base={pack,sample:pack.stickers.slice(0,5),adFree:false,reward:{days:5,goal:7},onBuy:vi.fn(),onWatchAd:vi.fn(),onTrial:vi.fn(),onBack:vi.fn()};
     const {unmount}=render(<PackScreen {...base}/>);
-    expect(screen.queryByText('구독하고 모든 묶음 열기')).toBeNull();
+    expect(screen.queryByText('구독하고 모든 스티커 팩 열기')).toBeNull();
     unmount();
     const onSubscribe=vi.fn();
     render(<PackScreen {...base} onSubscribe={onSubscribe}/>);
-    fireEvent.click(screen.getByText('구독하고 모든 묶음 열기'));
+    fireEvent.click(screen.getByText('구독하고 모든 스티커 팩 열기'));
     expect(onSubscribe).toHaveBeenCalled();
   });
   it('구매 패널: 구독 전에는 [구독 보기], 구독 중에는 광고 제거 칸을 숨기고 [구독 관리]',()=>{
     const {unmount}=render(<PurchasePanel adFree={false} price="5,500원" onRemoveAds={vi.fn()} onRestore={vi.fn()} subscription={{state:'none'}}/>);
     expect(screen.getByText('구독 보기')).toBeTruthy();
     expect(screen.getByText('5,500원에 광고 없애기')).toBeTruthy();
-    expect(screen.getByText('구독과 구매한 스티커 묶음, 광고 제거를 되살려요')).toBeTruthy();
+    expect(screen.getByText('구독과 구매한 스티커 팩, 광고 제거를 되살려요')).toBeTruthy();
     unmount();
     const onManage=vi.fn();
     render(<PurchasePanel adFree={false} price="5,500원" onRemoveAds={vi.fn()} onRestore={vi.fn()} subscription={{state:'cancelling',plan:'month',date:'2026년 12월 1일'}} onManageSubscription={onManage}/>);
@@ -74,6 +74,6 @@ describe('구독이 들어간 기존 화면',()=>{
     expect(onManage).toHaveBeenCalled();
   });
   it('구독이 끝난 뒤 창은 체험이 끝났을 때와 같은 버튼이다',()=>{
-    expect(stickerShopDialogs.subscriptionEnded).toMatchObject({title:'구독이 끝났어요',description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'묶음 열기',secondaryLabel:'다른 스티커'});
+    expect(stickerShopDialogs.subscriptionEnded).toMatchObject({title:'구독이 끝났어요',description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'스티커 열기',secondaryLabel:'다른 스티커'});
   });
 });
