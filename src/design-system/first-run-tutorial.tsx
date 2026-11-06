@@ -64,7 +64,7 @@ export function TutorialListExample() {
   const add=useTutorialSpot('add');
   return <GoalListScreen tab="active" onTab={noop} onOpen={noop} onAdd={noop} addTargetRef={add} completed={[]} active={[
     {id:'reading',name:t('example.reading'),sticker:'basic.clover',kind:t('board.tally'),percent:40,status:[t('goalCard.filled','40%')]},
-    {id:'walk',name:t('example.walkEveryEvening'),sticker:'basic.shoe',kind:t('board.calendar'),percent:30,status:[t('goalCard.filled',t('goalCard.percentThisMonth',30))]},
+    {id:'walk',name:t('example.walkEveryEvening'),sticker:'basic.clover',kind:t('board.calendar'),percent:30,status:[t('goalCard.filled',t('goalCard.percentThisMonth',30))]},
   ]}/>;
 }
 /** 2단계: 새 목표의 기본 스티커 */

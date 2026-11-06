@@ -28,10 +28,13 @@ export const colorStickerPacks=[
 export const colorStickers:readonly ColorStickerDefinition[]=colorStickerData;
 export type ColorStickerId=typeof colorStickerData[number]['id'];
 
+/** 이 버전이 모르는 스티커를 그릴 물음표 그림. 더 새 버전에서 붙인 스티커가 동기화로 들어와도 앱이 멈추지 않게 한다(2026-11-04). */
+const UNKNOWN_STICKER_LAYERS:readonly ColorStickerLayer[]=[{color:'#06261C',d:'M9 4h6v1h-6ZM9 5h6v1h-6ZM7 6h2v1h-2ZM15 6h2v1h-2ZM7 7h2v1h-2ZM15 7h2v1h-2ZM7 8h2v1h-2ZM15 8h2v1h-2ZM7 9h2v1h-2ZM15 9h2v1h-2ZM13 10h4v1h-4ZM13 11h4v1h-4ZM11 12h4v1h-4ZM11 13h4v1h-4ZM11 14h2v1h-2ZM11 15h2v1h-2ZM11 18h2v1h-2ZM11 19h2v1h-2Z'}];
+export const UNKNOWN_STICKER_LABEL='알 수 없는 스티커';
+
+/** 모르는 ID면 물음표 그림을 기본 묶음으로 돌려준다. 붙이기와 고르기를 막지 않고, 새 버전에서는 원래 그림으로 보인다. */
 export function getColorSticker(id:ColorStickerId):ColorStickerDefinition {
-  const sticker=colorStickers.find(s=>s.id===id);
-  if (!sticker) throw new Error(`Unknown color sticker: ${id}`);
-  return sticker;
+  return colorStickers.find(s=>s.id===id)??{id,label:UNKNOWN_STICKER_LABEL,pack:'basic',layers:UNKNOWN_STICKER_LAYERS};
 }
 /**
  * 묶음 목록에서만 뺀 스티커. 이미 붙인 판과 목표는 그대로 그려야 해서 그림과 ID는 남긴다(ID는 다른 그림에 다시 쓰지 않는다).
