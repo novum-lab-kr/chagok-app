@@ -2,6 +2,7 @@
 // 스티커 이름은 앱이 기기 언어(영어)로 보여 준다. 앱을 끈 상태에서 넣는다.
 // node seed8-en.mjs | sqlite3 <Documents/SQLite/chagok.db>
 // node seed8-en.mjs --together | sqlite3 ...  함께 목표 두 개(09 한 판, 10 각자 판)도 넣는다. 다른 장은 함께 목표 없이 찍는다(한국어 세트와 같은 목록).
+// 01 붙이기, 02 목표 목록, 07 위젯은 여기에 「자기 전 책 10쪽」 11번째 칸(10월 28일, basic.book)을 하나 더 붙인 뒤의 모습이다(15칸 중 11칸, 73%).
 // 사진 파일 demo-*.png는 Documents/record-photos/에 따로 복사한다.
 const TZ = 540;
 const T = (d, h = 21) => Date.parse(`${d}T${String(h).padStart(2, '0')}:00:00+09:00`);

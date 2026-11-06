@@ -1,5 +1,6 @@
 // 스토어 스크린샷 8판(1.1.0): 1.0.0 제출본(gen7 b안 「크게 잘라 보기」) 모양 그대로, 바뀐 장은 1.1.0 원본(raw8/)으로,
-// 함께 목표 장을 더한다. 화면이 바뀌지 않은 장(02 목표 목록, 03 기록, 04 다시 보기, 07 위젯과 워치)은 raw6/ 그대로.
+// 함께 목표 장을 더한다. 화면이 바뀌지 않은 장(03 기록, 04 다시 보기, 07 위젯과 워치)은 raw6/ 그대로.
+// 02 목표 목록은 01 붙이기 뒤(책 11칸, 73%)로 raw8/home.png에서 다시 찍었다(2026-11-06, 01과 07 위젯의 73%에 맞춤).
 // 결과: final-1.1.0/<6.9|6.3>/NN.png, final-1.1.0/watch/NN.png(1.0.0 그대로 복사), final-1.1.0/extra/<6.9|6.3>/new-together.png(예비 장), out8/sheet8.png(커밋 안 함)
 // node gen8.mjs
 import fs from 'node:fs';
@@ -16,8 +17,8 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const OUT = path.join(HERE, 'final-1.1.0');
 const SIZES = { '6.9': [1320, 2868], '6.3': [1206, 2622] };
 const INK = '#06261C', IVORY = '#FEF1D1', MINT = '#AFE1CB', LIME = '#C9DD94', APRICOT = '#FD855F';
-// 1.1.0에서 화면이 바뀐 원본만 raw8/에서 읽는다
-const NEW_RAW = new Set(['place.png', 'mood.png', 'walk.png', 'stickers.png', 'together-one.png', 'together-each.png', 'together-new.png']);
+// 1.1.0에서 다시 찍은 원본만 raw8/에서 읽는다
+const NEW_RAW = new Set(['place.png', 'home.png', 'mood.png', 'walk.png', 'stickers.png', 'together-one.png', 'together-each.png', 'together-new.png']);
 const raw = (f) => `file://${NEW_RAW.has(f) ? RAW8 : `${DIR}/raw6`}/${f}`;
 const art = (f) => `file://${ART}/color-${f}.png`;
 
@@ -168,14 +169,23 @@ function watchHtml(v, s) {
 function shoot(html, file, W, H) {
   const f = file.replace(/\.png$/, '.html');
   fs.writeFileSync(f, html);
-  execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-    '--allow-file-access-from-files', `--window-size=${W},${H}`, `--screenshot=${file}`, `file://${f}`], { stdio: 'ignore' });
+  // 맥이 바쁘면 Chrome이 그림을 쓴 뒤 종료 감시에 걸려 2로 끝나거나, 아예 멈춘다. 그림이 있으면 넘어가고, 없으면 세 번까지 다시 찍는다(gen8-en.mjs와 같다)
+  for (let attempt = 1; ; attempt++) {
+    fs.rmSync(file, { force: true });
+    try {
+      execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
+        '--allow-file-access-from-files', `--window-size=${W},${H}`, `--screenshot=${file}`, `file://${f}`], { stdio: 'ignore', timeout: 120000 });
+    } catch (e) {
+      if (!fs.existsSync(file) && attempt >= 3) throw e;
+    }
+    if (fs.existsSync(file)) break;
+  }
   fs.rmSync(f);
 }
 
 // b안만 만든다(1.0.0 제출본이 b안). 바뀐 장의 번호와 이유는 CHANGED에 적어 changed/로도 모은다.
 const CHANGED = {
-  '01': 'place-progress-bar', '05': 'mood-progress-bar', '06': 'walk-progress-bar', '08': 'stickers-clover-and-no-free-badge',
+  '01': 'place-progress-bar', '02': 'home-book-73', '05': 'mood-progress-bar', '06': 'walk-progress-bar', '08': 'stickers-clover-and-no-free-badge',
   '09': 'new-together-one-board', '10': 'new-together-each-board',
 };
 const NN = (i) => String(i + 1).padStart(2, '0');
