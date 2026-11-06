@@ -191,7 +191,7 @@ npm run check:storybook
 
 공통 새싹 원본은 지정 시안의 **기본 스티커 옆 작은 미리보기**로 갱신했다. `SproutSticker`는 모든 크기에서 같은56×56 viewBox 경로를 사용한다. 큰 스탬프 윤곽을 줄이던 이전 자산은 더 이상 사용하지 않는다.
 
-2026-09-23: 스티커 자산 소유 위치는 `src/stickers/pocket/`로 분리했다. `catalog.ts`에서 6종과 메타데이터를 관리하며 `StickerGlyph`가 현재 디자인 시스템의 ink를 전달한다. 새싹 경로는 그대로 유지했다. 추가 5종은 review-set-02 설정 시안 윤곽을 추출했고 꽃은 헤더용 `PixelIcon`과 다른 자산이다. [확장 방법](../src/stickers/pocket/README.md), [시안 비교](design/retro-pocket-v1/review-set-02/asset-review/README.md).
+2026-09-23: 스티커 자산 소유 위치는 `src/stickers/pocket/`로 분리했다. `catalog.ts`에서 6종과 메타데이터를 관리하며 `StickerGlyph`가 현재 디자인 시스템의 ink를 전달한다. 새싹 경로는 그대로 유지했다. 추가 5종은 review-set-02 설정 시안 윤곽을 추출했고 꽃은 헤더용 `PixelIcon`과 다른 자산이다. [확장 방법](../src/stickers/pocket/README.md), 시안 비교(지금은 지운 파일, git 기록에 있다).
 
 `StickerGrid`가 3열 배치와 여백을 관리한다. 자식 `StickerSlot`에는 width/height를 `100%`로 전달한다. `retro.layout`에 boardInset6, boardGap15, boardRowGap10, stickerSize54, stickerBottomInset2, progressGridGap2, stickerPreviewSize32를 정의했다. 칸의 새싹은 아래 정렬하며, 숫자는 slotNumber28/32를 사용한다.
 

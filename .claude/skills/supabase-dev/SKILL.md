@@ -1,6 +1,6 @@
 ---
 name: supabase-dev
-description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Function을 만들거나 고치거나, 개발 데이터를 조회하고 되돌릴 때. 토큰 다루는 법, 출시 전 마이그레이션 규칙, 배포와 테스트 순서.
+description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Function을 만들거나 고치거나, 개발 데이터를 조회하고 되돌릴 때. 토큰 다루는 법, 마이그레이션 규칙(1.0 공개 뒤라 새 파일만 더한다), 배포와 테스트 순서.
 ---
 
 # 개발 서버 작업

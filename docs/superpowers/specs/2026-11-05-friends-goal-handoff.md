@@ -26,7 +26,7 @@
 | 디자인 시스템 | `together-screens.tsx`(친구 판 줄과 목록, 친구 판 크게, 사람 줄, 더하기 시트, 친구와 함께, 초대 세 화면, 함께하는 사람, 함께 목표 설정, 차단 시트, 차단한 사람), `board-shape.ts`(칸 수 규칙), `PixelFrame` `thin`/`thinSlot`/`stroke`, `PixelFocusRing cornersOnly`, `PixelPanel invalid`, 토큰 `invalid`(#A61E1E), `BoardDetailScreen` 새 prop(title, readOnly, hideProgress, below, boardRows, members), `InlineModalContext` |
 | 검사 | `MEMBER_NAME_MAX = 10`, `memberNameError`(문구는 목표 이름과 같은 「n자까지 입력할 수 있어요.」) |
 | Storybook | `Screens/함께 목표` 21개, `Rules/입력 검사`에 함께 목표 상태, `Flows/앱 전체`에 시나리오 `together` 노드 13개 |
-| 서버 | 2판 구조와 2판 RPC(아래 목록), 1.1.0 호환 RPC. **개발과 운영 모두 적용**(2026-11-05). 서버 시험 68개 통과, 1.1.0 앱 시뮬레이터 확인 |
+| 서버 | 2판 구조와 2판 RPC(아래 목록), 1.0 앱용 호환 RPC. **개발은 1~7 모두, 운영은 1~5만 적용**(2026-11-05 14:39 UTC 조회. 6 `together_fixes`, 7 `sticker_period`는 운영에 없다). 서버 시험 68개 통과, 1.1.0 앱 시뮬레이터 확인 |
 | 정책 | novum-web 약관 2판, 처리방침 2판 PR #64(함께 목표 문안 없음, 아직 안 합침) |
 
 2판 RPC: `sync_push`, `sync_pull`, `pull_goal`, `create_shared_goal`, `preview_invite`(로그인 전), `join_goal`(`{error}` 값 반환: closed, full, invalid_name, name_not_allowed, invalid_sticker, sticker_taken, rate_limited), `update_member`, `update_goal`, `rotate_invite`, `leave_goal`(혼자 목표 id 반환), `kick_member`, `block_user`, `unblock_user`, `my_blocks`, `report`. 서버에 **보여주기를 만드는 함수는 아직 없다**(mode 값만 있음).
@@ -34,12 +34,12 @@
 ## 개발 목록 (빠짐없이, 순서대로)
 
 ### A. 데이터와 동기화
-1~5는 `feat/friends-goal`에서 끝냈다(계획 `docs/superpowers/plans/2026-11-05-friends-goal-data-sync.md`). 1의 기존 기기 데이터는 옮기지 않고 지운다(1.0.0 사용자 0명, RELEASE-1.1.0 「1.0.0 기기 DB 관문」).
+1~5는 `feat/friends-goal`에서 끝냈다(계획 `docs/superpowers/plans/2026-11-05-friends-goal-data-sync.md`). 1의 기존 기기 데이터는 지금 옮기지 않고 지운다. 1.0이 2026-11-03 공개돼 있어 제출 전에 설치 수를 보고, 있으면 옮기기로 바꾼다(RELEASE-1.1.0 「1.0 기기 DB 관문」).
 
-1. (끝남) 로컬 DB 새 판(`src/db/schema.ts` 끝에 더하기): goals(목표 자체), goal_members(사람마다 값: 순서, 기본 스티커, 완성, 마지막 붙인 시각, 이름, 역할), stickers(판 주인, 붙인 사람), records(공개 범위). 기존 기기 데이터 옮기기(내 목표마다 멤버 행 하나). 마이그레이션 시험(`__tests__/migrations.test.ts`)
+1. (끝남) 로컬 DB 새 판(`src/db/schema.ts` 끝에 더하기): goals(목표 자체), goal_members(사람마다 값: 순서, 기본 스티커, 완성, 마지막 붙인 시각, 이름, 역할), stickers(판 주인, 붙인 사람), records(공개 범위). 기존 기기 데이터는 위대로 지금은 지운다(옮기기는 1.0 설치 수 관문에 걸림). 마이그레이션 시험(`__tests__/migrations.test.ts`)
 2. (끝남) 리포지토리와 도메인 타입(`Goal`, `GoalShare`/멤버, 판 주인)을 새 표로. 위젯, 워치, 기록 탭, 완성, 목표 순서가 그대로 도는지
 3. (끝남) 2판 동기화로 바꾸기: 올리기 `sync_push`(행별 거절 `slot_taken`, `not_allowed` 처리: 한 판 칸 되돌리기), 받아 오기 `sync_pull(since)` 주기 실행(앱 시작, 포그라운드, 목표 탭, 판 화면, 30초), 새로 들어간 목표는 `pull_goal`. 멤버 행 `gone: true`면 그 사람 판 지우기, 목표 행이 오면 `pull_goal`로 다시 받기, 차단한 쪽은 상대를 직접 지우고 풀면 `pull_goal`
-4. (끝남) 1.1.0 호환 길(push_changes, pull_changes, replace_all)에서 새 길로 넘어가는 기기 처리(첫 실행 때 커서 정하기, 복원 흐름 `restore.ts`, 계정 연결 `connectAccount.ts`)
+4. (끝남) 1.0 앱용 호환 길(push_changes, pull_changes, replace_all)에서 새 길로 넘어가는 기기 처리(첫 실행 때 커서 정하기, 복원 흐름 `restore.ts`, 계정 연결 `connectAccount.ts`)
 5. (끝남) 로그아웃과 계정 삭제 때 기기에 남은 다른 사람 이름과 칸, 함께 목표 캐시 지우기
 6. 오프라인: 각자 판은 지금처럼 붙이고 나중에 올림, 한 판은 연결 없으면 「연결되면 붙일 수 있어요」
 
@@ -53,7 +53,7 @@
 13. 보여주기: 내 목표 설정 → [보여줄 친구 초대하기], 받은 쪽 「보기만」 판(톱니 없음). **서버에 만들기 RPC를 더해야 한다**(새 마이그레이션 파일). 보는 사람만 남은 목표가 알림 없이 사라지지 않게(서버 2판 계획 10절)
 14. 문제 화면: 자리가 다 찼어요, 이 목표에는 들어갈 수 없어요, `rate_limited`(「잠시 뒤 다시 해 주세요」 문구 새로)
 15. 입력: 내 이름 10자, 금칙어(`name_not_allowed` → 「다른 이름을 써 주세요」), 스티커 겹침, 적립판 칸 수 상한 1000(서버 값, 앱 입력과 안내 문구 더하기)
-16. 혼자 판도 4칸(판 안 폭 330 이상 5칸)으로(`board-shape.ts`의 규칙 사용, PRD 4.1과 4.2 고치기)
+16. ~~혼자 판도 4칸(판 안 폭 330 이상 5칸)으로~~ 2026-11-05 되돌림: 혼자 판은 3칸 그대로, 4칸은 함께 목표 판에만(PRD 12절 11-05)
 
 ### C. 초대 링크
 17. `app.json`: iOS `associatedDomains: applinks:chagok.novum-lab.com`, Android `intentFilters`(autoVerify, `/invite/*`). 라우트 `app/invite/[code].tsx`, `chagok://invite/<코드>`도 같은 파일
@@ -69,7 +69,7 @@
 ### E. 운영과 정책
 24. 신고 알림: Edge Function `report-notify` + DB 웹훅, Gmail SMTP(`chagok.app.help@gmail.com`, 사용자가 2단계 인증을 켜고 앱 비밀번호를 만들어 줘야 함). 24시간 안에 확인
 25. 금칙어 목록(`banned_words`)을 심사 제출 전에 채운다(외부 목록은 사용권 확인)
-26. 약관 3판, 처리방침 3판(초안 `friends-goal-policy-draft/`). 그때 이용자가 있으면 불리한 변경은 30일 전 고지. novum-web `versions.json`
+26. 약관과 처리방침의 함께 목표 문안(초안 `friends-goal-policy-draft/`). 함께 목표를 1.1.0에 넣으므로 2판(novum-web PR #64, 미머지)에 합친다(2026-11-06 사용자 확정). 처리방침 patch는 v1 경로를 가리켜 v2에 맞춰야 한다. 그때 이용자가 있으면 불리한 변경은 30일 전 고지. novum-web `versions.json`
 27. 스토어: App Privacy 라벨(다른 이용자에게 보이는 정보), 연령 등급 설문(사용자 간 상호작용), 심사 메모에 함께 목표 시험 방법과 **심사관용 두 번째 계정**(초대를 받아 볼 수 있게)
 28. 이벤트 기록(PostHog)과 오류 보고(Sentry): 함께 목표 이벤트를 더할지 사용자에게(처리방침 2판 범위 확인)
 
@@ -86,7 +86,7 @@
 ## 알아 둘 함정
 
 - 서버 시험은 로그인 한도(5분 30번) 때문에 한 번에 돌리면 무더기 실패한다. 나눠 돌린다(PITFALLS).
-- 1.1.0의 기기 id는 uuid가 아니다. 서버는 `client_id`에 보관하고 서버 id는 uuid(`private.v1_id`).
+- 1.0 앱의 기기 id는 uuid가 아니다. 서버는 `client_id`에 보관하고 서버 id는 uuid(`private.v1_id`).
 - `src/design-system`은 `src/domain`을 가져다 쓸 수 없다(린트).
 - 개발 서버는 다른 세션도 쓴다. **서버 통째 리셋은 2026-11-05가 마지막**이다. 이제부터 서버 변경은 새 마이그레이션 파일로만(DEV-SETUP 「운영 DB 바꾸기」 출시 뒤 방식).
 - 시안용 임시 스토리 원본은 `chagok-wt-friends-board`의 `stories/_proposal/`(커밋 안 함). 필요하면 거기서 본다.
