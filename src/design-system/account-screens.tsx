@@ -1,5 +1,5 @@
 import React,{type ReactNode} from 'react';
-import {Pressable,Text,View} from 'react-native';
+import {Pressable,ScrollView,Text,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
 import {Mascot} from './mascot';
@@ -206,12 +206,17 @@ export function RestoreConflictScreen({value,onChange,server,device,onConfirm,on
 /** 계정 삭제 내용 확인 (시안 6A). [계정 삭제하기]를 누르면 최종 확인 다이얼로그(accountDialogs.deleteAccount). */
 export function DeleteAccountScreen({onDelete,onCancel,onBack}:{onDelete:()=>void;onCancel:()=>void;onBack:()=>void}) {
   return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={<ScreenHeader title={t('account.delete')} onBack={onBack}/>}>
+    {/* 작은 화면(320×568)에서 안내가 길어도 버튼이 밀려나지 않게 안내만 스크롤한다 (2026-11-06, 구독 안내를 더하며) */}
+    <ScrollView style={{flexGrow:0,flexShrink:1}} alwaysBounceVertical={false}>
     <PixelPanel contentStyle={{gap:8}}>
       <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>{t('deleteScreen.heading')}</PixelText>
       <PixelText>{t('deleteScreen.body')}</PixelText>
       {/* 기기를 비울 때 산 표시도 지운다(src/sync/wipe.ts) — 구매가 사라진 줄 알지 않게 되살리는 길을 알린다 (2026-10-29 법률 검토 2차) */}
       <PixelText>{t('deleteScreen.purchases')}</PixelText>
+      {/* 약관 2판 제9조 제4항: 계정을 지워도 구독(Apple)은 계속 갱신된다 (2026-11-06) */}
+      <PixelText>{t('deleteScreen.subscription')}</PixelText>
     </PixelPanel>
+    </ScrollView>
     <View style={{flex:1}}/>
     <PixelButton label={t('deleteScreen.confirm')} onPress={onDelete}/>
     <PixelButton label={t('common.cancel')} variant="secondary" onPress={onCancel}/>

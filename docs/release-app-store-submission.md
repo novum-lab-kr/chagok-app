@@ -2,7 +2,7 @@
 
 작성: 2026-10-28(1.0). **1.1.0 제출본으로 다시 씀: 2026-11-06.** 1.0 제출본은 git 기록에 있다.
 
-함께 목표를 1.1.0에 낼지는 사용자 확인 대기다(초대 받는 화면이 아직 없다, [1.1.0 출시 순서](RELEASE-1.1.0.md) 「제출 전에 고칠 것」). 아래에서 「함께 목표를 내면」이라고 표시한 부분은 정해지면 넣거나 지운다.
+함께 목표는 1.1.0에 넣는다(2026-11-06 사용자 확정). 아래 「함께 목표」 부분까지 모두 낸다.
 
 개인정보 라벨과 연령 등급 답안은 [스토어 개인정보 신고 초안](release-store-privacy-draft.md)에 있다. 제출 직전 확인 목록은 [출시 전 최종 점검](RELEASE-CHECKLIST.md) 5절.
 
@@ -21,7 +21,7 @@
 | 처리방침 URL | 5.1.1(i), App Store Connect 앱 정보 "Required for iOS and macOS apps" | `https://chagok.novum-lab.com/privacy/` |
 | 광고 신고 | 2.5.18 "Apps that contain ads must also include the ability for users to report any inappropriate or age-inappropriate ads." | 설정 「도움말과 정보」 → 광고 신고하기(2026-10-28, 광고 제거를 산 사람에게는 숨김). 심사 메모에 적는다 |
 | 자동 갱신 구독 안내 | 3.1.2 앱 안에 구독 이름, 기간, 가격과 이용약관, 처리방침 링크. 개발자 계약 Schedule 2 제3.8(b) | 구독 화면(`app/subscription.tsx`)에 월과 연 가격, 자동 갱신 고지, [이용약관] [처리방침]이 있다. 스토어 설명 끝에 이용약관 주소를 둔다(5절) |
-| 사용자끼리 보는 내용 | 1.2 신고, 차단, 걸러 내기, 연락처 | 함께 목표를 낼 때만. 앱에 이름 신고와 차단이 있다. 금칙어 표가 운영 DB에서 비어 있다(2026-11-05) |
+| 사용자끼리 보는 내용 | 1.2 신고, 차단, 걸러 내기, 연락처 | 1.1.0에 들어간다. 앱에 이름 신고, 차단, 내보내기, 금칙어 거르기가 있다. 금칙어 표가 운영 DB에서 비어 있어(2026-11-05) 제출 전에 채운다 |
 | 수출 규정 | Info.plist로 답하면 제출마다 묻지 않는다 | `ITSAppUsesNonExemptEncryption: false` |
 
 도움말 일부(스크린샷 크기, 워치 문장, 연령 등급)는 읽은 도구가 앞부분만 원문으로 주고 나머지를 요약했다. 낼 때 화면에서 다시 본다.
@@ -60,10 +60,10 @@ Usage analytics (PostHog) is off until the user agrees on a sheet shown after pl
 Apple Watch: the watch app shows the goals created on the iPhone and lets you add today's sticker. Create a goal on the iPhone first, then open the watch app with the iPhone app nearby.
 ```
 
-**함께 목표를 내면 메모 끝에 더한다.** 심사 계정 두 개를 미리 만들어 「Sign-in information」에는 하나를, 메모에는 두 번째 계정과 초대 순서를 적는다. 영어 이름은 `together.*` 문구에서 옮긴다. 초대를 받는 화면이 생긴 뒤 실제 순서로 쓴다(지금 쓰면 없는 화면을 적게 된다).
+**함께 목표 (메모 끝에 더한다).** 심사 계정 두 개를 미리 만들어 「Sign-in information」에는 하나를, 메모에는 두 번째 계정을 적는다. 순서는 앱의 실제 화면(2026-11-06 `app/invite/[code]`)과 같다: 만들기 → 공유 창으로 링크 → 다른 기기에서 링크 열기 → 로그인 전이면 로그인 → 「Join」 화면에서 이름과 스티커 → 판.
 
 ```text
-Goals with friends (sign-in required): Goals tab [+] > "With friends" / "친구와 함께" > "Create and invite" / "만들고 초대하기" shares an invite link. Open the link on a second device signed in with the second demo account to join. Members can "Report a hurtful name" / "불쾌한 이름 신고하기" and "Block someone" / "사람 차단하기" from the goal's "If something is wrong" / "문제가 있을 때" menu (Guideline 1.2).
+Goals with friends (sign-in required): Goals tab [+] > "With friends" / "친구와 함께" > "Create and invite" / "만들고 초대하기" shares an invite link. Open the link on a second device (signed out or signed in with the second demo account), sign in if asked, choose a name and sticker, then tap "Join" / "함께하기". Members can "Report a hurtful name" / "불쾌한 이름 신고하기" and "Block someone" / "사람 차단하기" from the goal's "If something is wrong" / "문제가 있을 때" menu (Guideline 1.2).
 ```
 
 ## 3. 인앱 상품 심사 메모
@@ -83,7 +83,7 @@ Goals with friends (sign-in required): Goals tab [+] > "With friends" / "친구�
 ## 4. 스크린샷
 
 - 1.1.0 제출본(2026-11-05 확정): `docs/design/proposals-2026-10/store-shots/final-1.1.0/`의 iPhone 6.9와 6.3 각 10장, Watch 4장은 1.0 그대로. 바뀐 장과 새 장만 `changed/`.
-- 이 가운데 함께 목표 2장은 함께 목표를 낼 때만 올린다. 내지 않으면 빼고 8장으로 낸다.
+- 함께 목표 2장(09 한 판, 10 각자 판)까지 10장을 모두 올린다.
 - 유료 스티커 팩에는 가격 배지가 보여야 한다(2.3.2). 개발용 표시(Expo 톱니, 개발 계정 버튼)가 없는 출시 빌드 화면인지 다시 본다.
 - 판매 지역은 대한민국 그대로라 영어 스크린샷과 영어 등록정보는 1.1.0에서 내지 않는다. 해외 판매를 열 때 1차 6개국 기준으로 만든다([출시 준비 결정](RELEASE-DECISIONS.md) 2026-11-05).
 
@@ -133,7 +133,7 @@ Goals with friends (sign-in required): Goals tab [+] > "With friends" / "친구�
 개인정보 처리방침: https://chagok.novum-lab.com/privacy/
 ```
 
-**함께 목표를 내면** 「■ 백업」 앞에 더한다:
+**함께 목표** 「■ 백업」 앞에 더한다:
 
 ```text
 ■ 친구와 함께
