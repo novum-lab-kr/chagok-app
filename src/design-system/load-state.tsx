@@ -10,13 +10,15 @@ import {retro} from './tokens';
  * 화면을 보여 주지 못할 때의 안내 (2026-10-10 시안 B안, PRD 7절). 차곡이 갸웃 + 문구 + [다시 시도] [홈으로].
  * 문구는 무엇을 못 보여 줬는지에 따라 고른다. 어느 것에도 맞지 않으면 `screen`.
  */
-export type ScreenFailureKind='records'|'goals'|'stickers'|'subscription'|'screen';
+export type ScreenFailureKind='records'|'goals'|'stickers'|'subscription'|'invite'|'screen';
 export const screenFailureCopy=(kind:ScreenFailureKind):{title:string;detail:string}=>({
   records:{title:t('loadFailed.records'),detail:t('loadFailed.tryLater')},
   goals:{title:t('loadFailed.goals'),detail:t('loadFailed.tryLater')},
   stickers:{title:t('loadFailed.stickers'),detail:t('loadFailed.tryLater')},
   // 스토어에서 구독 상품을 받지 못했다. 앱을 다시 켜도 나아지지 않으니 「앱을 껐다 켜」 대신 잠시 뒤를 권한다 (2026-11-04)
   subscription:{title:t('loadFailed.subscription'),detail:t('loadFailed.tryLater')},
+  // 초대 미리보기를 받지 못했다(연결, 잠시 막힘). 앱을 다시 켜도 나아지지 않으니 잠시 뒤를 권한다 (2026-11-06)
+  invite:{title:t('loadFailed.invite'),detail:t('loadFailed.tryLater')},
   screen:{title:t('loadFailed.screen'),detail:t('loadFailed.restartApp')},
 })[kind];
 

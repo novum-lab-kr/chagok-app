@@ -1,5 +1,5 @@
-import React,{useState,type ReactNode} from 'react';
-import {Pressable,ScrollView,View} from 'react-native';
+import React,{useEffect,useState,type ReactNode} from 'react';
+import {Keyboard,Pressable,ScrollView,View} from 'react-native';
 import {DIALOG_MAX_WIDTH,FieldError,ModalHost,PixelBadge,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,useContentWidth} from './components';
 import {BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,KeepAboveKeyboard,OptionButtons,PixelBottomSheet,RetroScreen,ScreenHeader,SettingRow,SlotCountPicker,StickerSummary,type BoardKind} from './composition-controls';
 import {SlotsField,useSwipePages,type EndDateMode,type SlotsFieldView} from './board-screens';
@@ -220,6 +220,19 @@ export function TogetherGoalScreen({mode,onChangeMode,name,onChangeName,nameMaxL
 }
 
 // ── 초대 받기 ───────────────────────────────────────────────────────
+/**
+ * 키보드가 올라올 때마다 바뀌는 값(KeepAboveKeyboard의 watch). 화면(RetroScreen)이 키보드 위치를 먼저 받은 뒤
+ * 다음 렌더에서 맞추도록 상태로 넘긴다. 내려가 있으면 undefined.
+ */
+function useKeyboardShown():string|undefined {
+  const [count,setCount]=useState<number|null>(null);
+  useEffect(()=>{
+    const show=Keyboard.addListener('keyboardDidShow',()=>setCount(n=>(n??0)+1));
+    const hide=Keyboard.addListener('keyboardDidHide',()=>setCount(null));
+    return ()=>{show.remove();hide.remove();};
+  },[]);
+  return count===null?undefined:String(count);
+}
 /** 초대 링크를 열었는데 로그인 전: 「은주님이 함께하자고 했어요」 + 로그인 버튼(계정으로 시작 화면과 같은 배치). */
 export function InviteLoginPrompt({ownerName,goalName,loginButtons,onBack}:{ownerName:string;goalName:string;/** KakaoLoginButton, GoogleLoginButton, AppleLoginButton(iOS) */loginButtons:ReactNode;onBack?:()=>void}) {
   return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={onBack?<ScreenHeader title={t('invite.title')} onBack={onBack}/>:undefined}>
@@ -243,6 +256,7 @@ export function InviteJoinScreen({goalName,kind,total,ownerName,members,myName,o
   goalName:string;kind:BoardKind;/** 적립판 칸 수 */total?:number;ownerName:string;/** 지금 함께하는 사람 판(들어온 순서) */members:readonly FriendBoardItem[];
   myName:string;onChangeMyName:(name:string)=>void;myNameMaxLength?:number;myNameError?:string;onMyNameBlur?:()=>void;
   sticker:StickerId;onChooseSticker:()=>void;stickerError?:string;onJoin:()=>void;joinDisabled?:boolean;joining?:boolean;onBack:()=>void}) {
+  const keyboardShown=useKeyboardShown();
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('invite.title')} onBack={onBack}/>}>
     <PixelPanel title={goalName}><View style={{gap:10,paddingTop:8}}>
       <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
@@ -252,7 +266,8 @@ export function InviteJoinScreen({goalName,kind,total,ownerName,members,myName,o
       {members.length>0&&<View style={{gap:8}}>{members.map(member=><FriendBoardStrip key={member.id} name={member.name} sticker={member.sticker} board={member.board}/>)}</View>}
     </View></PixelPanel>
     <MemberFields name={myName} onChangeName={onChangeMyName} nameMaxLength={myNameMaxLength} nameError={myNameError} onNameBlur={onMyNameBlur} sticker={sticker} onChooseSticker={onChooseSticker} stickerError={stickerError}/>
-    <PixelButton label={t('invite.join')} disabled={joinDisabled} loading={joining} onPress={onJoin}/>
+    {/* 이름을 쓰는 동안에도 [함께하기]가 키보드 위에 보이게 한다. 입력칸만 올리면 스티커 칸과 버튼이 키보드에 가려졌다(2026-11-06 시뮬레이터 QA) */}
+    <KeepAboveKeyboard watch={keyboardShown}><PixelButton label={t('invite.join')} disabled={joinDisabled} loading={joining} onPress={onJoin}/></KeepAboveKeyboard>
   </RetroScreen>;
 }
 export type InviteProblem='full'|'closed';

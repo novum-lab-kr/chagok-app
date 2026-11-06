@@ -216,6 +216,7 @@ function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="goal/new" options={{ presentation: 'modal' }} />
           <Stack.Screen name="goal/together" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="invite/[code]" />
           {/* 판을 좌우로 밀어 쪽과 달을 넘긴다. iOS 26은 화면 안쪽에서 오른쪽으로 밀어도 뒤로 가서 판 밀기를 가로챈다. 가장자리 뒤로 가기는 남긴다 (2026-11-03) */}
           <Stack.Screen name="goal/[id]/index" options={{ fullScreenGestureEnabled: false }} />
           <Stack.Screen name="goal/[id]/settings" />

@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.novumlab.chagok",
+      "associatedDomains": ["applinks:chagok.novum-lab.com"],
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "appleTeamId": "AJ7LJPM82M",
