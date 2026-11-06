@@ -59,9 +59,12 @@ describe('컬러 스티커 카탈로그',()=>{
     }
   });
 
-  it('없는 ID는 찾지 못한다',()=>{
+  it('모르는 ID는 물음표 그림으로 돌려준다',()=>{
     expect(getColorSticker('snack_normal.cheese').label).toBe('치즈');
-    expect(()=>getColorSticker('snack_normal.nothing' as never)).toThrow();
+    // 더 새 버전의 스티커가 동기화로 들어와도 멈추지 않고 물음표로 그린다(2026-11-04)
+    const unknown=getColorSticker('snack_normal.nothing' as never);
+    expect(unknown).toMatchObject({id:'snack_normal.nothing',label:'알 수 없는 스티커',pack:'basic'});
+    expect(unknown.layers.length).toBeGreaterThan(0);
   });
 });
 

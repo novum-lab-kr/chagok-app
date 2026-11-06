@@ -138,5 +138,5 @@ export function packName(id: ColorStickerPackId): string {
 
 /** 지금 언어의 스티커 이름. korean 은 카탈로그의 한국어 이름이다. */
 export function stickerName(id: ColorStickerId | PocketStickerId, korean: string): string {
-  return getLanguage() === 'en' ? stickerNamesEn[id] : korean;
+  return getLanguage() === 'en' ? (stickerNamesEn[id] ?? 'Unknown sticker') : korean;
 }
