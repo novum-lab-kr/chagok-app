@@ -310,7 +310,7 @@ export const en: Messages = {
   'deleteScreen.toStart': 'Back to start',
   'consent.title': 'Nice to meet you',
   'consent.description': 'To create an account, check the items below and agree.',
-  'consent.age': "[Required] I'm 14 or older, or meet my local minimum age",
+  'consent.age': "[Required] I'm 14 or older and meet the minimum age where I live",
   'consent.terms': '[Required] I agree to the Terms of Service',
   'consent.viewTerms': 'View Terms of Service',
   'consent.viewPrivacy': 'View Privacy Policy',
