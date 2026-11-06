@@ -1,5 +1,5 @@
 import {
-  blockUser, createSharedGoal, errorMessage, errorWordOf, inviteCodeFromPath, inviteUrl, joinGoal, kickMember, previewInvite, leaveSharedGoal, myBlocks, readInviteCode,
+  blockUser, createSharedGoal, errorMessage, errorWordOf, inviteBase, inviteCodeFromPath, inviteUrl, joinGoal, kickMember, previewInvite, leaveSharedGoal, myBlocks, readInviteCode,
   readMemberDefaults, reportGoal, rotateInvite, SharedGoalError, unblockUser, updateMember, updateSharedGoal,
 } from '../src/sync/sharedGoals';
 import type { SharedClient } from '../src/sync/sharedGoals';
@@ -147,6 +147,11 @@ describe('실패 낱말', () => {
 describe('초대 주소', () => {
   it('고정 주소 뒤에 코드를 붙인다', () => {
     expect(inviteUrl('K7Q2MXAB')).toBe('https://chagok.novum-lab.com/invite/K7Q2MXAB');
+  });
+  it('개발 환경 값이 있으면 그 주소를 쓰고, 모양이 틀리면 운영 주소로 둔다', () => {
+    expect(inviteBase('https://chagok-dev.novum-lab.com/invite/')).toBe('https://chagok-dev.novum-lab.com/invite/');
+    expect(inviteBase(undefined)).toBe('https://chagok.novum-lab.com/invite/');
+    expect(inviteBase('chagok-dev.novum-lab.com')).toBe('https://chagok.novum-lab.com/invite/');
   });
 });
 
