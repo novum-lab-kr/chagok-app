@@ -362,6 +362,15 @@ describe('reportName, blockedPeople', () => {
     expect(args.report).toMatchObject({ p_target_user_id: FRIEND });
   });
 
+  it('신고한 뒤 운영자 알림 메일 함수를 부르고, 그 실패는 신고를 막지 않는다', async () => {
+    const { server, d } = setup();
+    const goalId = await owned(server);
+    let called = 0;
+    d.notifyReports = async () => { called += 1; throw new Error('mail down'); };
+    await expect(reportName(d, goalId, null)).resolves.toBeUndefined();
+    expect(called).toBe(1);
+  });
+
   it('차단한 사람은 서버 목록 그대로(이름만)', async () => {
     const { d } = setup();
     expect(await blockedPeople(d)).toEqual([{ userId: FRIEND, displayName: '지우', createdAt: 1 }]);
