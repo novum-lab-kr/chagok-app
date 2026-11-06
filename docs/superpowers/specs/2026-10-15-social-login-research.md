@@ -67,7 +67,7 @@ Supabase는 토큰의 `aud`가 그 공급자 설정의 **Client IDs** 목록에 
 
 ## 2. Apple
 
-자세한 구현은 기존 계획 [2026-10-08-apple-login.md](../plans/2026-10-08-apple-login.md)에 있다. 이 계획은 `chagok-wt-apple-login`에 커밋하지 않은 채 남아 있다. 여기서는 그 뒤에 바뀐 점과 이번에 확인한 점만 적는다.
+자세한 구현은 기존 계획 `2026-10-08-apple-login.md`(지금 저장소에 없다)에 있다. 이 계획은 `chagok-wt-apple-login`에 커밋하지 않은 채 남아 있다. 여기서는 그 뒤에 바뀐 점과 이번에 확인한 점만 적는다.
 
 ### 2.1 앱
 

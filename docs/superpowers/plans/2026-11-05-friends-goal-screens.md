@@ -45,7 +45,7 @@
 2. **한 판에서 연결이 없을 때** 기기에 칸을 쓰지 않아야 한다(outbox에도 없음). 연결이 있어 붙였다가 `slot_taken`으로 되돌려지면 「이미 누가 붙였어요」가 한 번만 보이고 칸이 사라진다(작업 1, 7의 시험).
 3. **차단한 사람의 한 판 칸**은 이름과 스티커 없이 흐리게 보이고, 눌러도 아무 일이 없으며, 판 칸 수 셈(완성)에는 들어간다. 각자 판에서 차단한 사람의 판은 보이지 않는다(작업 2, 7의 시험).
 4. **만든 사람만 할 수 있는 것**(이름과 칸 수, 내보내기, 친구 초대하기, 초대 링크 새로 만들기, 삭제하기)이 함께하는 사람 화면에 보이지 않고, 서버가 `not_owner`를 돌려주면(그사이 만든 사람이 바뀜) 다시 받아 화면이 바뀐다(작업 8의 시험).
-5. **혼자 판 4칸(큰 폰 5칸)으로 바꾼 뒤** 튜토리얼 칸 재기(`nextSlotRef`, `recordSlotRef`), 쪽 넘기기, 다음 빈칸 쪽 열기가 그대로 돈다(작업 4의 시험과 시뮬레이터).
+5. **혼자 판 4칸(큰 폰 5칸)으로 바꾼 뒤**(작업 4는 뒤에 되돌림, 혼자 판은 3칸) 튜토리얼 칸 재기(`nextSlotRef`, `recordSlotRef`), 쪽 넘기기, 다음 빈칸 쪽 열기가 그대로 돈다(작업 4의 시험과 시뮬레이터).
 
 ---
 
@@ -229,6 +229,8 @@ export function parseSlotCount(input: string, current: number, max?: number)
 - [ ] **5단계: 커밋** `feat(together): cap shared tally boards at 1000 slots`
 
 ### 작업 4: 혼자 판도 4칸, 판 안 폭 330 이상이면 5칸 (B16)
+
+> **2026-11-05 되돌림:** 혼자 판은 3칸 그대로 두고, 4칸 규칙은 함께 목표 판에만 쓴다(PRD 12절 11-05, 커밋 c4c5e4c). 아래는 기록으로만 남긴다.
 
 **파일:** `src/design-system/board-screens.tsx`(`TallyGrid`), `src/design-system/board-shape.ts`(주석), `docs/PRD.md` 4.1, 4.2, 12절, `docs/DESIGN-SYSTEM.md`. 시험 `src/design-system/board-render.test.tsx`, `board-render.perf.test.tsx`, `first-run-tutorial.test.tsx`.
 

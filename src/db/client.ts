@@ -35,7 +35,7 @@ async function applyVersion(driver: DbDriver, i: number): Promise<void> {
 }
 
 /**
- * 함께 목표 이전 구조(goal_members 표가 없는 DB)를 비우고 새 구조로 다시 만든다. 1.0.0 사용자가 없어 옮기지 않는다(2026-11-05).
+ * 함께 목표 이전 구조(goal_members 표가 없는 DB)를 비우고 새 구조로 다시 만든다.
  * 이 기기의 선택(deviceId, 사용 기록 동의, 오류 보고 끄기)만 app_settings에 되돌려 넣는다.
  * 지우기, 새 구조, 설정 되돌려 넣기가 한 트랜잭션이다 — 새로 만들다 실패하면 옛 DB가 그대로 남아 남길 설정을 잃지 않는다.
  */

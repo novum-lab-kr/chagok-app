@@ -420,13 +420,13 @@ delete from private.account_deletions where completed_at < now() - interval '1 y
 
 ## 운영 DB 바꾸기
 
-`supabase/migrations`를 운영 DB에 올리는 방법은 1.0.0 심사 제출 전과 뒤가 다르다. 지금은 제출 뒤다(AGENTS.md 「서버와 약관 규칙」).
+`supabase/migrations`를 운영 DB에 올리는 방법은 1.0 공개(2026-11-03) 뒤로는 아래 「지금: 통째로 지우지 않는다」만 쓴다(AGENTS.md 「서버와 약관 규칙」).
 
 **주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 계정 관리 마이그레이션(당시 `20260930000004`)을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
 
 **통째로 다시 넣는 방법 (2026-10-29, 2026-11-05에 썼다. 이제 하지 않는다)**
 
-운영의 사용자, 기록, 사진이 모두 사라진다. 2026-11-05 서버 2판(운영 사용자 0명 확인)이 마지막이다. 기록으로만 남긴다. 그때 맞춘 것: `log_min_error_statement` 다시 걸기, 함수 네 폴더 다시 올리기, 컨테이너 11개 healthy, Healthchecks 7개 초록.
+운영의 사용자, 기록, 사진이 모두 사라진다. 2026-11-05 서버 2판(운영 사용자 0명 확인)이 마지막이다. 기록으로만 남긴다. 그때 맞춘 것: `log_min_error_statement` 다시 걸기, 그때 있던 함수 폴더 다시 올리기, 컨테이너 11개 healthy, Healthchecks 7개 초록.
 
 ```sh
 # 서버 (ssh chagok@<운영 서버 주소>)
@@ -505,7 +505,7 @@ cd ~/supabase && sh run.sh recreate functions
 - `/auth/v1/settings`의 `external`이 `apple`, `google`, `kakao`만 true인지.
 - 5분 안에 Healthchecks.io 6개가 모두 초록인지.
 
-**운영 서버 테스트 (출시 전까지만, 2026-10-26 결정)**
+**운영 서버 테스트 (출시 전까지만 쓰던 방법, 2026-10-26 결정. 1.0이 공개된 지금은 하지 않는다)**
 
 `__tests__/server`는 관리 키로 테스트 사용자를 만들고 이메일과 비밀번호로 로그인한다. 운영은 이메일 로그인이 꺼져 있어, 돌리는 동안만 켠다.
 
