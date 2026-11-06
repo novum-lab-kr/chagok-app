@@ -303,6 +303,7 @@ export const en: Messages = {
   'deleteScreen.heading': 'Your account and records will be gone',
   'deleteScreen.body': "This deletes your account and the goals, stickers, notes, and photos saved on the server. All records on this device are erased too. This can't be undone.",
   'deleteScreen.purchases': 'Sticker packs you bought and ad removal are also removed from this device. To get them back, tap [Restore purchases] in the app settings using the same store account.',
+  'deleteScreen.subscription': "Deleting your account doesn't cancel your subscription. It keeps renewing and you keep being charged. To stop it, cancel first with [Manage subscription] in the Settings tab.",
   'deleteScreen.confirm': 'Delete account',
   'deleteScreen.doneHeading': 'Your account is deleted',
   'deleteScreen.doneBody': 'All records on the server and this device are erased. Heading back to the start.',
@@ -390,7 +391,7 @@ export const en: Messages = {
   'legal.subscriptionAutoRenew': (store: RefundStore) =>
     `Renews automatically at the same price every period you chose until you cancel. You may be charged up to 24 hours before the next billing date. Cancel or change it anytime in ${store === 'google' ? 'Google Play' : 'App Store'} subscriptions, and you keep access until the paid period ends.`,
   'legal.subscriptionNoRefund': (store: RefundStore, email: string) =>
-    `Once you pick or place a sticker from a pack that was locked, ${refundRights(store, email)}`,
+    `Once you pick or place a sticker from a pack that was locked, or make more goals than the free limit, ${refundRights(store, email)}`,
   'legal.minorCancel': 'Under 18? Ask a parent or guardian before buying. This does not limit any rights you have under local law.',
   'shop.allPacks': 'All packs',
   'shop.myStickers': 'My stickers',

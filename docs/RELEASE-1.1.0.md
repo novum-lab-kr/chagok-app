@@ -66,10 +66,10 @@
 
 ### 제출 전에 고칠 것 (2026-11-05 점검)
 
-- **함께 목표 초대 받기 (1.1.0에 넣음, 2026-11-06):** 앱에 초대 링크를 받는 화면(`app/invite`)과 링크 연결(Associated Domains)이 없고 `join_goal`을 부르는 곳도 없다. 웹 초대 페이지는 게시했다(novum-web #67, `https://chagok.novum-lab.com/invite/`). 운영 Caddy에 `/invite/*` 되쓰기와 AASA `application/json`도 넣었다(2026-11-06, 백업 `/etc/caddy/Caddyfile.bak-20261106-invite`). 실제 주소에서 없는 코드로 열어 운영 서버가 「들어갈 수 없어요」를 돌려주는 것까지 확인했다.
-- **연령 등급과 개인정보 라벨:** [스토어 개인정보 신고 초안](release-store-privacy-draft.md)이 함께 목표 이전 기준이다(공유 기능 없음). 함께 목표를 내면 다시 답한다.
+- **함께 목표 초대 받기 (1.1.0에 넣음):** 끝(2026-11-06). 앱 `app/invite/[code]`(`feat/invite-receive`), 웹 초대 페이지(novum-web #67, #68), 운영 Caddy 되쓰기와 AASA. 실기기에서 카카오톡과 메시지 링크로 앱이 열리는지는 아직 확인 전이다(Apple Developer 앱 ID의 Associated Domains가 켜졌는지 포함).
+- **연령 등급과 개인정보 라벨:** 함께 목표 기준 답안을 [스토어 개인정보 신고 초안](release-store-privacy-draft.md) 2절과 4절에 썼다(2026-11-06, 사용자 확인 전). App Store 「User-Generated Content」는 예.
 - **심사 메모와 스토어 설명:** [App Store 제출 문안 초안](release-app-store-submission.md)을 1.1.0 기준으로 다시 썼다(2026-11-06, 버튼 이름은 영어와 한국어). 함께 목표 부분은 결정 뒤 넣거나 지운다.
-- **앱 문구:** 구독 화면의 철회 불가 고지에 약관 2판 제11조의 「목표를 더 만들면」 조건이 없다(`src/i18n/ko.ts`, `en.ts`). 계정 삭제 화면에 「계정을 지워도 구독은 해지되지 않는다」(약관 2판 제9조 4항) 안내가 없다.
+- **앱 문구:** 구독 철회 불가 고지에 「목표를 더 만들면」 조건, 계정 삭제 화면에 「계정을 지워도 구독은 해지되지 않아요」를 더했다(2026-11-06, `fix/pre-submit`). 계정 삭제 화면은 작은 화면에서 안내만 스크롤한다.
 - **Google 로그인 동의 화면 게시:** 「테스트 중」이면 심사자가 Google 로그인을 못 한다([출시 전 최종 점검](RELEASE-CHECKLIST.md) 5절).
 
 ### 스토어 상품과 결제 (제출 전, 2026-11-04 정리)
