@@ -3,12 +3,13 @@ import {View} from 'react-native';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {
   AddGoalSheet, BlockPickSheet, BlockedPeopleScreen, BoardDetailScreen, FriendBoardList, FriendBoardModal, GoalListScreen, GoogleLoginButton,
-  InviteJoinScreen, InviteLoginPrompt, InviteProblemScreen, KakaoLoginButton, MemberBadgeRow, MemberList, OneBoardNote, OneBoardWaiting, PixelDialogModal, PixelText,
+  InviteJoinScreen, InviteLoginPrompt, InviteProblemScreen, KakaoLoginButton, MemberBadgeRow, MemberList, OneBoardMembers, OneBoardWaiting, PixelDialogModal, PixelText,
   TogetherGoalScreen, TogetherSettingsScreen, retro, togetherDialogs,
   type BoardKind, type FriendBoard, type FriendBoardItem, type GoalCardItem, type MemberRow, type StickerId, type TogetherMode,
 } from '../src/design-system';
 import {GOAL_NAME_MAX, MEMBER_NAME_MAX, goalNameError, memberNameError} from '../src/domain/board';
 import type {Goal} from '../src/domain/types';
+import {boardLabel, longDate} from '../src/app-data/pocketAdapter';
 import {t} from '../src/i18n';
 import {AppleButtonPreview} from './support/appleButton';
 import {Stage, noop} from './support/frame';
@@ -68,15 +69,18 @@ function SharedCalendar() {
 /** 한 판: 칸마다 붙인 사람의 스티커 */
 const ONE_FILLED: Record<number, StickerId> = {1: 'basic.shoe', 2: 'basic.flower', 3: 'basic.flower', 4: 'basic.star', 5: 'basic.shoe', 6: 'basic.cat', 7: 'basic.flower',
   8: 'basic.shoe', 9: 'basic.star', 10: 'basic.star', 11: 'basic.shoe', 12: 'basic.flower', 13: 'basic.cat'};
+/** 한 판 아래 「함께하는 사람 n」: 만든 사람(나) 먼저, 사람마다 붙인 칸 수(스티커로 센다) */
+const oneMembers = (filled: Record<number, StickerId>) => [{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 3)]
+  .map(person => ({...person, placed: Object.values(filled).filter(id => id === person.sticker).length}));
 function OneBoard({hidden, waiting = false}: {/** 가려진 칸(차단한 사람이 붙인 칸) */hidden?: ReadonlySet<number>;/** 아직 나만 있다 */waiting?: boolean}) {
   const base = boardOf(walk, []);
   const filled = waiting ? {1: ME.sticker, 2: ME.sticker, 3: ME.sticker} : Object.fromEntries(Object.entries(ONE_FILLED).filter(([n]) => !hidden?.has(Number(n))));
   const board = base.board.kind === 'tally' ? {...base.board, filled, hidden, recorded: new Set([1, 5])} : base.board;
   return <BoardDetailScreen {...base} board={board} title={walk.name} name={t('together.ourBoard')} hideProgress boardRows={4}
     members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...(waiting ? [] : FRIENDS.slice(0, 3))]}/>}
-    above={waiting ? <OneBoardWaiting onResend={noop}/> : undefined} below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
+    above={waiting ? <OneBoardWaiting onResend={noop}/> : undefined} below={waiting ? undefined : <OneBoardMembers members={oneMembers(filled)}/>} onBack={noop} onSettings={noop}/>;
 }
-/** 한 판 달력판: 하루 두 장이면 둘째 장을 오른쪽 아래로 비껴 겹친다(2026-11-05 시안 T2 B안) */
+/** 한 판 달력판: 그 달 전체(2026-11-06). 하루 두 장이면 둘째 장을 오른쪽 아래로 비껴 겹친다(2026-11-05 시안 T2 B안) */
 function OneCalendar() {
   const base = boardOf(goals.water, stickersOf.water);
   if (base.board.kind !== 'calendar') return null;
@@ -84,9 +88,9 @@ function OneCalendar() {
   const dates = Object.keys(records).sort();
   // 오늘 칸도 두 장: 겹친 두 장과 오늘 꺾쇠(5pt)가 함께 어떻게 보이는지 본다(2026-11-05 시안 「한 날 여러 장」 B)
   const records2 = {...Object.fromEntries(dates.filter((_, i) => i % 3 === 1).map(date => [date, 'basic.star' as StickerId])), [TODAY]: 'basic.star' as StickerId};
-  return <BoardDetailScreen {...base} board={{...base.board, records: {[TODAY]: 'basic.cat', ...records}, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={2}
+  return <BoardDetailScreen {...base} board={{...base.board, records: {[TODAY]: 'basic.cat', ...records}, records2}} title={goals.water.name} name={t('together.ourBoard')} hideProgress boardRows={4} calendarMonth
     members={<MemberBadgeRow people={[{id: 'me', ...ME, me: true}, ...FRIENDS.slice(0, 2)]}/>}
-    below={<OneBoardNote/>} onBack={noop} onSettings={noop}/>;
+    below={<OneBoardMembers members={[{id: 'me', ...ME, me: true, placed: 9}, {...FRIENDS[0], placed: 6}, {...FRIENDS[1], placed: 0}]}/>} onBack={noop} onSettings={noop}/>;
 }
 /** 앱(app/goal/[id]/index.tsx)이 띄우는 한 판 창. 문구는 togetherDialogs 그대로 */
 function OneBoardWith({dialog}: {dialog: {title: string; description: string; primaryLabel: string; secondaryLabel?: string}}) {
@@ -105,6 +109,9 @@ function Wide({children, width = 440}: {children: ReactNode; width?: number}) {
 
 export const SharedBoard390: Story = {name: '각자 판 390 폭', render: () => <Stage><SharedBoard/></Stage>};
 export const SharedBoard440: Story = {name: '각자 판 440 폭', render: () => <Wide><SharedBoard/></Wide>};
+/** 다 채운 친구(30/30)는 17~30칸이 모두 차 보이고 이름 아래 [완성], 칸이 두 줄보다 적은 판은 칸 수만큼만 */
+const COMPLETED_FRIENDS: readonly FriendBoardItem[] = [friend('jiwoo', '지우', 'basic.flower', tally(30)), FRIENDS[1], friend('sora', '소라', 'basic.sprout', {kind: 'tally', total: 10, filled: upTo(4)})];
+export const SharedBoardCompleted: Story = {name: '각자 판 친구가 다 채웠을 때', render: () => <Stage><SharedBoard friends={COMPLETED_FRIENDS}/></Stage>};
 export const SharedWaiting: Story = {name: '각자 판 친구를 기다릴 때', render: () => <Stage><SharedBoard friends={[]}/></Stage>};
 /** 초대 코드는 만든 사람만 읽는다. 함께하는 사람에게는 [링크 다시 보내기]가 없다 */
 export const SharedWaitingMember: Story = {name: '각자 판 친구를 기다릴 때 만든 사람 아님', render: () => <Stage><SharedBoard friends={[]} owner={false}/></Stage>};
@@ -172,20 +179,22 @@ const OWNER_VIEW: readonly MemberRow[] = [{id: 'me', ...ME, me: true, owner: tru
 const MEMBER_VIEW: readonly MemberRow[] = [{id: 'eunju', ...ME, owner: true}, {id: 'me', name: '소라', sticker: 'basic.sprout', me: true}, ...FRIENDS.slice(0, 2)];
 /** 앱과 같이 만든 사람에게는 칸 수 칸(적립판)과 [초대 링크 새로 만들기]가 있다 */
 function OwnerSettings() {
-  return <TogetherSettingsScreen role="owner" mode="each" goalName={walk.name} onChangeGoalName={noop} goalNameMaxLength={GOAL_NAME_MAX} ownerName={ME.name}
+  return <TogetherSettingsScreen role="owner" mode="each" goalName={walk.name} onChangeGoalName={noop} goalNameMaxLength={GOAL_NAME_MAX} ownerName={ME.name} boardLabel={boardLabel(walk)}
     slots={{current: 30, value: '30', onChange: noop}}
     myName={ME.name} onChangeMyName={noop} myNameMaxLength={MEMBER_NAME_MAX} sticker={ME.sticker} onChooseSticker={noop}
     members={<MemberList members={OWNER_VIEW} max={MAX} onKick={noop} onInvite={noop} onRotate={noop}/>}
     onSave={noop} onReport={noop} onBlock={noop} onLeave={noop} onDelete={noop} onBack={noop}/>;
 }
-function MemberSettings() {
-  return <TogetherSettingsScreen role="member" mode="each" goalName={walk.name} ownerName={ME.name}
+/** completed면 다 채운 판: 판 종류 줄 아래 「M월 D일 완성」, 만든 사람이 바꾼다는 안내는 없다 */
+function MemberSettings({completed = false}: {completed?: boolean}) {
+  return <TogetherSettingsScreen role="member" mode="each" goalName={walk.name} ownerName={ME.name} boardLabel={boardLabel(walk)} completedLabel={completed ? longDate(TODAY) : undefined}
     myName="소라" onChangeMyName={noop} myNameMaxLength={MEMBER_NAME_MAX} sticker="basic.sprout" onChooseSticker={noop}
     members={<MemberList members={MEMBER_VIEW} max={MAX}/>}
     onSave={noop} onReport={noop} onBlock={noop} onLeave={noop} onBack={noop}/>;
 }
 export const SettingsOwner: Story = {name: '목표 설정 만든 사람', render: () => <Stage auto><OwnerSettings/></Stage>};
 export const SettingsMember: Story = {name: '목표 설정 함께하는 사람', render: () => <Stage auto><MemberSettings/></Stage>};
+export const SettingsMemberCompleted: Story = {name: '목표 설정 함께하는 사람 완성한 판', render: () => <Stage auto><MemberSettings completed/></Stage>};
 /** 새 조립(사용자 확인 전): 칸 수 칸은 혼자 목표 설정과 같은 SlotsField. 늘리기만 된다. 스크롤해 아래쪽을 본다 */
 export const SettingsOwnerSlots: Story = {name: '목표 설정 만든 사람 칸 수', render: () => <Stage><OwnerSettings/></Stage>};
 /** 앱(app/goal/[id]/settings.tsx)이 띄우는 창. 문구는 togetherDialogs 그대로 */

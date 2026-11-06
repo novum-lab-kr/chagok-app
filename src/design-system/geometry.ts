@@ -9,7 +9,7 @@ export function progressRatio(value: number, total: number): number {
   return total > 0 && Number.isFinite(value) && Number.isFinite(total)
     ? Math.min(1, Math.max(0, value / total)) : 0;
 }
-/** 크게 보는 사진 틀의 폭:높이. 사진 비율을 따르되 세로는 3:4, 가로는 16:9까지만 (2026-11-05 A안). 아이폰 세로 사진 3:4를 자르지 않는다. 크기를 모르면 null. */
+/** 크게 보는 사진 틀의 폭:높이. 사진 비율을 따르되 세로는 3:4, 가로는 16:9까지만 (2026-11-05 A안). 아이폰 세로 사진 3:4를 자르지 않는다. 범위 밖 사진은 틀 안에 전체를 넣는다(usePhotoFrameRatio, 2026-11-06). 크기를 모르면 null. */
 export const PHOTO_FRAME_MIN_RATIO=3/4;
 export const PHOTO_FRAME_MAX_RATIO=16/9;
 export function photoFrameRatio(width: number, height: number): number | null {

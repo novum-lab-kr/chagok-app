@@ -13,7 +13,8 @@ import {t} from '../i18n';
 /**
  * 함께 목표 화면과 조각 (PRD 4.15, 2026-11-04 시안 9판 확정, 배치 A).
  * props만 받는다. 판 화면은 BoardDetailScreen(boardRows, below, members)에 여기 조각을 넣어 만든다.
- * 친구 판에는 칸 수, %, 순위를 쓰지 않는다(PRD 2절). 순서는 들어온 순서로 호스트가 넘긴다.
+ * 친구 판에는 %와 순위를 쓰지 않는다(PRD 2절). 적립판 줄만 이름 아래에 「붙인 칸/전체 칸」, 다 채우면 [완성]을 둔다(2026-11-06 사용자).
+ * 순서는 들어온 순서로 호스트가 넘긴다.
  */
 const c=retro.color;
 const caption={color:c.buttonText};
@@ -44,10 +45,14 @@ export type FriendBoard=
 export type FriendBoardItem={id:string;name:string;sticker:StickerId;board:FriendBoard};
 
 /** 이름 배지 칸. 폭을 고정해 줄마다 판이 같은 곳에서 시작한다. 긴 이름은 두 줄로 접힌다. */
-function NameCell({name}:{name:string}) {
-  return <View style={{width:FRIEND_NAME_WIDTH,alignItems:'flex-start'}}><PixelBadge label={name}/></View>;
+function NameCell({name,progress}:{name:string;/** 적립판만. 이름 아래 「붙인 칸/전체 칸」, 다 채우면 [완성] */progress?:{filled:number;total:number}}) {
+  return <View style={{width:FRIEND_NAME_WIDTH,alignItems:'flex-start',gap:4}}><PixelBadge label={name}/>
+    {progress&&(progress.filled>=progress.total
+      ?<PixelBadge label={t('common.completedBadge')} tone="primary"/>
+      :<Small>{`${progress.filled}/${progress.total}`}</Small>)}
+  </View>;
 }
-function StripCell({width,height,children,blank=false}:{width:number;height:number;children?:ReactNode;/** 판 밖 자리(칸 수보다 뒤) */blank?:boolean}) {
+function StripCell({width,height,children,blank=false}:{width:number;height:number;children?:ReactNode;/** 판 밖 자리(달력판 그 달 앞뒤 빈 날) */blank?:boolean}) {
   return <View style={{width,height,alignItems:'center',justifyContent:'center',borderWidth:blank?0:0.5,borderColor:GRID_LINE}}>{children}</View>;
 }
 function DayNumber({day,faint=false}:{day:number;faint?:boolean}) {
@@ -55,6 +60,7 @@ function DayNumber({day,faint=false}:{day:number;faint?:boolean}) {
 }
 /**
  * 친구 판 한 줄: [이름 배지][얇은 판 두 줄]. 적립판은 7칸(판 안 폭 320 이상이면 8칸), 가장 최근 칸이 둘째 줄에 오도록 연다.
+ * 적립판은 판 칸 수보다 뒤 자리를 그리지 않는다: 마지막 칸이 끝에 오도록 당기고, 칸 수가 두 줄보다 적으면 칸 수만큼만 그린다.
  * 달력판은 7칸 두 주(지난주, 이번 주). 옆으로 밀면 앞 칸(앞 주), 다시 밀면 돌아온다. 누르면 onPress(그 친구 판 크게).
  */
 export function FriendBoardStrip({name,sticker,board,onPress}:{name:string;sticker:StickerId;board:FriendBoard;onPress?:()=>void}) {
@@ -69,12 +75,16 @@ export function FriendBoardStrip({name,sticker,board,onPress}:{name:string;stick
   const span=columns*FRIEND_ROWS;
   let cells:ReactNode[]=[];
   let canPrev=false;
+  let progress:{filled:number;total:number}|undefined;
   if(board.kind==='tally'){
     const last=Math.max(0,...board.filled);
-    const first=Math.max(1,friendStripFirst(last,columns,FRIEND_ROWS)+offset*span);
+    // 마지막 칸(total)이 창 끝을 넘지 않게 당긴 뒤 쪽 단위로 앞으로 넘긴다
+    const opening=Math.min(friendStripFirst(last,columns,FRIEND_ROWS),Math.max(1,board.total-span+1));
+    const first=Math.max(1,opening+offset*span);
     canPrev=first>1;
-    cells=Array.from({length:span},(_,i)=>{const n=first+i;return <StripCell key={n} width={cell} height={FRIEND_CELL_HEIGHT} blank={n>board.total}>
+    cells=Array.from({length:Math.min(span,board.total-first+1)},(_,i)=>{const n=first+i;return <StripCell key={n} width={cell} height={FRIEND_CELL_HEIGHT}>
       {board.filled.has(n)&&<StickerGlyph id={sticker} size={FRIEND_STICKER}/>}</StripCell>;});
+    progress={filled:board.filled.size,total:board.total};
   }else{
     const dates=weekWindow(board.today,FRIEND_ROWS,offset);
     canPrev=dates[0]>board.start;
@@ -85,10 +95,14 @@ export function FriendBoardStrip({name,sticker,board,onPress}:{name:string;stick
   const strip=<View {...swipe.panHandlers} style={{flex:1}} onLayout={event=>setMeasured(Math.round(event.nativeEvent.layout.width))}>
     {width>0&&<PixelFrame variant="thin"><View testID="friend-strip-cells" style={{width:cell*columns,flexDirection:'row',flexWrap:'wrap'}}>{cells}</View></PixelFrame>}
   </View>;
-  const row=<View style={{flexDirection:'row',alignItems:'center',gap:STRIP_GAP}}><NameCell name={name}/>{strip}</View>;
+  const row=<View style={{flexDirection:'row',alignItems:'center',gap:STRIP_GAP}}><NameCell name={name} progress={progress}/>{strip}</View>;
+  // 줄 전체가 한 요소라 안의 글자는 읽히지 않는다. 칸 수와 완성은 줄 이름에 붙인다.
+  const label=progress
+    ?[t('together.boardOf',name),t('together.stripProgress',progress.filled,progress.total),...(progress.filled>=progress.total?[t('common.completedBadge')]:[])].join(', ')
+    :t('together.boardOf',name);
   return onPress
-    ?<Pressable accessibilityRole="button" accessibilityLabel={t('together.boardOf',name)} accessibilityHint={t('together.openBoard',name)} onPress={onPress}>{row}</Pressable>
-    :<View accessible accessibilityLabel={t('together.boardOf',name)}>{row}</View>;
+    ?<Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={t('together.openBoard',name)} onPress={onPress}>{row}</Pressable>
+    :<View accessible accessibilityLabel={label}>{row}</View>;
 }
 /** 친구를 기다리는 자리: 차곡이 + 안내 + [링크 다시 보내기]. 둘째 줄(detail)만 각자 판과 한 판이 다르다. */
 function WaitingForFriends({detail,onResend}:{detail:string;/** 만든 사람만. 없으면 버튼을 그리지 않는다 */onResend?:()=>void}) {
@@ -112,9 +126,24 @@ export function FriendBoardList({friends,onOpen,onResend}:{friends:readonly Frie
 export function OneBoardWaiting({onResend}:{/** 만든 사람만 */onResend?:()=>void}) {
   return <WaitingForFriends detail={t('together.waitingOneDetail')} onResend={onResend}/>;
 }
-/** 한 판 아래 안내 글: 칸마다 붙인 사람의 스티커. 친구 칸을 누르는 창은 없다(2026-11-05 사용자, 나중에 메모와 사진이 들어갈 자리). */
-export function OneBoardNote() {
-  return <Small>{t('together.oneBoardNote')}</Small>;
+/** 한 판 아래 「함께하는 사람 n」 줄 하나. placed는 그 사람이 이 판에 붙인 칸 수 */
+export type OneBoardMember=MemberBadge&{placed:number};
+/**
+ * 한 판 아래 「함께하는 사람 n」(나 포함)과 사람마다 붙인 칸 수. 순서는 호스트가 넘긴 대로(만든 사람 먼저, 들어온 순서).
+ * 줄은 누를 수 없다. 안내 글(칸마다 붙인 사람의 스티커)은 뺐다(2026-11-06 사용자: 판 아래가 비어 무엇을 할지 모르겠음).
+ */
+export function OneBoardMembers({members}:{members:readonly OneBoardMember[]}) {
+  return <View style={{gap:8}}>
+    <PixelText accessibilityRole="header" style={sectionTitle}>{t('together.peopleCount',members.length)}</PixelText>
+    <View style={{gap:4}}>
+      {members.map(member=>{const name=member.me?t('together.meName',member.name):member.name;const placed=t('together.placedCount',member.placed);
+        return <View key={member.id} accessible accessibilityLabel={`${name}, ${placed}`} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:44}}>
+          <StickerGlyph id={member.sticker} size={24}/>
+          <PixelText style={{flex:1}}>{name}</PixelText>
+          <PixelText>{placed}</PixelText>
+        </View>;})}
+    </View>
+  </View>;
 }
 const BIG_CELL=44;
 /** 친구 판 전체(적립판 모든 칸, 달력판 그 달)를 얇은 판에 크게. 보기만 한다. */
@@ -329,12 +358,15 @@ function ProblemSection({onReport,onBlock,onLeave}:{onReport?:()=>void;onBlock?:
  * 함께 목표의 목표 설정. 만든 사람(owner)은 목표 이름과 칸 수(적립판, slots)를 고치고 [삭제하기]가 있다. 나머지 사람은 목표 이름 대신
  * 「목표 이름과 칸 수는 만든 사람이 바꿔요」. 모두 내 이름, 내 스티커, 함께하는 사람(members), 문제가 있을 때를 본다.
  * 완성한 판은 만든 사람에게도 onChangeGoalName과 slots를 넘기지 않는다(이름과 칸 수 칸이 없다).
+ * 함께하는 사람의 목표 칸에는 판 종류 줄(boardLabel, 달력판은 periodLabel도)이 늘 있고, 완성한 판이면 「M월 D일 완성」을 더한다(2026-11-06 사용자: 비어 보임).
  */
-export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,completed=false,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,saveError,onReport,onBlock,onLeave,onDelete,onBack}:{
+export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goalNameMaxLength,goalNameError,slots,ownerName,boardLabel,periodLabel,completedLabel,myName,onChangeMyName,myNameMaxLength,myNameError,sticker,onChooseSticker,stickerError,members,onSave,saveDisabled=false,saveError,onReport,onBlock,onLeave,onDelete,onBack}:{
   role:'owner'|'member';mode:TogetherMode;
   goalName:string;/** 만든 사람만 */onChangeGoalName?:(name:string)=>void;goalNameMaxLength?:number;goalNameError?:string;
   /** 만든 사람의 진행 중인 적립판만. 늘리기만 된다(새 조립, GoalSettingsScreen과 같은 칸) */slots?:SlotsFieldView;
-  /** 빈 문자열이면(내가 만든 사람을 차단해 기기에 없음) 이름 없는 안내 */ownerName:string;/** 완성한 판: 아무도 바꿀 수 없어 안내를 그리지 않는다 */completed?:boolean;
+  /** 빈 문자열이면(내가 만든 사람을 차단해 기기에 없음) 이름 없는 안내 */ownerName:string;
+  /** 함께하는 사람의 목표 칸. 예: '적립판 30칸', '달력판' (CompletedGoalSettingsScreen과 같은 값) */boardLabel:string;/** 달력판만. 예: '9월 1일 – 9월 23일', '9월 1일부터' */periodLabel?:string;
+  /** 완성한 판만. 예: '9월 24일'. 있으면 아무도 바꿀 수 없어 만든 사람이 바꾼다는 안내를 그리지 않는다 */completedLabel?:string;
   myName:string;onChangeMyName:(name:string)=>void;myNameMaxLength?:number;myNameError?:string;
   sticker:StickerId;onChooseSticker:()=>void;stickerError?:string;
   /** MemberList */members?:ReactNode;onSave:()=>void;saveDisabled?:boolean;
@@ -344,7 +376,13 @@ export function TogetherSettingsScreen({role,mode,goalName,onChangeGoalName,goal
   return <RetroScreen style={{gap:16}} avoidKeyboard header={<ScreenHeader title={t('goal.settings')} onBack={onBack}/>}>
     {owner
       ?onChangeGoalName&&<PixelInput label={t('goal.name')} value={goalName} onChangeText={onChangeGoalName} maxLength={goalNameMaxLength} error={goalNameError}/>
-      :<PixelPanel title={goalName}>{!completed&&<View style={{paddingTop:6}}><Small>{ownerName?t('together.ownerEdits',ownerName):t('together.ownerEditsNoName')}</Small></View>}</PixelPanel>}
+      :<PixelPanel title={goalName}><View style={{paddingTop:6,gap:4}}>
+        <Small>{boardLabel}</Small>
+        {periodLabel!==undefined&&<Small>{periodLabel}</Small>}
+        {completedLabel!==undefined
+          ?<Small>{t('goalCard.completedOn',completedLabel)}</Small>
+          :<Small>{ownerName?t('together.ownerEdits',ownerName):t('together.ownerEditsNoName')}</Small>}
+      </View></PixelPanel>}
     {owner&&slots&&<SlotsField {...slots}/>}
     <MemberFields name={myName} onChangeName={onChangeMyName} nameMaxLength={myNameMaxLength} nameError={myNameError} sticker={sticker} onChooseSticker={onChooseSticker} stickerError={stickerError}/>
     {members}

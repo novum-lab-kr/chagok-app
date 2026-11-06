@@ -88,30 +88,33 @@ function photoUri(source?:ImageSourcePropType){
   if(source==null||typeof source==='number') return null;
   return (Array.isArray(source)?source[0]:source)?.uri??null;
 }
+/** 틀이 사진 비율과 달라 사진 전체를 넣을 때 남는 자리의 색. 기록 화면 사진 틀(PixelFrame)의 바탕과 같다 (2026-11-06) */
+export const PHOTO_MAT=retro.color.lcd;
 /**
- * 크게 보는 사진 틀 비율. 기록에 사진 크기를 저장하지 않아서 Image.getSize로 읽어 바꾼다. 그 전에는 기본 틀 (2026-11-05 A안).
- * onLoad가 아닌 getSize를 쓰는 건 웹(Storybook)의 onLoad 이벤트에 크기가 없어서다.
+ * 크게 보는 사진 틀 비율과 사진을 그리는 방식. 기록에 사진 크기를 저장하지 않아서 Image.getSize로 읽어 바꾼다. 그 전에는 기본 틀 (2026-11-05 A안).
+ * 틀은 세로 3:4에서 가로 16:9까지라, 그보다 길거나 넓은 사진(휴대폰 화면 캡처 등)은 자르지 않고 전체를 가운데 넣는다(contain, 남는 자리는 PHOTO_MAT, 2026-11-06 사용자).
+ * 범위 안의 사진은 틀과 비율이 같아 지금처럼 꽉 채운다(cover). onLoad가 아닌 getSize를 쓰는 건 웹(Storybook)의 onLoad 이벤트에 크기가 없어서다.
  */
-export function usePhotoFrameRatio(source?:ImageSourcePropType) {
+export function usePhotoFrameRatio(source?:ImageSourcePropType):{ratio:number;resizeMode:'cover'|'contain'} {
   const uri=photoUri(source);
-  const [loaded,setLoaded]=useState<{uri:string;ratio:number}|null>(null);
+  const [loaded,setLoaded]=useState<{uri:string;ratio:number;resizeMode:'cover'|'contain'}|null>(null);
   useEffect(()=>{
     if(!uri) return;
     let live=true;
     Image.getSize(uri,(width,height)=>{
       const ratio=photoFrameRatio(width,height);
-      if(live&&ratio!=null) setLoaded({uri,ratio});
+      if(live&&ratio!=null) setLoaded({uri,ratio,resizeMode:ratio===width/height?'cover':'contain'});
     },()=>{});
     return ()=>{live=false;};
   },[uri]);
-  return loaded&&loaded.uri===uri?loaded.ratio:PHOTO_FRAME_DEFAULT_RATIO;
+  return loaded&&loaded.uri===uri?{ratio:loaded.ratio,resizeMode:loaded.resizeMode}:{ratio:PHOTO_FRAME_DEFAULT_RATIO,resizeMode:'cover'};
 }
 export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,onPhotoError,actionsInFrame:inFrame=false}:{source?:ImageSourcePropType;preview?:ReactNode;/** 앨범에서 고르기 */onChoose:()=>void;/** 카메라로 찍기. 주면 빈 프레임에 [사진 찍기]·[앨범에서 고르기]를 함께 둔다 (2026-10-11 시안 B) */onTakePhoto?:()=>void;onRemove:()=>void;onPhotoError?:()=>void;actionsInFrame?:boolean}) {
   const attached=!!source||!!preview;
-  const frameRatio=usePhotoFrameRatio(source);
+  const frame=usePhotoFrameRatio(source);
   return <View style={{gap:12}}>
-    <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:frameRatio,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
-      {source?<Image source={source} onError={onPhotoError} accessibilityLabel={t('photo.alt')} resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label={t('photo.take')} variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label={t('photo.choose')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label={t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>{t('photo.prompt')}</PixelText></View>)}
+    <PixelFrame fill={PHOTO_MAT} contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:frame.ratio,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
+      {source?<Image source={source} onError={onPhotoError} accessibilityLabel={t('photo.alt')} resizeMode={frame.resizeMode} style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label={t('photo.take')} variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label={t('photo.choose')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label={t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>{t('photo.prompt')}</PixelText></View>)}
       {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel={t('photo.remove')} onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
     </View></PixelFrame>
     {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?t('photo.replace'):t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label={t('photo.remove')} variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}

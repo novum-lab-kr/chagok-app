@@ -4,7 +4,7 @@ import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/reac
 import {Keyboard} from 'react-native';
 import {PixelFrame,PixelText,SCREEN_PADDING} from './components';
 import {BoardDetailScreen,type TallyBoardView} from './board-screens';
-import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,OneBoardNote,OneBoardWaiting,TogetherGoalScreen,TogetherSettingsScreen,deleteOwnerDescription,togetherDialogs,type FriendBoard} from './together-screens';
+import {BlockPickSheet,BlockedPeopleScreen,FriendBoardList,FriendBoardStrip,InviteProblemScreen,MemberBadgeRow,MemberList,OneBoardMembers,OneBoardWaiting,TogetherGoalScreen,TogetherSettingsScreen,deleteOwnerDescription,togetherDialogs,type FriendBoard} from './together-screens';
 import {SlotsField} from './board-screens';
 import {t} from '../i18n';
 afterEach(cleanup);
@@ -44,9 +44,42 @@ describe('친구 판 줄 (PRD 4.15)',()=>{
     // 9~24칸: 붙은 칸 9~18 = 10장
     expect(stickersIn(cells)).toBe(10);
   });
-  it('칸 수나 %를 쓰지 않는다',()=>{
+  it('%를 쓰지 않고 이름 아래에 붙인 칸/전체 칸을 쓴다',()=>{
     render(<FriendBoardStrip name="지우" sticker="basic.flower" board={tally(18)}/>);
-    expect(document.body.textContent).not.toMatch(/%|칸/);
+    expect(document.body.textContent).not.toMatch(/%/);
+    expect(screen.getByText('18/30')).toBeTruthy();
+    expect(screen.getByLabelText('지우의 판, 30칸 중 18칸')).toBeTruthy();
+    expect(screen.queryByText('완성')).toBeNull();
+  });
+  it('판 칸 수보다 뒤 자리는 그리지 않고 마지막 칸이 30이다 (붙인 칸 1~30)',()=>{
+    for(let filled=1;filled<=30;filled++){
+      render(<FriendBoardStrip name="지우" sticker="basic.flower" board={tally(filled)}/>);
+      const cells=screen.getByTestId('friend-strip-cells');
+      // 7칸 두 줄 = 14자리 모두 판 칸(테두리 있음)
+      expect(cells.children).toHaveLength(14);
+      const first=Math.min(Math.max(1,(Math.ceil(filled/7)-2)*7+1),17);
+      // 보이는 칸은 first~first+13이고 그 안의 붙은 칸 수만큼 스티커
+      expect(stickersIn(cells)).toBe(Math.max(0,filled-first+1));
+      // 판 밖(31칸 이후)은 없고, 가장 최근 칸은 늘 보인다. 29칸부터는 마지막 칸 30이 창 끝이다
+      expect(first+13).toBeLessThanOrEqual(30);
+      expect(filled).toBeGreaterThanOrEqual(first);
+      if(filled>=29) expect(first+13).toBe(30);
+      cleanup();
+    }
+  });
+  it('다 채운 30칸 판은 22~30이 아니라 17~30칸 14장을 다 보여 주고 [완성]',()=>{
+    render(<FriendBoardStrip name="지우" sticker="basic.flower" board={tally(30)}/>);
+    expect(stickersIn(screen.getByTestId('friend-strip-cells'))).toBe(14);
+    expect(screen.getByText('완성')).toBeTruthy();
+    expect(screen.queryByText('30/30')).toBeNull();
+    expect(screen.getByLabelText('지우의 판, 30칸 중 30칸, 완성')).toBeTruthy();
+  });
+  it('칸 수가 두 줄보다 적으면 칸 수만큼만 그린다',()=>{
+    render(<FriendBoardStrip name="지우" sticker="basic.flower" board={tally(5,10)}/>);
+    const cells=screen.getByTestId('friend-strip-cells');
+    expect(cells.children).toHaveLength(10);
+    expect(stickersIn(cells)).toBe(5);
+    expect(screen.getByText('5/10')).toBeTruthy();
   });
   it('달력판은 지난주와 이번 주 14일',()=>{
     render(<FriendBoardStrip name="민" sticker="basic.star" board={{kind:'calendar',today:'2026-11-12',start:'2026-10-01',dates:new Set(['2026-11-02','2026-11-12'])}}/>);
@@ -60,7 +93,7 @@ describe('친구 판 줄 (PRD 4.15)',()=>{
     render(<FriendBoardList friends={[{id:'jiwoo',name:'지우',sticker:'basic.flower',board:tally(3)}]} onOpen={id=>opened.push(id)} onResend={()=>{}}/>);
     // 목표 설정의 n/6과 같이 나를 포함한 수
     expect(screen.getByText('함께하는 사람 2')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('지우의 판'));
+    fireEvent.click(screen.getByLabelText('지우의 판, 30칸 중 3칸'));
     expect(opened).toEqual(['jiwoo']);
   });
   it('친구가 없으면 기다리는 자리와 [링크 다시 보내기]',()=>{
@@ -151,15 +184,18 @@ describe('한 판 창 문구 (판 화면이 띄운다)',()=>{
     expect(togetherDialogs.offlineOne).not.toHaveProperty('secondaryLabel');
     expect(togetherDialogs.slotTaken).toMatchObject({title:'이미 누가 붙였어요',primaryLabel:'확인'});
   });
-  it('한 판 안내 글은 한 문장: 칸마다 붙인 사람의 스티커(누르는 창은 없다, 2026-11-05)',()=>{
-    render(<OneBoardNote/>);
-    expect(screen.getByText('칸마다 붙인 사람의 스티커예요.')).toBeTruthy();
+  it('한 판 아래는 함께하는 사람 n(나 포함)과 사람마다 붙인 칸 수, 누를 수 없다 (2026-11-06)',()=>{
+    render(<OneBoardMembers members={[{id:'u-owner',name:'은주',sticker:'basic.shoe',placed:12},{id:'me',name:'소라',sticker:'basic.sprout',me:true,placed:0}]}/>);
+    expect(screen.getByText('함께하는 사람 2')).toBeTruthy();
+    expect(screen.getByLabelText('은주, 12칸')).toBeTruthy();
+    expect(screen.getByLabelText('소라(나), 0칸')).toBeTruthy();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 });
 
 describe('함께 목표 설정 (PRD 4.15)',()=>{
   const noop=()=>{};
-  const base={mode:'each' as const,goalName:'만 보 걷기',ownerName:'은주',myName:'소라',onChangeMyName:noop,sticker:'basic.sprout' as const,onChooseSticker:noop,onSave:noop,onReport:noop,onBlock:noop,onLeave:noop,onBack:noop};
+  const base={mode:'each' as const,goalName:'만 보 걷기',ownerName:'은주',boardLabel:'적립판 30칸',myName:'소라',onChangeMyName:noop,sticker:'basic.sprout' as const,onChooseSticker:noop,onSave:noop,onReport:noop,onBlock:noop,onLeave:noop,onBack:noop};
   it('onRotate가 있으면 [초대 링크 새로 만들기]가 [친구 초대하기] 아래에 있고 누르면 부른다',()=>{
     const rotated:number[]=[];
     render(<MemberList max={6} onInvite={noop} onRotate={()=>rotated.push(1)} members={[{id:'me',name:'은주',sticker:'basic.shoe',me:true,owner:true}]}/>);
@@ -227,10 +263,23 @@ describe('함께 목표 설정 (PRD 4.15)',()=>{
       cleanup();
     }
   });
-  it('완성한 판은 함께하는 사람에게도 안내가 없다',()=>{
-    render(<TogetherSettingsScreen {...base} role="member" completed/>);
+  it('함께하는 사람의 목표 칸은 판 종류 줄 아래 만든 사람이 바꾼다는 안내',()=>{
+    render(<TogetherSettingsScreen {...base} role="member"/>);
+    const text=document.body.textContent??'';
+    expect(screen.getByText('적립판 30칸')).toBeTruthy();
+    expect(text.indexOf('적립판 30칸')).toBeLessThan(text.indexOf('목표 이름과 칸 수는 만든 사람(은주)이 바꿔요.'));
+  });
+  it('완성한 판은 함께하는 사람에게 판 종류와 완성한 날을 보이고 바꾼다는 안내가 없다 (2026-11-06 비어 보임)',()=>{
+    render(<TogetherSettingsScreen {...base} role="member" completedLabel="11월 6일"/>);
     expect(screen.getByText('만 보 걷기')).toBeTruthy();
+    expect(screen.getByText('적립판 30칸')).toBeTruthy();
+    expect(screen.getByText('11월 6일 완성')).toBeTruthy();
     expect(screen.queryByText(/바꿔요|바꿀 수 있어요/)).toBeNull();
+  });
+  it('달력판은 판 종류와 기간',()=>{
+    render(<TogetherSettingsScreen {...base} role="member" boardLabel="달력판" periodLabel="9월 1일부터"/>);
+    expect(screen.getByText('달력판')).toBeTruthy();
+    expect(screen.getByText('9월 1일부터')).toBeTruthy();
   });
   it('완성한 판(만든 사람에게 이름 칸을 넘기지 않음)은 이름 칸도 안내도 없다',()=>{
     render(<TogetherSettingsScreen {...base} role="owner" onDelete={noop}/>);

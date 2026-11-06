@@ -1,7 +1,7 @@
 import { normalizeStickerId } from '../stickers/stickerIds';
 import type { GoalCardItem, PocketGoal, StickerId } from '../design-system';
 import type { Goal, Sticker } from '../domain/types';
-import { parseDateKey } from '../domain/dates';
+import { localDateKey, parseDateKey } from '../domain/dates';
 import type { DateKey } from '../domain/dates';
 import { isCompleted, progressBasis, progressOf, startDate } from '../domain/board';
 import type { GoalSummary } from '../repositories/goalRepository';
@@ -54,12 +54,6 @@ export function longDate(key: DateKey): string {
   return t('date.monthDay', d.getMonth() + 1, d.getDate());
 }
 
-/** '9/29' */
-export function shortDate(epochMs: number): string {
-  const d = new Date(epochMs);
-  return t('date.monthDayNumeric', d.getMonth() + 1, d.getDate());
-}
-
 /**
  * 진행 비율 문구. 종료일 없는 달력판은 기준 달을 붙여 전체 진행으로 오해하지 않게 한다 (PRD 4.1).
  * 진행 중이면 '이번 달 m%', 완성했으면 '9월 m%'.
@@ -71,10 +65,10 @@ export function percentLabel(goal: Goal, placedInBasis: number, now: Date): stri
   return basis.current ? t('goalCard.percentThisMonth', percent) : t('goalCard.percentInMonth', basis.month, percent);
 }
 
-/** 목록 카드: `[판 종류] m% 채웠어요` 또는 `[판 종류] m% M/D 완성` (PRD 4.1). 함께 목표(각자 판, 한 판)는 나 말고 함께하는 사람이 있으면 앞에 「n명이 함께」(PRD 4.15). */
+/** 목록 카드: `[판 종류] m% 채웠어요` 또는 `[판 종류] m% M월 D일 완성` (PRD 4.1). 함께 목표(각자 판, 한 판)는 나 말고 함께하는 사람이 있으면 앞에 「n명이 함께」(PRD 4.15). */
 export function goalCard({ goal, placedInBasis, memberCount }: GoalSummary, now: Date): GoalCardItem {
   const label = percentLabel(goal, placedInBasis, now);
-  const progress = isCompleted(goal) ? [label, t('goalCard.completedOn', shortDate(goal.completedAt!))] : [t('goalCard.filled', label)];
+  const progress = isCompleted(goal) ? [label, t('goalCard.completedOn', longDate(localDateKey(goal.completedAt!)))] : [t('goalCard.filled', label)];
   return {
     id: goal.id,
     name: goal.name,

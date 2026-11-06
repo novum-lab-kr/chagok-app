@@ -100,6 +100,9 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
   const {ref:row,size,onLayout}=useLayoutSize();
   const fit=packRowCount(size.width,pack.stickers.length);
   const more=pack.stickers.length-fit;
+  // 접힌 줄은 카드 안 폭 전체에 고르게 편다(넓은 폰에서 오른쪽이 비었다, 2026-11-06). 칸 사이는 ROW_GAP 아래로 줄지 않는다.
+  // 스티커가 5개보다 적고 「+n」도 없는 묶음은 양끝으로 벌어지지 않게 왼쪽부터 둔다.
+  const spread=more>0||fit>=5?'space-between' as const:'flex-start' as const;
   const right=pack.state==='free'||pack.state==='owned'?null
     :pack.state==='trial'?(pack.trialLabel?<PixelBadge label={pack.trialLabel} tone="primary"/>:null)
     :<>{rewardReady?<PixelBadge label={t('shop.threeDaysFree')} tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
@@ -116,7 +119,7 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
   if(locked) return <Pressable accessibilityRole="button" accessibilityLabel={t('shop.previewPack',pack.label)} onPress={onOpenPack}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
       {head}
-      <View ref={row} onLayout={onLayout} style={{flexDirection:'row',alignItems:'center',gap:ROW_GAP,opacity:retro.opacity.disabled}}>
+      <View ref={row} onLayout={onLayout} testID="pack-row" style={{flexDirection:'row',alignItems:'center',justifyContent:spread,gap:ROW_GAP,opacity:retro.opacity.disabled}}>
         {pack.stickers.slice(0,fit).map(id=><View key={id} style={{width:ROW_CELL,alignItems:'center'}}><StickerGlyph id={id} size={48}/></View>)}
         {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
       </View>
@@ -132,7 +135,7 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
     <View ref={row} onLayout={onLayout}>
     {open
       ?<View accessibilityRole={group} style={{flexDirection:'row',flexWrap:'wrap',rowGap:14}}>{shown.map(id=><View key={id} style={{width:'20%',alignItems:'center'}}>{cell(id)}</View>)}</View>
-      :<View accessibilityRole={group} style={{flexDirection:'row',alignItems:'center',gap:ROW_GAP}}>{shown.map(id=><React.Fragment key={id}>{cell(id)}</React.Fragment>)}{more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}</View>}
+      :<View accessibilityRole={group} testID="pack-row" style={{flexDirection:'row',alignItems:'center',justifyContent:spread,gap:ROW_GAP}}>{shown.map(id=><React.Fragment key={id}>{cell(id)}</React.Fragment>)}{more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}</View>}
     </View>
   </PixelFrame>;
 }

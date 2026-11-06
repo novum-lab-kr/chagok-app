@@ -142,6 +142,32 @@ describe('한 판 달력판 하루 두 장 (2026-11-05 시안 T2 B안)',()=>{
   });
 });
 
+describe('한 판 달력판은 그 달 전체 (2026-11-06 사용자: 4주 창이 어색함)',()=>{
+  const base={kind:'calendar' as const,year:2026,month:11,records:{'2026-11-02':'shoe' as const},records2:{'2026-11-02':'star' as const},
+    selectedDate:'2026-11-06',isDateEnabled:(d:string)=>d<='2026-11-06',canGoPrev:true,canGoNext:false,onSelect:()=>{},onOpenRecord:()=>{}};
+  const Month=({b}:{b:CalendarBoardView})=><BoardDetailScreen name="우리 판" sticker="shoe" completed={false} progress={{value:0,total:0,percentLabel:''}} board={b}
+    hideProgress boardRows={4} calendarMonth onBack={()=>{}} onSettings={()=>{}}/>;
+  it('머리말은 그 달, 1일 앞과 마지막 날 뒤는 빈 자리, 하루 두 장은 그대로',()=>{
+    render(<Month b={{...base,onMonthChange:()=>{}}}/>);
+    expect(screen.getByText('2026년 11월')).toBeTruthy();
+    // 2026년 11월 1일은 일요일, 30일은 월요일: 5주 35칸 중 빈 자리 5
+    expect(screen.getByRole('button',{name:/^11월 1일/})).toBeTruthy();
+    expect(screen.getByRole('button',{name:/^11월 30일/})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:/^10월 31일/})).toBeNull();
+    expect(screen.getAllByTestId('month-blank')).toHaveLength(5);
+    expect(screen.getByRole('button',{name:/^11월 2일/}).querySelector('[data-testid="day-second-sticker"]')).not.toBeNull();
+    // 오늘 뒤는 누를 수 없다
+    expect(screen.getByRole('button',{name:/^11월 7일/}).getAttribute('aria-disabled')).toBe('true');
+  });
+  it('이전 달로 넘기고, canGoNext가 false면 다음 달 버튼이 없다',()=>{
+    const moved:number[][]=[];
+    render(<Month b={{...base,onMonthChange:(y,m)=>moved.push([y,m])}}/>);
+    fireEvent.click(screen.getByRole('button',{name:'이전 달'}));
+    expect(moved).toEqual([[2026,10]]);
+    expect(screen.queryByRole('button',{name:'다음 달'})).toBeNull();
+  });
+});
+
 describe('하루 여러 장 자리 dayStickerSpot (2026-11-05 시안 「한 날 여러 장」 B 지그재그)',()=>{
   const H=52;
   /** 칸 폭 w에서 실제 왼쪽 위치 */

@@ -96,7 +96,7 @@ function TogetherSettings({initialSlots}: {initialSlots: string}) {
   const [name, setName] = useState('11월 만 보 걷기'), [slots, setSlots] = useState(initialSlots);
   const parsed = parseSlotCount(slots, 30, SHARED_SLOTS_MAX);
   return <Stage auto><TogetherSettingsScreen role="owner" mode="each" goalName={name} onChangeGoalName={setName} goalNameMaxLength={GOAL_NAME_MAX} goalNameError={goalNameError(name)}
-    slots={{current: 30, value: slots, onChange: setSlots, error: parsed.ok ? undefined : parsed.reason}} ownerName="은주"
+    slots={{current: 30, value: slots, onChange: setSlots, error: parsed.ok ? undefined : parsed.reason}} ownerName="은주" boardLabel={t('board.tallyWithSlots', 30)}
     myName="은주" onChangeMyName={noop} myNameMaxLength={MEMBER_NAME_MAX} myNameError={memberNameError('은주')} sticker="basic.shoe" onChooseSticker={noop}
     members={<MemberList members={[{id: 'me', name: '은주', sticker: 'basic.shoe', me: true, owner: true}]} max={6}/>}
     onSave={noop} saveDisabled={!parsed.ok} onReport={noop} onBlock={noop} onLeave={noop} onDelete={noop} onBack={noop}/></Stage>;

@@ -4,14 +4,14 @@ import * as Haptics from 'expo-haptics';
 import { track } from '../../../src/analytics';
 import { hasAnsweredAnalytics, saveAnalyticsEnabled } from '../../../src/analytics/posthog';
 import {
-  AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, FriendBoardList, FriendBoardModal, GuideCard, LoadingScreen, MemberBadgeRow, OneBoardNote, OneBoardWaiting, PixelButton,
+  AnalyticsConsentSheet, BoardDetailScreen, CompletionNudge, FriendBoardList, FriendBoardModal, GuideCard, LoadingScreen, MemberBadgeRow, OneBoardMembers, OneBoardWaiting, PixelButton,
   boardDialogs, stickerShopDialogs, togetherDialogs, useLoadRetry,
 } from '../../../src/design-system';
 import type { StickerId } from '../../../src/design-system';
 import { loadBoard } from '../../../src/app-data/boardData';
 import type { BoardData } from '../../../src/app-data/boardData';
 import { percentLabel } from '../../../src/app-data/pocketAdapter';
-import { canPlaceOn, friendBoardsOf, memberBadgesOf, myStickerOn, oneBoardCells, oneBoardShown, oneDayTap, placeCompletes } from '../../../src/app-data/sharedBoardView';
+import { canPlaceOn, friendBoardsOf, memberBadgesOf, myStickerOn, oneBoardCells, oneBoardMembersOf, oneBoardShown, oneDayTap, placeCompletes } from '../../../src/app-data/sharedBoardView';
 import { oneBoardOnline, watchSlotTaken } from '../../../src/app-data/sharedBoardGuards';
 import { actionDeps, shareInvite } from '../../../src/app-data/sharedGoalActions';
 import { normalizeStickerId } from '../../../src/stickers/stickerIds';
@@ -260,7 +260,7 @@ export default function Board() {
   }
 
   function openRecord(target: Sticker | undefined) {
-    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id, from: 'board' } });
+    if (target) router.push({ pathname: '/sticker/[id]', params: { id: target.id } });
   }
 
   const one = goal.mode === 'one';
@@ -351,9 +351,13 @@ export default function Board() {
       below: <FriendBoardList friends={friends} onOpen={setFriendOpen} onResend={goal.role === 'owner' ? onResend : undefined} /> }
     : one
       ? { title: goal.name, name: t('together.ourBoard'), hideProgress: true, boardRows: 4,
-        members: <MemberBadgeRow people={memberBadgesOf(members)} />, below: <OneBoardNote />,
-        // 친구가 아직 없으면 판 위에 각자 판과 같은 기다림 안내(2026-11-05 시안 T1 A안)
-        above: members.some((m) => !m.isMe) ? undefined : <OneBoardWaiting onResend={goal.role === 'owner' ? onResend : undefined} /> }
+        // 한 판 달력판은 4주 창 대신 혼자 달력판처럼 그 달 전체(2026-11-06)
+        calendarMonth: goal.boardType === 'calendar',
+        members: <MemberBadgeRow people={memberBadgesOf(members)} />,
+        // 친구가 아직 없으면 판 위에 각자 판과 같은 기다림 안내(2026-11-05 시안 T1 A안), 있으면 판 아래 사람마다 붙인 칸 수(2026-11-06)
+        ...(members.some((m) => !m.isMe)
+          ? { below: <OneBoardMembers members={oneBoardMembersOf(members, stickers)} /> }
+          : { above: <OneBoardWaiting onResend={goal.role === 'owner' ? onResend : undefined} /> }) }
       : { name: goal.name };
 
   return (
@@ -370,7 +374,7 @@ export default function Board() {
           <GuideCard
             text={t('guide.firstSticker')}
             onClose={() => { setFirstGuide(null); void setFlag('firstStickerGuideDone', true); }}
-            actions={<PixelButton label={t('guide.writeMemo')} minHeight={40} onPress={() => { const target = firstGuide; setFirstGuide(null); void setFlag('firstStickerGuideDone', true); router.push({ pathname: '/sticker/[id]', params: { id: target, from: 'board' } }); }} />}
+            actions={<PixelButton label={t('guide.writeMemo')} minHeight={40} onPress={() => { const target = firstGuide; setFirstGuide(null); void setFlag('firstStickerGuideDone', true); router.push({ pathname: '/sticker/[id]', params: { id: target } }); }} />}
           />
         ) : undefined}
         board={goal.boardType === 'tally'

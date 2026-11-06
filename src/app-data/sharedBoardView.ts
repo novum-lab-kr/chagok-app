@@ -1,4 +1,4 @@
-import type { FriendBoardItem, MemberBadge, MemberRow, StickerId } from '../design-system';
+import type { FriendBoardItem, MemberBadge, MemberRow, OneBoardMember, StickerId } from '../design-system';
 import { canPlace, completesBoard, isDateEnabled, stickerDate } from '../domain/board';
 import type { PlaceTarget } from '../domain/board';
 import { localDateKey } from '../domain/dates';
@@ -42,6 +42,12 @@ export function memberRowsOf(goal: Goal, members: readonly GoalMember[]): Member
 /** 한 판 위 사람 줄. 나는 「나」 배지. */
 export function memberBadgesOf(members: readonly GoalMember[]): MemberBadge[] {
   return members.map((m) => ({ id: m.userId, name: nameOf(m), sticker: stickerOf(m, DEFAULT_STICKER_ID), ...(m.isMe ? { me: true } : {}) }));
+}
+
+/** 한 판 아래 「함께하는 사람」: 만든 사람 먼저, 그다음 들어온 순서(나도 그 자리). 사람마다 이 판에 붙인 칸 수(가려진 칸은 세지 않는다). */
+export function oneBoardMembersOf(members: readonly GoalMember[], stickers: readonly Sticker[]): OneBoardMember[] {
+  const ordered = [...members.filter((m) => m.role === 'owner'), ...members.filter((m) => m.role !== 'owner')];
+  return memberBadgesOf(ordered).map((badge) => ({ ...badge, placed: stickers.filter((s) => s.placedBy === badge.id).length }));
 }
 
 /** 한 판 적립판의 칸. filled는 칸 번호(1부터) → 붙인 사람의 스티커, hidden은 가려진 칸 번호. */

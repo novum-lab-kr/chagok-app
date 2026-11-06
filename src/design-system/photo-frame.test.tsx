@@ -10,7 +10,8 @@ function fakeGetSize() {
   vi.spyOn(Image,'getSize').mockImplementation(((uri:string,ok:(w:number,h:number)=>void)=>{calls.push({uri,ok});}) as never);
   return calls;
 }
-const ratioOf=(source:ImageSourcePropType)=>renderHook(({s}:{s:ImageSourcePropType})=>usePhotoFrameRatio(s),{initialProps:{s:source}});
+const fitOf=(source:ImageSourcePropType)=>renderHook(({s}:{s:ImageSourcePropType})=>usePhotoFrameRatio(s).resizeMode,{initialProps:{s:source}});
+const ratioOf=(source:ImageSourcePropType)=>renderHook(({s}:{s:ImageSourcePropType})=>usePhotoFrameRatio(s).ratio,{initialProps:{s:source}});
 
 describe('usePhotoFrameRatio', ()=>{
   it('크기를 알기 전에는 기본 틀, 크기를 알면 사진 비율', async ()=>{
@@ -25,6 +26,20 @@ describe('usePhotoFrameRatio', ()=>{
     const tall=ratioOf({uri:'file:///tall.jpg'});
     const wide=ratioOf({uri:'file:///wide.jpg'});
     await vi.waitFor(()=>{calls[0].ok(1080,2400);calls[1].ok(3000,1000);expect(tall.result.current).toBeCloseTo(3/4);expect(wide.result.current).toBeCloseTo(16/9);});
+  });
+  it('범위 안 사진은 꽉 채우고(cover), 틀보다 길거나 넓은 사진은 자르지 않고 전체를 넣는다(contain, 2026-11-06)', async ()=>{
+    const calls=fakeGetSize();
+    const before=fitOf({uri:'file:///unknown.jpg'});
+    expect(before.result.current).toBe('cover');
+    const photo=fitOf({uri:'file:///photo.jpg'});
+    const tall=fitOf({uri:'file:///screenshot.png'});
+    const wide=fitOf({uri:'file:///pano.jpg'});
+    await vi.waitFor(()=>{
+      calls[1].ok(3024,4032);calls[2].ok(1290,2796);calls[3].ok(3000,1000);
+      expect(photo.result.current).toBe('cover');
+      expect(tall.result.current).toBe('contain');
+      expect(wide.result.current).toBe('contain');
+    });
   });
   it('사진이 바뀌면 새 크기를 알 때까지 기본 틀로 돌아간다', async ()=>{
     const calls=fakeGetSize();
