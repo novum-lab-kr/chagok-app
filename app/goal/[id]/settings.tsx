@@ -419,7 +419,9 @@ function TogetherSettings({ goal: initial }: { goal: Goal }) {
           max: SHARED_SLOTS_MAX,
         } : undefined}
         ownerName={ownerName}
-        completed={isCompleted(goal)}
+        boardLabel={boardLabel(goal)}
+        periodLabel={goal.boardType === 'calendar' ? periodLabel(goal) : undefined}
+        completedLabel={isCompleted(goal) ? longDate(localDateKey(goal.completedAt!)) : undefined}
         myName={myName}
         onChangeMyName={(next) => { setMyName(next); setRejected({}); }}
         myNameMaxLength={MEMBER_NAME_MAX}

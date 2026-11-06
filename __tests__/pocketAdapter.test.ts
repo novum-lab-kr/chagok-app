@@ -101,11 +101,11 @@ describe('목록 카드와 진행 문구 (PRD 4.1)', () => {
     expect(card.status).toEqual(['이번 달 30% 채웠어요']);
   });
 
-  it('완성한 판: m%와 M/D 완성. 종료일 없는 달력판은 완성한 달을 붙인다', () => {
+  it('완성한 판: m%와 M월 D일 완성. 종료일 없는 달력판은 완성한 달을 붙인다', () => {
     const doneTally = goalCard({ goal: { ...tally, totalSlots: 20, completedAt: at(9, 29, 8) }, placedAll: 20, placedInBasis: 20, memberCount: 1 }, NOW);
-    expect(doneTally.status).toEqual(['100%', '9/29 완성']);
+    expect(doneTally.status).toEqual(['100%', '9월 29일 완성']);
     const doneOpen = goalCard({ goal: { ...cal, completedAt: at(8, 31) }, placedAll: 10, placedInBasis: 10, memberCount: 1 }, NOW);
-    expect(doneOpen.status).toEqual(['8월 32%', '8/31 완성']);
+    expect(doneOpen.status).toEqual(['8월 32%', '8월 31일 완성']);
   });
 
   it('기간 달력판은 기준 달을 붙이지 않는다', () => {

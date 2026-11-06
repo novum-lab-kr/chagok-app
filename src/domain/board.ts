@@ -232,18 +232,19 @@ export function parseSlotCount(input: string, current: number, max?: number): { 
 
 /**
  * 입력 글자 수 (2026-10-08). 입력칸은 maxLength로 한도를 넘지 못하게 하고, 이 문구는 입력칸 아래에 보여준다.
- * 글자 수는 RN maxLength와 같은 기준(string.length)으로 센다.
+ * 글자 수는 RN maxLength와 같은 기준(string.length)으로 센다. 한도와 같은 길이는 받고, 넘을 때만 알린다(2026-11-06: 20자 이름이 거절처럼 보였다).
+ * 서버도 같은 한도를 포함한다(goals.name 1~20자, 이름 private.clean_name 1~10자).
  */
 export const GOAL_NAME_MAX = 20;
 export const MEMO_MAX = 500;
 export function goalNameError(name: string): string | undefined {
   if (name.trim() === '') return t('validation.goalNameEmpty');
-  if (name.length >= GOAL_NAME_MAX) return t('validation.maxLength', GOAL_NAME_MAX);
+  if (name.length > GOAL_NAME_MAX) return t('validation.maxLength', GOAL_NAME_MAX);
   return undefined;
 }
 /** 메모는 비워 둬도 된다. */
 export function memoError(memo: string): string | undefined {
-  return memo.length >= MEMO_MAX ? t('validation.maxLength', MEMO_MAX) : undefined;
+  return memo.length > MEMO_MAX ? t('validation.maxLength', MEMO_MAX) : undefined;
 }
 /**
  * 새 목표의 이름 문구. 처음 연 빈 칸에는 보이지 않고, 이름을 썼다가 지웠거나
@@ -263,7 +264,7 @@ export const SHARED_MAX_MEMBERS = 6;
 export const MEMBER_NAME_MAX = 10;
 export function memberNameError(name: string): string | undefined {
   if (name.trim() === '') return t('validation.memberNameEmpty');
-  if (name.length >= MEMBER_NAME_MAX) return t('validation.maxLength', MEMBER_NAME_MAX);
+  if (name.length > MEMBER_NAME_MAX) return t('validation.maxLength', MEMBER_NAME_MAX);
   return undefined;
 }
 /** 목표 이름과 같이, 처음 연 빈 칸에는 문구를 보이지 않는다. */

@@ -65,6 +65,15 @@ describe('「기본 스티커」 화면',()=>{
     render(<PackCard pack={pack} open onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
     expect(screen.getAllByRole('radio')).toHaveLength(10);
   });
+  it('접힌 줄은 5개와 +n을 카드 폭에 고르게 편다(넓은 폰에서 오른쪽이 비지 않게, 2026-11-06). 잠긴 묶음도 같다',()=>{
+    for(const state of ['owned','locked'] as const){
+      render(<PackCard pack={colorPack('snack_normal',state)} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
+      const row=screen.getByTestId('pack-row');
+      expect(getComputedStyle(row).justifyContent).toBe('space-between');
+      expect(row.lastElementChild?.textContent).toBe('+5');
+      cleanup();
+    }
+  });
   it('접힌 줄의 5개 안에 고른 스티커가 있으면 선택 표시가 보인다',()=>{
     const pack=colorPack('snack_normal','owned');
     render(<PackCard pack={pack} open={false} selected={pack.stickers[2]} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);

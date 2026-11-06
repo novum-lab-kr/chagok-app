@@ -39,8 +39,8 @@ export const SummaryCards: Story = {name: '목록 카드', render: () => <View s
   <GoalSummaryCard name="책 읽기" sticker="basic.sprout" kind="적립판" status={['40% 채웠어요']} percent={40}/>
   <GoalSummaryCard name="물 여덟 잔 마시기" sticker="basic.flower" kind="달력판" status={['17% 채웠어요']} percent={17}/>
   <GoalSummaryCard name="매일 저녁 동네 한 바퀴 걷기" sticker="basic.shoe" kind="달력판" status={['이번 달 30% 채웠어요']} percent={30}/>
-  <GoalSummaryCard name="자기 전 스트레칭 십 분" sticker="basic.star" kind="적립판" status={['100%', '9/29 완성']} percent={100}/>
-  <GoalSummaryCard name="기타 코드 연습" sticker="basic.book" kind="달력판" status={['9월 33%', '9/20 완성']} percent={33}/>
+  <GoalSummaryCard name="자기 전 스트레칭 십 분" sticker="basic.star" kind="적립판" status={['100%', '9월 29일 완성']} percent={100}/>
+  <GoalSummaryCard name="기타 코드 연습" sticker="basic.book" kind="달력판" status={['9월 33%', '9월 20일 완성']} percent={33}/>
 </View>};
 export const ProgressRows: Story = {name: '판 상세 진행 줄', render: () => <View style={{gap: 8, backgroundColor: retro.color.lcd, padding: 12}}>
   <BoardProgressRow value={6} total={15} percentLabel="40%" sticker="basic.sprout"/>

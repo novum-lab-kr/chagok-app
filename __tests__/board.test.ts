@@ -305,16 +305,17 @@ describe('입력 글자 수 (2026-10-08)', () => {
     expect(goalNameError('')).toBe('목표 이름을 입력해주세요.');
     expect(goalNameError('   ')).toBe('목표 이름을 입력해주세요.');
   });
-  test('목표 이름: 20자에 닿으면 한도를 알린다', () => {
+  test('목표 이름: 20자까지 받고 21자부터 한도를 알린다', () => {
     expect(GOAL_NAME_MAX).toBe(20);
     expect(goalNameError('가'.repeat(19))).toBeUndefined();
-    expect(goalNameError('가'.repeat(20))).toBe('20자까지 입력할 수 있어요.');
+    expect(goalNameError('가'.repeat(20))).toBeUndefined();
+    expect(goalNameError('가'.repeat(21))).toBe('20자까지 입력할 수 있어요.');
   });
-  test('메모: 비어도 괜찮고 500자에 닿으면 한도를 알린다', () => {
+  test('메모: 비어도 괜찮고 500자까지 받고 501자부터 한도를 알린다', () => {
     expect(MEMO_MAX).toBe(500);
     expect(memoError('')).toBeUndefined();
-    expect(memoError('가'.repeat(499))).toBeUndefined();
-    expect(memoError('가'.repeat(500))).toBe('500자까지 입력할 수 있어요.');
+    expect(memoError('가'.repeat(500))).toBeUndefined();
+    expect(memoError('가'.repeat(501))).toBe('500자까지 입력할 수 있어요.');
   });
   test('새 목표: 처음 연 빈 칸에는 문구가 없고, 건드린 뒤 비면 보인다', () => {
     expect(shownGoalNameError('', false)).toBeUndefined();
@@ -333,11 +334,11 @@ describe('함께 목표 내 이름 (2026-11-04)', () => {
     expect(memberNameError('')).toBe('이름을 적어 주세요.');
     expect(memberNameError('   ')).toBe('이름을 적어 주세요.');
   });
-  test('10자에 닿으면 한도를 알린다', () => {
+  test('10자까지 받고 11자부터 한도를 알린다', () => {
     expect(MEMBER_NAME_MAX).toBe(10);
     expect(memberNameError('은주')).toBeUndefined();
-    expect(memberNameError('가'.repeat(9))).toBeUndefined();
-    expect(memberNameError('가'.repeat(10))).toBe('10자까지 입력할 수 있어요.');
+    expect(memberNameError('가'.repeat(10))).toBeUndefined();
+    expect(memberNameError('가'.repeat(11))).toBe('10자까지 입력할 수 있어요.');
   });
   test('처음 연 빈 칸에는 문구가 없고, 건드린 뒤 비면 보인다', () => {
     expect(shownMemberNameError('', false)).toBeUndefined();

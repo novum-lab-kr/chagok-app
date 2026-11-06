@@ -7,7 +7,7 @@ import {touchSlop} from './touch';
 import {CompletionSticker,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,SCREEN_PADDING,StickMotion,StickerGrid,removeStickerAction,stickerCellSize,useContentWidth,useLayoutSize,useReducedMotion} from './components';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
 import {AppHeader,BoardProgressRow,BoardTypePicker,DeleteSection,EmptyState,EndDatePicker,GoalListHeader,GoalSummaryCard,OptionButtons,PeriodField,RetroScreen,ScreenHeader,ShortNotice,SlotCountPicker,StickerSummary,useScrollToCenter,useScrollLock,CenteringScrollView,type BoardKind,type GoalListTab} from './composition-controls';
-import {CalendarBoard,MonthNavigation,calendarDateKey} from './calendar';
+import {CalendarBoard,MonthNavigation,calendarDateKey,monthCells} from './calendar';
 import {GoalStickerCell} from './screen-compositions';
 import {getLanguage,t} from '../i18n';
 import {boardCellSize,boardColumns,pageFirst,weekWindow} from './board-shape';
@@ -227,7 +227,7 @@ export type CalendarBoardView={kind:'calendar';year:number;month:number;/** 방�
  * boardRows를 주면 칸을 그 줄 수만큼만 보이는 작은 판이 된다: 판 제목 대신 칸 위에 이름 줄(name)과 ‹ ›,
  * 적립판은 4칸(판 안 폭 330 이상이면 5칸), 달력판은 그 주 수만큼(지난주, 이번 주). 톱니는 머리말 오른쪽으로 옮긴다.
  */
-export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false,notice,title,readOnly=false,hideProgress=false,members,above,below,boardRows}:{/** 머리말 제목. 없으면 「내 목표」(완성하면 「완성한 판」) */title?:string;/** 보기만: 톱니를 숨긴다. 작은 판(boardRows)은 칸도 누를 수 없다(보여주기 받은 판) */readOnly?:boolean;/** 진행 막대 숨기기(함께하는 판은 비교로 읽히지 않게 막대를 두지 않는다) */hideProgress?:boolean;/** 판 패널 안, 칸 위. 한 판의 사람 줄(MemberBadgeRow) */members?:ReactNode;/** 판 패널 위(한 판에서 친구를 기다리는 안내) */above?:ReactNode;/** 판 패널 아래(친구 판 목록, 안내 글) */below?:ReactNode;/** 보이는 줄 수. 주면 작은 판이 되고 화면 전체가 스크롤한다(함께하는 판 2, 한 판 4) */boardRows?:number;/** 판 아래에 떠 있는 안내(완성 뒤 권하기, 2026-10-12) */notice?:ReactNode;/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:StickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
+export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,onSettings,completionTargetRef,animateCompletion=false,notice,title,readOnly=false,hideProgress=false,members,above,below,boardRows,calendarMonth=false}:{/** 작은 달력판을 주 단위 대신 그 달 전체로 그린다(한 판 달력판, 2026-11-06 사용자). 혼자 달력판처럼 달을 넘긴다 */calendarMonth?:boolean;/** 머리말 제목. 없으면 「내 목표」(완성하면 「완성한 판」) */title?:string;/** 보기만: 톱니를 숨긴다. 작은 판(boardRows)은 칸도 누를 수 없다(보여주기 받은 판) */readOnly?:boolean;/** 진행 막대 숨기기(함께하는 판은 비교로 읽히지 않게 막대를 두지 않는다) */hideProgress?:boolean;/** 판 패널 안, 칸 위. 한 판의 사람 줄(MemberBadgeRow) */members?:ReactNode;/** 판 패널 위(한 판에서 친구를 기다리는 안내) */above?:ReactNode;/** 판 패널 아래(친구 판 목록, 안내 글) */below?:ReactNode;/** 보이는 줄 수. 주면 작은 판이 되고 화면 전체가 스크롤한다(함께하는 판 2, 한 판 4) */boardRows?:number;/** 판 아래에 떠 있는 안내(완성 뒤 권하기, 2026-10-12) */notice?:ReactNode;/** 완성 순간: [완성] 스티커 붙이기 모션 (PRD 4.7) */animateCompletion?:boolean;name:string;/** 기본 스티커 */sticker:StickerId;completed:boolean;progress:{value:number;total:number;percentLabel:string};board:TallyBoardView|CalendarBoardView;onBack:()=>void;onSettings:()=>void;completionTargetRef?:React.Ref<View>}) {
   // 판은 칸 크기를 재고 다음 빈칸으로 스크롤한 뒤에 보인다. 재기 전 프레임은 픽셀 테두리가 빠져 있어,
   // 칸이 많은 판을 열 때 화면이 넘어오는 동안 그대로 보였다 (2026-09-30 실기기 녹화).
   const [ready,setReady]=useState(false);
@@ -263,7 +263,7 @@ export function BoardDetailScreen({name,sticker,completed,progress,board,onBack,
         ?<View style={{paddingTop:4,gap:8}}>
           {members}
           {board.kind==='calendar'
-            ?<CompactCalendar board={board} label={name} weeks={boardRows} readOnly={readOnly}/>
+            ?calendarMonth?<CompactMonth board={board} label={name} readOnly={readOnly}/>:<CompactCalendar board={board} label={name} weeks={boardRows} readOnly={readOnly}/>
             :<CompactTally board={board} sticker={sticker} label={name} rows={boardRows} readOnly={readOnly}/>}
         </View>
         :<>
@@ -589,6 +589,36 @@ function CompactCalendar({board,label,weeks,readOnly}:{board:CalendarBoardView;l
         {dates.slice(row*7,row*7+7).map(date=><WeekDay key={date} date={date} sticker={board.records[date]} second={board.records2?.[date]} placeable={board.placeable?.has(date)} recorded={board.recordedDates?.has(date)??false}
           selected={!readOnly&&date===board.selectedDate} enabled={!readOnly&&board.isDateEnabled(date)} popIn={date===board.justPlaced} width={day} height={52}
           onSelect={board.onSelect} onOpenRecord={readOnly?undefined:board.onOpenRecord}/>)}
+      </View>)}
+    </View>
+  </View>;
+}
+/**
+ * 작은 달력판을 그 달 전체로(한 판 달력판). 일요일부터, 1일 앞과 마지막 날 뒤는 빈 자리(혼자 달력판과 같다).
+ * ‹ ›와 밀기로 달을 넘기고, 넘길 수 있는지는 혼자 달력판과 같이 canGoPrev, canGoNext가 정한다. 날 칸은 작은 달력판과 같다(하루 두 장).
+ */
+function CompactMonth({board,label,readOnly}:{board:CalendarBoardView;label:string;readOnly:boolean}) {
+  const {year,month,canGoPrev,canGoNext,onMonthChange}=board;
+  const shift=(delta:number)=>{const d=new Date(year,month-1+delta,1);onMonthChange(d.getFullYear(),d.getMonth()+1);};
+  const prev=canGoPrev?()=>shift(-1):undefined;
+  const next=canGoNext?()=>shift(1):undefined;
+  const swipe=useSwipePages(prev,next);
+  const [measured,setMeasured]=useState<number|null>(null);
+  const day=compactDayWidth(useContentWidth(measured));
+  const rowStyle={flexDirection:'row' as const,gap:COMPACT_DAY_GAP,width:day*7+COMPACT_DAY_GAP*6,alignSelf:'center' as const};
+  const cells=monthCells(year,month);
+  return <View style={{gap:8}}>
+    <CompactBoardHeader label={label} range={t('date.yearMonth',year,month)} onPrev={prev} onNext={next} prevLabel={t('calendar.previousMonth')} nextLabel={t('calendar.nextMonth')}/>
+    <View {...swipe.panHandlers} onLayout={event=>setMeasured(event.nativeEvent.layout.width)} style={{gap:4}}>
+      <View style={rowStyle}>{[0,1,2,3,4,5,6].map(weekday=><PixelText key={weekday} variant="caption" style={[caption,{width:day,textAlign:'center'}]}>{t('date.weekdayShort',weekday)}</PixelText>)}</View>
+      {Array.from({length:cells.length/7},(_,row)=><View key={row} style={rowStyle}>
+        {cells.slice(row*7,row*7+7).map((n,i)=>{
+          if(n===null) return <View key={`blank-${i}`} testID="month-blank" style={{width:day,height:52}}/>;
+          const date=calendarDateKey(year,month,n);
+          return <WeekDay key={date} date={date} sticker={board.records[date]} second={board.records2?.[date]} placeable={board.placeable?.has(date)} recorded={board.recordedDates?.has(date)??false}
+            selected={!readOnly&&date===board.selectedDate} enabled={!readOnly&&board.isDateEnabled(date)} popIn={date===board.justPlaced} width={day} height={52}
+            onSelect={board.onSelect} onOpenRecord={readOnly?undefined:board.onOpenRecord}/>;
+        })}
       </View>)}
     </View>
   </View>;

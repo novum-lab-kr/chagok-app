@@ -2079,15 +2079,6 @@
       }
     },
     {
-      "id": "record-records-tab",
-      "source": "record",
-      "target": "records-tab",
-      "label": "저장 뒤 기록 탭 보기",
-      "data": {
-        "scenarios": []
-      }
-    },
-    {
       "id": "pack-subscription",
       "source": "pack",
       "target": "subscription",
