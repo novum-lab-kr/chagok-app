@@ -83,3 +83,10 @@
 ## 판 상세는 flex:1로 남은 높이를 잴 수 없다
 
 `RetroScreen scrollable={false}`의 본문 열은 `flexShrink:1`뿐이라 높이가 내용만큼이다. 그 안에 `flex:1` View를 두면 높이 0으로 접혀 판 전체가 사라진다(2026-11-03, 쪽 넘기기 첫 구현). 남은 높이는 화면 루트와 판을 `measureInWindow`로 재서 계산한다. jsdom 컴포넌트 테스트에는 레이아웃이 없어 이런 붕괴가 통과하니, 레이아웃을 바꾸면 시뮬레이터 첫 화면에서 `maestro hierarchy`로 칸 요소가 있는지 본다.
+
+## 앱에 새 권한(entitlement)을 넣으면 출시 빌드가 프로필에서 막힌다 (2026-11-06)
+
+`app.json`에 `ios.associatedDomains`(초대 링크)를 넣은 뒤 `eas build --non-interactive`가 「Provisioning profile ... doesn't include the Associated Domains capability」로 2분 만에 실패했다. EAS는 Apple 계정에 로그인한 대화형 빌드에서만 App ID 권한을 맞추고 프로필을 새로 만든다. 저장된 App Store Connect API 키(제출용)로는 하지 않는다.
+
+- 새 권한을 더한 첫 출시 빌드는 사용자가 터미널에서 `npx eas-cli build -p ios --profile production --auto-submit`을 대화형으로 돌리고 Apple ID로 로그인한다.
+- 그 뒤 빌드는 다시 `--non-interactive`로 돌려도 된다.

@@ -51,11 +51,11 @@
 
 | 순서 | 어디 | 할 일 | 누가 | 지금 상태 |
 | --- | --- | --- | --- | --- |
-| 0 | App Store Connect | 1.0 설치 수 확인(위 「1.0 기기 DB 관문」) | 사용자 | 확인 전. 운영 서버 사용자는 0명(2026-11-05) |
+| 0 | App Store Connect | 1.0 설치 수 확인(위 「1.0 기기 DB 관문」) | 사용자 | 설치는 사용자와 가족 2명. 1.0 기기 기록이 지워지는 것을 받아들이고 그대로 낸다(2026-11-06 사용자 결정) |
 | 1 | chagok-app | 통합 시험을 통과한 뒤 `release/1.1.0`을 main으로(PR #30) | 에이전트, 사용자 승인 | 실기기 확인 전 |
 | 1 | novum-web | 약관과 처리방침 2판 머지(PR #64). 머지하면 운영에 바로 반영된다. #63은 닫는다 | 에이전트, 사용자 승인 | 함께 목표 문안 결정 대기 |
-| 1 | PostHog와 Sentry | EAS `production` 변수 넣기 | 사용자 | 프로젝트와 IP 설정 끝, EAS 변수는 아직 |
-| 2 | 운영 DB | 남은 마이그레이션 `20261105000006_together_fixes`, `20261105000007_sticker_period`, `20261106000001_invite_guessing`, `20261106000002_invite_code_length`, `20261106000003_invite_guessing_fixes`, `20261106000004_preview_member`(초대 코드 12자리, 미리보기 횟수 제한, 이미 든 사람 미리보기, 브랜치 `fix/invite-hardening`)와 바뀐 서버 함수 반영, 금칙어 표(`banned_words`) 채우기. 반영 뒤 운영 주소로 없는 코드를 넣어 `private.invite_preview_misses`에 실제 접속 주소가 남는지 본다 | 에이전트, 사용자 승인 | 1~5번만 반영됨, 금칙어 0개(2026-11-05 조회) |
+| 1 | PostHog와 Sentry | EAS `production` 변수 넣기 | 사용자 | 끝. EAS `production`에 PostHog, Sentry 변수가 들어 있다(2026-11-06 `eas env:list` 확인) |
+| 2 | 운영 DB | 남은 마이그레이션 `20261105000006_together_fixes`, `20261105000007_sticker_period`, `20261106000001_invite_guessing`, `20261106000002_invite_code_length`, `20261106000003_invite_guessing_fixes`, `20261106000004_preview_member`(초대 코드 12자리, 미리보기 횟수 제한, 이미 든 사람 미리보기, 브랜치 `fix/invite-hardening`)와 바뀐 서버 함수 반영, 금칙어 표(`banned_words`) 채우기. 반영 뒤 운영 주소로 없는 코드를 넣어 `private.invite_preview_misses`에 실제 접속 주소가 남는지 본다 | 에이전트, 사용자 승인 | **끝(2026-11-06).** `20261105000006`~`20261106000005` 7개 반영(백업 `~/backup/manual/prod-20261106-before-20261105000006.dump`), 함수 `purge-photos`, `report-notify` 더함(6개 모두 토큰 없이 401), 금칙어 38개, 없는 코드 미리보기에 실제 접속 주소가 남는 것 확인 |
 | 3 | chagok-app | production 빌드, TestFlight 최종 확인, 제출 | 사용자, 에이전트 | 시작 전 |
 | 4 | 승인 직후 | 앱 출시, `v1.1.0` 태그, 운영 로그와 Sentry 확인 | 사용자, 에이전트 | 시작 전 |
 
@@ -70,7 +70,7 @@
 - **연령 등급과 개인정보 라벨:** 함께 목표 기준 답안을 [스토어 개인정보 신고 초안](release-store-privacy-draft.md) 2절과 4절에 썼다(2026-11-06, 사용자 확인 전). App Store 「User-Generated Content」는 예.
 - **심사 메모와 스토어 설명:** [App Store 제출 문안 초안](release-app-store-submission.md)을 1.1.0 기준으로 다시 썼다(2026-11-06, 버튼 이름은 영어와 한국어). 함께 목표 부분은 결정 뒤 넣거나 지운다.
 - **앱 문구:** 구독 철회 불가 고지에 「목표를 더 만들면」 조건, 계정 삭제 화면에 「계정을 지워도 구독은 해지되지 않아요」를 더했다(2026-11-06, `fix/pre-submit`). 계정 삭제 화면은 작은 화면에서 안내만 스크롤한다.
-- **Google 로그인 동의 화면 게시:** 「테스트 중」이면 심사자가 Google 로그인을 못 한다([출시 전 최종 점검](RELEASE-CHECKLIST.md) 5절).
+- **Google 로그인 동의 화면 게시:** 끝. 「프로덕션 단계」(2026-11-06 Cloud 콘솔 확인).
 
 ### 스토어 상품과 결제 (제출 전, 2026-11-04 정리)
 
