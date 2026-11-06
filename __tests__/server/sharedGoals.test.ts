@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { deleteAccountOnServer } from '../../src/sync/account';
 import { goal, V1Server } from './v1';
 import { adminClient, anonClient, describeIfServer, newUser } from './support';
@@ -83,6 +83,56 @@ describeIfServer('함께 목표 (서버 2판)', () => {
     expect(await call(anonClient(), 'preview_invite', { p_code: 'ZZZZZZZZ' })).toEqual({ status: 'closed' });
     expect(await outcome(join({ client: anonClient(), userId: '' }, invite_code, '지우', 'basic.star'))).not.toBe('ok');
   });
+
+  // 초대 코드 맞히기 막기 (20261106000001_invite_guessing.sql)
+  it('새 초대 코드는 헷갈리는 글자 없이 12자리다', async () => {
+    const a = await newUser();
+    const { goal_id, invite_code } = await createGoal(a, 'each');
+    expect(invite_code).toMatch(/^[A-HJ-NP-Z2-9]{12}$/);
+    const { invite_code: fresh } = await call<{ invite_code: string }>(a.client, 'rotate_invite', { p_goal_id: goal_id });
+    expect(fresh).toMatch(/^[A-HJ-NP-Z2-9]{12}$/);
+  });
+
+  it('이미 든 사람이 미리보기를 다시 보면 member와 goal_id가 오고, 쓰는 스티커에서 내 것은 빠진다', async () => {
+    const a = await newUser(); const b = await newUser();
+    const { goal_id, invite_code } = await createGoal(a, 'one', 'basic.clover');
+    expect((await call<{ taken_stickers: string[]; member?: boolean }>(b.client, 'preview_invite', { p_code: invite_code })))
+      .toMatchObject({ status: 'open', taken_stickers: ['basic.clover'] });
+    await join(b, invite_code, '지우', 'basic.star');
+    const again = await call<Record<string, unknown>>(b.client, 'preview_invite', { p_code: invite_code });
+    expect(again).toMatchObject({ status: 'open', member: true, goal_id, taken_stickers: ['basic.clover'] });
+    // 로그인하지 않은 사람에게는 member와 goal_id가 없다
+    const anon = await call<Record<string, unknown>>(anonClient(), 'preview_invite', { p_code: invite_code });
+    expect(anon.member).toBeUndefined();
+    expect(anon.goal_id).toBeUndefined();
+    expect(anon.taken_stickers).toEqual(['basic.clover', 'basic.star']);
+  });
+
+  it('한 곳에서 없는 코드를 30번 넣으면 그 뒤로는 맞는 코드도 rate_limited, 다른 곳은 그대로', async () => {
+    // 개발 서버(Supabase 클라우드)는 X-Forwarded-For 첫 값을 그대로 넘겨서 시험마다 다른 주소로 센다.
+    // 운영 서버는 Caddy가 이 머리글을 실제 접속 주소로 덮어쓴다.
+    const from = (ip: string) => createClient(process.env.SUPABASE_TEST_URL!, process.env.SUPABASE_TEST_ANON_KEY!, {
+      auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { 'x-forwarded-for': ip } },
+    });
+    const n = Math.floor(Math.random() * 250) + 1;
+    const guesser = from(`198.51.100.${n}, 10.0.0.1`);
+    const other = from(`192.0.2.${n}`);
+    const a = await newUser();
+    const { invite_code } = await createGoal(a, 'each');
+    expect((await call<{ status: string }>(guesser, 'preview_invite', { p_code: invite_code })).status).toBe('open');
+    for (let i = 0; i < 30; i++) {
+      expect(await call(guesser, 'preview_invite', { p_code: `MISS${String(i).padStart(8, '2')}` })).toEqual({ status: 'closed' });
+    }
+    expect(await call(guesser, 'preview_invite', { p_code: 'MISS99999999' })).toEqual({ status: 'rate_limited' });
+    expect(await call(guesser, 'preview_invite', { p_code: invite_code })).toEqual({ status: 'rate_limited' });
+    expect((await call<{ status: string }>(other, 'preview_invite', { p_code: invite_code })).status).toBe('open');
+    // IPv6는 /64로 묶어 센다: 같은 /64 안에서 주소를 바꿔도 같은 곳이다
+    const net = `2001:db8:${n.toString(16)}:1`;
+    for (let i = 0; i < 30; i++) {
+      expect(await call(from(`${net}::${(i + 1).toString(16)}`), 'preview_invite', { p_code: `MISS${String(i).padStart(8, '3')}` })).toEqual({ status: 'closed' });
+    }
+    expect(await call(from(`${net}::ffff`), 'preview_invite', { p_code: invite_code })).toEqual({ status: 'rate_limited' });
+  }, 60000);
 
   it('같은 목표에서 쓰는 스티커는 고를 수 없다 (sticker_taken)', async () => {
     const a = await newUser(); const b = await newUser();

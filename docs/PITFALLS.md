@@ -21,6 +21,8 @@
 - RN Web의 `AccessibilityInfo.addEventListener`는 구독 객체를 돌려주지 않는다. 정리할 때 `?.remove?.()`로 부른다.
 - 복원 뒤 아직 받지 못한 사진(기기 경로 없음, 서버 경로만 있음)에 photo 항목이 생기면 서버의 하나뿐인 사본이 지워진다. 지금은 그런 경로가 없다. 사진 지우기·바꾸기를 "사진 유실" 화면에 붙일 때 `src/sync/push.ts`의 `pushPhoto` 주석을 다시 본다.
 - **iOS는 떠 있는 Modal 옆에 둔 Modal을 띄우지 못한다(2026-10-21).** 조용히 아무것도 안 뜬다. 시트(`PixelBottomSheet`) 위에 다이얼로그를 띄우려면 `overlay`로 시트 Modal 안에 그린다. 닫히는 중인 창 위에 띄우는 것도 같은 이유로 실패한다(`useDialog`).
+- **마이그레이션 끝의 `revoke execute on all functions in schema private`는 정책이 쓰는 함수 권한까지 거둬 간다**(2026-11-06). `goals`, `invites` 정책이 `private.can_see_goal`, `private.is_owner`를 부르므로 이 줄 바로 뒤에 `grant execute on function private.can_see_goal(uuid), private.is_owner(uuid) to authenticated;`를 늘 붙인다. 빠뜨리면 로그인 사용자가 목표를 읽을 때 permission denied가 난다(`20261106000003`에서 고침).
+- **IP로 세는 서버 제한은 앞단 구성에 기댄다**(2026-11-06). 운영 API는 CDN 없이 Caddy가 맨 앞이라 `X-Forwarded-For` 첫 값이 실제 접속 주소다. CDN 프록시를 켜거나 웹 서버가 대신 부르게 바꾸면 모두가 몇 개 주소로 묶여 초대 미리보기 제한이 모두를 막는다. 개발 서버(Supabase 클라우드)는 이 머리글을 꾸밀 수 있다.
 
 ## 의존성과 빌드
 
