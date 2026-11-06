@@ -25,6 +25,8 @@ export type ActionDeps = {
   client: SharedClient; userId: string; sync: PushDeps; currentUserId: () => Promise<string | null>;
   /** 서버가 지운 기록의 사진 파일을 저장소에서 지우게 한다(Edge Function purge-photos). 없으면 부르지 않는다 */
   purgePhotos?: () => Promise<unknown>;
+  /** 아직 알리지 않은 신고를 운영자 메일로 보내게 한다(Edge Function report-notify). 없으면 부르지 않는다 */
+  notifyReports?: () => Promise<unknown>;
 };
 
 /** 로그인한 사용자 id. 서버 설정이 없거나 세션이 없으면 null이다(화면이 로그인을 권한다). */
@@ -47,6 +49,7 @@ export async function actionDeps(): Promise<ActionDeps | null> {
     currentUserId,
     sync: { ...(await syncDepsFor(supabase, userId)), userId, currentUserId },
     purgePhotos: () => supabase.functions.invoke('purge-photos'),
+    notifyReports: () => supabase.functions.invoke('report-notify'),
   };
 }
 
@@ -193,6 +196,8 @@ export async function blockedPeople(d: ActionDeps): Promise<{ userId: string; di
 /** 불쾌한 이름 신고. 대상이 null이면 목표 이름이다. 신고는 기기에 남기지 않는다. */
 export async function reportName(d: ActionDeps, goalId: string, targetUserId: string | null): Promise<void> {
   await onGoal(d, goalId, () => reportGoal(d.client, goalId, targetUserId, 'name'));
+  // 운영자에게 알림 메일. 기다리지 않고, 실패하면 알리지 않은 신고로 남아 다음 신고 때 함께 간다(20261106000005)
+  d.notifyReports?.().catch(() => {});
 }
 
 /** 초대 링크를 OS 공유 창으로 보낸다. 쓰는 코드가 없으면 false. 코드는 기기에 두지 않고 그때그때 읽는다. */
