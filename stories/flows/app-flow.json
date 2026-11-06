@@ -2278,6 +2278,17 @@
       }
     },
     {
+      "id": "invite-join-invite-problem",
+      "source": "invite-join",
+      "target": "invite-problem",
+      "label": "그사이 자리가 찼거나 링크가 바뀌었을 때",
+      "data": {
+        "scenarios": [
+          "together"
+        ]
+      }
+    },
+    {
       "id": "invite-join-together-board",
       "source": "invite-join",
       "target": "together-board",

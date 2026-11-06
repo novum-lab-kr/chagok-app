@@ -4,7 +4,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { track } from '../../src/analytics';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import {
-  AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
+  AccountLoginScreen, AppleLoginButton, InviteLoginPrompt, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
@@ -41,8 +41,13 @@ import { t } from '../../src/i18n';
 const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
 const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD;
 
-/** together: 목표 탭 + 시트 [친구와 함께]에서 왔다. 연결이 끝나면 친구와 함께 만들기로 간다(PRD 4.15) */
-type From = 'start' | 'settings' | 'relogin' | 'together';
+/**
+ * together: 목표 탭 + 시트 [친구와 함께]에서 왔다. 연결이 끝나면 친구와 함께 만들기로 간다(PRD 4.15).
+ * invite: 초대 링크 화면(app/invite/[code].tsx)이 로그인 전에 이 화면을 안에 그린다. 로그인 자리가 「초대 링크 로그인 전」 모양이고, 끝나면 onDone으로 초대 화면에 돌려준다.
+ */
+type From = 'start' | 'settings' | 'relogin' | 'together' | 'invite';
+/** from이 invite일 때 로그인 화면에 보이는 초대 (초대 미리보기 값) */
+type InviteInfo = { ownerName: string; goalName: string };
 type Step =
   | { kind: 'login' }
   | { kind: 'restoring' }
@@ -74,17 +79,19 @@ function toCard(s: RecordSummary): RecordSnapshot {
  * 연결이 끝날 때까지 자동 전송을 잠근다 — 복원 충돌을 고르기 전에 기기 기록이 올라가지 않게.
  */
 export default function ConnectAccountRoute() {
-  const { from = 'settings' } = useLocalSearchParams<{ from?: From }>();
+  const { from: raw } = useLocalSearchParams<{ from?: string }>();
+  // start와 invite는 화면 안에서 그릴 때만 쓴다(onDone이 있어야 끝난 뒤 돌아갈 곳이 있다). 링크로 들어온 값은 거른다
+  const from: From = raw === 'relogin' || raw === 'together' ? raw : 'settings';
   return <ConnectAccount from={from} />;
 }
 
 /** 첫 실행 시작 화면(홈)은 이 화면을 그대로 띄운다 — from 'start'면 끝날 때 onDone, [로그인 없이 시작하기]는 onLocal. */
-export function ConnectAccount(props: { from: From; onDone?: (restored: boolean) => void; onLocal?: () => void }) {
+export function ConnectAccount(props: { from: From; onDone?: (restored: boolean) => void; onLocal?: () => void; invite?: InviteInfo }) {
   const supabase = getSupabase();
   return supabase ? <Connect supabase={supabase} {...props} /> : null;
 }
 
-function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient; from: From; onDone?: (restored: boolean) => void; onLocal?: () => void }) {
+function Connect({ supabase, from, onDone, onLocal, invite }: { supabase: SupabaseClient; from: From; onDone?: (restored: boolean) => void; onLocal?: () => void; invite?: InviteInfo }) {
   const navigation = useNavigation();
   const { ask, dialog } = useDialog();
   const [age, setAge] = useState(false);
@@ -151,10 +158,16 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
       await setFlag('startDone', true);
       if (restored) await setFlag('tutorialDone', true);
     }
+    // 앱을 처음 깔고 초대 링크로 바로 로그인했다. 시작 화면(로그인할지 고르기)은 이미 지난 것으로 둔다
+    if (from === 'invite') {
+      await setFlag('startDone', true);
+      // 복원했으면 이미 쓰던 사람이라 첫 튜토리얼을 다시 보이지 않는다(시작 화면과 같음)
+      if (restored) await setFlag('tutorialDone', true);
+    }
     settled.current = true;
     await endConnect();
     resumeSync();
-    if (from === 'start') onDone?.(restored);
+    if (from === 'start' || from === 'invite') onDone?.(restored);
     else if (from === 'together') router.replace('/goal/together');
     else goBackOrHome();
   };
@@ -369,32 +382,39 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     );
   }
 
-  return (
-    <>
-      <AccountLoginScreen
+  // 로그인 버튼은 계정 연결과 초대가 같은 것을 쓴다
+  const loginButtons = <>
+    {/* 순서 카카오 → Google → Apple(Apple은 덜 쓰여 맨 아래), 글자는 셋 다 「계속하기」 (2026-10-22 사용자 결정) */}
+    <KakaoLoginButton onPress={() => void connect('kakao')} />
+    <GoogleLoginButton onPress={() => void connect('google')} />
+    {/* Apple: 로고 파일이 있으면 HIG대로 직접 만든 버튼(로고를 다른 버튼과 맞춤), 없으면 기본 버튼. 기본 버튼은 밝은 바탕이라 흰 바탕 테두리, 모서리 12 (HIG, 2026-10-21 시안 2안). */}
+    {appleReady && hasCustomAppleButton && <AppleLoginButton onPress={() => void connect('apple')} />}
+    {appleReady && !hasCustomAppleButton && (
+      <AppleAuthentication.AppleAuthenticationButton
+        buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+        buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
+        cornerRadius={12}
+        style={{ width: '100%', height: LOGIN_BUTTON_HEIGHT }}
+        onPress={() => void connect('apple')}
+      />
+    )}
+    {__DEV__ && DEV_EMAIL && DEV_PASSWORD
+      ? <PixelButton label="개발 계정으로 계속" loading={busy && !consent} onPress={() => void connect('dev')} />
+      : null}
+  </>;
+  const loginScreen = from === 'invite' && invite
+    ? <InviteLoginPrompt ownerName={invite.ownerName} goalName={invite.goalName} loginButtons={loginButtons}
+        onBack={() => { if (!busy) goBackOrHome(); }} />
+    : <AccountLoginScreen
         onBack={from === 'start' ? undefined : () => { if (!busy) goBackOrHome(); }}
         onLocal={from === 'start' ? onLocal : undefined}
         busy={busy}
-        loginButtons={<>
-          {/* 순서 카카오 → Google → Apple(Apple은 덜 쓰여 맨 아래), 글자는 셋 다 「계속하기」 (2026-10-22 사용자 결정) */}
-          <KakaoLoginButton onPress={() => void connect('kakao')} />
-          <GoogleLoginButton onPress={() => void connect('google')} />
-          {/* Apple: 로고 파일이 있으면 HIG대로 직접 만든 버튼(로고를 다른 버튼과 맞춤), 없으면 기본 버튼. 기본 버튼은 밝은 바탕이라 흰 바탕 테두리, 모서리 12 (HIG, 2026-10-21 시안 2안). */}
-          {appleReady && hasCustomAppleButton && <AppleLoginButton onPress={() => void connect('apple')} />}
-          {appleReady && !hasCustomAppleButton && (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
-              cornerRadius={12}
-              style={{ width: '100%', height: LOGIN_BUTTON_HEIGHT }}
-              onPress={() => void connect('apple')}
-            />
-          )}
-          {__DEV__ && DEV_EMAIL && DEV_PASSWORD
-            ? <PixelButton label="개발 계정으로 계속" loading={busy && !consent} onPress={() => void connect('dev')} />
-            : null}
-        </>}
-      />
+        loginButtons={loginButtons}
+      />;
+
+  return (
+    <>
+      {loginScreen}
       <ConsentSheet
         visible={consent !== null}
         ageChecked={age}

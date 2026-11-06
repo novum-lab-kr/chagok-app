@@ -8,6 +8,8 @@ import { createClient } from '@supabase/supabase-js';
 const HELP = `사용: node scripts/dev-friend.mjs <명령> [인자]   (npm run server:dev-friend -- <명령>)
 
   setup                                  dev2 계정이 없으면 만든다(service 키 사용, 이 명령에서만)
+  create <목표 이름> [each|one] [내 이름] [스티커]
+                                         create_shared_goal(적립판 10칸). goalId와 초대 코드, 링크를 낸다. 앱의 초대 받기를 확인할 때
   join <코드> <이름> <스티커>             join_goal. 실패하면 {"error": 낱말}
   place <goalId> <칸 번호|YYYY-MM-DD> [스티커]
                                          sync_push로 스티커 한 장. 칸 번호는 화면 번호(1부터), 날짜면 달력판(그 날짜 칸).
@@ -107,6 +109,17 @@ switch (cmd) {
   case 'whoami':
     out({ userId: me, email });
     break;
+  case 'create': {
+    need(1);
+    const [name, mode = 'each', displayName = '지우', stickerId = 'basic.flower'] = args;
+    const r = await rpc('create_shared_goal', {
+      p_mode: mode, p_name: name, p_board_type: 'tally', p_total_slots: 10, p_end_date: null,
+      p_display_name: displayName, p_sticker_id: stickerId, p_goal_id: randomUUID(),
+    });
+    if (r.error) fail(`create_shared_goal 실패: ${r.error}`);
+    out({ goalId: r.data.goal_id, inviteCode: r.data.invite_code, url: `https://chagok.novum-lab.com/invite/${r.data.invite_code}`, devLink: `chagok-dev://invite/${r.data.invite_code}` });
+    break;
+  }
   case 'join': {
     need(3);
     const r = await rpc('join_goal', { p_code: args[0], p_display_name: args[1], p_sticker_id: args[2] });

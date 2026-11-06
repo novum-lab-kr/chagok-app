@@ -8,7 +8,7 @@ import { AccountChanged, refetchGoal } from '../sync/pull';
 import { pushOnce } from '../sync/push';
 import type { PushDeps } from '../sync/push';
 import {
-  blockUser, createSharedGoal, inviteUrl, kickMember, leaveSharedGoal, myBlocks, readInviteCode, reportGoal, rotateInvite,
+  blockUser, createSharedGoal, inviteUrl, joinGoal, kickMember, leaveSharedGoal, myBlocks, readInviteCode, reportGoal, rotateInvite,
   SharedGoalError, unblockUser, updateMember, updateSharedGoal,
   type ErrorWord, type SharedClient,
 } from '../sync/sharedGoals';
@@ -99,6 +99,19 @@ export async function createAndFetch(
 ): Promise<{ goalId: string; inviteUrl: string; onDevice: boolean }> {
   const { goalId, inviteCode } = await createSharedGoal(d.client, input);
   return { goalId, inviteUrl: inviteUrl(inviteCode), onDevice: await tryRefetch(d, goalId) };
+}
+
+/** 초대로 들어간다(이미 멤버면 그대로). onDevice가 false면 기기에는 다음 회차가 내 멤버 행을 보고 받아 온다. */
+export async function joinAndFetch(
+  d: ActionDeps, code: string, displayName: string, stickerId: string,
+): Promise<{ goalId: string; onDevice: boolean }> {
+  const { goalId } = await joinGoal(d.client, code, displayName, stickerId);
+  return { goalId, onDevice: await tryRefetch(d, goalId) };
+}
+
+/** 이미 든 목표를 서버 것으로 다시 받는다(초대 링크를 다시 열었을 때). false면 다음 동기화 회차에 맡긴다. */
+export async function fetchJoined(d: ActionDeps, goalId: string): Promise<boolean> {
+  return tryRefetch(d, goalId);
 }
 
 /** 내 이름과 스티커를 바꾼다. */

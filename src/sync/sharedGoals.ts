@@ -68,6 +68,54 @@ async function call<T>(c: RpcClient, fn: string, args: Record<string, unknown>):
   return result.data as T;
 }
 
+/** 초대 코드 모양: 헷갈리는 글자(I, O, 0, 1)를 뺀 8자리(2026-11-06 전) 또는 12자리. 서버 invites.code 검사와 같다 */
+const INVITE_CODE = /^[A-HJ-NP-Z2-9]{8}(?:[A-HJ-NP-Z2-9]{4})?$/;
+/** 초대 경로(/invite/<코드>)의 코드. 모양이 맞지 않으면 null(들어갈 수 없는 초대로 보인다) */
+export function inviteCodeFromPath(raw: string | string[] | undefined): string | null {
+  const value = (Array.isArray(raw) ? raw[0] : raw)?.trim().toUpperCase() ?? '';
+  return INVITE_CODE.test(value) ? value : null;
+}
+const normalizeCode = (code: string) => code.trim().toUpperCase();
+
+export type InvitePreview =
+  | { status: 'closed' | 'full' | 'rate_limited' }
+  | {
+      status: 'open'; goalName: string; mode: 'each' | 'one'; boardType: 'tally' | 'calendar'; totalSlots: number | null;
+      endDate: string | null; ownerName: string | null; memberCount: number; maxMembers: number; takenStickers: string[];
+      /** 로그인한 내가 이미 이 목표에 들었으면 그 목표 id(20261106000004). 쓰는 스티커에는 내 것이 빠져 있다 */
+      memberGoalId: string | null;
+    };
+
+/**
+ * 초대 미리보기(로그인 없이 부를 수 있다). closed: 없는 코드, 끈 코드, 지운 목표. rate_limited: 한 곳에서 없는 코드를
+ * 너무 많이 넣었다(20261106000001). 모르는 상태는 closed로 본다.
+ */
+export async function previewInvite(c: RpcClient, code: string): Promise<InvitePreview> {
+  type Raw = {
+    status: string; goal?: { name: string; mode: 'each' | 'one'; board_type: 'tally' | 'calendar'; total_slots: number | null; end_date: string | null };
+    owner_name?: string | null; member_count?: number; max_members?: number; taken_stickers?: string[];
+    member?: boolean; goal_id?: string;
+  };
+  const r = await call<Raw>(c, 'preview_invite', { p_code: normalizeCode(code) });
+  if (r.status === 'open' && r.goal) {
+    return {
+      status: 'open', goalName: r.goal.name, mode: r.goal.mode, boardType: r.goal.board_type, totalSlots: r.goal.total_slots,
+      endDate: r.goal.end_date, ownerName: r.owner_name ?? null, memberCount: r.member_count ?? 0, maxMembers: r.max_members ?? 0,
+      takenStickers: r.taken_stickers ?? [], memberGoalId: r.member && r.goal_id ? r.goal_id : null,
+    };
+  }
+  return { status: r.status === 'full' || r.status === 'rate_limited' ? r.status : 'closed' };
+}
+
+/** 초대로 들어간다. 이미 멤버면 그대로 성공. 서버는 실패를 오류가 아니라 값 {error}로 돌려준다(시도 기록을 남겨야 해서). */
+export async function joinGoal(c: RpcClient, code: string, displayName: string, stickerId: string): Promise<{ goalId: string }> {
+  const r = await call<{ goal_id?: string; error?: string }>(c, 'join_goal', {
+    p_code: normalizeCode(code), p_display_name: displayName, p_sticker_id: stickerId,
+  });
+  if (r.goal_id) return { goalId: r.goal_id };
+  throw new SharedGoalError(SERVER_WORDS.includes(r.error as ErrorWord) ? r.error as ErrorWord : 'network');
+}
+
 export async function createSharedGoal(
   c: SharedClient,
   input: {

@@ -10,6 +10,12 @@ describe('scrubUrl', () => {
     expect(scrubUrl('https://api.example.com?token=abc')).toBe('https://api.example.com');
   });
 
+  it('초대 코드는 남기지 않는다(웹 주소와 앱 주소)', () => {
+    expect(scrubUrl('https://chagok.novum-lab.com/invite/ABCD2345EFGH')).toBe('https://chagok.novum-lab.com/invite');
+    expect(scrubUrl('chagok://invite/ABCD2345EFGH')).toBe('chagok://invite');
+    expect(scrubUrl('chagok-dev://invite/ABCD2345?x=1')).toBe('chagok-dev://invite');
+  });
+
   it('주소가 아니면 아무것도 남기지 않는다', () => {
     expect(scrubUrl('/local/path/photo.jpg')).toBe('');
   });

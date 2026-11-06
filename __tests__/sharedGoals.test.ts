@@ -1,5 +1,5 @@
 import {
-  blockUser, createSharedGoal, errorMessage, errorWordOf, inviteUrl, kickMember, leaveSharedGoal, myBlocks, readInviteCode,
+  blockUser, createSharedGoal, errorMessage, errorWordOf, inviteCodeFromPath, inviteUrl, joinGoal, kickMember, previewInvite, leaveSharedGoal, myBlocks, readInviteCode,
   readMemberDefaults, reportGoal, rotateInvite, SharedGoalError, unblockUser, updateMember, updateSharedGoal,
 } from '../src/sync/sharedGoals';
 import type { SharedClient } from '../src/sync/sharedGoals';
@@ -19,6 +19,45 @@ function fake(reply: Reply = { data: null }) {
 }
 
 describe('함께 목표 RPC', () => {
+  it('preview_invite: 열 수 있으면 목표와 사람을 camelCase로, 아니면 상태만', async () => {
+    const open = fake({ data: {
+      status: 'open', goal: { name: '아침 산책', mode: 'one', board_type: 'tally', total_slots: 30, end_date: null },
+      owner_name: '지민', member_count: 3, max_members: 6, taken_stickers: ['basic.cat', 'basic.star'],
+    } });
+    expect(await previewInvite(open.client, 'abcd2345efgh')).toEqual({
+      status: 'open', goalName: '아침 산책', mode: 'one', boardType: 'tally', totalSlots: 30, endDate: null,
+      ownerName: '지민', memberCount: 3, maxMembers: 6, takenStickers: ['basic.cat', 'basic.star'], memberGoalId: null,
+    });
+    const mine = fake({ data: { status: 'open', goal: { name: 'a', mode: 'each', board_type: 'tally', total_slots: 3, end_date: null }, member: true, goal_id: 'g9' } });
+    expect(await previewInvite(mine.client, 'X')).toMatchObject({ status: 'open', memberGoalId: 'g9' });
+    expect(open.calls).toEqual([['preview_invite', { p_code: 'ABCD2345EFGH' }]]);
+    expect(await previewInvite(fake({ data: { status: 'closed' } }).client, 'X')).toEqual({ status: 'closed' });
+    expect(await previewInvite(fake({ data: { status: 'full' } }).client, 'X')).toEqual({ status: 'full' });
+    expect(await previewInvite(fake({ data: { status: 'rate_limited' } }).client, 'X')).toEqual({ status: 'rate_limited' });
+    // 모르는 상태는 들어갈 수 없는 초대로 본다
+    expect(await previewInvite(fake({ data: { status: 'weird' } }).client, 'X')).toEqual({ status: 'closed' });
+  });
+
+  it('join_goal: 실패는 값 {error}로 와서 SharedGoalError로 던진다', async () => {
+    const ok = fake({ data: { goal_id: 'g1' } });
+    expect(await joinGoal(ok.client, ' abcd2345efgh ', '소라', 'basic.cat')).toEqual({ goalId: 'g1' });
+    expect(ok.calls).toEqual([['join_goal', { p_code: 'ABCD2345EFGH', p_display_name: '소라', p_sticker_id: 'basic.cat' }]]);
+    for (const word of ['closed', 'full', 'rate_limited', 'sticker_taken', 'name_not_allowed', 'invalid_name', 'invalid_sticker'] as const) {
+      await expect(joinGoal(fake({ data: { error: word } }).client, 'X', '소라', 'basic.cat')).rejects.toEqual(new SharedGoalError(word));
+    }
+    await expect(joinGoal(fake({ data: { error: 'something_new' } }).client, 'X', '소라', 'basic.cat')).rejects.toEqual(new SharedGoalError('network'));
+  });
+
+  it('초대 주소 경로에서 코드를 꺼낸다(8자리와 12자리, 헷갈리는 글자 없음)', () => {
+    expect(inviteCodeFromPath('ABCD2345EFGH')).toBe('ABCD2345EFGH');
+    expect(inviteCodeFromPath('abcd2345')).toBe('ABCD2345');
+    expect(inviteCodeFromPath(' K7Q2MXAB ')).toBe('K7Q2MXAB');
+    expect(inviteCodeFromPath('ABCD2345E')).toBeNull();
+    expect(inviteCodeFromPath('ABCDO0I1')).toBeNull();
+    expect(inviteCodeFromPath(undefined)).toBeNull();
+    expect(inviteCodeFromPath(['ABCD2345'])).toBe('ABCD2345');
+  });
+
   it('create_shared_goal: 인자 이름은 서버 그대로, 돌려받은 키는 camelCase', async () => {
     const { client, calls } = fake({ data: { goal_id: 'g1', invite_code: 'K7Q2MXAB' } });
     const result = await createSharedGoal(client, {

@@ -10,7 +10,7 @@ import { subscribeResume } from '../src/sync/syncGate';
 import type { SharedClient } from '../src/sync/sharedGoals';
 import { getSupabase } from '../src/sync/supabaseClient';
 import {
-  actionDeps, block, blockedPeople, createAndFetch, kick, leave, removeAsOwner, reportName, saveGoal, shareInvite, unblock,
+  actionDeps, block, blockedPeople, createAndFetch, joinAndFetch, kick, leave, removeAsOwner, reportName, saveGoal, shareInvite, unblock,
 } from '../src/app-data/sharedGoalActions';
 import type { ActionDeps } from '../src/app-data/sharedGoalActions';
 import { FakePhotos, FakeServer } from './support/fakeServer';
@@ -42,6 +42,7 @@ function rpcOf(server: FakeServer, log: string[], args: Record<string, Record<st
       const r = server.createSharedGoal({ mode: a.p_mode as 'each' | 'one', name: a.p_name, displayName: a.p_display_name, stickerId: a.p_sticker_id });
       return { goal_id: r.goalId, invite_code: r.inviteCode };
     },
+    join_goal: (a) => server.join(a.p_code, a.p_display_name, a.p_sticker_id),
   };
   return {
     rpc: async (fn: string, a?: Record<string, unknown>) => {
@@ -364,5 +365,31 @@ describe('reportName, blockedPeople', () => {
   it('차단한 사람은 서버 목록 그대로(이름만)', async () => {
     const { d } = setup();
     expect(await blockedPeople(d)).toEqual([{ userId: FRIEND, displayName: '지우', createdAt: 1 }]);
+  });
+});
+
+describe('joinAndFetch', () => {
+  it('들어간 뒤 다시 받아 기기에 그 목표와 내 멤버 행이 있다', async () => {
+    const { server, d } = setup();
+    const { goalId, inviteCode } = server.as(FRIEND).createSharedGoal({ mode: 'one', displayName: '은주', stickerId: 'basic.clover' });
+    const r = await joinAndFetch(d, inviteCode.toLowerCase(), '지우', 'basic.star');
+    expect(r).toEqual({ goalId, onDevice: true });
+    expect(await getGoal(goalId)).toMatchObject({ mode: 'one' });
+    expect((await listMembers(goalId)).map((m) => m.displayName).sort()).toEqual(['은주', '지우']);
+  });
+
+  it('이미 멤버면 그대로 그 목표를 받는다', async () => {
+    const { server, d } = setup();
+    const { goalId, inviteCode } = server.as(FRIEND).createSharedGoal({ mode: 'each', displayName: '은주', stickerId: 'basic.clover' });
+    await joinAndFetch(d, inviteCode, '지우', 'basic.star');
+    expect(await joinAndFetch(d, inviteCode, '지우', 'basic.star')).toEqual({ goalId, onDevice: true });
+  });
+
+  it('서버가 값으로 거절하면 그 낱말로 던지고 기기에는 아무것도 받지 않는다', async () => {
+    const { server, d } = setup();
+    const { goalId, inviteCode } = server.as(FRIEND).createSharedGoal({ mode: 'each', displayName: '은주', stickerId: 'basic.clover' });
+    await expect(joinAndFetch(d, inviteCode, '지우', 'basic.clover')).rejects.toEqual(new SharedGoalError('sticker_taken'));
+    await expect(joinAndFetch(d, 'ZZZZZZZZ', '지우', 'basic.star')).rejects.toEqual(new SharedGoalError('closed'));
+    expect(await getGoal(goalId)).toBeNull();
   });
 });

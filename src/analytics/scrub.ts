@@ -3,12 +3,18 @@
  * 네이티브를 불러오지 않는 순수 함수다.
  */
 
-/** 주소의 앞 두 칸까지만 남긴다. 뒤쪽에는 사용자 ID와 파일 이름이, 쿼리에는 조회 값이 들어간다. */
+/**
+ * 주소의 앞 두 칸까지만 남긴다. 뒤쪽에는 사용자 ID와 파일 이름이, 쿼리에는 조회 값이 들어간다.
+ * 초대 코드는 기간 없는 입장권이라 `/invite/` 뒤 칸을 남기지 않는다. 앱 주소(chagok://invite/<코드>)는 invite가 호스트 자리에 온다.
+ */
 export function scrubUrl(url: string): string {
   const matched = /^([a-z][a-z0-9+.-]*:\/\/[^/?#]+)([^?#]*)/i.exec(url);
   if (!matched) return '';
   const origin = matched[1] ?? '';
-  const segments = (matched[2] ?? '').split('/').filter(Boolean).slice(0, 2);
+  if (/^[a-z0-9+.-]+:\/\/invite$/i.test(origin)) return origin;
+  const all = (matched[2] ?? '').split('/').filter(Boolean);
+  const invite = all.indexOf('invite');
+  const segments = (invite >= 0 ? all.slice(0, invite + 1) : all).slice(0, 2);
   return segments.length > 0 ? `${origin}/${segments.join('/')}` : origin;
 }
 
