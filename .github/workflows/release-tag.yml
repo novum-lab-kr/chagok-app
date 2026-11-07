@@ -1,0 +1,43 @@
+# release/<버전> 브랜치의 PR이 main에 합쳐지면 그 병합 커밋에 v<버전> 태그를 붙인다 (2026-11-07).
+# 예: release/1.2.0 → main 병합 → v1.2.0. 같은 이름의 태그가 이미 있으면 그대로 둔다
+# (v1.1.0은 심사 빌드 커밋 dd0421f에 손으로 붙였다). PR 없이 main에 직접 push한 병합은 잡지 않는다.
+# 다음 release 브랜치는 start-release.yml이 딴다. 다음 버전은 대화에서 사용자에게 묻는다(ship 스킬).
+name: Release tag
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - name: Tag the merge commit
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          version="${HEAD_REF#release/}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "release/ 뒤가 버전(1.2.3) 모양이 아니라 태그를 붙이지 않는다: $HEAD_REF"
+            exit 0
+          fi
+          tag="v$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag 태그가 이미 있어 그대로 둔다"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" "$SHA" -m "Chagok $version (merged from $HEAD_REF, PR #$PR)"
+          git push origin "refs/tags/$tag"
+          echo "$tag → $SHA" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,47 @@
+# main 끝에서 release/<버전> 브랜치를 딴다 (2026-11-07). 버전은 대화에서 사용자에게 물어 정하고 실행한다(ship 스킬).
+#   gh workflow run start-release.yml -f version=1.1.1
+# 같은 브랜치나 v<버전> 태그가 이미 있거나, 가장 최근 v 태그보다 크지 않으면 멈춘다.
+name: Start next release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 다음 버전 (예 1.1.1)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Create release branch from main
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::버전은 1.2.3 모양이어야 한다: $VERSION"; exit 1
+          fi
+          branch="release/$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "::error::$branch 브랜치가 이미 있다"; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::v$VERSION 태그가 이미 있다(이미 낸 버전)"; exit 1
+          fi
+          latest=$(git tag -l 'v*.*.*' | sed 's/^v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+          if [ -n "$latest" ]; then
+            top=$(printf '%s\n%s\n' "$latest" "$VERSION" | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+            if [ "$top" != "$VERSION" ]; then
+              echo "::error::$VERSION이 가장 최근 태그 v$latest보다 크지 않다"; exit 1
+            fi
+          fi
+          git push origin "HEAD:refs/heads/$branch"
+          echo "$branch ← main $(git rev-parse --short HEAD)" >> "$GITHUB_STEP_SUMMARY"
