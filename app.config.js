@@ -20,7 +20,8 @@ module.exports = ({ config }) => {
     // 출시 앱과 같은 scheme이면 위젯과 링크가 어느 앱을 열지 iOS가 정한다
     scheme: `${config.scheme}-dev`,
     icon: './assets/icon-dev.png',
-    ios: { ...config.ios, bundleIdentifier: id },
+    // 초대 링크는 개발 사이트에서만 받는다. 운영 주소까지 받으면 두 앱이 깔린 폰에서 운영 링크가 개발 앱으로 열린다(2026-11-06)
+    ios: { ...config.ios, bundleIdentifier: id, associatedDomains: ['applinks:chagok-dev.novum-lab.com'] },
     android: { ...config.android, package: id },
     // 홈 화면 이름은 app.json이 아니라 언어별 CFBundleDisplayName이 정한다
     locales: {

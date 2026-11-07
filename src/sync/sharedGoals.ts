@@ -54,8 +54,15 @@ export function errorMessage(word: ErrorWord): string {
   }
 }
 
+/** 운영 초대 주소. 앱 링크(ios.associatedDomains)와 웹 초대 페이지(novum-web chagok/invite/)가 이 주소에 있다 */
 export const INVITE_BASE = 'https://chagok.novum-lab.com/invite/';
-export const inviteUrl = (code: string): string => `${INVITE_BASE}${code}`;
+/**
+ * 초대 주소의 앞부분. 개발 환경은 .env.local의 EXPO_PUBLIC_INVITE_BASE(https://chagok-dev.novum-lab.com/invite/)로
+ * 개발 사이트를 쓴다(그 페이지는 개발 서버를 읽는다, 2026-11-06). 값이 없으면(출시 빌드) 운영 주소다.
+ */
+export const inviteBase = (fromEnv: string | undefined = process.env.EXPO_PUBLIC_INVITE_BASE): string =>
+  fromEnv && /^https:\/\/[^/]+\/invite\/$/.test(fromEnv) ? fromEnv : INVITE_BASE;
+export const inviteUrl = (code: string): string => `${inviteBase()}${code}`;
 
 async function call<T>(c: RpcClient, fn: string, args: Record<string, unknown>): Promise<T> {
   let result: Awaited<ReturnType<RpcClient['rpc']>>;

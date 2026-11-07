@@ -592,3 +592,11 @@ npx expo start --go --lan --port 8081   # 개발 빌드로 볼 때는 --go를 �
 에이전트가 백그라운드 작업으로 띄운 개발 서버는 장시간 실행 프로세스 정리 대상이라
 시스템 메모리에 여유가 있어도 중간에 죽는다. Metro는 사용자 터미널에서 돌리는 것이 맞다.
 QR과 `r`(리로드) 같은 단축키도 그래야 쓸 수 있다.
+
+## 초대 링크 개발 사이트 (2026-11-06)
+
+개발 앱(`com.novumlab.chagok.dev`)의 함께 목표 초대 링크는 `https://chagok-dev.novum-lab.com/invite/<코드>`다. 이 페이지는 개발 서버(Supabase chagok-dev)에서 초대를 읽고, [차곡차곡에서 열기]는 개발 앱(`chagok-dev://`)을 연다.
+
+- 앱: `.env.local`에 `EXPO_PUBLIC_INVITE_BASE=https://chagok-dev.novum-lab.com/invite/`가 있어야 개발 사이트 주소로 링크를 만든다. 없으면 운영 주소(`chagok.novum-lab.com`)로 만든다. 출시 빌드(EAS)는 이 값이 없어 운영 주소다.
+- 개발 앱은 개발 사이트의 앱 링크만 받는다(`app.config.js` `associatedDomains`). 바꾼 뒤에는 `npm run prebuild:dev`로 개발 빌드를 다시 만들어야 기기에 반영된다.
+- 사이트 올리기는 novum-web `deploy/chagok-dev.sh`(novum-web `docs/chagok.md` 「개발 사이트」). 어느 브랜치든 올릴 수 있어 약관 같은 페이지를 공개 전에 미리 볼 때도 쓴다.
