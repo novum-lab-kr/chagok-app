@@ -1,6 +1,9 @@
 // 스토어 스크린샷 8판(1.1.0): 1.0.0 제출본(gen7 b안 「크게 잘라 보기」) 모양 그대로, 바뀐 장은 1.1.0 원본(raw8/)으로,
-// 함께 목표 장을 더한다. 화면이 바뀌지 않은 장(02 목표 목록, 03 기록, 04 다시 보기, 07 위젯과 워치)은 raw6/ 그대로.
-// 결과: final-1.1.0/<6.9|6.3>/NN.png, final-1.1.0/watch/NN.png(1.0.0 그대로 복사), final-1.1.0/extra/<6.9|6.3>/new-together.png(예비 장), out8/sheet8.png(커밋 안 함)
+// 함께 목표 장을 더한다. 화면이 바뀌지 않은 장(03 기록, 04 다시 보기, 07 위젯과 워치)은 raw6/ 그대로.
+// 02 목표 목록은 01 붙이기 뒤(책 11칸, 73%)로 raw8/home.png에서 다시 찍었다(2026-11-06, 01과 07 위젯의 73%에 맞춤).
+// 워치 원본은 raw8/watch/(2026-11-07, 영어 raw8-en/watch와 같은 장면을 1.1.0 Release 빌드, 한국어 기기로 다시 찍음). 07의 워치 화면도 여기서 읽는다.
+// 워치 상태 표시줄 시각은 시뮬레이터에서 바꿀 수 없어 영어 원본의 시각 부분(298,32 100x38)을 붙여 영어판과 같게 했다.
+// 결과: final-1.1.0/<6.9|6.3>/NN.png, final-1.1.0/watch/NN.png, final-1.1.0/extra/<6.9|6.3>/new-together.png(예비 장), out8/sheet8.png(커밋 안 함)
 // node gen8.mjs
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,8 +19,8 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const OUT = path.join(HERE, 'final-1.1.0');
 const SIZES = { '6.9': [1320, 2868], '6.3': [1206, 2622] };
 const INK = '#06261C', IVORY = '#FEF1D1', MINT = '#AFE1CB', LIME = '#C9DD94', APRICOT = '#FD855F';
-// 1.1.0에서 화면이 바뀐 원본만 raw8/에서 읽는다
-const NEW_RAW = new Set(['place.png', 'mood.png', 'walk.png', 'stickers.png', 'together-one.png', 'together-each.png', 'together-new.png']);
+// 1.1.0에서 다시 찍은 원본만 raw8/에서 읽는다
+const NEW_RAW = new Set(['place.png', 'home.png', 'mood.png', 'walk.png', 'stickers.png', 'together-one.png', 'together-each.png', 'together-new.png']);
 const raw = (f) => `file://${NEW_RAW.has(f) ? RAW8 : `${DIR}/raw6`}/${f}`;
 const art = (f) => `file://${ART}/color-${f}.png`;
 
@@ -90,7 +93,7 @@ function decoImg(name, x, y, size, rot, px, shadow = 'rgba(6,38,28,.35)') {
 
 function watchCard(src, left, top, rot, px, shadow) {
   return `<div style="position:absolute;z-index:4;left:${px(left)};top:${px(top)};background:${INK};padding:${px(24)};border-radius:${px(120)};box-shadow:${shadow};transform:rotate(${rot}deg)">
-    <div style="width:${px(540)};height:${px(540 * 496 / 416)};overflow:hidden;border-radius:${px(96)}"><img src="file://${DIR}/watch6/${src}" style="width:100%;display:block"></div></div>`;
+    <div style="width:${px(540)};height:${px(540 * 496 / 416)};overflow:hidden;border-radius:${px(96)}"><img src="file://${RAW8}/watch/${src}" style="width:100%;display:block"></div></div>`;
 }
 
 // a 출시 영상 결
@@ -162,20 +165,29 @@ function watchHtml(v, s) {
     html,body{width:${W}px;height:${H}px;overflow:hidden} body{font-family:N;position:relative;background:${INK};color:${IVORY}}
     em{font-style:normal;color:${accent}}</style>
     <div style="height:78px;display:flex;align-items:center;justify-content:center;font-size:31px;word-break:keep-all"><span>${s.cap}</span></div>
-    <img src="file://${DIR}/watch6/${s.src}" style="position:absolute;left:${(W - 384) / 2}px;top:78px;width:384px;border-radius:44px 44px 0 0;box-shadow:0 0 0 4px ${accent}">`;
+    <img src="file://${RAW8}/watch/${s.src}" style="position:absolute;left:${(W - 384) / 2}px;top:78px;width:384px;border-radius:44px 44px 0 0;box-shadow:0 0 0 4px ${accent}">`;
 }
 
 function shoot(html, file, W, H) {
   const f = file.replace(/\.png$/, '.html');
   fs.writeFileSync(f, html);
-  execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-    '--allow-file-access-from-files', `--window-size=${W},${H}`, `--screenshot=${file}`, `file://${f}`], { stdio: 'ignore' });
+  // 맥이 바쁘면 Chrome이 그림을 쓴 뒤 종료 감시에 걸려 2로 끝나거나, 아예 멈춘다. 그림이 있으면 넘어가고, 없으면 세 번까지 다시 찍는다(gen8-en.mjs와 같다)
+  for (let attempt = 1; ; attempt++) {
+    fs.rmSync(file, { force: true });
+    try {
+      execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
+        '--allow-file-access-from-files', `--window-size=${W},${H}`, `--screenshot=${file}`, `file://${f}`], { stdio: 'ignore', timeout: 120000 });
+    } catch (e) {
+      if (!fs.existsSync(file) && attempt >= 3) throw e;
+    }
+    if (fs.existsSync(file)) break;
+  }
   fs.rmSync(f);
 }
 
 // b안만 만든다(1.0.0 제출본이 b안). 바뀐 장의 번호와 이유는 CHANGED에 적어 changed/로도 모은다.
 const CHANGED = {
-  '01': 'place-progress-bar', '05': 'mood-progress-bar', '06': 'walk-progress-bar', '08': 'stickers-clover-and-no-free-badge',
+  '01': 'place-progress-bar', '02': 'home-book-73', '05': 'mood-progress-bar', '06': 'walk-progress-bar', '07': 'watch-1.1.0', '08': 'stickers-clover-and-no-free-badge',
   '09': 'new-together-one-board', '10': 'new-together-each-board',
 };
 const NN = (i) => String(i + 1).padStart(2, '0');
@@ -199,10 +211,10 @@ for (const [name, [W, H]] of Object.entries(SIZES)) {
     fs.copyFileSync(file, path.join(CH, name, `extra-new-together-invite.png`));
   });
 }
-// 워치: 1.1.0에서 한국어 화면이 바뀌지 않아 1.0.0 최종본을 그대로 쓴다
+// 워치: raw8/watch/(1.1.0)에서 b안으로 만든다
 const wout = path.join(OUT, 'watch');
 fs.mkdirSync(wout, { recursive: true });
-WATCH.forEach((_, i) => fs.copyFileSync(path.join(DIR, 'final/watch', `${NN(i)}.png`), path.join(wout, `${NN(i)}.png`)));
+WATCH.forEach((s, i) => shoot(watchHtml('b', s), path.join(wout, `${NN(i)}.png`), 416, 496));
 
 // 한 장짜리 시트: 위에 iPhone 6.9 열 장(바뀐 장과 새 장에 표시), 예비 장, 아래 Watch 네 장
 const n = SLIDES.length, SW = (n + 1) * 300 + (n + 2) * 24;
@@ -213,5 +225,5 @@ const wa = WATCH.map((_, i) => `<img src="file://${wout}/${NN(i)}.png" style="wi
 shoot(`<meta charset="utf-8"><style>@font-face{font-family:N;src:url(file://${FONT})} *{margin:0;box-sizing:border-box}
   body{width:${SW}px;background:#5b6b65;font-family:N;color:${IVORY};padding:24px} .r{display:flex;gap:24px;margin-top:16px}
   h2{font-weight:normal;font-size:40px} p{font-size:28px;margin-top:8px;text-align:center}</style>
-  <h2>1.1.0 iPhone ${n}장 (6.9인치) + 예비 1장</h2><div class="r">${ph}</div><h2 style="margin-top:32px">Apple Watch 4장 (1.0.0 그대로)</h2><div class="r">${wa}</div>`,
+  <h2>1.1.0 iPhone ${n}장 (6.9인치) + 예비 1장</h2><div class="r">${ph}</div><h2 style="margin-top:32px">Apple Watch 4장 (1.1.0)</h2><div class="r">${wa}</div>`,
 (fs.mkdirSync(path.join(HERE, 'out8'), { recursive: true }), path.join(HERE, 'out8', 'sheet8.png')), SW, 24 + 48 + 16 + 652 + 44 + 32 + 48 + 16 + 358 + 24);
