@@ -20,7 +20,13 @@
 
 1. `app.json` `version` 올리기
 2. 스토어 「새로운 기능」 문구(한국어, iOS·Android 각각)
-3. 스토어에 낸 커밋에 git 태그 `v1.1.0`
+3. 스토어에 낸 커밋에 git 태그 `v1.1.0`(release 병합 때 Actions가 붙인다. 아래 「브랜치」)
+
+## 브랜치 (2026-11-07 사용자)
+
+- **판 작업:** `release/<버전>`에 모은다. 심사에 낸 뒤 PR로 main에 합치면 GitHub Actions가 그 병합 커밋에 `v<버전>` 태그를 붙인다(`.github/workflows/release-tag.yml`). 다음 판 브랜치는 대화에서 사용자에게 버전을 묻고 `start-release.yml`로 main 끝에서 딴다([ship 스킬](../.claude/skills/ship/SKILL.md)).
+- **심사 반려나 출시한 판의 급한 수정:** main에서 `hotfix/<버전>`(예: `hotfix/1.1.0`)을 따서 고치고 main에 합친다. 다시 내는 빌드는 그 main에서 만든다. 그다음 main을 다음 판 브랜치(예: `release/1.1.1`)에 합쳐 최신으로 맞춘다. 지난 `release/<버전>` 브랜치에서 고치지 않는다.
+- **태그:** 같은 버전으로 다시 낸 빌드가 출시되면 `v<버전>` 태그를 그 빌드 커밋으로 옮긴다(`git tag -f -a`, `git push -f origin v<버전>`). 태그 워크플로는 `release/*` 병합만 잡고, 이미 있는 태그는 건드리지 않는다.
 
 ## 처음 한 번 (EAS 설정 때)
 
