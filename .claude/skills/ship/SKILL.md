@@ -53,7 +53,7 @@ npm run lint
 
 ## 심사 반려나 출시한 판을 급히 고칠 때
 
-[버전 규칙](../../../docs/RELEASE-VERSIONING.md) 「브랜치」대로 한다. main에서 `hotfix/<버전>`을 따서 고치고 → main에 `--no-ff`(또는 PR Merge commit)로 합치고 → 다시 내는 빌드는 그 main에서 만들고 → main을 다음 판 `release/<다음 버전>`에 합쳐 최신으로 맞춘다. 같은 버전 빌드가 출시되면 `v<버전>` 태그를 그 빌드 커밋으로 옮긴다.
+[버전 규칙](../../../docs/RELEASE-VERSIONING.md) 「브랜치」대로 한다. main에서 `hotfix/<버전>`을 따서 고치고 → main에 PR(Merge commit)로 합치고 → 다시 내는 빌드는 그 main에서 만들고 → main을 다음 판 `release/<다음 버전>`에 합쳐 최신으로 맞춘다. `v<버전>` 태그는 hotfix PR 병합 때 Actions가 그 병합 커밋으로 옮긴다. 병합 뒤 `git ls-remote --tags origin v<버전>`으로 확인한다.
 
 ## Gotchas
 

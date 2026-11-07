@@ -26,8 +26,8 @@
 
 - **판 작업:** `release/<버전>`에 모은다. 심사에 낸 뒤 PR로 main에 합치면 GitHub Actions가 그 병합 커밋에 `v<버전>` 태그를 붙인다(`.github/workflows/release-tag.yml`). 다음 판 브랜치는 대화에서 사용자에게 버전을 묻고 `start-release.yml`로 main 끝에서 딴다([ship 스킬](../.claude/skills/ship/SKILL.md)).
 - **심사 반려나 출시한 판의 급한 수정:** main에서 `hotfix/<버전>`(예: `hotfix/1.1.0`)을 따서 고치고 main에 합친다. 다시 내는 빌드는 그 main에서 만든다. 그다음 main을 다음 판 브랜치(예: `release/1.1.1`)에 합쳐 최신으로 맞춘다. 지난 `release/<버전>` 브랜치에서 고치지 않는다.
-- **자동 태그는 PR로 합칠 때만 붙는다.** PR 없이 main에 직접 push한 병합은 잡지 않는다. 2026-11-07 기준으로 워크플로가 도는 것과 release가 아닌 PR을 건너뛰는 것(PR #32)만 확인했고, 태그를 실제로 붙이는 것은 아직 확인하지 못했다. 첫 대상인 `release/1.1.1` 병합 때 `git ls-remote --tags origin v1.1.1`로 확인하고 이 문장을 지운다.
-- **태그:** 같은 버전으로 다시 낸 빌드가 출시되면 `v<버전>` 태그를 그 빌드 커밋으로 옮긴다(`git tag -f -a`, `git push -f origin v<버전>`). 태그 워크플로는 `release/*` 병합만 잡고, 이미 있는 태그는 건드리지 않는다.
+- **자동 태그는 PR로 합칠 때만 붙는다.** PR 없이 main에 직접 push한 병합은 잡지 않는다(hotfix도 PR로 합친다). 2026-11-07 기준으로 워크플로가 도는 것과 release가 아닌 PR을 건너뛰는 것(PR #32)만 확인했고, 태그를 실제로 붙이거나 옮기는 것은 아직 확인하지 못했다. 첫 대상(hotfix나 `release/1.1.1`) 병합 때 `git ls-remote --tags origin v1.1.1`로 확인하고 이 문장을 지운다.
+- **태그:** `hotfix/<버전>` PR이 main에 합쳐지면 태그 워크플로가 `v<버전>`을 그 병합 커밋으로 옮긴다(없으면 붙인다). `release/*` 병합은 이미 있는 태그를 건드리지 않는다.
 
 ## 처음 한 번 (EAS 설정 때)
 
