@@ -1,6 +1,6 @@
 ---
 name: supabase-dev
-description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Function을 만들거나 고치거나, 개발 데이터를 조회하고 되돌릴 때. 토큰 다루는 법, 출시 전 마이그레이션 규칙, 배포와 테스트 순서.
+description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Function을 만들거나 고치거나, 개발 데이터를 조회하고 되돌릴 때. 토큰 다루는 법, 마이그레이션 규칙(1.0 공개 뒤라 새 파일만 더한다), 배포와 테스트 순서.
 ---
 
 # 개발 서버 작업
@@ -9,7 +9,7 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 
 ## 대상
 
-- 개발 서버만 다룬다: 프로젝트 ref `cmkmhrzvxbtuxbgixqoo`(`chagok-dev`). 운영 서버는 아직 정하지 않았다. 다른 프로젝트 ref가 보이면 멈추고 보고한다.
+- 개발 서버만 다룬다: 프로젝트 ref `cmkmhrzvxbtuxbgixqoo`(`chagok-dev`). 운영 서버는 이 스킬로 다루지 않는다([DEV-SETUP](../../../docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 다른 프로젝트 ref가 보이면 멈추고 보고한다.
 
 ## 토큰
 
@@ -22,13 +22,13 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 - 짧은 SQL: `supabase db query --linked "<sql>"` 또는 Management API `POST https://api.supabase.com/v1/projects/<ref>/database/query`.
 - 값을 바꾸기 전에 바꿀 행의 원래 값을 파일로 남긴다. 끝나면 되돌리거나, 되돌릴 필요가 없음을 확인해 보고한다.
 
-## 구조 바꾸기 (출시 전 규칙)
+## 구조 바꾸기
 
-1. 새 마이그레이션 파일을 더하지 않는다. `supabase/migrations`의 파일을 최종 구조로 고친다. 기기 DB(`src/db/schema.ts`)도 v1을 고친다.
+1. 올린 파일을 고치지 않고 새 마이그레이션 파일을 더한다. 기기 DB(`src/db/schema.ts`)도 버전을 올린다. 1.0.0과 함께 돌 수 있게 칸 추가부터 생각한다.
 2. 새 테이블은 RLS를 켜고 본인 행만 읽고 쓰게 한다. 다른 사용자 행이 보이는 정책을 만들지 않는다.
-3. `supabase db reset --linked`로 개발 서버를 비우고 다시 적용한다. `public.change_seq`가 남는 함정은 PITFALLS를 본다.
-4. 리셋하면 로그인 사용자도 지워진다. `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일을 지운다.
-5. 개발 기기의 앱 데이터도 지운다(`sim-qa` 스킬 「처음 상태로 돌리기」).
+3. 개발 서버에는 `supabase db push --linked`로 새 파일만 올린다. 개발 서버는 다른 세션(출시 시험)도 쓰므로 이미 있는 RPC는 옛 앱이 보내는 모양을 그대로 받게 고친다.
+4. `supabase db reset --linked`(개발 서버를 비우고 처음부터 다시)는 사용자가 허락할 때만. 리셋하면 로그인 사용자도 지워져 `npm run server:dev-user`로 개발 계정을(함께 목표 시험용 두 번째 계정은 `npm run server:dev-friend -- setup`) 다시 만들고 `record-photos`를 비워야 한다. `public.change_seq`가 남는 함정은 PITFALLS.
+5. 운영 반영은 이 스킬 밖이다([DEV-SETUP](../../../docs/DEV-SETUP.md) 「운영 DB 바꾸기」).
 
 ## Edge Function
 
@@ -41,3 +41,16 @@ description: 개발 서버(Supabase chagok-dev)의 테이블, RLS, RPC, Edge Fun
 
 - `npm run test:server`로 실제 서버를 시험한다. 만든 테스트 사용자는 끝나면 지운다.
 - 앱 쪽 확인이 필요하면 `sim-qa` 스킬로 넘긴다.
+
+## Gotchas
+
+- **서버를 비우고 다시 만드는 일은 2026-11-05(서버 2판)가 마지막이다.** 사용자: 「이런 방식은 이번까지만 할꺼고, 나중에는 마이그레이션과 수정하는 방법들을 택해야 할꺼야.」 개발 서버도 리셋하지 않고 새 파일로만 바꾼다.
+
+- 2026-11-04: 「구조 바꾸기」가 새 파일을 더하라면서 3번에 `db reset`을 남겨 두어 출시 뒤 규칙과 어긋났다. `db push`로 고쳤다. 리셋은 다른 세션이 쓰는 개발 서버 데이터를 모두 지운다.
+
+## Gotchas
+
+- **에이전트로 `supabase db query`를 부르면 확인을 못 받아 멈춘다**(`HostedMutationConsentRequiredError`). 읽기만 할 때는 `--read-only`를 붙인다. 바꾸는 SQL은 사용자에게 묻고 `--yes`로 한다(2026-11-06).
+- **서버 시험을 연달아 돌리면 Auth가 `Request rate limit reached`로 막는다.** 새 사용자 로그인이 많아서다. 실패가 우르르 나오면 코드보다 이것부터 의심하고 몇 분 뒤 한 번만 다시 돌린다(2026-11-06).
+- **개발 서버(Supabase 클라우드)는 요청의 `X-Forwarded-For` 첫 값을 클라이언트가 보낸 그대로 넘긴다.** 운영 서버는 Caddy가 덮어써서 꾸밀 수 없다. IP로 세는 제한은 개발 서버에서 꾸민 머리글로 시험한다(`20261106000001_invite_guessing.sql`, 2026-11-06).
+- **표의 check 제약을 같이 본다.** 함수만 바꾸고 `invites.code` 검사(8자리)를 놓쳐 개발 서버에서 목표 만들기가 깨졌다. 값 모양을 바꾸면 그 열의 제약을 `grep`하고, 올린 뒤 서버 시험을 바로 돌린다(2026-11-06).

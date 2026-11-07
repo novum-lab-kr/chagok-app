@@ -36,10 +36,12 @@ describe('판 상세 고정 영역',()=>{
     expect(scroll.textContent).not.toContain('33%');
     expect(screen.queryByTestId('retro-scroll')).toBeNull();
   });
-  it('달력판도 같은 구조다',()=>{
+  it('달력판은 달 넘기기 줄을 스크롤 밖에 고정하고 달력만 스크롤 안에 둔다 (2026-11-03)',()=>{
     detail({kind:'calendar',year:2026,month:9,records:{},isDateEnabled:()=>true,canGoPrev:true,canGoNext:true,onSelect:()=>{},onMonthChange:()=>{},onOpenRecord:()=>{}});
     const scroll=screen.getByTestId('board-scroll');
-    expect(scroll.textContent).toContain('2026년 9월');
+    expect(scroll.textContent).not.toContain('2026년 9월');
+    expect(scroll.textContent).toContain('일월화수목금토');
+    expect(screen.getByText('2026년 9월')).toBeTruthy();
     expect(scroll.textContent).not.toContain('10분 독서');
   });
 });

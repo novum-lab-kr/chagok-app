@@ -15,6 +15,7 @@
 | [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | 개발 빌드, 시뮬레이터, 개발 서버 실행 |
 | [docs/RELEASE-DECISIONS.md](docs/RELEASE-DECISIONS.md) | 식별자, 계정, 가격, 광고 같은 출시 결정 |
 | [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md) | 스토어에 내기 직전. 출시 전 최종 점검 목록 |
+| [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) | 1.1.0을 합치거나 내보낼 때. 심사 시점별 처리, 운영 DB 반영 순서 |
 | [docs/LEGAL-REVIEW.md](docs/LEGAL-REVIEW.md) | 출시와 업데이트 때마다. 약관과 처리방침이 기대는 법령의 개정 확인과 문서 유효성 점검 |
 | [docs/migration/README.md](docs/migration/README.md) | 레포를 옮긴 직후에만 |
 
@@ -26,10 +27,11 @@ Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](
 
 - **한국어로 쓴다.** 진행 메모와 질문까지, 대화가 요약된 뒤에도. 쉬운 말로 쓰고, 시험 구현인지 실제 구현인지 밝힌다. 커밋 메시지는 영어.
 - **가운뎃점(·)으로 낱말을 잇지 않는다.** 앱 문구, 시안, 답변 모두. 낱말이나 온전한 문장으로 쓰고, 꼭 붙여야 하면 라벨을 따로 디자인한다.
-- **작업마다 새 worktree와 브랜치를 먼저 만든다.** main 체크아웃은 다른 세션과 같이 쓴다. 문서 초안도 마찬가지다. worktree에서 Metro를 띄우기 전에 `.env.local`을 링크한다.
-- **커밋은 확인 뒤에.** 계획과 설계는 사용자가 승인한 뒤, 코드는 사용자가 직접 돌려 본 뒤 커밋한다. 테스트 통과는 확인으로 치지 않는다. 계획이나 스킬이 "태스크마다 커밋"이라고 해도 이 규칙이 먼저다. main에는 `--no-ff`로 합친다. **push는 사용자가 요청할 때만.** push가 끝나면 그 worktree와 로컬 브랜치는 묻지 않고 지운다.
+- **작업마다 새 worktree와 브랜치를 먼저 만든다.** main 체크아웃은 다른 세션과 같이 쓴다. 문서 초안도 마찬가지다. 만든 직후 git 밖 파일 셋을 챙긴다: `.env.local` 링크, `node_modules` 링크(같은 `package-lock.json`인 체크아웃), `src/design-system/apple-siwa-logo.generated.ts` 복사(없으면 타입 검사와 컴포넌트 테스트가 실패한다).
+- **커밋은 확인 뒤에.** 계획과 설계는 사용자가 승인한 뒤, 코드는 사용자가 직접 돌려 본 뒤 커밋한다. 테스트 통과는 확인으로 치지 않는다. 계획이나 스킬이 "태스크마다 커밋"이라고 해도 이 규칙이 먼저다. main에는 `--no-ff`로 합친다. **push는 사용자가 요청할 때만.** push가 끝나거나 그 PR이 어느 브랜치에든 합쳐지면 그 worktree와 로컬 브랜치는 묻지 않고 지운다. 시안 worktree는 시안이 확정돼 기능 브랜치로 옮긴 직후 지운다.
+- **커밋하지 않은 변경을 두고 세션을 끝내지 않는다.** 확인을 기다리느라 커밋하지 못했으면 [HANDOFF](docs/HANDOFF.md) 「커밋 안 한 작업」 표에 worktree, 무엇, 기다리는 것을 적는다. 커밋하거나 버리면 그 줄을 지운다.
 - **애매하면 선택지 3개.** 하나를 추천으로 표시한다. 한 번에 4개 이하로 묻는다. 선택지 밖의 방향을 들으면 그 안에서 다시 3개.
-- **시안은 아티팩트로 먼저.** 고르기와 메모가 되고 고른 안을 `db`에 저장하는 아티팩트로 보여 준다. 캡처는 실제 컴포넌트를 렌더해서 만든다(임시 스토리 `stories/_proposal/`, 커밋하지 않음). 안은 지금 화면 구조 안에서 바꾼다. **시안을 만들기 전에 스토어 심사 지침, 회사 브랜드 규정(로그인 버튼 등), 관련 법을 원문으로 확인하고, 반려될 수 있는 안은 내지 않는다.** 확정된 뒤에 Storybook과 코드에 반영한다. 시안에 달린 메모는 범위 밖으로 보여도 모두 답한다.
+- **시안은 아티팩트로 먼저.** 고르기와 메모가 되고 고른 안을 `db`에 저장하는 아티팩트로 보여 준다. 시안은 초안까지 모두 디자인 시스템을 기준으로 만들고, 색과 글꼴만 맞춘 손그림은 내지 않는다. 캡처는 실제 컴포넌트를 렌더해서 만든다(임시 스토리 `stories/_proposal/`, 커밋하지 않음). 안은 지금 화면 구조 안에서 바꾼다. **시안을 만들기 전에 스토어 심사 지침, 회사 브랜드 규정(로그인 버튼 등), 관련 법을 원문으로 확인하고, 반려될 수 있는 안은 내지 않는다.** 확정된 뒤에 코드에 반영하고, Storybook은 기존 컴포넌트를 먼저 확인해 없던 컴포넌트이거나 props가 늘어나는 경우에만 추가한다. 시안에 달린 메모는 범위 밖으로 보여도 모두 답한다.
 - **화면 문구는 사용자 관점으로.** 시스템 상태가 아니라 사용자가 할 일과 결과를 말한다("로그인이 필요해요").
 - **계정이나 외부 설정이 필요한 일은 뒤로.** 실기기 테스트는 맨 뒤. Google 로그인은 OAuth 준비 전에 제안하지 않는다.
 - **브랜드와 캐릭터는 묻고 시작한다.** 새싹이는 기본 스티커일 뿐 대표가 아니다.
@@ -66,17 +68,38 @@ Expo는 버전마다 API가 다르다. 코드를 쓰기 전에 [Expo 57 문서](
 
 기능이 main에 합쳐져 push되면 문서와 시안, 코드에 지난 흔적이 남는다. 정리는 push 직후가 아니라 **다음 worktree를 만든 직후, 그 작업을 시작하기 전에** 한다.
 
-1. **무엇이 합쳐졌는지 본다.** `git fetch` 뒤 마지막 정리 커밋(`git log origin/main --grep "^chore(cleanup)" -1`) 이후 `origin/main`에 push된 병합을 `git log --merges <그 커밋>..origin/main`으로 훑는다. 아직 push되지 않은 작업은 정리 대상이 아니다. 다른 세션이 쓰는 worktree(`git worktree list`)의 작업은 건드리지 않는다.
+1. **무엇이 합쳐졌는지 본다.** `git fetch` 뒤 마지막 정리 커밋(`git log origin/main --grep "^chore(cleanup)" -1`) 이후 `origin/main`과 진행 중인 출시 브랜치(`origin/release/*`)에 들어간 병합을 `git log --merges <그 커밋>..<브랜치>`로 훑는다. 아직 push되지 않은 작업은 정리 대상이 아니다.
+   - **합쳐진 worktree를 지운다.** `git worktree list`에서 브랜치 끝 커밋이 `origin/main`이나 `origin/release/*`에 이미 들어 있는 worktree를 지운다. 지우기 전에 커밋하지 않은 변경이 다른 곳에 있는지, 그 폴더에서 도는 프로세스(다른 세션)가 있는지, 다른 worktree가 그 폴더의 `node_modules`를 빌려 쓰는지 본다. 하나라도 걸리면 지우지 않고 사용자에게 목록을 준다.
 2. **문서를 최신으로 맞춘다.** HANDOFF(끝난 일은 지우고 남은 일만), PRD(바뀐 결정과 이력), DESIGN-SYSTEM, PITFALLS, DEV-SETUP, 화면 흐름도(`Flows/앱 전체`)가 지금 코드와 맞는지 본다.
 3. **오래된 내용을 버린다.** 끝난 구현 계획(`docs/superpowers/plans/`), 시험 구현 결과, 지금과 다른 옛 설명은 지운다. 지운 파일을 가리키던 링크도 고친다. 기록은 git에 남으니 "언젠가 볼지도"는 남길 이유가 아니다.
 4. **시안을 정리한다.** 화면에 반영된 시안은 `docs/design/proposals-2026-10/`의 원본과 README 줄을 지운다. 앞으로 개발할 기획의 시안만 남긴다. 발행한 아티팩트는 에이전트가 지울 수 없으니, 지울 목록을 사용자에게 주고 `/artifacts`에서 지워 달라고 한다.
-5. **쓰지 않는 코드를 지운다.** `npx knip`으로 후보를 찾되, 가져다 쓰는 곳을 직접 확인한 것만 지운다. Expo 설정, 위젯 진입점, 서버 함수, npm 스크립트, `src/stickers/catalog.ts`는 쓰이지 않는 것처럼 보여도 남긴다.
+5. **쓰지 않는 코드를 지운다.** `npx knip`(설정은 `knip.json`)으로 후보를 찾되, `.ios.ts`처럼 플랫폼 확장자 파일에서만 쓰는 것은 knip이 놓치니 직접 찾아본다. 그리고 가져다 쓰는 곳을 직접 확인한 것만 지운다. Expo 설정, 위젯 진입점, 서버 함수, npm 스크립트, `src/stickers/catalog.ts`는 쓰이지 않는 것처럼 보여도 남긴다.
 6. **확인과 커밋.** 지울 목록을 먼저 보여 주고 사용자의 OK를 받는다. 테스트, 타입 검사, 린트, 번들을 돌린 뒤 정리만 담은 커밋 하나(`chore(cleanup): ...`)로 남기고, 그다음 원래 작업을 시작한다. 정리할 것이 없으면 "정리할 것 없음"이라고 한 줄 보고하고 바로 시작한다.
 
-## 출시 전까지
+## 코드를 쓰기 전에 찾는 곳
 
-- 약관과 처리방침 변경은 모두 1판에 넣는다. `v2/` 폴더, `versions.json` 항목, 앱 동의 버전 올리기를 하지 않는다.
-- 단계별 마이그레이션을 만들지 않는다. `supabase/migrations`와 `src/db/schema.ts`를 최종 구조로 고치고 개발 데이터를 지운다([DEV-SETUP](docs/DEV-SETUP.md) 「개발 서버」).
+같은 일을 하는 코드가 여러 곳에 생기면 한쪽만 고쳐 어긋난다(2026-11-02 점검에서 기기 정리 순서, 결제 안내, 날짜 계산이 복사돼 있었다). 새 도우미를 만들기 전에 아래부터 찾는다.
+
+| 하려는 일 | 먼저 볼 곳 |
+| --- | --- |
+| 날짜 키, 월 키, 날짜 차이 | `src/domain/dates.ts` (`localDateKey`, `dateKeyOf`, `monthKeyOf`, `daysInclusive`) |
+| 가격과 금액 글자 | `src/purchases/price.ts` (`priceLabel`, `wonLabel`) |
+| 결제 실패와 보호자 승인 대기 안내, 구매 복원 | `src/app-data/purchaseDialogs.ts` (`notifyBuyFailure`, `restoreWithDialog`) |
+| 확인 창, 안내 창 | `src/app-data/useDialog.ts`, 창 내용은 `src/design-system`의 `*Dialogs` |
+| 뒤로 가기 | `src/app-data/goBack.ts` (`goBackOrHome`) |
+| 로그아웃, 계정 삭제, 연결 취소의 기기 정리 | `src/app-data/signOut.ts` (`signOutAndWipe`, `clearSignInSessions`), 실제 모듈은 `signOutDeps.ts` |
+| 스토어 응답, 구독 상태 같은 상태 타입 | `src/domain`에 한 번만 정의하고 나머지는 가져다 쓴다 |
+
+- **순서가 중요한 흐름은 함수 하나에만 둔다.** 로그아웃, 계정 삭제, 결제처럼 단계 순서가 보안이나 데이터에 걸리는 흐름은 화면마다 복사하지 않고, 부르는 순서를 확인하는 테스트를 같이 둔다.
+- **`src/design-system`은 앱 데이터 층을 가져다 쓰지 않는다.** domain, repositories, app-data, db, purchases를 import하면 린트가 막는다. Storybook에서 혼자 그리기 위해서다. 그래서 디자인 시스템 안의 작은 중복은 그대로 둔다.
+- **위젯(`src/widgets`)과 워치(`src/watch`)는 쌍이다.** 앱 상태 감지, 요청 중복 제거, 달력 칸 계산, 잠김 계산이 두 벌로 있다. 한쪽을 고치면 다른 쪽도 같이 본다.
+
+## 서버와 약관 규칙
+
+1.0이 2026-11-03 한국 App Store에 공개됐다. 그래서 아래가 언제나 적용된다.
+
+- 올린 마이그레이션 파일을 고치지 않고 새 파일을 더한다. 운영 DB를 통째로 지우지 않고 바뀐 파일만 올린다([DEV-SETUP](docs/DEV-SETUP.md) 「운영 DB 바꾸기」). 기기 DB(`src/db/schema.ts`)도 버전을 올려 옮긴다. 1.1.0의 기기 DB 지우기(`dropLegacy`)는 1.0 설치 수 확인을 거친다([1.1.0 출시 순서](docs/RELEASE-1.1.0.md) 「1.0 기기 DB 관문」).
+- 약관과 처리방침은 이미 게시한 판을 고치지 않고 새 판을 낸다(1판은 2026-11-03 시행, [1.1.0 출시 순서](docs/RELEASE-1.1.0.md) 「처리방침 판」).
 
 ## 빠른 확인
 
@@ -96,7 +119,7 @@ npm run storybook
 npx expo export --platform ios --output-dir /tmp/check && rm -rf /tmp/check
 ```
 
-화면을 추가, 변경, 삭제했거나 이동 경로가 바뀌었으면 같은 작업에서 화면 흐름도(Storybook `Flows/앱 전체`)도 맞춘다 — [stories/flows/README.md](stories/flows/README.md). 시각 작업은 렌더해서 눈으로 보고 고친다.
+화면을 추가, 변경, 삭제했거나 이동 경로가 바뀌었으면 같은 작업에서 화면 흐름도(Storybook `Flows/앱 전체`)도 맞춘다. 시안을 거치는 작업은 그 작업의 시안이 전부 확정된 뒤 맞춘다 — [stories/flows/README.md](stories/flows/README.md). 시각 작업은 렌더해서 눈으로 보고 고친다.
 
 ## 건드리면 안 되는 것
 

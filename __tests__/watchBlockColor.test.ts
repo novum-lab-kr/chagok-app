@@ -22,8 +22,8 @@ describe('블록 색 (워치 설계 「블록 색」)', () => {
     expect(blockColorOf('sprout')).toBe(stickerBlockColors['basic.sprout']);
   });
 
-  it('모르는 id는 앱처럼 기본 스티커(새싹) 색', () => {
-    expect(blockColorOf('nope.nope')).toBe(stickerBlockColors['basic.sprout']);
+  it('모르는 id는 앱처럼 기본 스티커(네잎클로버) 색', () => {
+    expect(blockColorOf('nope.nope')).toBe(stickerBlockColors['basic.clover']);
   });
 
   it('기본 색은 차곡이 판 세 장 색', () => {

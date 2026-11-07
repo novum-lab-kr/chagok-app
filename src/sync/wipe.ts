@@ -3,13 +3,14 @@ import { notifyLocalChange } from './changes';
 
 /**
  * 로그아웃·계정 삭제 뒤 기기를 새로 설치한 것처럼 비운다 (계정·백업 설계 ①). 서버 쪽 일이 성공한 뒤에만 부른다.
- * deviceId만 남긴다 — 시작 화면·튜토리얼 표시도 처음으로 돌아간다.
+ * deviceId와 사용 기록 동의(analyticsOff), 오류 보고 끄기(errorReportOff)만 남긴다 — 시작 화면·튜토리얼 표시도 처음으로 돌아간다.
+ * 이 선택은 계정이 아니라 이 기기 사용자의 선택이라, 로그아웃했다고 다시 켜지면 안 된다.
  * DB를 먼저 비우고 사진 파일은 그 뒤에 지운다: DB가 실패하면 사진이 남아 기록이 깨지지 않는다.
  */
 export async function wipeDevice(removePhotoFiles: () => void): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    await tx.exec("DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox; DELETE FROM pack_access; DELETE FROM placed_days; DELETE FROM app_settings WHERE key <> 'deviceId';");
+    await tx.exec("DELETE FROM records; DELETE FROM stickers; DELETE FROM goal_members; DELETE FROM goals; DELETE FROM outbox; DELETE FROM pack_access; DELETE FROM placed_days; DELETE FROM app_settings WHERE key NOT IN ('deviceId', 'analyticsOff', 'errorReportOff');");
   });
   removePhotoFiles();
   notifyLocalChange(); // 위젯을 비운다

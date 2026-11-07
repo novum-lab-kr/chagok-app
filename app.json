@@ -4,12 +4,13 @@
     "slug": "chagok",
     "owner": "novum-lab",
     "scheme": "chagok",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.novumlab.chagok",
+      "associatedDomains": ["applinks:chagok.novum-lab.com"],
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "appleTeamId": "AJ7LJPM82M",
@@ -36,6 +37,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#AFE1CB"
       }
+    },
+    "locales": {
+      "ko": "./locales/ko.json",
+      "en": "./locales/en.json"
     },
     "plugins": [
       "expo-router",
@@ -94,8 +99,8 @@
                   "default": "ivory",
                   "values": [
                     { "name": "아이보리", "value": "ivory" },
-                    { "name": "흰색", "value": "white" },
-                    { "name": "먹색", "value": "ink" }
+                    { "name": "화이트", "value": "white" },
+                    { "name": "다크", "value": "ink" }
                   ]
                 }
               }
@@ -119,8 +124,8 @@
                   "default": "ivory",
                   "values": [
                     { "name": "아이보리", "value": "ivory" },
-                    { "name": "흰색", "value": "white" },
-                    { "name": "먹색", "value": "ink" }
+                    { "name": "화이트", "value": "white" },
+                    { "name": "다크", "value": "ink" }
                   ]
                 }
               }
@@ -144,8 +149,8 @@
                   "default": "ivory",
                   "values": [
                     { "name": "아이보리", "value": "ivory" },
-                    { "name": "흰색", "value": "white" },
-                    { "name": "먹색", "value": "ink" }
+                    { "name": "화이트", "value": "white" },
+                    { "name": "다크", "value": "ink" }
                   ]
                 }
               }
@@ -163,7 +168,13 @@
           "iosAppId": "ca-app-pub-3557389923784580~6730991421"
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "expo-localization",
+      "@sentry/react-native",
+      [
+        "expo-build-properties",
+        { "android": { "extraMavenRepos": ["https://devrepo.kakao.com/nexus/content/groups/public/"] } }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

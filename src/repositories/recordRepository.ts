@@ -1,5 +1,7 @@
 import { getDb } from '../db/client';
-import { newId } from './ids';
+import type { DbDriver } from '../db/driver';
+import { ME, newId } from './ids';
+import { DEFAULT_STICKER_ID } from '../domain/types';
 import type { RecordNote } from '../domain/types';
 import { enqueue } from '../sync/outbox';
 
@@ -39,6 +41,9 @@ export async function upsertRecord(
   const db = await getDb();
   const now = Date.now();
   return db.transaction(async (tx) => {
+    // 기록은 내가 붙인 칸에만 남긴다 (친구 칸에는 남기지 않는다).
+    const owner = await tx.first<{ placed_by: string | null }>('SELECT placed_by FROM stickers WHERE id = ?', stickerId);
+    if (owner?.placed_by !== ME) throw new Error('내가 붙인 칸에만 기록할 수 있습니다.');
     const row = await tx.first<RecordRow>('SELECT * FROM records WHERE sticker_id = ?', stickerId);
     if (row) {
       await tx.run(
@@ -51,7 +56,7 @@ export async function upsertRecord(
     }
     const record: RecordNote = { id: newId(), stickerId, photoUri: data.photoUri, memo: data.memo, createdAt: now };
     await tx.run(
-      'INSERT INTO records (id, sticker_id, photo_uri, memo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      "INSERT INTO records (id, sticker_id, photo_uri, memo, created_at, updated_at, visibility) VALUES (?, ?, ?, ?, ?, ?, 'self')",
       record.id, record.stickerId, record.photoUri, record.memo, record.createdAt, now,
     );
     await enqueue(tx, 'record', record.id, now);
@@ -93,11 +98,12 @@ export type TimelineEntry = {
  */
 export async function listRecordTimeline(): Promise<TimelineEntry[]> {
   const db = await getDb();
-  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; default_sticker_id: string; sticker_type: string; placed_at: number; date_key: string; memo: string | null; photo_uri: string | null }>(
-    `SELECT r.sticker_id, s.goal_id, g.name, g.default_sticker_id, s.sticker_type, s.placed_at, s.date_key, r.memo, r.photo_uri
+  const rows = await db.all<{ sticker_id: string; goal_id: string; name: string; default_sticker_id: string | null; sticker_type: string; placed_at: number; date_key: string; memo: string | null; photo_uri: string | null }>(
+    `SELECT r.sticker_id, s.goal_id, g.name, m.sticker_id AS default_sticker_id, s.sticker_type, s.placed_at, s.date_key, r.memo, r.photo_uri
      FROM records r
      JOIN stickers s ON s.id = r.sticker_id
      JOIN goals g ON g.id = s.goal_id
+     JOIN goal_members m ON m.goal_id = g.id AND m.user_id = '${ME}'
      WHERE NULLIF(TRIM(r.memo), '') IS NOT NULL OR NULLIF(TRIM(r.photo_uri), '') IS NOT NULL
      ORDER BY s.placed_at DESC, s.id`,
   );
@@ -105,7 +111,7 @@ export async function listRecordTimeline(): Promise<TimelineEntry[]> {
     stickerId: r.sticker_id,
     goalId: r.goal_id,
     goalName: r.name,
-    goalSticker: r.default_sticker_id,
+    goalSticker: r.default_sticker_id ?? DEFAULT_STICKER_ID,
     sticker: r.sticker_type,
     placedAt: r.placed_at,
     dateKey: r.date_key,
@@ -117,14 +123,27 @@ export async function listRecordTimeline(): Promise<TimelineEntry[]> {
 export async function deleteRecord(stickerId: string): Promise<void> {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    const row = await tx.first<{ id: string; photo_uri: string | null; photo_remote_path: string | null }>(
-      'SELECT id, photo_uri, photo_remote_path FROM records WHERE sticker_id = ?', stickerId,
-    );
+    const row = await deleteRecordRow(tx, 'sticker_id', stickerId);
     if (!row) return;
-    await tx.run('DELETE FROM records WHERE sticker_id = ?', stickerId);
     const now = Date.now();
-    await enqueue(tx, 'record', row.id, now);
+    await enqueue(tx, 'record', row.recordId, now);
     // 복원 뒤 사진을 아직 못 받은 기록은 기기 경로 없이 서버 경로만 있다. 서버 사진도 지운다.
-    if (row.photo_uri || row.photo_remote_path) await enqueue(tx, 'photo', row.id, now);
+    if (row.photoUri || row.photoRemotePath) await enqueue(tx, 'photo', row.recordId, now);
   });
+}
+
+/** 기기에서 지운 기록. 사진 파일은 호출자가 DB 삭제가 성공한 뒤에 지운다. */
+export type RemovedRecord = { recordId: string; photoUri: string | null; photoRemotePath: string | null };
+
+/**
+ * 기록 한 줄을 기기에서만 지운다(outbox를 만들지 않는다). 기록 지우기, 칸 떼기, 받아 오기가 함께 쓴다.
+ * 기록은 칸마다 하나라 sticker_id로도 한 줄이다.
+ */
+export async function deleteRecordRow(tx: DbDriver, by: 'id' | 'sticker_id', value: string): Promise<RemovedRecord | null> {
+  const row = await tx.first<{ id: string; photo_uri: string | null; photo_remote_path: string | null }>(
+    `SELECT id, photo_uri, photo_remote_path FROM records WHERE ${by} = ?`, value,
+  );
+  if (!row) return null;
+  await tx.run('DELETE FROM records WHERE id = ?', row.id);
+  return { recordId: row.id, photoUri: row.photo_uri, photoRemotePath: row.photo_remote_path };
 }

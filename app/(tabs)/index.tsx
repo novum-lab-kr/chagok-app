@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
+import * as Haptics from 'expo-haptics';
+import { trackTutorial } from '../../src/analytics';
+import { AddGoalSheet, FirstRunTutorial, GoalListScreen, LoadingScreen, TabSafeArea, TrialReadyCard, accountDialogs, useLoadRetry } from '../../src/design-system';
 import type { GoalListTab } from '../../src/design-system';
-import { listGoalSummaries, settleExpiredPeriods } from '../../src/repositories/goalRepository';
+import { listGoalSummaries, reorderGoals, settleExpiredPeriods } from '../../src/repositories/goalRepository';
 import type { GoalSummary } from '../../src/repositories/goalRepository';
 import { getFlag, getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
-import { useDialog } from '../../src/app-data/useDialog';
+import { DISMISS_FALLBACK_MS, useDialog } from '../../src/app-data/useDialog';
+import { askToSignIn } from '../../src/app-data/askToSignIn';
+import { signedInUserId } from '../../src/app-data/sharedGoalActions';
+import { subscribeLocalChangeGathered } from '../../src/sync/changes';
+import { requestSync } from '../../src/sync/syncGate';
 import { ConnectAccount } from '../account/connect';
 import { readAccountState } from '../../src/sync/accountStatus';
 import { getSupabase } from '../../src/sync/supabaseClient';
-import { orderGoals } from '../../src/domain/board';
+import { moveItem, orderGoals } from '../../src/domain/board';
 import { goalCard } from '../../src/app-data/pocketAdapter';
 import { localDateKey } from '../../src/domain/dates';
 import { fetchPolicyManifest } from '../../src/policy/manifest';
@@ -18,6 +25,7 @@ import { GoalsAdBanner } from '../../src/purchases/GoalsAdBanner';
 import { monthDayLabel, upcomingChange } from '../../src/policy/versions';
 import { subscribeWidgetApplied } from '../../src/widgets/applied';
 import { loadPackState } from '../../src/repositories/packRepository';
+import { canCreateGoal } from '../../src/domain/subscription';
 import { reachedThreshold, showTrialReadyCard } from '../../src/domain/packs';
 
 /** 홈 = 목표 탭 (PRD 4.1, 2026-10-12 하단 탭). 목표를 누르면 판 상세를 연다. 목표가 1개여도 목록을 거친다. */
@@ -27,6 +35,7 @@ export default function GoalList() {
   const [tab, setTab] = useState<GoalListTab>(initialTab === 'completed' ? 'completed' : 'active');
   const [summaries, setSummaries] = useState<GoalSummary[] | null>(null);
   /** undefined = 아직 모름. 값을 읽기 전에 튜토리얼을 띄우지 않는다. */
+  const [reorderGuide, setReorderGuide] = useState(false);
   const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
   /** 첫 실행 시작 화면 (시안 1B). 로그아웃·계정 삭제 뒤에도 기기가 비워져 다시 나온다. */
   const [showStart, setShowStart] = useState<boolean | undefined>(undefined);
@@ -36,9 +45,17 @@ export default function GoalList() {
   const sessionCheck = useRef<Promise<boolean>>(Promise.resolve(false));
   /** 체험 열림 카드에 보일 문턱(7, 14…). null이면 숨긴다 (2026-10-12). */
   const [trial, setTrial] = useState<number | null>(null);
+  /** 구독 중이면 목표를 개수 제한 없이 만든다 (구독 설계 4.8) */
+  const [subscribed, setSubscribed] = useState(false);
   /** 시작 화면에서 복원을 마치면 올린다. 목표 탭은 그동안 계속 보이는 중이라 포커스로는 다시 읽지 않는다 (2026-10-22). */
   const [reload, setReload] = useState(0);
   const navigation = useNavigation();
+  /** 내 목표를 끄는 동안. 화면을 밀어 탭이 바뀌지 않게 한다 (PRD 4.1, 2026-10-30). */
+  const [dragging, setDragging] = useState(false);
+  /** + 시트 [혼자 채우기] [친구와 함께] (PRD 4.15) */
+  const [sheet, setSheet] = useState(false);
+  /** 시트가 다 닫힌 뒤 열 화면. iOS는 닫히는 중인 Modal 위로 화면을 열면 Modal에 가린다 */
+  const afterSheet = useRef<(() => void) | null>(null);
 
   // 연결 화면에서 돌아오거나 로그아웃 뒤 홈으로 오면 다시 읽는다
   useFocusEffect(useCallback(() => {
@@ -109,9 +126,13 @@ export default function GoalList() {
       await settleExpiredPeriods(now);
       const next = await listGoalSummaries(now);
       if (alive) setSummaries(next);
+      const guideDone = await getFlag('reorderGuideDone');
+      if (alive) setReorderGuide(!guideDone);
       const pack = await loadPackState();
       const dismissed = Number(await getSetting('trialCardDismissed') ?? 0);
-      if (alive) setTrial(showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
+      if (alive) setSubscribed(pack.subscribed);
+      // 구독 중에는 잠긴 묶음이 없어 체험 열림 카드를 숨긴다. 붙인 날은 계속 쌓인다 (구독 설계 D8)
+      if (alive) setTrial(!pack.subscribed && showTrialReadyCard(pack.days, pack.claimed, dismissed) ? reachedThreshold(pack.days) : null);
     })().catch(() => { if (alive) fail(); });
     return () => { alive = false; };
   // attempt와 reload는 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
@@ -123,12 +144,19 @@ export default function GoalList() {
     void listGoalSummaries(new Date()).then(setSummaries);
   }), []);
 
+  // 목표 탭을 볼 때 서버 것을 바로 받는다(로그인해 있을 때만 회차가 돈다). 회차가 기기를 바꾸면 목록을 다시 읽는다 —
+  // 친구가 만든 함께 목표, 바뀐 이름과 사람 수. 신호는 커밋 전에 올 수 있어 모았다가 읽는다(changes.ts).
+  useFocusEffect(useCallback(() => {
+    requestSync();
+    return subscribeLocalChangeGathered(() => { void listGoalSummaries(new Date()).then(setSummaries).catch(() => {}); });
+  }, []));
+
   // 시작 화면·튜토리얼·불러오는 동안은 하단 탭을 숨긴다. 첫 실행은 탭보다 먼저 끝내야 한다.
   const hideTabBar = !summaries || showTutorial !== false || showStart !== false;
   useEffect(() => {
     // 숨긴 동안은 화면을 밀어 다른 탭으로 가지도 못한다
-    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined, swipeEnabled: !hideTabBar });
-  }, [navigation, hideTabBar]);
+    navigation.setOptions({ tabBarStyle: hideTabBar ? { display: 'none' } : undefined, swipeEnabled: !hideTabBar && !dragging });
+  }, [navigation, hideTabBar, dragging]);
 
   if (!summaries || showTutorial === undefined || showStart === undefined) {
     return <LoadingScreen failed={failed} kind="goals" onRetry={retry} />;
@@ -150,13 +178,60 @@ export default function GoalList() {
   }
 
   if (showTutorial) {
-    return <FirstRunTutorial onFinish={() => { setShowTutorial(false); void setFlag('tutorialDone', true); }} />;
+    return <FirstRunTutorial onProgress={trackTutorial} onFinish={() => { setShowTutorial(false); void setFlag('tutorialDone', true); }} />;
   }
 
   const now = new Date();
   const byId = new Map(summaries.map((s) => [s.goal.id, s]));
   const { active, completed } = orderGoals(summaries.map((s) => s.goal));
   const cards = (goals: typeof active) => goals.map((g) => goalCard(byId.get(g.id)!, now));
+
+  const finishReorderGuide = () => {
+    setReorderGuide(false);
+    void setFlag('reorderGuideDone', true);
+  };
+
+  // 옮긴 순서를 바로 보여 주고 저장한다. 위젯과 워치는 저장이 보내는 변경 신호로 다시 그린다.
+  // 저장이 실패하면 저장된 순서로 다시 읽는다.
+  const moveGoal = (from: number, to: number) => {
+    const ids = moveItem(active.map((goal) => goal.id), from, to);
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    setSummaries(summaries.map((summary) => {
+      const sortOrder = rank.get(summary.goal.id);
+      return sortOrder === undefined ? summary : { ...summary, goal: { ...summary.goal, sortOrder } };
+    }));
+    void reorderGoals(ids).catch(() => listGoalSummaries(new Date()).then(setSummaries)).catch(() => {});
+  };
+  const dragChange = (value: boolean) => {
+    setDragging(value);
+    if (value) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+
+  /**
+   * 구독이 아니면 내가 만든 목표는 5개까지(완성한 목표, 내가 만든 함께 목표 포함, 초대받아 들어간 목표는 빼고). 넘으면 [+]가 구독 화면을 열고, 그 화면이 이유를 알린다 (2026-11-02 시안 C안).
+   * 넘지 않으면 + 시트를 연다 (PRD 4.15).
+   */
+  const addGoal = () => {
+    if (canCreateGoal(summaries.map((s) => s.goal), subscribed)) setSheet(true);
+    else router.push({ pathname: '/subscription', params: { from: 'goals' } });
+  };
+  const runAfterSheet = () => {
+    const next = afterSheet.current;
+    afterSheet.current = null;
+    next?.();
+  };
+  /** 시트를 닫고, 다 닫힌 뒤(iOS onDismiss, 신호가 안 오면 잠시 뒤) 다음 화면을 연다 */
+  const closeSheetThen = (next: () => void) => {
+    afterSheet.current = next;
+    setSheet(false);
+    if (Platform.OS === 'ios') setTimeout(runAfterSheet, DISMISS_FALLBACK_MS);
+    else runAfterSheet();
+  };
+  /** [친구와 함께]: 시트를 닫고, 로그인해 있으면 만들기로, 아니면 로그인을 권한다. 로그인이 끝나면 계정 연결이 만들기로 보낸다 */
+  const addTogether = async () => {
+    const signedIn = await signedInUserId();
+    closeSheetThen(() => { if (signedIn) router.push('/goal/together'); else void askToSignIn(ask, router, 'together'); });
+  };
 
   const closeTrial = () => {
     if (trial === null) return;
@@ -172,11 +247,21 @@ export default function GoalList() {
         active={cards(active)}
         completed={cards(completed)}
         onOpen={(id) => router.push({ pathname: '/goal/[id]', params: { id } })}
-        onAdd={() => router.push('/goal/new')}
+        onAdd={addGoal}
+        onMove={moveGoal}
+        onDragChange={dragChange}
+        onReorderGuideDone={reorderGuide ? finishReorderGuide : undefined}
         footer={<GoalsAdBanner />}
         notice={tab === 'active' && trial !== null
           ? <TrialReadyCard days={trial} onChoose={() => router.navigate('/stickers')} onClose={closeTrial} />
           : undefined}
+      />
+      <AddGoalSheet
+        visible={sheet}
+        onSolo={() => closeSheetThen(() => router.push('/goal/new'))}
+        onTogether={() => { void addTogether().catch(() => {}); }}
+        onRequestClose={() => setSheet(false)}
+        onDismiss={runAfterSheet}
       />
       {dialog}
     </TabSafeArea>

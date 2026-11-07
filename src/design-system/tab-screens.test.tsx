@@ -75,7 +75,7 @@ describe('스티커 탭',()=>{
     const openPack=vi.fn();
     render(<StickerCollectionScreen packs={[colorPack('basic','free'),colorPack('animals_normal','locked')]} mine={false} onChangeMine={vi.fn()} openPacks={['basic']} onToggle={vi.fn()} reward={{days:5,goal:7}} onOpenPack={openPack}/>);
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button',{name:'동물 묶음 미리 보기'}));expect(openPack).toHaveBeenCalledWith('animals_normal');
+    fireEvent.click(screen.getByRole('button',{name:'동물 스티커 팩 미리 보기'}));expect(openPack).toHaveBeenCalledWith('animals_normal');
   });
 });
 
@@ -83,12 +83,13 @@ describe('흐름 중간 안내',()=>{
   it('체험 열림 카드: [묶음 고르기]와 닫기',()=>{
     const choose=vi.fn(),close=vi.fn();render(<TrialReadyCard days={7} onChoose={choose} onClose={close}/>);
     expect(screen.getByText('스티커 붙인 날 7일을 모았어요')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button',{name:'묶음 고르기'}));expect(choose).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'스티커 팩 고르기'}));expect(choose).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'닫기'}));expect(close).toHaveBeenCalled();
   });
-  it('완성 권하기: [스티커 보기]와 닫기',()=>{
-    const go=vi.fn(),close=vi.fn();render(<CompletionNudge onStickers={go} onClose={close}/>);
+  it('완성 권하기: [스티커 보기], [홈으로]와 닫기',()=>{
+    const go=vi.fn(),home=vi.fn(),close=vi.fn();render(<CompletionNudge onStickers={go} onHome={home} onClose={close}/>);
     fireEvent.click(screen.getByRole('button',{name:'스티커 보기'}));expect(go).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'홈으로'}));expect(home).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'닫기'}));expect(close).toHaveBeenCalled();
   });
 });
@@ -96,7 +97,9 @@ describe('흐름 중간 안내',()=>{
 describe('묶음 카드 한 줄',()=>{
   it('폭에 들어가는 만큼만 보이고 나머지는 +n으로 (폴드 344dp에서 넘치던 것, 2026-10-12)',()=>{
     expect(packRowCount(400,10)).toBe(5);
-    expect(packRowCount(262,10)).toBe(3);
+    expect(packRowCount(262,10)).toBe(4);
+    expect(packRowCount(308,10)).toBe(5);
+    expect(packRowCount(307,10)).toBe(4);
     expect(packRowCount(290,5)).toBe(5);
     expect(packRowCount(0,10)).toBe(5);
   });

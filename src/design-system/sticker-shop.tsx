@@ -6,8 +6,14 @@ import {touchSlop} from './touch';
 import {PixelBadge,PixelButton,PixelFocusRing,PixelFrame,PixelIcon,PixelPanel,PixelText,ProgressBar,StickerGrid,StickerSlot,useLayoutSize} from './components';
 import {InfoRow,RetroScreen,ScreenHeader,SelectionBadge} from './composition-controls';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
-import {colorStickerPacks,colorStickersInPack,type ColorStickerId,type ColorStickerPackId} from '../stickers/color/catalog';
+import {colorStickersInPack,type ColorStickerId,type ColorStickerPackId} from '../stickers/color/catalog';
 import {Mascot} from './mascot';
+import {t} from '../i18n';
+import {packName} from '../i18n/stickerNames';
+import {SUPPORT_EMAIL} from '../support/contactMail';
+import {SubscriptionRow,type SubscriptionSummary} from './subscription';
+
+const noopPress=()=>{};
 
 /** 스티커 묶음과 구매 (PRD 4.12, 2026-10-08 확정 시안 19판). */
 const c=retro.color;
@@ -16,7 +22,7 @@ const caption={color:c.buttonText};
 /** 「기본 스티커」 맨 위 [모든 묶음 · 내 스티커]. 가운데 구분선 없이 고른 쪽 채움만으로 구분한다. */
 export function PackViewSwitch({mine,onChange}:{mine:boolean;onChange:(mine:boolean)=>void}) {
   return <View accessibilityRole="tablist" style={{flexDirection:'row'}}>
-    {([['모든 묶음',false],['내 스티커',true]] as const).map(([label,value])=>{
+    {([[t('shop.allPacks'),false],[t('shop.myStickers'),true]] as const).map(([label,value])=>{
       const on=value===mine;
       return <Pressable key={label} accessibilityRole="tab" accessibilityLabel={label} aria-selected={on} accessibilityState={{selected:on}} onPress={()=>onChange(value)} style={{flex:1,marginHorizontal:4}}>
         <PixelFrame variant="selection" fill={on?c.ink:'transparent'} contentStyle={{minHeight:44,alignItems:'center',justifyContent:'center'}}>
@@ -28,7 +34,7 @@ export function PackViewSwitch({mine,onChange}:{mine:boolean;onChange:(mine:bool
 }
 /** 묶음 카드 머리글 끝의 꺾쇠. 펼침은 위, 접힘은 아래를 가리킨다. */
 export function FoldToggle({open,onPress}:{open:boolean;onPress:()=>void}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={open?'접기':'펼치기'} onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={open?t('shop.collapse'):t('shop.expand')} onPress={onPress} hitSlop={touchSlop({width:44,height:44})} style={{width:44,height:44,alignItems:'center',justifyContent:'center'}}>
     <View style={{transform:[{rotate:open?'-90deg':'90deg'}]}}><PixelIcon name="chevron" size={16}/></View>
   </Pressable>;
 }
@@ -45,8 +51,8 @@ export function RewardProgress({days,goal}:{days:number;goal:number}) {
   return <PixelFrame variant="dialog" fill={c.secondary} contentStyle={{padding:10,flexDirection:'row',alignItems:'center',gap:10}}>
     <Mascot pose={ready?'sparkle':'smile'} size={44}/>
     <View style={{flex:1,gap:6}}>
-      <PixelText style={{fontSize:15,lineHeight:21,color:c.buttonText}}>{ready?'묶음 하나를 골라\n3일 동안 써 볼 수 있어요':`스티커 붙인 날이 ${goal-days}일 더 모이면\n묶음 하나를 3일 써 볼 수 있어요`}</PixelText>
-      {ready?<PixelText variant="caption" style={caption}>{`스티커 붙인 날 ${goal}일을 모았어요`}</PixelText>
+      <PixelText style={{fontSize:15,lineHeight:21,color:c.buttonText}}>{ready?t('shop.rewardReady'):t('shop.rewardMore',goal-days)}</PixelText>
+      {ready?<PixelText variant="caption" style={caption}>{t('shop.rewardCollected',goal)}</PixelText>
         :<View style={{flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><ProgressBar value={days} total={goal}/></View><PixelText variant="caption" style={caption}>{`${days}/${goal}`}</PixelText></View>}
     </View>
   </PixelFrame>;
@@ -56,23 +62,23 @@ export function PickedStickerBar({sticker,onDone}:{sticker:StickerId;onDone:()=>
   const bottom=useContext(SafeAreaInsetsContext)?.bottom??0;
   return <View style={{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:20,paddingTop:12,paddingBottom:bottom+12,borderTopWidth:retro.shape.panelTitleBorder,borderColor:c.ink,backgroundColor:c.lcd}}>
     <PixelFrame variant="slot" fill={c.secondary} style={{width:60,height:60}} contentStyle={{width:60,height:60,alignItems:'center',justifyContent:'center'}}><StickerGlyph id={sticker} size={48}/></PixelFrame>
-    <View style={{flex:1}}><PixelText variant="caption" style={caption}>고른 스티커</PixelText><PixelText variant="title" style={{fontSize:20,lineHeight:26}}>{stickerLabel(sticker)}</PixelText></View>
-    <PixelButton label="선택 완료" onPress={onDone} style={{minWidth:130}}/>
+    <View style={{flex:1}}><PixelText variant="caption" style={caption}>{t('shop.picked')}</PixelText><PixelText variant="title" style={{fontSize:20,lineHeight:26}}>{stickerLabel(sticker)}</PixelText></View>
+    <PixelButton label={t('shop.pickDone')} onPress={onDone} style={{minWidth:130}}/>
   </View>;
 }
 
 export type PackState='free'|'owned'|'locked'|'trial';
 export type PackView={id:ColorStickerPackId;label:string;state:PackState;stickers:readonly StickerId[];/** 체험 중 배지. 예: '24시간 남음', '3일 남음' */trialLabel?:string;/** 스토어에서 받아 온 가격 글자(예: '2,200원'). 못 받아 왔으면 없다 */price?:string};
 export function colorPack(id:ColorStickerPackId,state:PackState,trialLabel?:string):PackView {
-  const pack=colorStickerPacks.find(p=>p.id===id)!;
-  return {id,label:pack.label,state,stickers:colorStickersInPack(id).map(s=>s.id as ColorStickerId),trialLabel};
+  return {id,label:packName(id),state,stickers:colorStickersInPack(id).map(s=>s.id as ColorStickerId),trialLabel};
 }
 /*
  * 가격은 스토어에서 받아 온 글자(src/purchases/price.ts). 못 받아 왔으면 가격만 빼고 그대로 둔다 —
  * 배지 없이 [>], [묶음 열기], [열기], [광고 없애기]. 결제 창이 실제 가격을 보여 준다 (2026-10-13 시안 A).
  */
 /** 접힌 줄 한 칸 폭(StickerChoice), 칸 사이, 「+n」 글자 폭 */
-const ROW_CELL=50,ROW_GAP=10,ROW_MORE=28;
+// 접힌 줄 간격 6: 보통 iPhone 폭에서 5개 + 「+n」이 들어가게 (2026-11-04 사용자 요청, 이전 10이라 4개만 보였다)
+const ROW_CELL=50,ROW_GAP=6,ROW_MORE=28;
 /**
  * 접힌 줄에 보일 스티커 수(최대 5). 남으면 「+n」 자리까지 들어가야 한다.
  * 폴드 커버(344dp)에서 5개 + 「+n」이 카드 밖으로 넘쳐 폭을 재서 줄인다 (2026-10-12). 재기 전(0)에는 5개.
@@ -84,36 +90,38 @@ export function packRowCount(width:number,total:number):number {
   return 1;
 }
 
-/** 묶음 카드. 가진 묶음·체험 중은 펼치거나(5개씩 두 줄) 접고(5개 + +n), 잠긴 묶음은 흐린 5개 + +n 위에 가림막. */
+/**
+ * 묶음 카드. 가진 묶음과 체험 중은 펼치거나(5개씩 두 줄) 접고(5개 + +n), 잠긴 묶음은 이름 앞 자물쇠와 흐린 5개 + +n.
+ * 2026-11-04 시안(B안, 흐림 40%): 무료와 열었어요 표시는 없앴다. 지금 쓸 수 있는 묶음은 표시 없이, 잠긴 묶음만 자물쇠로 구분한다.
+ * 가림막과 「눌러서 미리 보기」도 없애 누르기 전에도 스티커 윤곽이 보인다.
+ */
 export function PackCard({pack,open,selected,rewardReady=false,selectable=true,onToggle,onSelect,onOpenPack}:{pack:PackView;open:boolean;selected?:StickerId;rewardReady?:boolean;/** false면 둘러보기만(스티커 탭): 스티커가 고르는 칸이 아니다 */selectable?:boolean;onToggle:()=>void;onSelect:(id:StickerId)=>void;onOpenPack:()=>void}) {
   const locked=pack.state==='locked';
   const {ref:row,size,onLayout}=useLayoutSize();
   const fit=packRowCount(size.width,pack.stickers.length);
   const more=pack.stickers.length-fit;
-  const right=pack.state==='free'?<PixelText variant="caption" style={caption}>무료</PixelText>
-    :pack.state==='owned'?<PixelBadge label="열었어요"/>
-    :pack.state==='trial'?<PixelBadge label={pack.trialLabel??''} tone="primary"/>
-    :<>{rewardReady?<PixelBadge label="3일 무료" tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
+  // 접힌 줄은 카드 안 폭 전체에 고르게 편다(넓은 폰에서 오른쪽이 비었다, 2026-11-06). 칸 사이는 ROW_GAP 아래로 줄지 않는다.
+  // 스티커가 5개보다 적고 「+n」도 없는 묶음은 양끝으로 벌어지지 않게 왼쪽부터 둔다.
+  const spread=more>0||fit>=5?'space-between' as const:'flex-start' as const;
+  const right=pack.state==='free'||pack.state==='owned'?null
+    :pack.state==='trial'?(pack.trialLabel?<PixelBadge label={pack.trialLabel} tone="primary"/>:null)
+    :<>{rewardReady?<PixelBadge label={t('shop.threeDaysFree')} tone="primary"/>:pack.price&&<PixelBadge label={pack.price} tone="primary"/>}<PixelIcon name="chevron" size={16}/></>;
   const head=<View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:36}}>
-    <PixelText accessibilityRole="header" style={{fontSize:20,lineHeight:26,color:c.buttonText}}>{pack.label}</PixelText>
-    <PixelText variant="caption" style={caption}>{`${pack.stickers.length}종`}</PixelText><View style={{flex:1}}/>{right}
+    {/* 이름이 길면(영어) 개수를 다음 줄로 내려 가격과 화살표를 밀지 않는다 */}
+    <View style={{flex:1,flexDirection:'row',flexWrap:'wrap',alignItems:'center',columnGap:8}}>
+      {locked&&<ActionSymbol name="lock" size={16} color={c.buttonText}/>}
+      <PixelText accessibilityRole="header" style={{fontSize:20,lineHeight:26,color:c.buttonText}}>{pack.label}</PixelText>
+      <PixelText variant="caption" style={caption}>{t('shop.stickerCount',pack.stickers.length)}</PixelText>
+    </View>{right}
     {!locked&&<FoldToggle open={open} onPress={onToggle}/>}
   </View>;
   // 카드 어디를 눌러도 묶음 화면을 연다. 머리줄의 [>]도 눌리는 것처럼 보이므로 (2026-10-09)
-  if(locked) return <Pressable accessibilityRole="button" accessibilityLabel={`${pack.label} 묶음 미리 보기`} onPress={onOpenPack}>
+  if(locked) return <Pressable accessibilityRole="button" accessibilityLabel={t('shop.previewPack',pack.label)} onPress={onOpenPack}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14,gap:10}}>
       {head}
-      <View ref={row} onLayout={onLayout}>
-        <View style={{flexDirection:'row',alignItems:'center',gap:10}}>
-          {pack.stickers.slice(0,fit).map(id=><View key={id} style={{opacity:retro.opacity.disabled}}><StickerGlyph id={id} size={48}/></View>)}
-          {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
-        </View>
-        <View style={{position:'absolute',left:-4,right:-4,top:-4,bottom:-4,alignItems:'center',justifyContent:'center'}}>
-          <View style={{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:c.secondary,opacity:0.7}}/>
-          <PixelFrame variant="selection" fill={c.ink} contentStyle={{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:10,paddingVertical:4}}>
-            <ActionSymbol name="lock" size={14} color={c.lcd}/><PixelText style={{color:c.lcd,fontSize:15}}>눌러서 미리 보기</PixelText>
-          </PixelFrame>
-        </View>
+      <View ref={row} onLayout={onLayout} testID="pack-row" style={{flexDirection:'row',alignItems:'center',justifyContent:spread,gap:ROW_GAP,opacity:retro.opacity.disabled}}>
+        {pack.stickers.slice(0,fit).map(id=><View key={id} style={{width:ROW_CELL,alignItems:'center'}}><StickerGlyph id={id} size={48}/></View>)}
+        {more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}
       </View>
     </PixelFrame>
   </Pressable>;
@@ -127,7 +135,7 @@ export function PackCard({pack,open,selected,rewardReady=false,selectable=true,o
     <View ref={row} onLayout={onLayout}>
     {open
       ?<View accessibilityRole={group} style={{flexDirection:'row',flexWrap:'wrap',rowGap:14}}>{shown.map(id=><View key={id} style={{width:'20%',alignItems:'center'}}>{cell(id)}</View>)}</View>
-      :<View accessibilityRole={group} style={{flexDirection:'row',alignItems:'center',gap:ROW_GAP}}>{shown.map(id=><React.Fragment key={id}>{cell(id)}</React.Fragment>)}{more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}</View>}
+      :<View accessibilityRole={group} testID="pack-row" style={{flexDirection:'row',alignItems:'center',justifyContent:spread,gap:ROW_GAP}}>{shown.map(id=><React.Fragment key={id}>{cell(id)}</React.Fragment>)}{more>0&&<PixelText style={{fontSize:16,color:c.buttonText}}>{`+${more}`}</PixelText>}</View>}
     </View>
   </PixelFrame>;
 }
@@ -138,12 +146,12 @@ export function togglePack(open:readonly ColorStickerPackId[],id:ColorStickerPac
 }
 
 /** 「기본 스티커」: 새 목표·목표 설정의 [바꾸기]에서 연다 (PRD 4.12). 가진 묶음·체험 중이 위, 잠긴 묶음이 아래. */
-export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,openPacks,onToggle,reward,onOpenPack,onDone,onBack}:{packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;selected:StickerId;onSelect:(id:StickerId)=>void;/** 펼친 묶음들. 처음에는 지금 고른 스티커가 든 묶음 하나 */openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void;onDone:()=>void;onBack:()=>void}) {
+export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,openPacks,onToggle,reward,onOpenPack,onDone,onBack,hideReward=false}:{/** 구독 중에는 붙인 날 체험 안내를 숨긴다 (구독 설계 D8) */hideReward?:boolean;packs:readonly PackView[];mine:boolean;onChangeMine:(mine:boolean)=>void;selected:StickerId;onSelect:(id:StickerId)=>void;/** 펼친 묶음들. 처음에는 지금 고른 스티커가 든 묶음 하나 */openPacks:readonly ColorStickerPackId[];onToggle:(id:ColorStickerPackId)=>void;reward:{days:number;goal:number};onOpenPack:(id:ColorStickerPackId)=>void;onDone:()=>void;onBack:()=>void}) {
   const order=[...packs.filter(p=>p.state!=='locked'),...(mine?[]:packs.filter(p=>p.state==='locked'))];
   const rewardReady=reward.days>=reward.goal;
   return <View style={{flex:1}}>
-    <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:24}}><ScreenHeader title="기본 스티커" onBack={onBack}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
-      <RewardProgress days={reward.days} goal={reward.goal}/>
+    <RetroScreen style={{gap:14}} headerGap={14} header={<View style={{gap:24}}><ScreenHeader title={t('board.basicSticker')} onBack={onBack}/><PackViewSwitch mine={mine} onChange={onChangeMine}/></View>}>
+      {!hideReward&&<RewardProgress days={reward.days} goal={reward.goal}/>}
       {order.map(p=><PackCard key={p.id} pack={p} open={openPacks.includes(p.id)} selected={selected} rewardReady={rewardReady} onToggle={()=>onToggle(p.id)} onSelect={onSelect} onOpenPack={()=>onOpenPack(p.id)}/>)}
     </RetroScreen>
     <PickedStickerBar sticker={selected} onDone={onDone}/>
@@ -151,65 +159,72 @@ export function StickerChooserScreen({packs,mine,onChangeMine,selected,onSelect,
 }
 
 /** 묶음 화면 (PRD 4.12). 스티커 영역은 고르기 카드와 같은 모양, 「판에 붙이면」은 6칸에 5개. */
-export function PackScreen({pack,sample,adFree,reward,onBuy,onWatchAd,onTrial,onBack,busy}:{pack:PackView;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
+export function PackScreen({pack,sample,adFree,adReady=true,reward,onBuy,onWatchAd,onTrial,onBack,busy,onSubscribe}:{pack:PackView;/** 보상형 광고를 지금 띄울 수 있다. false면 [광고 보고 하루]를 숨긴다 — 광고를 못 불러오는데 누를 수 있게 두지 않는다 (2026-11-04) */adReady?:boolean;/** 구독 화면으로 가는 [구독하고 모든 묶음 열기]. 없으면 줄을 그리지 않는다 (2026-11-02 구독 흐름 시안) */onSubscribe?:()=>void;/** 판 예시로 붙일 서로 다른 스티커 5개 */sample:readonly StickerId[];/** 광고 제거를 샀으면 하루 체험이 없다 (2026-10-08) */adFree:boolean;reward:{days:number;goal:number};onBuy:()=>void;onWatchAd:()=>void;onTrial:()=>void;onBack:()=>void;/** 결제·광고를 기다리는 중: 누른 버튼은 로딩 점, 나머지는 누를 수 없다 */busy?:'buy'|'ad'}) {
   const ready=reward.days>=reward.goal;
-  return <RetroScreen style={{gap:14}} header={<ScreenHeader title={`${pack.label} 묶음`} onBack={onBack}/>}>
+  return <RetroScreen style={{gap:14}} header={<ScreenHeader title={pack.label} onBack={onBack}/>}>
     <PixelFrame variant="button" fill={c.secondary} contentStyle={{padding:14}}>
       <View style={{flexDirection:'row',flexWrap:'wrap',rowGap:14}}>{pack.stickers.map(id=><View key={id} style={{width:'20%',alignItems:'center'}}><StickerGlyph id={id} size={48}/></View>)}</View>
     </PixelFrame>
-    <PixelPanel title="판에 붙이면"><View style={{paddingTop:12}}><StickerGrid>
+    <PixelPanel title={t('shop.onBoard')}><View style={{paddingTop:12}}><StickerGrid>
       {[0,1,2,3,4,5].map(i=>sample[i]
         ?<PixelFrame key={i} variant="slot" style={{height:'100%'}} contentStyle={{height:'100%',alignItems:'center',justifyContent:'center'}}><StickerGlyph id={sample[i]} size={48}/></PixelFrame>
         :<StickerSlot key={i} number={i+1} width="100%" height="100%" state="empty"/>)}
     </StickerGrid></View></PixelPanel>
     <View style={{gap:10}}>
-      <PixelButton label={pack.price?`${pack.price}에 열기`:'묶음 열기'} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
-      {!adFree&&<PixelButton label="광고 보고 하루 써 보기" variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
-      <PixelButton label="3일 무료로 써 보기" variant="secondary" disabled={!ready||busy!==undefined} onPress={onTrial}/>
-      {!ready&&<PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{`스티커 붙인 날이 ${reward.goal-reward.days}일 더 모이면 써 볼 수 있어요 (${reward.days}/${reward.goal}일)`}</PixelText>}
+      <PixelButton label={pack.price?t('shop.openForPrice',pack.price):t('shop.openPack')} icon={<ActionSymbol name="lock" size={16} color={c.buttonText}/>} loading={busy==='buy'} disabled={busy==='ad'} onPress={onBuy}/>
+      {onSubscribe&&<PixelButton label={t('sub.openAllPacks')} variant="secondary" disabled={busy!==undefined} onPress={onSubscribe}/>}
+      {!adFree&&adReady&&<PixelButton label={t('shop.watchAd')} variant="secondary" icon={<ActionSymbol name="play" size={16} color={c.buttonText}/>} loading={busy==='ad'} disabled={busy==='buy'} onPress={onWatchAd}/>}
+      <PixelButton label={t('shop.tryThreeDays')} variant="secondary" disabled={!ready||busy!==undefined} onPress={onTrial}/>
+      {!ready&&<PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{t('shop.tryAfter',reward.goal-reward.days,reward.days,reward.goal)}</PixelText>}
     </View>
   </RetroScreen>;
 }
 
-/** 사기 전 확인 창 두 곳(묶음, 광고 제거)에 같이 붙는 줄: 환불 요청처, 미성년자 취소, 약관 적용 (2026-10-29 법률 검토 2차) */
-const purchaseNotice=`환불은 ${Platform.OS==='android'?'Google Play':'App Store'}에서 요청해 주세요.\n미성년자가 법정대리인 동의 없이\n샀다면 본인이나 법정대리인이\n취소할 수 있어요.\n이 구매에는 이용약관이 적용돼요.`;
-/** 화면 위에 PixelDialogModal로 띄운다. 결제 팝업은 Apple·Google이 그린다. */
+const refundStore=()=>Platform.OS==='android'?'google' as const:'apple' as const;
+
+/** 화면 위에 PixelDialogModal로 띄운다. 결제 팝업은 Apple·Google이 그린다. 값은 읽는 순간의 언어로 만든다. */
 export const stickerShopDialogs={
   /**
-   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안 → 2026-10-29 법률 검토 2차). 결제 직전에 알릴 것을 한 창에 둔다:
-   * 얻는 것, 청약철회(환불)를 할 수 없게 되는 때(약관 11조 2항·3항과 같은 뜻), 환불을 요청하는 곳, 미성년자 취소(약관 12조), 약관 적용과 [약관 보기].
-   * 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다. [약관 보기]는 confirmWithTerms(src/policy/openPolicy.ts)로 띄운다.
+   * 사기 전 확인 (2026-10-13 환불 안내 시안 2차 3안 → 2026-10-31 문구 줄이기). 결제 직전에 알릴 것을 한 창에 둔다:
+   * 얻는 것, 청약철회(환불)를 할 수 없게 되는 때(약관 11조 2항·3항과 같은 뜻), 미성년자 취소, [약관 보기].
+   * 법 근거 문구는 사전 `legal.*` 에 따로 둔다. 한국어는 단어 중간에서 줄이 바뀌지 않게 줄을 직접 끊는다. [약관 보기]는 confirmWithTerms(src/policy/openPolicy.ts)로 띄운다.
    */
-  confirmBuy:(label:string,count:number,price?:string)=>({title:`${label} 묶음을 열까요?`,description:`스티커 ${count}개를 바로 붙일 수 있어요.\n스티커를 고르거나 판에 붙이면\n청약철회(환불)를 할 수 없어요.\n${purchaseNotice}`,primaryLabel:price?`${price}에 열기`:'열기',secondaryLabel:'취소',linkLabel:'약관 보기'}),
-  confirmAdFree:{title:'광고를 없앨까요?',description:`사는 즉시 목표 화면 아래\n광고가 사라져서\n청약철회(환불)를 할 수 없어요.\n${purchaseNotice}`,primaryLabel:'광고 없애기',secondaryLabel:'취소',linkLabel:'약관 보기'},
-  bought:(label:string)=>({title:`${label} 묶음을 열었어요`,description:'기본 스티커로 쓸 그림을 골라 주세요.',primaryLabel:'확인',single:true}),
+  confirmBuy:(label:string,count:number,price?:string)=>({title:t('shop.confirmBuyTitle',label),description:`${t('shop.confirmBuyIntro',count)}\n${t('legal.packNoRefund',refundStore(),SUPPORT_EMAIL)}\n${t('legal.minorCancel')}`,primaryLabel:price?t('shop.openForPrice',price):t('shop.open'),secondaryLabel:t('common.cancel'),linkLabel:t('shop.viewTerms')}),
+  get confirmAdFree(){return {title:t('shop.confirmAdFreeTitle'),description:`${t('legal.adFreeNoRefund',refundStore(),SUPPORT_EMAIL)}\n${t('legal.minorCancel')}`,primaryLabel:t('shop.removeAds'),secondaryLabel:t('common.cancel'),linkLabel:t('shop.viewTerms')};},
+  bought:(label:string)=>({title:t('shop.boughtTitle',label),description:t('shop.boughtDescription'),primaryLabel:t('common.ok'),single:true}),
   /** endLabel 예: '내일 밤 11:00' — 광고를 다 본 때부터 24시간 */
-  adTrialStarted:(endLabel:string)=>({title:'하루 동안 써 볼 수 있어요',description:`${endLabel}까지 쓸 수 있어요.`,primaryLabel:'확인',single:true}),
-  trialEnded:(kind:'3일'|'하루')=>({title:`${kind} 체험이 끝났어요`,description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'묶음 열기',secondaryLabel:'다른 스티커'}),
-  restoreDone:(names:readonly string[])=>({title:'구매 내역을 불러왔어요',description:names.join(', '),primaryLabel:'확인',single:true}),
-  restoreNone:{title:'이 계정으로 구매 내역이 없어요',description:'구매한 스토어 계정으로 로그인했는지 확인해 주세요.',primaryLabel:'확인',single:true},
+  adTrialStarted:(endLabel:string)=>({title:t('shop.adTrialTitle'),description:t('shop.adTrialDescription',endLabel),primaryLabel:t('common.ok'),single:true}),
+  /** 구독으로 쓰던 묶음의 스티커를 다음에 붙이려 할 때만 띄운다. 체험이 끝났을 때와 같은 모양 (2026-11-02 구독 흐름 시안) */
+  get subscribed(){return {title:t('sub.doneTitle'),description:t('sub.doneDescription'),primaryLabel:t('common.ok'),single:true};},
+  get subscribeFailed(){return {title:t('sub.failedTitle'),description:t('shop.tryAgainLater'),primaryLabel:t('common.ok'),single:true};},
+  get subscriptionEnded(){return {title:t('sub.endedTitle'),description:t('shop.trialEndedDescription'),primaryLabel:t('shop.openPack'),secondaryLabel:t('shop.otherSticker')};},
+  trialEnded:(kind:'3일'|'하루')=>({title:t('shop.trialEndedTitle',kind),description:t('shop.trialEndedDescription'),primaryLabel:t('shop.openPack'),secondaryLabel:t('shop.otherSticker')}),
+  restoreDone:(names:readonly string[])=>({title:t('shop.restoreDoneTitle'),description:names.join(', '),primaryLabel:t('common.ok'),single:true}),
+  get restoreNone(){return {title:t('shop.restoreNoneTitle'),description:t('shop.restoreNoneDescription'),primaryLabel:t('common.ok'),single:true};},
   /** 실패 (2026-10-13 시안 2판 — 제목은 결과, 설명은 할 일). 결제 창을 닫은 취소에는 띄우지 않는다. */
-  buyFailed:{title:'묶음을 열지 못했어요',description:'잠시 후 다시 시도해 주세요.',primaryLabel:'확인',single:true},
-  adFreeFailed:{title:'광고를 없애지 못했어요',description:'잠시 후 다시 시도해 주세요.',primaryLabel:'확인',single:true},
-  restoreFailed:{title:'구매 내역을 못 불러왔어요',description:'인터넷 연결을 확인하고 다시 시도해 주세요.',primaryLabel:'확인',single:true},
+  get buyFailed(){return {title:t('shop.buyFailedTitle'),description:t('shop.tryAgainLater'),primaryLabel:t('common.ok'),single:true};},
+  get adFreeFailed(){return {title:t('shop.adFreeFailedTitle'),description:t('shop.tryAgainLater'),primaryLabel:t('common.ok'),single:true};},
+  get restoreFailed(){return {title:t('shop.restoreFailedTitle'),description:t('shop.restoreFailedDescription'),primaryLabel:t('common.ok'),single:true};},
   /** 보호자 승인(구입 승인 요청·가족 결제)을 기다릴 때 */
-  purchasePending:{title:'보호자 승인을 기다려요',description:'승인되면 앱 설정에서 [구매 복원]을 눌러 주세요.',primaryLabel:'확인',single:true},
-  adUnavailable:{title:'지금은 광고를 볼 수 없어요',description:'잠시 후 다시 시도해 주세요.',primaryLabel:'확인',single:true},
-} as const;
+  get purchasePending(){return {title:t('shop.pendingTitle'),description:t('shop.pendingDescription'),primaryLabel:t('common.ok'),single:true};},
+  get adUnavailable(){return {title:t('shop.adUnavailableTitle'),description:t('shop.tryAgainLater'),primaryLabel:t('common.ok'),single:true};},
+};
 
 /** 앱 설정 「구매」 블럭 (PRD 4.9). 구매 복원은 앱 설정에만 두고, 사기 전·후 같은 자리다. */
-export function PurchasePanel({adFree,price,onRemoveAds,onRestore,busy}:{adFree:boolean;/** 스토어에서 받아 온 광고 제거 가격 글자. 못 받아 왔으면 없다 */price?:string;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
-  return <PixelPanel title="구매" contentStyle={{gap:0}}>
-    {adFree?<InfoRow label="광고 제거" value="없이 쓰는 중"/>
+export function PurchasePanel({adFree,price,onRemoveAds,onRestore,busy,subscription,onSubscribe=noopPress,onManageSubscription=noopPress}:{/** 구독 칸 (2026-11-02 구독 흐름 시안). 없으면 그리지 않고, 구독 중이면 광고 제거 칸을 숨긴다 */subscription?:SubscriptionSummary;onSubscribe?:()=>void;onManageSubscription?:()=>void;adFree:boolean;/** 스토어에서 받아 온 광고 제거 가격 글자. 못 받아 왔으면 없다 */price?:string;onRemoveAds:()=>void;onRestore:()=>void;/** 결제·복원을 기다리는 중: 누른 버튼은 로딩 점, 다른 버튼은 누를 수 없다 */busy?:'adFree'|'restore'}) {
+  const subscribed=subscription!==undefined&&subscription.state!=='none';
+  return <PixelPanel title={t('shop.purchaseSection')} contentStyle={{gap:0}}>
+    {subscription&&<SubscriptionRow summary={subscription} onSubscribe={onSubscribe} onManage={onManageSubscription}/>}
+    {subscribed?null:adFree?<InfoRow label={t('shop.adFree')} value={t('shop.adFreeOn')}/>
       :<View style={{gap:12,paddingVertical:12}}>
-        <PixelText style={{fontSize:18,lineHeight:24}}>광고 제거</PixelText>
-        <PixelText>목표 화면 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.</PixelText>
-        <PixelButton label={price?`${price}에 광고 없애기`:'광고 없애기'} loading={busy==='adFree'} disabled={busy==='restore'} onPress={onRemoveAds}/>
+        <PixelText style={{fontSize:18,lineHeight:24}}>{t('shop.adFree')}</PixelText>
+        <PixelText>{t('shop.adFreeDescription')}</PixelText>
+        <PixelButton label={price?t('shop.removeAdsForPrice',price):t('shop.removeAds')} loading={busy==='adFree'} disabled={busy==='restore'} onPress={onRemoveAds}/>
       </View>}
-    <View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>
+    {!subscribed&&<View style={{borderTopWidth:retro.shape.cellBorder,borderColor:c.ink}}/>}
     <View style={{gap:8,paddingVertical:12}}>
-      <PixelButton label="구매 복원" variant="secondary" loading={busy==='restore'} disabled={busy==='adFree'} onPress={onRestore}/>
-      <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>구매한 스티커 묶음과 광고 제거를 되살려요</PixelText>
+      <PixelButton label={t('shop.restore')} variant="secondary" loading={busy==='restore'} disabled={busy==='adFree'} onPress={onRestore}/>
+      <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{t(subscription?'sub.restoreHint':'shop.restoreHint')}</PixelText>
     </View>
   </PixelPanel>;
 }

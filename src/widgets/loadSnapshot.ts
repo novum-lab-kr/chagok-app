@@ -1,13 +1,12 @@
 import { listGoals } from '../repositories/goalRepository';
 import { listStickers, listStickersInMonth } from '../repositories/stickerRepository';
 import { listRecordedStickerIds } from '../repositories/recordRepository';
-import { isCompleted } from '../domain/board';
+import { filledCount, isCompleted } from '../domain/board';
 import { localDateKey } from '../domain/dates';
 import type { Sticker } from '../domain/types';
-import { buildWidgetSnapshot } from './snapshot';
 import { listPackAccess } from '../repositories/packRepository';
 import { stickerUsableUntil } from '../app-data/placeGate';
-import type { WidgetInput, WidgetSnapshot } from './snapshot';
+import type { WidgetInput } from './snapshot';
 
 /** 진행 중인 목표의 위젯 입력. 종료일 없는 달력판은 이번 달만 읽는다 (PRD 6.3). */
 export async function loadWidgetInputs(now: Date): Promise<WidgetInput[]> {
@@ -32,12 +31,8 @@ export async function loadWidgetInputs(now: Date): Promise<WidgetInput[]> {
       continue;
     }
     const month = await listStickersInMonth(goal.id, now.getFullYear(), now.getMonth() + 1);
-    const placedAll = goal.endDate === null ? month.length : (await listStickers(goal.id)).length;
+    const placedAll = goal.endDate === null ? month.length : filledCount(goal, await listStickers(goal.id));
     inputs.push({ goal, placedAll, placedDates: month.map((s) => s.dateKey), slotIndexes: [], todaySticker: todaySticker(month), usableUntil });
   }
   return inputs;
-}
-
-export async function loadWidgetSnapshot(now: Date): Promise<WidgetSnapshot> {
-  return buildWidgetSnapshot(await loadWidgetInputs(now), now);
 }

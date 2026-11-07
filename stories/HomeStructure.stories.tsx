@@ -93,6 +93,9 @@ const longTally: Goal = {...goals.reading, totalSlots: 100};
 /** 2·5번 칸에 사진·메모가 있다(오른쪽 위 표식). */
 export const DetailTally: Story = {name: '상세 · 적립판 진행중', render: () => detail('reading', new Set([2, 5]))};
 export const DetailTallyLong: Story = {name: '상세 · 적립판 100칸 (빈칸으로 스크롤)', render: () => <Detail goal={longTally} stickers={slots(longTally, 33)}/>};
+/** 넓은 폰(440pt): 판 안 폭이 330 이상이라 한 줄 5칸 (PRD 4.2, 2026-11-05). 390 폭은 위 스토리처럼 4칸 */
+export const DetailTallyWide: Story = {name: '상세, 적립판 100칸 440 폭 (한 줄 5칸)', render: () => <View style={{width: 440, height: 956, backgroundColor: c.screen}}>
+  <BoardDetailScreen {...boardOf(longTally, slots(longTally, 33))} onBack={noop} onSettings={noop}/></View>};
 export const DetailPeriod: Story = {name: '상세 · 달력판 기간 진행중', render: () => detail('water')};
 export const DetailOpenEnded: Story = {name: '상세 · 달력판 종료일 없음', render: () => detail('walk')};
 export const FlowExtendEndDate: Story = {name: '완성 흐름 · 달력판 종료일 늘리기', render: () => <ExtendEndDate/>};

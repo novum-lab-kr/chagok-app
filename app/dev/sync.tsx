@@ -97,7 +97,7 @@ export default function DevSync() {
       primaryLabel: '복원',
     }))) return;
     const d = await deps();
-    const result = await restoreAll(d.server);
+    const result = await restoreAll({ server: d.server, userId: status!.userId! });
     await downloadRestoredPhotos(d.photos, result.photos);
   });
 

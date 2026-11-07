@@ -1,6 +1,7 @@
 import { getDb } from '../src/db/client';
 import { AD_TRIAL_MS } from '../src/domain/packs';
-import { buyAdFree, buyPack, loadPrices, resetPricesForTest, restorePurchases, setStoreForTest, watchAdForPack, type Store } from '../src/purchases';
+import { buyAdFree, buyPack, usingDevStore, loadPrices, refreshSubscription, resetPricesForTest, restorePurchases, setStoreForTest, subscribe, watchAdForPack, type Store } from '../src/purchases';
+import { devChangeSubscription } from '../src/purchases/devStore';
 import { priceLabel } from '../src/purchases/price';
 import { grantPurchase, listPackAccess, loadPackState } from '../src/repositories/packRepository';
 import { withFreshDb } from './support/setup';
@@ -12,7 +13,10 @@ function fakeStore(over: Partial<Store>): Store {
   return {
     buyPack: async () => ({ ok: true }),
     buyAdFree: async () => ({ ok: true }),
-    restore: async () => ({ packs: [], adFree: false }),
+    restore: async () => ({ packs: [], adFree: false, subscription: null }),
+    subscribe: async () => ({ ok: true }),
+    subscriptionStatus: async () => ({ active: false }),
+    manageSubscriptionUrl: async () => null,
     prices: async () => ({}),
     showRewardedAd: async () => ({ ok: true }),
     ...over,
@@ -48,8 +52,8 @@ describe('purchases', () => {
   });
 
   it('복원: 스토어가 돌려준 묶음과 광고 제거를 되살리고 이름을 묶음 순서 + 광고 제거로 돌려준다', async () => {
-    setStoreForTest(fakeStore({ restore: async () => ({ packs: ['snack_normal', 'sports_normal'], adFree: true }) }));
-    expect(await restorePurchases(now)).toEqual(['운동 묶음', '간식 묶음', '광고 제거']);
+    setStoreForTest(fakeStore({ restore: async () => ({ packs: ['snack_normal', 'sports_normal'], adFree: true, subscription: null }) }));
+    expect(await restorePurchases(now)).toEqual(['운동 스티커 팩', '간식 스티커 팩', '광고 제거']);
     expect((await listPackAccess()).map((a) => [a.packId, a.expiresAt])).toEqual([['snack_normal', null], ['sports_normal', null]]);
     expect((await loadPackState()).adFree).toBe(true);
   });
@@ -63,7 +67,7 @@ describe('purchases', () => {
     await grantPurchase('sports_normal', now);
     const db = await getDb();
     await db.run("INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES ('snack_normal', 'ad', 1, 2)");
-    expect(await restorePurchases(now)).toEqual(['운동 묶음']);
+    expect(await restorePurchases(now)).toEqual(['운동 스티커 팩']);
   });
 });
 
@@ -113,3 +117,49 @@ describe('결제는 한 번에 하나', () => {
   });
 });
 
+describe('구독', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  afterEach(() => setStoreForTest(null));
+
+  it('시험용 버튼: 개발용 구독을 해지 예약하면 끝나는 날까지 쓰고, 끝내면 바로 끝난다', async () => {
+    expect(usingDevStore()).toBe(true);
+    expect(await subscribe('month')).toEqual({ ok: true });
+    await devChangeSubscription('cancel');
+    expect(await refreshSubscription()).toBe(true);
+    expect((await loadPackState()).subscription).toMatchObject({ willRenew: false });
+    await devChangeSubscription('expire');
+    expect(await refreshSubscription()).toBe(false);
+    expect((await loadPackState()).subscribed).toBe(false);
+  });
+  const active = (expiresAt: number) => ({ active: true as const, plan: 'month' as const, expiresAt, willRenew: true });
+
+  it('구독하면 상태를 저장하고, 유료 묶음을 쓰고, 광고가 없다(광고 제거를 산 것은 아니다)', async () => {
+    setStoreForTest(fakeStore({ subscriptionStatus: async () => active(now + 30 * DAY) }));
+    expect(await subscribe('month', now)).toEqual({ ok: true });
+    const s = await loadPackState(now);
+    expect(s).toMatchObject({ subscribed: true, adFree: true, adFreePurchased: false });
+    expect(s.access.filter((a) => a.source === 'sub').map((a) => a.packId)).toContain('christmas_normal');
+  });
+
+  it('확인하지 못하면 저장한 값을 그대로 쓰고, 꺼졌다고 하면 끝난다', async () => {
+    setStoreForTest(fakeStore({ subscriptionStatus: async () => active(now + DAY) }));
+    expect(await refreshSubscription(now)).toBe(true);
+    setStoreForTest(fakeStore({ subscriptionStatus: async () => null }));
+    expect(await refreshSubscription(now + 2 * DAY)).toBe(true);
+    setStoreForTest(fakeStore({ subscriptionStatus: async () => ({ active: false }) }));
+    expect(await refreshSubscription(now + 2 * DAY)).toBe(false);
+    expect((await loadPackState(now + 2 * DAY)).adFree).toBe(false);
+  });
+
+  it('복원 결과에 구독을 함께 보이고, 구독으로는 묶음을 영구로 적지 않는다', async () => {
+    setStoreForTest(fakeStore({ restore: async () => ({ packs: [], adFree: false, subscription: active(now + 30 * DAY) }) }));
+    expect(await restorePurchases(now)).toEqual(['구독']);
+    expect((await listPackAccess()).filter((a) => a.expiresAt === null)).toEqual([]);
+  });
+
+  it('취소한 구독은 저장하지 않는다', async () => {
+    setStoreForTest(fakeStore({ subscribe: async () => ({ ok: false, reason: 'cancelled' }), subscriptionStatus: async () => active(now + DAY) }));
+    expect(await subscribe('year', now)).toEqual({ ok: false, reason: 'cancelled' });
+    expect((await loadPackState(now)).subscription).toBeNull();
+  });
+});

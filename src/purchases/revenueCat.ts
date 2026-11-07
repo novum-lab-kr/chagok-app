@@ -1,6 +1,6 @@
 import { NativeModules } from 'react-native';
 import Purchases, { PRODUCT_CATEGORY } from 'react-native-purchases';
-import { setActiveStore } from './index';
+import { setActiveStore, setPurchaseAccountLinker } from './index';
 import { createRevenueCatStore } from './revenueCatStore';
 
 let configured = false;
@@ -13,13 +13,16 @@ let configured = false;
 export function configureRevenueCat(): boolean {
   if (configured) return true;
   const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_KEY;
-  if (!apiKey || !NativeModules.RNPurchases) return false;
+  // Release 빌드는 Test Store 키를 보면 SDK가 앱을 닫는다. preview 빌드는 결제를 끄고 돈다.
+  if (!apiKey || !NativeModules.RNPurchases || (!__DEV__ && apiKey.startsWith('test_'))) return false;
   Purchases.configure({ apiKey });
   configured = true;
+  setPurchaseAccountLinker(linkPurchaseAccount);
   setActiveStore(createRevenueCatStore({
-    getProducts: (ids) => Purchases.getProducts(ids, PRODUCT_CATEGORY.NON_SUBSCRIPTION),
+    getProducts: (ids, category) => Purchases.getProducts(ids, category === 'SUBSCRIPTION' ? PRODUCT_CATEGORY.SUBSCRIPTION : PRODUCT_CATEGORY.NON_SUBSCRIPTION),
     purchaseStoreProduct: (product) => Purchases.purchaseStoreProduct(product as Parameters<typeof Purchases.purchaseStoreProduct>[0]),
     restorePurchases: () => Purchases.restorePurchases(),
+    getCustomerInfo: () => Purchases.getCustomerInfo(),
   }));
   return true;
 }

@@ -1,5 +1,7 @@
 # 친구와 함께 쓰기: 아이디어
 
+> 2026-11-04: 이 아이디어에서 출발해 「함께 목표」로 정했다. 지금 동작은 [PRD](../../PRD.md) 4.15와 [함께 목표 설계](2026-11-04-friends-goal-design.md)를 본다. 아래는 그때의 기록이다.
+
 2026-10-17. **출시 뒤에 넣을지 고민 중인 기능이다.** 아직 정한 것은 없다. 이 문서는 다음에 기획을 이어 가기 위한 출발점이다.
 
 - 시안: [친구와 함께 쓰기](https://claude.ai/artifact/QYT5fQYk2xeDnBgV63Yckb)(비공개). 저장소에서 바로 보기는 [`friends-ideas.html`](../../design/proposals-2026-10/friends-ideas.html)(브라우저로 열기) 또는 캡처 [`friends-ideas.png`](../../design/proposals-2026-10/friends-ideas.png). 원본은 `friends-ideas.template.html`, 다시 만들기는 `node docs/design/proposals-2026-10/friends-ideas.gen.mjs [출력 폴더]`.

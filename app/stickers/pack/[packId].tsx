@@ -1,19 +1,21 @@
-import { useCallback, useState } from 'react';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { LoadingScreen, PackScreen, stickerShopDialogs, useLoadRetry } from '../../../src/design-system';
 import { endLabel, packViews, samplePlacement } from '../../../src/app-data/packViews';
 import { usePrices } from '../../../src/app-data/usePrices';
+import { useRewardedReady } from '../../../src/app-data/useRewardedReady';
 import { offerOpenPack } from '../../../src/app-data/stickerChoice';
+import { notifyBuyFailure } from '../../../src/app-data/purchaseDialogs';
 import { saveOrNotify, useDialog } from '../../../src/app-data/useDialog';
 import { goBackOrHome, goHome } from '../../../src/app-data/goBack';
 import { createSingleFlight } from '../../../src/app-data/singleFlight';
 import { AD_TRIAL_MS, dayTrialThreshold } from '../../../src/domain/packs';
-import { loadPackState, startDayTrial } from '../../../src/repositories/packRepository';
+import { loadPackState, type LoadedPackState, startDayTrial } from '../../../src/repositories/packRepository';
 import { buyPack, watchAdForPack } from '../../../src/purchases';
 import { confirmWithTerms } from '../../../src/policy/openPolicy';
 import type { ColorStickerPackId } from '../../../src/stickers/color/catalog';
+import { t } from '../../../src/i18n';
 
-type PackState = Awaited<ReturnType<typeof loadPackState>>;
 
 /**
  * 묶음 화면 (PRD 4.12). 「기본 스티커」의 잠긴 묶음, 판 화면 「체험이 끝났어요」의 [묶음 열기]에서 연다.
@@ -21,17 +23,26 @@ type PackState = Awaited<ReturnType<typeof loadPackState>>;
  */
 export default function Pack() {
   const { packId } = useLocalSearchParams<{ packId: ColorStickerPackId }>();
-  const [state, setState] = useState<{ pack: PackState; now: number } | null>(null);
+  const [state, setState] = useState<{ pack: LoadedPackState; now: number } | null>(null);
   const [once] = useState(createSingleFlight);
   const [busy, setBusy] = useState<'buy' | 'ad'>();
   const { ask, dialog } = useDialog();
   const { failed, attempt, fail, retry } = useLoadRetry();
+  // 광고 제거를 샀으면 하루 체험이 없어 광고를 불러 두지 않는다
+  const adReady = useRewardedReady(state?.pack.adFree === false);
   const prices = usePrices();
+  /** 구독 화면으로 갔다가 구독하고 돌아오면 산 것처럼 그 묶음을 펼친다 */
+  const subscribing = useRef(false);
 
   useFocusEffect(useCallback(() => {
     let alive = true;
     void loadPackState()
-      .then((pack) => { if (alive) setState({ pack, now: Date.now() }); })
+      .then((pack) => {
+        if (!alive) return;
+        if (subscribing.current && pack.subscribed) { subscribing.current = false; offerOpenPack(packId); goBackOrHome(); return; }
+        subscribing.current = false;
+        setState({ pack, now: Date.now() });
+      })
       .catch(() => { if (alive) fail(); });
     return () => { alive = false; };
   // attempt는 [다시 시도] 때 다시 읽게 하는 신호라 콜백 안에서 쓰지 않는다.
@@ -55,7 +66,7 @@ export default function Pack() {
     setBusy('buy');
     const r = await buyPack(packId).finally(() => setBusy(undefined));
     if (!r.ok) {
-      if (r.reason !== 'cancelled') await ask(r.reason === 'pending' ? stickerShopDialogs.purchasePending : stickerShopDialogs.buyFailed);
+      await notifyBuyFailure(ask, r, stickerShopDialogs.buyFailed);
       return;
     }
     await ask(stickerShopDialogs.bought(view!.label));
@@ -75,7 +86,7 @@ export default function Pack() {
   }
 
   async function trial() {
-    const ok = await saveOrNotify(ask, '써 보기를 시작하지 못했어요', async () => { await startDayTrial(packId); });
+    const ok = await saveOrNotify(ask, t('shop.trialStartFailed'), async () => { await startDayTrial(packId); });
     if (ok) opened();
   }
 
@@ -85,11 +96,13 @@ export default function Pack() {
         pack={view}
         sample={samplePlacement(view)}
         adFree={state.pack.adFree}
+        adReady={adReady}
         reward={{ days: state.pack.days, goal: dayTrialThreshold(state.pack.claimed) }}
         onBuy={() => { void once(buy); }}
         onWatchAd={() => { void once(watchAd); }}
         onTrial={() => { void once(trial); }}
         onBack={goBackOrHome}
+        onSubscribe={() => { subscribing.current = true; router.push('/subscription'); }}
         busy={busy}
       />
       {dialog}

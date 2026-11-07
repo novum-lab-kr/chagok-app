@@ -1,7 +1,7 @@
 import type { Goal } from '../domain/types';
 import type { DateKey } from '../domain/dates';
-import { dateKeyOf, daysInclusive, daysInMonth, localDateKey } from '../domain/dates';
-import { inPeriod, orderGoals, progressBasis, progressOf, startDate } from '../domain/board';
+import { dateKeyOf, daysInclusive, daysInMonth, localDateKey, monthKeyOf } from '../domain/dates';
+import { inPeriod, mostRecentGoal, orderGoals, progressBasis, progressOf, startDate } from '../domain/board';
 import { kindLabel, percentLabel } from '../app-data/pocketAdapter';
 import { normalizeStickerId } from '../stickers/stickerIds';
 import type { StickerId } from '../design-system/sticker-glyphs';
@@ -91,7 +91,7 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
     const basis = progressBasis(goal, now);
     const placed = basis.kind === 'all'
       ? input.placedAll
-      : input.placedDates.filter((d) => d.startsWith(`${basis.year}-${String(basis.month).padStart(2, '0')}-`)).length;
+      : input.placedDates.filter((d) => d.startsWith(`${monthKeyOf(basis.year, basis.month)}-`)).length;
     const progress = progressOf(goal, placed, now);
     const placedToday = input.todaySticker?.dateKey === localDateKey(now.getTime());
     const todaySlots = input.todaySlots?.dateKey === localDateKey(now.getTime()) ? input.todaySlots : null;
@@ -115,5 +115,6 @@ export function buildWidgetSnapshot(inputs: readonly WidgetInput[], now: Date, c
         : tallyMini(goal, input.slotIndexes, chunk),
     };
   });
-  return { today: localDateKey(now.getTime()), goals, defaultGoalId: goals[0]?.id ?? null };
+  // 기본 목표는 목록 맨 위가 아니라 가장 최근에 붙인 목표다 (PRD 4.10). 목록은 사용자가 정한 순서라 따로 고른다.
+  return { today: localDateKey(now.getTime()), goals, defaultGoalId: mostRecentGoal(active)?.id ?? null };
 }

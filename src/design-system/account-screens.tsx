@@ -1,5 +1,5 @@
 import React,{type ReactNode} from 'react';
-import {Pressable,Text,View} from 'react-native';
+import {Pressable,ScrollView,Text,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
 import {PixelButton,PixelIcon,PixelPanel,PixelText,useLayoutSize} from './components';
 import {Mascot} from './mascot';
@@ -7,6 +7,7 @@ import {APPLE_SIWA_LOGO} from './apple-siwa-logo.generated';
 import {InfoRow,PixelBottomSheet,RetroScreen,ScreenHeader,SelectionBadge,SettingRow} from './composition-controls';
 import {pixelOutline} from './geometry';
 import {retro} from './tokens';
+import {t} from '../i18n';
 
 /**
  * 계정 흐름의 다이얼로그 문구 (2026-10-01 확정 시안). 화면 위에 PixelDialogModal·PixelBusyModal로 띄운다.
@@ -14,23 +15,25 @@ import {retro} from './tokens';
  */
 export const accountDialogs={
   /** 로그인이 풀렸을 때 앱을 열면 한 번 묻는다. 그 뒤로는 앱 설정의 계정 칸이 안내한다. */
-  session:{title:'로그인이 필요해요',description:'다시 로그인해 주세요. 로그인하기 전까지 기록은 이 기기에만 저장돼요. 나중에 설정 탭에서 로그인해도 돼요.',primaryLabel:'로그인',secondaryLabel:'나중에'},
-  restoring:{title:'기록을 가져오는 중',description:'앱을 닫지 말고 잠시 기다려 주세요.'},
-  restoreFailed:{title:'가져오지 못했어요',description:'이 기기의 기록은 바뀌지 않았어요. 연결을 확인하고 다시 시도해 주세요.',primaryLabel:'다시 시도',secondaryLabel:'나중에'},
+  get session(){return {title:t('account.sessionTitle'),description:t('account.sessionDescription'),primaryLabel:t('account.login'),secondaryLabel:t('account.later')};},
+  get restoring(){return {title:t('account.restoringTitle'),description:t('account.restoringDescription')};},
+  get restoreFailed(){return {title:t('account.restoreFailedTitle'),description:t('account.restoreFailedDescription'),primaryLabel:t('common.retry'),secondaryLabel:t('account.later')};},
   /** 백업 중에는 loading으로 같은 다이얼로그를 둔다. */
-  logout:{title:'로그아웃할까요?',description:'아직 백업하지 않은 기록을 먼저 백업하고, 이 기기의 기록을 지워요. 다시 로그인하면 가져올 수 있어요.',primaryLabel:'로그아웃',secondaryLabel:'취소'},
-  logoutFailed:{title:'백업에 실패했어요',description:'인터넷 연결을 확인하고 다시 시도해 주세요.',primaryLabel:'다시 시도',secondaryLabel:'닫기'},
+  get logout(){return {title:t('account.logoutTitle'),description:t('account.logoutDescription'),primaryLabel:t('account.logout'),secondaryLabel:t('common.cancel')};},
+  get logoutFailed(){return {title:t('account.logoutFailedTitle'),description:t('account.checkInternetRetry'),primaryLabel:t('common.retry'),secondaryLabel:t('common.close')};},
   /** 서버가 받지 않는 기록(보류)이 남았을 때. */
-  logoutHeld:(count:number)=>({title:`기록 ${count}개가 사라져요`,description:'이 기록은 백업할 수 없어요. 로그아웃하면 이 기기에서도 지워져요. 그래도 로그아웃할까요?',primaryLabel:'로그아웃',secondaryLabel:'취소'}),
+  logoutHeld:(count:number)=>({title:t('account.logoutHeldTitle',count),description:t('account.logoutHeldDescription',count),primaryLabel:t('account.logout'),secondaryLabel:t('common.cancel')}),
   /** 삭제 중에는 loading으로 같은 다이얼로그를 둔다. */
-  deleteAccount:{title:'계정을 삭제할까요?',description:'서버와 이 기기의 기록이 모두 지워지고 되돌릴 수 없어요.',primaryLabel:'삭제하기',secondaryLabel:'취소'},
-  deleteFailed:{title:'삭제하지 못했어요',description:'연결을 확인하고 다시 시도해 주세요. 아무것도 지우지 않았어요.',primaryLabel:'다시 시도',secondaryLabel:'닫기'},
+  get deleteAccount(){return {title:t('account.deleteTitle'),description:t('account.deleteDescription'),primaryLabel:t('common.delete'),secondaryLabel:t('common.cancel')};},
+  get deleteFailed(){return {title:t('account.deleteFailedTitle'),description:t('account.deleteFailedDescription'),primaryLabel:t('common.retry'),secondaryLabel:t('common.close')};},
+  /** 계정 삭제를 눌렀는데 이 기기의 로그인이 풀려 있을 때 (2026-10-29). [로그인]은 다시 로그인 화면으로 간다. */
+  get deleteNeedsLogin(){return {title:t('account.deleteNeedsLoginTitle'),description:t('account.deleteNeedsLoginDescription'),primaryLabel:t('account.login'),secondaryLabel:t('common.close')};},
   /** 약관 개정: 게시일부터 시행일 사이에 한 번. 재동의 화면은 두지 않는다. */
-  termsChanged:(effectiveLabel:string)=>({title:'이용약관이 바뀌어요',description:`${effectiveLabel}부터 새 약관이 적용돼요. 바뀐 내용은 약관 보기에서 확인해 주세요.`,primaryLabel:'확인',secondaryLabel:'약관 보기'}),
+  termsChanged:(effectiveLabel:string)=>({title:t('account.termsChangedTitle'),description:t('account.termsChangedDescription',effectiveLabel),primaryLabel:t('common.ok'),secondaryLabel:t('account.viewTermsShort')}),
   /** 새 계정 동의 시트를 동의 없이 닫을 때 (2026-10-21). 그만하면 방금 만든 계정을 서버에서 지운다. */
-  quitSignup:{title:'가입을 그만할까요?',description:'방금 만든 계정은 지워져요. 로그인 없이 이 기기에서 쓸 수 있어요.',primaryLabel:'그만하기',secondaryLabel:'계속 가입하기'},
-  quitFailed:{title:'계정을 지우지 못했어요',description:'인터넷 연결을 확인해 주세요. 다음에 로그인하면 동의를 다시 여쭤볼게요.',primaryLabel:'확인'},
-} as const;
+  get quitSignup(){return {title:t('account.quitSignupTitle'),description:t('account.quitSignupDescription'),primaryLabel:t('account.quitSignupConfirm'),secondaryLabel:t('account.quitSignupContinue')};},
+  get quitFailed(){return {title:t('account.quitFailedTitle'),description:t('account.quitFailedDescription'),primaryLabel:t('common.ok')};},
+};
 
 function Caption({children}:{children:ReactNode}) {
   return <PixelText variant="caption" style={{color:retro.color.buttonText}}>{children}</PixelText>;
@@ -70,18 +73,18 @@ function ChoiceCard({title,selected,onPress,children}:{title:string;selected:boo
  * 앱 설정에서 오면 「계정 연결」 머리글이 있고 인사 제목은 뺀다. 안내는 고르기를 권하고 로그인의 덤(자동 백업)만 말한다. 기록이 사라질 수 있다는 걱정이나 새 기기로 옮기기를 앞세우지 않는다.
  */
 export function AccountLoginScreen({loginButtons,onBack,onLocal,busy=false}:{loginButtons:ReactNode;/** 앱 설정에서 왔다 */onBack?:()=>void;/** 첫 실행: 로그인 없이 시작 */onLocal?:()=>void;/** 로그인 진행 중: 로그인 없이 시작을 막는다 */busy?:boolean}) {
-  return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={onBack?<ScreenHeader title="계정 연결" onBack={onBack}/>:undefined}>
+  return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={onBack?<ScreenHeader title={t('account.connectTitle')} onBack={onBack}/>:undefined}>
     <View style={{flex:1,justifyContent:'center'}}>
       <View style={{alignItems:'center',marginBottom:-22,zIndex:1}}><Mascot pose="grin" size={96}/></View>
       <PixelPanel contentStyle={{gap:20,paddingTop:36,paddingBottom:28}}>
         <View style={{gap:8,alignItems:'center'}}>
-          {!onBack&&<PixelText variant="title" style={{fontSize:20,lineHeight:28,textAlign:'center'}}>반가워요</PixelText>}
-          <PixelText variant="caption" style={{color:retro.color.buttonText,textAlign:'center',lineHeight:20}}>{'어떤 걸로 시작해 볼까요?\n로그인하면 기록을 자동으로 백업해요.'}</PixelText>
+          {!onBack&&<PixelText variant="title" style={{fontSize:20,lineHeight:28,textAlign:'center'}}>{t('account.welcome')}</PixelText>}
+          <PixelText variant="caption" style={{color:retro.color.buttonText,textAlign:'center',lineHeight:20}}>{t('account.loginPrompt')}</PixelText>
         </View>
         <View style={{gap:10}}>{loginButtons}</View>
       </PixelPanel>
     </View>
-    {onLocal&&<PixelButton label="로그인 없이 시작하기" variant="secondary" disabled={busy} onPress={onLocal}/>}
+    {onLocal&&<PixelButton label={t('account.startWithoutLogin')} variant="secondary" disabled={busy} onPress={onLocal}/>}
   </RetroScreen>;
 }
 
@@ -95,12 +98,12 @@ export const hasCustomAppleButton=APPLE_SIWA_LOGO!==null;
 export function AppleLoginButton({onPress,disabled=false,logo=APPLE_SIWA_LOGO}:{onPress:()=>void;disabled?:boolean;/** 테스트에서 바꿔 넣는다 */logo?:{width:number;height:number;d:string}|null}) {
   if(!logo) return null;
   const h=LOGIN_BUTTON_HEIGHT;
-  return <Pressable accessibilityRole="button" accessibilityLabel="Apple로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('account.continueApple')} aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
     hitSlop={loginHitSlop} style={({pressed})=>({height:h,borderRadius:12,borderWidth:1,borderColor:'#000000',backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:pressed?0.8:1})}>
     <Svg width={logo.width*h/logo.height} height={h} viewBox={`0 0 ${logo.width} ${logo.height}`} accessibilityElementsHidden importantForAccessibility="no">
       <Path fill="#000000" d={logo.d}/>
     </Svg>
-    <Text style={{fontSize:h*0.43,fontWeight:'500',color:'#000000'}}>Apple로 계속하기</Text>
+    <Text style={{fontSize:h*0.43,fontWeight:'500',color:'#000000'}}>{t('account.continueApple')}</Text>
   </Pressable>;
 }
 
@@ -113,12 +116,12 @@ const loginHitSlop={top:2,bottom:2};
  * 심볼 경로는 카카오 리소스 페이지의 미리보기 SVG 그대로다(모양과 비율 변경 금지). 높이는 다른 로그인 버튼과 같은 LOGIN_BUTTON_HEIGHT.
  */
 export function KakaoLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="카카오로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('account.continueKakao')} aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
     hitSlop={loginHitSlop} style={({pressed})=>({height:LOGIN_BUTTON_HEIGHT,borderRadius:12,backgroundColor:'#FEE500',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:pressed?0.8:1})}>
     <Svg width={18} height={18} viewBox="61.5 16.5 13 13" accessibilityElementsHidden importantForAccessibility="no">
       <Path fill="#000000" d="M68.001 16.5225C64.4222 16.5225 61.5225 19.0037 61.5225 22.0641C61.5225 24.0312 62.7219 25.7596 64.5292 26.7423L63.9181 29.2113C63.8954 29.285 63.9132 29.364 63.9619 29.4184C63.9975 29.457 64.0461 29.478 64.0931 29.478C64.1337 29.478 64.1742 29.464 64.2082 29.4341L66.834 27.5144C67.2117 27.5723 67.6007 27.6039 67.9994 27.6039C71.5767 27.6039 74.478 25.1226 74.478 22.0623C74.478 19.002 71.5783 16.5225 68.001 16.5225Z"/>
     </Svg>
-    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>카카오로 계속하기</Text>
+    <Text style={{fontSize:17,fontWeight:'500',color:'rgba(0,0,0,0.85)'}}>{t('account.continueKakao')}</Text>
   </Pressable>;
 }
 
@@ -127,7 +130,7 @@ export function KakaoLoginButton({onPress,disabled=false}:{onPress:()=>void;disa
  * 다른 로그인 버튼과 같은 크기로 둔다(가이드: 다른 회사 버튼과 비슷한 크기와 무게). 글자는 Apple 기본 버튼의 「계속하기」와 맞춘 「Google로 계속하기」(가이드의 Continue with Google, 2026-10-22 사용자 결정).
  */
 export function GoogleLoginButton({onPress,disabled=false}:{onPress:()=>void;disabled?:boolean}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="Google로 계속하기" aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('account.continueGoogle')} aria-disabled={disabled} accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
     hitSlop={loginHitSlop} style={({pressed})=>({height:LOGIN_BUTTON_HEIGHT,borderRadius:12,borderWidth:1,borderColor:'#747775',backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10,opacity:pressed?0.8:1})}>
     <Svg width={20} height={20} viewBox="0 0 48 48" accessibilityElementsHidden importantForAccessibility="no">
       <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -135,7 +138,7 @@ export function GoogleLoginButton({onPress,disabled=false}:{onPress:()=>void;dis
       <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
       <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
     </Svg>
-    <Text style={{fontSize:17,fontWeight:'500',color:'#1F1F1F'}}>Google로 계속하기</Text>
+    <Text style={{fontSize:17,fontWeight:'500',color:'#1F1F1F'}}>{t('account.continueGoogle')}</Text>
   </Pressable>;
 }
 
@@ -150,76 +153,85 @@ export type AccountBackupStatus=
   |{state:'local'}
   |{state:'synced';provider:AccountProvider;/** 예: '오늘 9:20' */backedUpAt:string}
   |{state:'pending'|'firstBackup'|'needsLogin'|'restoring';provider:AccountProvider};
-const backupLines={
-  pending:['백업하지 못한 기록이 있어요','연결되면 자동으로 백업해요'],
-  firstBackup:['기록을 처음 백업하고 있어요','조금 걸릴 수 있어요. 앱은 그대로 써도 돼요'],
-  needsLogin:['백업하려면 로그인이 필요해요','기록은 이 기기에 그대로 있어요'],
-} as const;
-export function AccountBackupPanel({status,onConnect,onLogin,onLogout,onDelete}:{status:AccountBackupStatus;onConnect:()=>void;onLogin:()=>void;onLogout:()=>void;onDelete:()=>void}) {
-  if(status.state==='local') return <PixelPanel title="계정과 백업" contentStyle={{gap:0}}>
-    <View style={{paddingVertical:12}}><PixelText>지금은 이 기기에만 저장하고 있어요</PixelText></View>
-    <View style={{paddingBottom:12}}><PixelButton label="계정 연결하기" onPress={onConnect}/></View>
+const backupLines=()=>({
+  pending:[t('account.pendingTitle'),t('account.pendingBody')],
+  firstBackup:[t('account.firstBackupTitle'),t('account.firstBackupBody')],
+  needsLogin:[t('account.needsLoginTitle'),t('account.needsLoginBody')],
+});
+/** provider 는 저장값이라 그대로 두고 보여 줄 때만 옮긴다. '개발'은 개발 빌드에서만 보인다. */
+const providerLabel=(provider:AccountProvider)=>provider==='카카오'?t('account.providerKakao'):provider;
+/** onBlocked: 로그인해 있을 때만 호스트가 넘긴다. 패널 맨 아래 「차단한 사람」 줄(새 조립). */
+export function AccountBackupPanel({status,onConnect,onLogin,onLogout,onDelete,onBlocked}:{status:AccountBackupStatus;onConnect:()=>void;onLogin:()=>void;onLogout:()=>void;onDelete:()=>void;onBlocked?:()=>void}) {
+  if(status.state==='local') return <PixelPanel title={t('account.backupTitle')} contentStyle={{gap:0}}>
+    <View style={{paddingVertical:12}}><PixelText>{t('account.deviceOnly')}</PixelText></View>
+    <View style={{paddingBottom:12}}><PixelButton label={t('account.connectAction')} onPress={onConnect}/></View>
   </PixelPanel>;
-  const lines:readonly string[]|undefined=status.state==='synced'||status.state==='restoring'?undefined:backupLines[status.state];
+  const lines:readonly string[]|undefined=status.state==='synced'||status.state==='restoring'?undefined:backupLines()[status.state];
   // 연결된 계정은 「항목 · 값」으로 보인다 (2026-10-08 스티커 화면 시안 확정)
-  return <PixelPanel title="계정과 백업" contentStyle={{gap:0}}>
-    <InfoRow label="연결한 계정" value={status.provider}/>
-    {status.state==='synced'&&<><Rule/><InfoRow label="마지막 백업" value={status.backedUpAt}/></>}
+  return <PixelPanel title={t('account.backupTitle')} contentStyle={{gap:0}}>
+    <InfoRow label={t('account.connectedAccount')} value={providerLabel(status.provider)}/>
+    {status.state==='synced'&&<><Rule/><InfoRow label={t('account.lastBackup')} value={status.backedUpAt}/></>}
     {lines&&<><Rule/><View style={{paddingVertical:12,gap:4}}><PixelText>{lines[0]}</PixelText>{lines[1]&&<Caption>{lines[1]}</Caption>}</View></>}
-    {status.state==='needsLogin'&&<View style={{paddingBottom:12}}><PixelButton label="로그인" onPress={onLogin}/></View>}
-    {status.state!=='restoring'&&<><Rule/><SettingRow label="로그아웃" onPress={onLogout}/><Rule/><SettingRow label="계정 삭제" onPress={onDelete}/></>}
+    {status.state==='needsLogin'&&<View style={{paddingBottom:12}}><PixelButton label={t('account.login')} onPress={onLogin}/></View>}
+    {status.state!=='restoring'&&<><Rule/><SettingRow label={t('account.logout')} onPress={onLogout}/><Rule/><SettingRow label={t('account.delete')} onPress={onDelete}/></>}
+    {onBlocked&&<><Rule/><SettingRow label={t('block.title')} onPress={onBlocked}/></>}
   </PixelPanel>;
 }
 
 export type RecordSnapshot={goals:number;stickers:number;/** 목표 이름. 둘까지 보이고 나머지는 「외 N개」 */goalNames:readonly string[];/** 예: '9월 27일' */updatedAt:string};
 export type RestoreSide='server'|'device';
 function goalNamesLine(names:readonly string[]) {
-  return names.length>2?`${names.slice(0,2).join(', ')} 외 ${names.length-2}개`:names.join(', ');
+  return names.length>2?t('restore.namesMore',names.slice(0,2).join(', '),names.length-2):names.join(', ');
 }
 /** 서버 백업과 이 기기 기록이 다를 때 하나를 고른다 (시안 3B). 안내는 제목 아래. */
 export function RestoreConflictScreen({value,onChange,server,device,onConfirm,onBack}:{value:RestoreSide;onChange:(value:RestoreSide)=>void;server:RecordSnapshot;device:RecordSnapshot;onConfirm:()=>void;onBack:()=>void}) {
   const card=(side:RestoreSide,title:string,s:RecordSnapshot)=><ChoiceCard title={title} selected={value===side} onPress={()=>onChange(side)}>
-    <PixelText style={{fontSize:15,lineHeight:22}}>{`목표 ${s.goals}개 · 스티커 ${s.stickers}개`}</PixelText>
+    <PixelText style={{fontSize:15,lineHeight:22}}>{t('restore.counts',s.goals,s.stickers)}</PixelText>
     {s.goalNames.length>0&&<Caption>{goalNamesLine(s.goalNames)}</Caption>}
-    <Caption>{`마지막 수정 ${s.updatedAt}`}</Caption>
+    <Caption>{t('restore.lastEdited',s.updatedAt)}</Caption>
   </ChoiceCard>;
-  return <RetroScreen style={{gap:16}} header={<ScreenHeader title="기록 복원" onBack={onBack}/>}>
+  return <RetroScreen style={{gap:16}} header={<ScreenHeader title={t('restore.title')} onBack={onBack}/>}>
     <View style={{gap:8}}>
-      <Heading>어느 기록을 사용할까요?</Heading>
-      <PixelText>고른 기록으로 이 기기와 서버를 맞춰요. 다른 쪽 기록은 고른 기록으로 바뀌어요.</PixelText>
+      <Heading>{t('restore.question')}</Heading>
+      <PixelText>{t('restore.description')}</PixelText>
     </View>
     <View accessibilityRole="radiogroup" style={{gap:16}}>
-      {card('server','서버 백업',server)}
-      {card('device','이 기기 기록',device)}
+      {card('server',t('restore.server'),server)}
+      {card('device',t('restore.device'),device)}
     </View>
-    <PixelButton label={value==='server'?'서버 백업 사용하기':'이 기기 기록 사용하기'} onPress={onConfirm}/>
+    <PixelButton label={value==='server'?t('restore.useServer'):t('restore.useDevice')} onPress={onConfirm}/>
   </RetroScreen>;
 }
 
 /** 계정 삭제 내용 확인 (시안 6A). [계정 삭제하기]를 누르면 최종 확인 다이얼로그(accountDialogs.deleteAccount). */
 export function DeleteAccountScreen({onDelete,onCancel,onBack}:{onDelete:()=>void;onCancel:()=>void;onBack:()=>void}) {
-  return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={<ScreenHeader title="계정 삭제" onBack={onBack}/>}>
+  return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={<ScreenHeader title={t('account.delete')} onBack={onBack}/>}>
+    {/* 작은 화면(320×568)에서 안내가 길어도 버튼이 밀려나지 않게 안내만 스크롤한다 (2026-11-06, 구독 안내를 더하며) */}
+    <ScrollView style={{flexGrow:0,flexShrink:1}} alwaysBounceVertical={false}>
     <PixelPanel contentStyle={{gap:8}}>
-      <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>계정과 기록이 사라져요</PixelText>
-      <PixelText>서버에 저장된 목표, 스티커, 메모, 사진과 계정을 삭제해요. 이 기기의 기록도 모두 지워져요. 되돌릴 수 없어요.</PixelText>
+      <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>{t('deleteScreen.heading')}</PixelText>
+      <PixelText>{t('deleteScreen.body')}</PixelText>
       {/* 기기를 비울 때 산 표시도 지운다(src/sync/wipe.ts) — 구매가 사라진 줄 알지 않게 되살리는 길을 알린다 (2026-10-29 법률 검토 2차) */}
-      <PixelText>산 스티커 묶음과 광고 제거도 이 기기에서 지워져요. 같은 스토어 계정으로 앱 설정의 [구매 복원]을 누르면 다시 받을 수 있어요.</PixelText>
+      <PixelText>{t('deleteScreen.purchases')}</PixelText>
+      {/* 약관 2판 제9조 제4항: 계정을 지워도 구독(Apple)은 계속 갱신된다 (2026-11-06) */}
+      <PixelText>{t('deleteScreen.subscription')}</PixelText>
     </PixelPanel>
+    </ScrollView>
     <View style={{flex:1}}/>
-    <PixelButton label="계정 삭제하기" onPress={onDelete}/>
-    <PixelButton label="취소" variant="secondary" onPress={onCancel}/>
+    <PixelButton label={t('deleteScreen.confirm')} onPress={onDelete}/>
+    <PixelButton label={t('common.cancel')} variant="secondary" onPress={onCancel}/>
   </RetroScreen>;
 }
 
 /** 삭제 완료. 뒤로 갈 곳이 없으므로 뒤로가기 없이 [처음으로]만. */
 export function AccountDeletedScreen({onDone}:{onDone:()=>void}) {
-  return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={<ScreenHeader title="계정 삭제"/>}>
+  return <RetroScreen scrollable={false} style={{gap:16,flex:1}} header={<ScreenHeader title={t('account.delete')}/>}>
     <PixelPanel contentStyle={{gap:8}}>
-      <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>계정을 삭제했어요</PixelText>
-      <PixelText>서버와 이 기기의 기록을 모두 지웠어요. 처음 화면으로 돌아가요.</PixelText>
+      <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>{t('deleteScreen.doneHeading')}</PixelText>
+      <PixelText>{t('deleteScreen.doneBody')}</PixelText>
     </PixelPanel>
     <View style={{flex:1}}/>
-    <PixelButton label="처음으로" onPress={onDone}/>
+    <PixelButton label={t('deleteScreen.toStart')} onPress={onDone}/>
   </RetroScreen>;
 }
 
@@ -246,20 +258,20 @@ function ViewChevron({label,onPress}:{label:string;onPress:()=>void}) {
  * 닫으면(배경, Android 뒤로가기) onRequestClose — 부르는 쪽이 가입을 그만할지 묻는다.
  */
 export function ConsentSheet({visible,ageChecked,termsChecked,onToggleAge,onToggleTerms,onViewTerms,onViewPrivacy,onAgree,onRequestClose,loading=false,overlay}:{visible:boolean;ageChecked:boolean;termsChecked:boolean;onToggleAge:()=>void;onToggleTerms:()=>void;onViewTerms:()=>void;onViewPrivacy:()=>void;onAgree:()=>void;onRequestClose:()=>void;/** 동의를 기록하는 중 */loading?:boolean;/** 시트 위에 띄울 다이얼로그(PixelBottomSheet overlay) */overlay?:ReactNode}) {
-  return <PixelBottomSheet visible={visible} title="처음 오셨네요" onRequestClose={onRequestClose} overlay={overlay}>
+  return <PixelBottomSheet visible={visible} title={t('consent.title')} onRequestClose={onRequestClose} overlay={overlay}>
     {/* 제목만 있고 바로 체크 칸이 나오면 무엇을 하라는지 알기 어렵다 (2026-10-22 사용자 메모) */}
-    <Caption>계정을 만들려면 아래 내용을 확인하고 동의해 주세요.</Caption>
+    <Caption>{t('consent.description')}</Caption>
     <View>
-      <PixelCheckbox label="[필수] 만 14세 이상이에요" checked={ageChecked} onChange={onToggleAge}/>
+      <PixelCheckbox label={t('consent.age')} checked={ageChecked} onChange={onToggleAge}/>
       <View style={{flexDirection:'row',alignItems:'center'}}>
-        <View style={{flex:1}}><PixelCheckbox label="[필수] 이용약관에 동의해요" checked={termsChecked} onChange={onToggleTerms}/></View>
-        <ViewChevron label="이용약관 보기" onPress={onViewTerms}/>
+        <View style={{flex:1}}><PixelCheckbox label={t('consent.terms')} checked={termsChecked} onChange={onToggleTerms}/></View>
+        <ViewChevron label={t('consent.viewTerms')} onPress={onViewTerms}/>
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="개인정보 처리방침 보기" onPress={onViewPrivacy} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',paddingLeft:34}}>
-        <PixelText style={{flex:1}}>개인정보 처리방침</PixelText>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('consent.viewPrivacy')} onPress={onViewPrivacy} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',paddingLeft:34}}>
+        <PixelText style={{flex:1}}>{t('policy.privacy')}</PixelText>
         <PixelIcon name="chevron" size={14}/>
       </Pressable>
     </View>
-    <PixelButton label="동의하고 시작하기" disabled={!(ageChecked&&termsChecked)} loading={loading} onPress={onAgree}/>
+    <PixelButton label={t('consent.agree')} disabled={!(ageChecked&&termsChecked)} loading={loading} onPress={onAgree}/>
   </PixelBottomSheet>;
 }

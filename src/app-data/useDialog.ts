@@ -22,7 +22,7 @@ export type DialogChoice = 'primary' | 'secondary' | 'link' | 'dismiss';
  * 반환한 `dialog`는 화면에 함께 렌더해야 한다.
  */
 /** 닫히는 애니메이션(fade)보다 넉넉하게 */
-const DISMISS_FALLBACK_MS = 700;
+export const DISMISS_FALLBACK_MS = 700;
 
 export function useDialog() {
   const [open, setOpen] = useState<{ spec: DialogSpec; resolve: (choice: DialogChoice) => void } | null>(null);
@@ -88,7 +88,10 @@ export function useDialog() {
     onLink: () => close('link'),
   });
 
-  return { ask, confirm, dialog };
+  /** 창이 떠 있거나 닫히는 중이다. iOS는 그 위에 다른 모달을 띄우지 못한다. */
+  const dialogOpen = open !== null || closing !== null;
+
+  return { ask, confirm, dialog, dialogOpen };
 }
 
 /**

@@ -20,6 +20,18 @@ describe('updateGrowth: 예전에 저장된 최고치', () => {
   });
 });
 
+describe('updateGrowth: 친구 칸', () => {
+  it('친구가 붙인 칸은 세지 않는다', async () => {
+    const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
+    await placeSticker(g.id, 0);
+    await (await getDb()).run(
+      `INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min, board_user_id, placed_by)
+       VALUES ('f1', ?, 1, 5, 'basic.star', 1, '2026-10-12', 540, 'u2', 'u2')`, g.id,
+    );
+    expect(await updateGrowth()).toBe(1);
+  });
+});
+
 describe('updateGrowth (워치 설계 「성장 수」)', () => {
   it('처음에는 지금까지 붙인 스티커 전체, 완성한 판도 센다', async () => {
     const a = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 1 });
@@ -59,7 +71,7 @@ describe('updateGrowth (워치 설계 「성장 수」)', () => {
     expect(await updateGrowth()).toBe(6);
     const db = await getDb();
     await db.exec('DELETE FROM records; DELETE FROM stickers; DELETE FROM goals; DELETE FROM outbox;');
-    await restoreAll(server);
+    await restoreAll({ server, userId: server.userId });
     expect(await updateGrowth()).toBe(1);
   });
 });

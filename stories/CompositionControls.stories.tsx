@@ -1,7 +1,7 @@
 import React,{useState} from 'react';
 import {View} from 'react-native';
 import type {Meta,StoryObj} from '@storybook/react-vite';
-import {BoardTypePicker,SlotCountPicker,StickerSummary,RecordSummary,PhotoAttachment,MemoEditor,MonthNavigation,PixelText,ActionSymbol,pocketStickers,StickerGlyph,toColorStickerId,type BoardKind} from '../src/design-system';
+import {BoardTypePicker,SlotCountPicker,StickerSummary,RecordSummary,PhotoAttachment,MemoEditor,MonthNavigation,PixelText,ActionSymbol,StickerGlyph,type BoardKind} from '../src/design-system';
 const meta={title:'Components/Screen Building Blocks'} satisfies Meta;
 export default meta;type Story=StoryObj<typeof meta>;
 function BoardDemo(){const [kind,setKind]=useState<BoardKind>('tally'),[count,setCount]=useState('15');return <View style={{maxWidth:350,gap:24}}><BoardTypePicker value={kind} onChange={setKind}/>{kind==='tally'&&<SlotCountPicker value={count} onChange={setCount}/>}</View>}
@@ -16,4 +16,3 @@ export const PhotoEmpty:Story={name:'사진 프레임 · 찍기·고르기',rend
 export const PhotoAttached:Story={name:'사진 프레임 · 오른쪽 위 삭제',render:()=> <PhotoState initialAttached/>};
 export const PhotoMissing:Story={name:'사진 프레임 · 불러오기 실패',render:()=> <PhotoState initialAttached missing/>};
 export const CalendarNavigation:Story={name:'달력 월 이동',render:()=> <MonthDemo/>};
-export const StickerGlyphs:Story={name:'도트 스티커 6종',render:()=> <View style={{flexDirection:'row',flexWrap:'wrap',gap:24}}>{pocketStickers.map(item=><View key={item.id} style={{width:100,alignItems:'center',gap:12}}><StickerGlyph id={toColorStickerId(item.id)} size={48}/><PixelText>{item.label}</PixelText></View>)}</View>};

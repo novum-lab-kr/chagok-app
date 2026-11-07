@@ -67,7 +67,7 @@ function calendarBoard(goal: Goal, stickers: readonly WatchStickerInput[], now: 
   return { type: 'calendar', year, month, firstWeekday: new Date(year, month - 1, 1).getDay(), days, recorded, startDate: startDate(goal), endDate: goal.endDate };
 }
 
-/** 그 시점의 목표 목록. 진행 중인 목표만, 앱 목록과 같은 순서(마지막으로 붙인 순, PRD 4.1). */
+/** 그 시점의 목표 목록. 진행 중인 목표만, 앱 목록과 같은 순서(사용자가 정한 내 목표 순서, PRD 4.1). */
 export function buildWatchDay(inputs: readonly WatchInput[], now: Date): WatchDayView {
   const today = localDateKey(now.getTime());
   const byId = new Map(inputs.map((i) => [i.goal.id, i]));

@@ -3,13 +3,16 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {FoldToggle,PackCard,PackViewSwitch,PickedStickerBar,RewardProgress,StickerChoice,StickerChooserScreen,colorPack,PackScreen,PurchasePanel,stickerShopDialogs,togglePack} from './sticker-shop';
 import {InfoRow} from './composition-controls';
+import {Platform} from 'react-native';
+import {setLanguage,t} from '../i18n';
+import {SUPPORT_EMAIL} from '../support/contactMail';
 afterEach(cleanup);
 /** 원화 계정에서 받아 온 가격 */
 const priced={...colorPack('animals_normal','locked'),price:'2,200원'};
 describe('스티커 묶음 부품',()=>{
   it('보기 전환은 고른 쪽만 선택 상태이고 누르면 바뀐 값을 알린다',()=>{
     const change=vi.fn();render(<PackViewSwitch mine={false} onChange={change}/>);
-    expect(screen.getByRole('tab',{name:'모든 묶음'}).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab',{name:'전체'}).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('tab',{name:'내 스티커'}).getAttribute('aria-selected')).toBe('false');
     fireEvent.click(screen.getByRole('tab',{name:'내 스티커'}));expect(change).toHaveBeenCalledWith(true);
   });
@@ -28,7 +31,7 @@ describe('스티커 묶음 부품',()=>{
     expect(screen.getByText(/스티커 붙인 날이 2일 더 모이면/)).toBeTruthy();
     expect(screen.getByText('5/7')).toBeTruthy();
     rerender(<RewardProgress days={7} goal={7}/>);
-    expect(screen.getByText(/묶음 하나를 골라/)).toBeTruthy();
+    expect(screen.getByText(/스티커 팩 하나를 골라/)).toBeTruthy();
     expect(screen.queryByText('5/7')).toBeNull();
   });
   it('고른 스티커 줄은 이름과 [선택 완료]를 보인다',()=>{
@@ -62,6 +65,15 @@ describe('「기본 스티커」 화면',()=>{
     render(<PackCard pack={pack} open onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
     expect(screen.getAllByRole('radio')).toHaveLength(10);
   });
+  it('접힌 줄은 5개와 +n을 카드 폭에 고르게 편다(넓은 폰에서 오른쪽이 비지 않게, 2026-11-06). 잠긴 묶음도 같다',()=>{
+    for(const state of ['owned','locked'] as const){
+      render(<PackCard pack={colorPack('snack_normal',state)} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
+      const row=screen.getByTestId('pack-row');
+      expect(getComputedStyle(row).justifyContent).toBe('space-between');
+      expect(row.lastElementChild?.textContent).toBe('+5');
+      cleanup();
+    }
+  });
   it('접힌 줄의 5개 안에 고른 스티커가 있으면 선택 표시가 보인다',()=>{
     const pack=colorPack('snack_normal','owned');
     render(<PackCard pack={pack} open={false} selected={pack.stickers[2]} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
@@ -71,9 +83,15 @@ describe('「기본 스티커」 화면',()=>{
     const open=vi.fn();const {rerender}=render(<PackCard pack={priced} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
     expect(screen.getByText('2,200원')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button',{name:'동물 묶음 미리 보기'}));expect(open).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'동물 스티커 팩 미리 보기'}));expect(open).toHaveBeenCalled();
     rerender(<PackCard pack={priced} open={false} rewardReady onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={open}/>);
     expect(screen.getByText('3일 무료')).toBeTruthy();
+  });
+  it('무료와 연 묶음은 표시 없이, 잠긴 묶음은 가림막과 미리 보기 글자 없이 보인다 (2026-11-04 시안 B안)',()=>{
+    render(<>{(['free','owned','locked'] as const).map(state=><PackCard key={state} pack={colorPack(state==='free'?'basic':'animals_normal',state)} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>)}</>);
+    expect(screen.queryByText('무료')).toBeNull();
+    expect(screen.queryByText('열었어요')).toBeNull();
+    expect(screen.queryByText('눌러서 미리 보기')).toBeNull();
   });
   it('가격을 못 받아 왔으면 잠긴 묶음에 가격 배지가 없다',()=>{
     render(<PackCard pack={colorPack('animals_normal','locked')} open={false} onToggle={vi.fn()} onSelect={vi.fn()} onOpenPack={vi.fn()}/>);
@@ -108,6 +126,10 @@ describe('묶음 화면',()=>{
     expect(actions()).toEqual(['2,200원에 열기','광고 보고 하루 써 보기','3일 무료로 써 보기']);
     expect(screen.getByText('6')).toBeTruthy();
   });
+  it('광고를 아직 못 불러왔으면 [광고 보고 하루]를 숨긴다 (2026-11-04)',()=>{
+    render(<PackScreen {...base} adReady={false}/>);
+    expect(actions()).toEqual(['2,200원에 열기','3일 무료로 써 보기']);
+  });
   it('붙인 날이 모자라면 3일 무료는 누를 수 없고 아래에 남은 날을 적는다',()=>{
     const trial=vi.fn();render(<PackScreen {...base} onTrial={trial}/>);
     fireEvent.click(screen.getByRole('button',{name:'3일 무료로 써 보기'}));expect(trial).not.toHaveBeenCalled();
@@ -124,29 +146,61 @@ describe('묶음 화면',()=>{
   });
   it('가격을 못 받아 왔으면 가격만 빼고 [묶음 열기]',()=>{
     const buy=vi.fn();render(<PackScreen {...base} pack={colorPack('animals_normal','locked')} onBuy={buy}/>);
-    fireEvent.click(screen.getByRole('button',{name:'묶음 열기'}));expect(buy).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'스티커 열기'}));expect(buy).toHaveBeenCalled();
   });
   it('다이얼로그 문구는 확정 시안 그대로다',()=>{
-    // 결제 직전 고지 (2026-10-29 법률 검토 2차): 청약철회를 할 수 없게 되는 때는 약관 11조와 같은 뜻, 환불 요청처, 미성년자 취소, 약관 적용과 [약관 보기]
-    const notice='환불은 App Store에서 요청해 주세요.\n미성년자가 법정대리인 동의 없이\n샀다면 본인이나 법정대리인이\n취소할 수 있어요.\n이 구매에는 이용약관이 적용돼요.';
-    expect(stickerShopDialogs.confirmBuy('동물',10,'2,200원')).toMatchObject({title:'동물 묶음을 열까요?',description:`스티커 10개를 바로 붙일 수 있어요.\n스티커를 고르거나 판에 붙이면\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'2,200원에 열기',secondaryLabel:'취소',linkLabel:'약관 보기'});
+    // 결제 직전 고지 (2026-10-31 문구 줄이기): 청약철회를 할 수 없게 되는 때는 약관 11조와 같은 뜻, 미성년자 취소, [약관 보기]
+    const notice='미성년자가 법정대리인 동의 없이\n샀다면 취소할 수 있어요.';
+    expect(stickerShopDialogs.confirmBuy('동물',10,'2,200원')).toMatchObject({title:'동물 스티커 팩을 열까요?',description:`스티커 10개를 바로 붙일 수 있어요.\n스티커를 고르거나 판에 붙이면\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'2,200원에 열기',secondaryLabel:'취소',linkLabel:'약관 보기'});
     expect(stickerShopDialogs.confirmBuy('동물',10).primaryLabel).toBe('열기');
     expect(stickerShopDialogs.confirmAdFree).toMatchObject({title:'광고를 없앨까요?',description:`사는 즉시 목표 화면 아래\n광고가 사라져서\n청약철회(환불)를 할 수 없어요.\n${notice}`,primaryLabel:'광고 없애기',secondaryLabel:'취소',linkLabel:'약관 보기'});
-    expect(stickerShopDialogs.bought('동물')).toMatchObject({title:'동물 묶음을 열었어요',description:'기본 스티커로 쓸 그림을 골라 주세요.'});
+    expect(stickerShopDialogs.bought('동물')).toMatchObject({title:'동물 스티커 팩을 열었어요',description:'기본 스티커로 쓸 그림을 골라 주세요.'});
     expect(stickerShopDialogs.adTrialStarted('내일 밤 11:00')).toMatchObject({title:'하루 동안 써 볼 수 있어요',description:'내일 밤 11:00까지 쓸 수 있어요.'});
-    expect(stickerShopDialogs.trialEnded('3일')).toMatchObject({title:'3일 체험이 끝났어요',description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'묶음 열기',secondaryLabel:'다른 스티커'});
+    expect(stickerShopDialogs.trialEnded('3일')).toMatchObject({title:'3일 체험이 끝났어요',description:'붙인 스티커는 그대로 남아 있어요.',primaryLabel:'스티커 열기',secondaryLabel:'다른 스티커'});
     expect(stickerShopDialogs.trialEnded('하루').title).toBe('하루 체험이 끝났어요');
     expect(stickerShopDialogs.restoreDone(['동물 묶음','간식 묶음','광고 제거']).description).toBe('동물 묶음, 간식 묶음, 광고 제거');
     expect(stickerShopDialogs.restoreNone).toMatchObject({title:'이 계정으로 구매 내역이 없어요',description:'구매한 스토어 계정으로 로그인했는지 확인해 주세요.'});
   });
 });
+describe('구매 창의 영어 설명',()=>{
+  it('묶음과 광고 제거 창에 법 근거 문구가 들어간다',()=>{
+    setLanguage('en');
+    try {
+      const buy=stickerShopDialogs.confirmBuy('Snacks',10,'$1.99').description;
+      expect(buy).toContain(t('legal.packNoRefund','apple',SUPPORT_EMAIL));
+      expect(buy).toContain(t('legal.minorCancel'));
+      const adFree=stickerShopDialogs.confirmAdFree.description;
+      expect(adFree).toContain(t('legal.adFreeNoRefund','apple',SUPPORT_EMAIL));
+      expect(adFree).toContain(t('legal.minorCancel'));
+    } finally {
+      setLanguage('ko');
+    }
+  });
+  it('Android 에는 Apple 안내가 나가지 않는다',()=>{
+    const platform=Platform as {OS:string};
+    const originalOs=platform.OS;
+    setLanguage('en');
+    platform.OS='android';
+    try {
+      for(const description of [stickerShopDialogs.confirmBuy('Snacks',10,'$1.99').description,stickerShopDialogs.confirmAdFree.description]){
+        expect(description).toContain('Google Play (Budget & order history > Report a problem)');
+        expect(description).toContain(SUPPORT_EMAIL);
+        expect(description).not.toContain('Apple');
+      }
+    } finally {
+      platform.OS=originalOs;
+      setLanguage('ko');
+    }
+  });
+});
+
 describe('앱 설정 「구매」 블럭',()=>{
   it('사기 전에는 광고 제거 설명과 버튼, 늘 구매 복원 버튼과 설명이 있다',()=>{
     const remove=vi.fn(),restore=vi.fn();render(<PurchasePanel adFree={false} price="5,500원" onRemoveAds={remove} onRestore={restore}/>);
     expect(screen.getByText('목표 화면 아래 광고를 없애요. 한 번 사면 계속 쓸 수 있어요.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'5,500원에 광고 없애기'}));expect(remove).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'구매 복원'}));expect(restore).toHaveBeenCalled();
-    expect(screen.getByText('구매한 스티커 묶음과 광고 제거를 되살려요')).toBeTruthy();
+    expect(screen.getByText('구매한 스티커 팩과 광고 제거를 되살려요')).toBeTruthy();
   });
   it('가격을 못 받아 왔으면 [광고 없애기]',()=>{
     const remove=vi.fn();render(<PurchasePanel adFree={false} onRemoveAds={remove} onRestore={vi.fn()}/>);

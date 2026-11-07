@@ -3,35 +3,44 @@
  * 여는 길: 사기(영구) · 광고를 끝까지 본 때부터 24시간 · 붙인 날 누적 7·14·이후 30일마다 묶음 하나 3일.
  * 체험으로 붙인 스티커는 끝나도 판에 남는다 — 여기서는 「새로 붙일 수 있는가」만 정한다.
  */
+import { t } from '../i18n';
 import { colorStickerPacks, getColorSticker, type ColorStickerId, type ColorStickerPackId } from '../stickers/color/catalog';
 
-export type PackAccess = { packId: ColorStickerPackId; source: 'purchase' | 'ad' | 'days'; grantedAt: number; expiresAt: number | null };
+/** sub: 구독으로 쓰는 묶음. 기기에 저장하지 않고 구독 상태에서 만든 줄이다(packRepository.listPackAccess). */
+export type PackAccess = { packId: ColorStickerPackId; source: 'purchase' | 'ad' | 'days' | 'sub'; grantedAt: number; expiresAt: number | null };
 export type TrialKind = '3일' | '하루';
-export type PackStatus = { state: 'free' | 'owned' | 'trial' | 'locked'; trialLabel?: string; trialKind?: TrialKind; endedKind?: TrialKind };
+/** 잠긴 뒤 안내할 것: 끝난 체험 또는 끝난 구독 */
+export type EndedKind = TrialKind | '구독';
+export type PackStatus = { state: 'free' | 'owned' | 'subscribed' | 'trial' | 'locked'; trialLabel?: string; trialKind?: TrialKind; endedKind?: EndedKind };
 
 const HOUR = 60 * 60 * 1000;
 export const AD_TRIAL_MS = 24 * HOUR;
 export const DAY_TRIAL_MS = 3 * AD_TRIAL_MS;
 
 const kindOf = (a: PackAccess): TrialKind => (a.source === 'ad' ? '하루' : '3일');
+const endedKindOf = (a: PackAccess): EndedKind => (a.source === 'sub' ? '구독' : kindOf(a));
 const isFree = (packId: ColorStickerPackId) => colorStickerPacks.some((p) => p.id === packId && p.free);
 
 /** 남은 시간 배지: 24시간 넘게 남으면 「n일 남음」, 24시간 이하면 「n시간 남음」(둘 다 올림). */
 export function trialLabel(expiresAt: number, now: number): string {
   const left = Math.max(0, expiresAt - now);
-  return left > AD_TRIAL_MS ? `${Math.ceil(left / AD_TRIAL_MS)}일 남음` : `${Math.max(1, Math.ceil(left / HOUR))}시간 남음`;
+  return left > AD_TRIAL_MS ? t('trial.daysLeft', Math.ceil(left / AD_TRIAL_MS)) : t('trial.hoursLeft', Math.max(1, Math.ceil(left / HOUR)));
 }
 
-/** 같은 묶음에 줄이 여럿이면 산 것 > 끝나지 않은 체험 중 가장 늦게 끝나는 것 > 가장 최근에 끝난 것. */
+/**
+ * 같은 묶음에 줄이 여럿이면 산 것 > 구독 중 > 끝나지 않은 체험 중 가장 늦게 끝나는 것 > 가장 최근에 끝난 것.
+ * 구독이 끝나면 남은 체험이 그대로 살아난다 (구독 설계 4.1).
+ */
 export function packStatus(packId: ColorStickerPackId, access: readonly PackAccess[], now: number): PackStatus {
   if (isFree(packId)) return { state: 'free' };
   const mine = access.filter((a) => a.packId === packId);
   if (mine.some((a) => a.expiresAt === null)) return { state: 'owned' };
   const latest = (rows: PackAccess[]) => rows.reduce<PackAccess | null>((best, a) => (!best || a.expiresAt! > best.expiresAt! ? a : best), null);
-  const live = latest(mine.filter((a) => a.expiresAt! > now));
+  if (mine.some((a) => a.source === 'sub' && a.expiresAt! > now)) return { state: 'subscribed' };
+  const live = latest(mine.filter((a) => a.source !== 'sub' && a.expiresAt! > now));
   if (live) return { state: 'trial', trialLabel: trialLabel(live.expiresAt!, now), trialKind: kindOf(live) };
   const ended = latest(mine);
-  return ended ? { state: 'locked', endedKind: kindOf(ended) } : { state: 'locked' };
+  return ended ? { state: 'locked', endedKind: endedKindOf(ended) } : { state: 'locked' };
 }
 
 /** 새로 붙이거나 기본 스티커로 고를 수 있는가. */

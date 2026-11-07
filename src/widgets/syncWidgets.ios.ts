@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { AppState } from 'react-native';
 import { subscribeLocalChange } from '../sync/changes';
 import ChagokGoal from '../../widgets/ios/ChagokGoal';
@@ -11,6 +12,10 @@ import { syncWidgetsOnce } from './syncCore';
 import { createSyncRunner } from './syncRunner';
 import type { WidgetPort } from './syncCore';
 import { widgetArt } from './widgetArt.ios'; // tsc는 플랫폼 확장자를 풀지 못해 명시한다
+
+// 위젯이 이 앱을 열 scheme. 개발 앱과 출시 앱이 한 폰에 같이 있으면 각자 자기 앱을 열어야 한다
+const rawScheme = Constants.expoConfig?.scheme;
+const scheme = (Array.isArray(rawScheme) ? rawScheme[0] : rawScheme) ?? 'chagok';
 
 type AnyWidget = { getTimeline(): Promise<{ props?: { requests?: unknown[] } }[]>; updateTimeline(e: { date: Date; props: never }[]): void };
 const port = (w: unknown): WidgetPort => {
@@ -32,11 +37,11 @@ function syncOnce(): Promise<{ changed: boolean }> {
   };
   return syncWidgetsOnce({
     widgets: { goal: port(ChagokGoal), month: port(ChagokMonth), tally: port(ChagokTally) },
-    apply: applyWidgetRequests,
+    apply: (requests) => applyWidgetRequests(requests, 'widget'),
     props: async (date) => {
       const [inputs, art] = await Promise.all([inputsFor(date), widgetArt()]);
       const s = buildWidgetSnapshot(inputs, date);
-      return { goal: goalWidgetProps(s, art), month: monthWidgetProps(s, art, date), tally: tallyWidgetProps(s, art) };
+      return { goal: { ...goalWidgetProps(s, art), scheme }, month: { ...monthWidgetProps(s, art, date), scheme }, tally: { ...tallyWidgetProps(s, art), scheme } };
     },
     now: () => new Date(),
   });

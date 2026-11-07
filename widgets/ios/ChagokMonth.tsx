@@ -23,6 +23,7 @@ type Config = { background: string; goal?: string };
 
 const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) => {
   'widget';
+  const link = props.scheme ?? 'chagok';
   // 바탕은 고른 색 그대로 — 홈 화면 라이트·다크를 따르지 않는다(2026-10-06 사용자 결정).
   const pal = env.configuration?.background === 'white' ? 'white' : env.configuration?.background === 'ink' ? 'ink' : 'ivory';
   const bg = pal === 'white' ? '#FFFFFF' : pal === 'ink' ? '#1A1A1C' : '#FEF1D1';
@@ -44,10 +45,10 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
     return (
       <VStack
         spacing={6}
-        modifiers={[containerBackground(bg, 'widget'), widgetURL('chagok://goal/new'), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
+        modifiers={[containerBackground(bg, 'widget'), widgetURL(`${link}://goal/new`), frame({ maxWidth: 10000, maxHeight: 10000 })]}>
         <Image uiImage={props.mascotSleepy} modifiers={[resizable(), frame({ width: 40, height: 40 })]} />
-        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>달력판 목표를 만들어 보세요</Text>
-        <Link destination="chagok://goal/new">
+        <Text modifiers={[font({ family: F, size: 13 }), foregroundStyle(ink), lineLimit(2)]}>{props.labels?.firstCalendar ?? '달력판 목표를 만들어 보세요'}</Text>
+        <Link destination={`${link}://goal/new`}>
           <Text
             modifiers={[
               font({ family: F, size: 13 }),
@@ -55,7 +56,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
               padding({ top: 6, bottom: 6, leading: 14, trailing: 14 }),
               background('#FD855F', shapes.roundedRectangle({ cornerRadius: 10 })),
             ]}>
-            목표 만들기
+            {props.labels?.makeGoal ?? '목표 만들기'}
           </Text>
         </Link>
       </VStack>
@@ -88,14 +89,15 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
   const lastSlot = remaining !== null && remaining <= 1;
   // 이번 달 칸: 이 달 요청을 반영한다. 오늘 칸은 이 항목의 날짜 기준.
   const days = g.days.slice();
-  const sameMonth = g.monthLabel === `${day.getMonth() + 1}월`; // 칸이 이 항목의 달일 때만 요청을 합친다
+  const sameMonth = g.month === day.getMonth() + 1; // 칸이 이 항목의 달일 때만 요청을 합친다
   for (const r of mine) {
     if (!sameMonth || !r.dateKey.startsWith(todayKey.slice(0, 8))) continue; // 이 달 요청만
     const i = Number(r.dateKey.slice(8, 10)) - 1;
     if (days[i] === undefined || days[i] === 'outside') continue;
     days[i] = r.kind === 'add' ? 'filled' : r.dateKey < todayKey ? 'missed' : 'future';
   }
-  const todayDay = sameMonth ? day.getDate() : 0;
+  // 칸이 다른 달이면 오늘 칸은 없다. 0을 쓰면 앞쪽 빈칸(day 0)마다 오늘 꺾쇠가 그려졌다(2026-11-05, 1.0.0부터).
+  const todayDay = sameMonth ? day.getDate() : -1;
   const cells: { day: number; state: string }[] = [];
   for (let i = 0; i < g.firstWeekday; i++) cells.push({ day: 0, state: 'blank' });
   days.forEach((state, i) => cells.push({ day: i + 1, state }));
@@ -116,8 +118,8 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
     const isToday = c.day === todayDay;
     const filled = c.state === 'filled';
     if (!filled && !isToday && c.state !== 'missed') return label;
-    if (!filled && (lastSlot || g.locked)) return <Link key={key} destination={`chagok://goal/${g.id}?place=1`}>{label}</Link>;
-    if (filled && !(isToday && undoable)) return <Link key={key} destination={`chagok://goal/${g.id}`}>{label}</Link>;
+    if (!filled && (lastSlot || g.locked)) return <Link key={key} destination={`${link}://goal/${g.id}?place=1`}>{label}</Link>;
+    if (filled && !(isToday && undoable)) return <Link key={key} destination={`${link}://goal/${g.id}`}>{label}</Link>;
     const dateKey = `${todayKey.slice(0, 8)}${String(c.day).padStart(2, '0')}`;
     return (
       <Button
@@ -127,7 +129,8 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
         onPress={() => {
           const now = new Date();
           const req = {
-            id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+            // 요청 id는 스티커 id가 되고 서버는 uuid만 받는다. 위젯 실행 환경에는 crypto가 없어 Math.random으로 v4 모양을 채운다.
+            id: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r % 4) + 8).toString(16); }),
             goalId: g.id,
             kind: filled ? 'undo' : 'add',
             at: now.getTime(),
@@ -140,7 +143,7 @@ const ChagokMonth = (props: MonthWidgetProps, env: WidgetEnvironment<Config>) =>
     );
   };
   return (
-    <HStack spacing={0} modifiers={[containerBackground(bg, 'widget'), widgetURL(`chagok://goal/${g.id}`)]}>
+    <HStack spacing={0} modifiers={[containerBackground(bg, 'widget'), widgetURL(`${link}://goal/${g.id}`)]}>
       <VStack
         alignment="leading"
         spacing={0}

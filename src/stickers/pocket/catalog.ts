@@ -33,4 +33,3 @@ export function getPocketSticker(id:PocketStickerId) {
   if(!definition)throw new Error(`Unknown pocket sticker: ${id}`);
   return definition;
 }
-export const stickerLabel=(id:PocketStickerId)=>getPocketSticker(id).label;

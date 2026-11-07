@@ -3,7 +3,8 @@
 import SwiftUI
 import WidgetKit
 
-private let appGroup = "group.com.novumlab.chagok.watch"
+// 「group.」 + 워치 앱 ID. 이 확장의 ID는 워치 앱 ID + .widgets다 (targets/watch-widget/expo-target.config.js)
+private let appGroup = "group." + (Bundle.main.bundleIdentifier ?? "com.novumlab.chagok.watch.widgets").replacingOccurrences(of: ".widgets", with: "", options: [.anchored, .backwards])
 private let textKey = "complicationText"
 private let imageFile = "complication-chagok.png"
 
@@ -14,7 +15,7 @@ struct ChagokEntry: TimelineEntry {
 }
 
 struct ChagokProvider: TimelineProvider {
-  func placeholder(in context: Context) -> ChagokEntry { ChagokEntry(date: Date(), text: "차곡차곡\n블록을 쌓아요", image: nil) }
+  func placeholder(in context: Context) -> ChagokEntry { ChagokEntry(date: Date(), text: pick("차곡차곡\n블록을 쌓아요", "Chagok\nStack blocks"), image: nil) }
   func getSnapshot(in context: Context, completion: @escaping (ChagokEntry) -> Void) { completion(read(Date())) }
   func getTimeline(in context: Context, completion: @escaping (Timeline<ChagokEntry>) -> Void) {
     let now = Date()
@@ -26,7 +27,7 @@ struct ChagokProvider: TimelineProvider {
   private func read(_ date: Date) -> ChagokEntry {
     let d = UserDefaults(suiteName: appGroup)
     let day = d?.string(forKey: textKey + ".day")
-    let text = (day == dayKey(date) ? d?.string(forKey: textKey) : d?.string(forKey: textKey + ".other")) ?? "폰에서 차곡차곡을\n열어 주세요"
+    let text = (day == dayKey(date) ? d?.string(forKey: textKey) : d?.string(forKey: textKey + ".other")) ?? pick("폰에서 차곡차곡을\n열어 주세요", "Open Chagok\non your phone")
     let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?.appendingPathComponent(imageFile)
     let image = url.flatMap { try? Data(contentsOf: $0) }.flatMap(UIImage.init(data:))
     return ChagokEntry(date: date, text: text, image: image)
@@ -56,7 +57,7 @@ struct ChagokComplicationView: View {
     }
     .containerBackground(for: .widget) { Color.clear }
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("차곡이, " + entry.text.replacingOccurrences(of: "\n", with: " "))
+    .accessibilityLabel(pick("차곡이", "Chagok") + ", " + entry.text.replacingOccurrences(of: "\n", with: " "))
   }
 }
 
@@ -64,8 +65,13 @@ struct ChagokComplicationView: View {
 struct ChagokComplication: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "ChagokComplication", provider: ChagokProvider()) { ChagokComplicationView(entry: $0) }
-      .configurationDisplayName("차곡이")
-      .description("차곡이와 오늘 붙인 스티커")
+      .configurationDisplayName(pick("차곡이", "Chagok"))
+      .description(pick("차곡이와 오늘 붙인 스티커", "Chago and today's sticker"))
       .supportedFamilies([.accessoryRectangular])
   }
+}
+
+/// 워치 앱과 같은 규칙: 기기 첫 언어가 한국어면 한국어, 나머지는 영어.
+private func pick(_ ko: String, _ en: String) -> String {
+  (Locale.preferredLanguages.first?.hasPrefix("ko") ?? true) ? ko : en
 }

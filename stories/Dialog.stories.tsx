@@ -48,7 +48,8 @@ type Spec = React.ComponentProps<typeof PixelDialog>;
  * [이름, 문구]. 이름은 어느 화면에서 언제 뜨는지. 예시 값(개수·날짜)만 여기서 정하고 문구는 앱과 같은 객체에서 읽는다.
  * 보조 버튼 문구가 없으면 버튼 하나로 그린다 — 앱 useDialog와 같은 규칙.
  */
-const groups: [string, [string, Spec][]][] = [
+// 함수로 둔다. 툴바에서 고른 언어로 그릴 때 문구를 읽는다.
+const groups = (): [string, [string, Spec][]][] => [
   ['목표·판 (boardDialogs)', [
     ['판 · 마지막 칸 붙이기 전', boardDialogs.confirmLast('tally')],
     ['판 · 기간 마지막 빈 날 붙이기 전', boardDialogs.confirmLast('calendar')],
@@ -81,6 +82,7 @@ const groups: [string, [string, Spec][]][] = [
     ['계정 삭제 · 최종 확인', accountDialogs.deleteAccount],
     ['계정 삭제 · 삭제 중', {...accountDialogs.deleteAccount, loading: true}],
     ['계정 삭제 · 실패', accountDialogs.deleteFailed],
+    ['계정 삭제 · 로그인이 풀려 있음', accountDialogs.deleteNeedsLogin],
   ]],
   ['스티커 묶음·구매 (stickerShopDialogs)', [
     ['묶음 · 사기 전 확인', stickerShopDialogs.confirmBuy(colorPack('objects_normal', 'locked').label, colorPack('objects_normal', 'locked').stickers.length, '2,200원')],
@@ -91,6 +93,7 @@ const groups: [string, [string, Spec][]][] = [
     ['묶음 · 광고를 못 불러옴', stickerShopDialogs.adUnavailable],
     ['묶음 · 광고를 다 본 뒤', stickerShopDialogs.adTrialStarted('내일 밤 11:00')],
     ['판 · 체험이 끝난 뒤 붙이려 할 때', stickerShopDialogs.trialEnded('3일')],
+    ['판, 구독이 끝난 뒤 붙이려 할 때', stickerShopDialogs.subscriptionEnded],
     ['설정 · 광고 제거 사기 전', stickerShopDialogs.confirmAdFree],
     ['설정 · 광고 제거 실패', stickerShopDialogs.adFreeFailed],
     ['설정 · 구매 복원 찾음', stickerShopDialogs.restoreDone(['동물 묶음', '간식 묶음', '광고 제거'])],
@@ -104,7 +107,7 @@ const groups: [string, [string, Spec][]][] = [
 function Catalog() {
   const caption = {color: retro.color.buttonText};
   return <View style={{gap: 40, padding: 16, backgroundColor: retro.color.screen}}>
-    {groups.map(([group, items]) => <View key={group} style={{gap: 16}}>
+    {groups().map(([group, items]) => <View key={group} style={{gap: 16}}>
       <PixelText variant="title">{group}</PixelText>
       <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start'}}>
         {items.map(([name, spec]) => <View key={name} style={{width: 350, gap: 8}}>

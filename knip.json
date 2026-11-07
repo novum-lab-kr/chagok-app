@@ -1,0 +1,38 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/*.{ts,tsx}",
+    "widgets/ios/*.tsx",
+    "targets/*/expo-target.config.js",
+    "plugins/*/index.js",
+    "supabase/functions/*/index.ts",
+    "scripts/*.{mjs,cjs,js}",
+    "stories/**/*.{ts,tsx,mdx}",
+    "src/**/*.ios.ts",
+    "src/stickers/catalog.ts",
+    "docs/design/**/*.{mjs,cjs}"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "src/**/*.{ts,tsx}",
+    "stories/**/*.{ts,tsx}",
+    "widgets/**/*.tsx",
+    "supabase/functions/**/*.ts",
+    "modules/**/*.ts"
+  ],
+  "ignoreDependencies": [
+    "react-native-pager-view",
+    "react-native-tab-view",
+    "react-native-worklets",
+    "expo-clipboard",
+    "@expo/ngrok",
+    "expo-updates",
+    "expo-modules-core",
+    "expo-asset",
+    "@expo/plist",
+    "xcode",
+    "@expo/ui",
+    "npm"
+  ],
+  "ignoreExportsUsedInFile": true
+}

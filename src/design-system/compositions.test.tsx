@@ -1,11 +1,14 @@
 import React from 'react';
+import {BoardProgressRow,GuideCard,progressBlockPose,progressMascotLeft,tallyPageSize} from './index';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {monthCells,MonthNavigation,CalendarBoard} from './calendar';
+import {boardDialogs} from './board-dialogs';
+import {removeStickerAction,PixelDialog,PixelText} from './components';
+import {setLanguage} from '../i18n';
 import {GoalStickerCell,RecordScreen,exampleGoals} from './screen-compositions';
-import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen} from './board-screens';
-import {PhotoAttachment,SlotCountPicker} from './composition-controls';
-import {PixelDialog,PixelText} from './components';
+import {CompletedGoalSettingsScreen,ExtendSlotsScreen,GoalListScreen,GoalSettingsScreen,NewGoalScreen,goalDragShift,goalDropIndex,movedOrder,pendingOrder} from './board-screens';
+import {PhotoAttachment,SlotCountPicker,goalMoveActionList} from './composition-controls';
 import {retro} from './tokens';
 afterEach(cleanup);
 /** react-native-web은 누른 채 450ms가 지나면 onLongPress를 부른다. */
@@ -168,10 +171,17 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
     fireEvent.click(screen.getByRole('button',{name:'9월 29일'}));expect(change).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'9월 30일'}));expect(change).toHaveBeenCalledWith('2026-09-30');
   });
-  it('기간 없는 달력판 완성 안내는 계속하기로 다시 이어 쓸 수 있다고 알린다 (2026-09-30)',()=>{
+  it('기간 없는 달력판 완성: 계속하기로 이어 쓸 수 있다는 안내는 확인 창이 하고, 화면에는 다시 두지 않는다 (2026-09-30, 2026-11-05 사용자)',()=>{
+    expect(boardDialogs.confirmManual.description).toMatch(/계속하기로 다시 이어 쓸 수도 있어요/);
     render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} onComplete={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
-    expect(screen.getByText(/계속하기로 다시 이어 쓸 수 있어요/)).toBeTruthy();
+    expect(screen.getByText('종료일이 없는 달력판은 여기서 완성해요.')).toBeTruthy();
+    expect(screen.queryByText(/계속하기로/)).toBeNull();
     expect(screen.queryByText(/되돌릴 수 없어요/)).toBeNull();
+  });
+  it('[삭제하기] 아래에 지워지는 내용을 다시 쓰지 않는다. 확인 창이 지워질 스티커와 기록 수를 말한다 (2026-11-05 사용자)',()=>{
+    render(<GoalSettingsScreen name="산책" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} onSave={()=>{}} onDelete={()=>{}} onBack={()=>{}}/>);
+    expect(screen.getByText('삭제하기')).toBeTruthy();
+    expect(screen.queryByText(/지워져요/)).toBeNull();
   });
   it('칸 수 선택: min보다 작은 버튼은 비활성이고, 버튼에 없는 값이면 직접 입력으로 연다 (2026-09-30)',()=>{
     const change=vi.fn();
@@ -191,7 +201,7 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   it('목표 설정: 적립판 칸 수는 늘리기만 된다고 알리고, 오류가 있으면 보여준다 (2026-09-30)',()=>{
     const slots={current:30,value:'15',onChange:vi.fn(),error:'지금 30칸보다 줄일 수 없어요.'};
     render(<GoalSettingsScreen name="독서" onChangeName={()=>{}} sticker="sprout" onChooseSticker={()=>{}} slots={slots} onSave={()=>{}} saveDisabled onDelete={()=>{}} onBack={()=>{}}/>);
-    expect(screen.getByText('지금 30칸 · 늘리기만 할 수 있어요')).toBeTruthy();
+    expect(screen.getByText('지금 30칸이에요. 칸은 늘리기만 할 수 있어요.')).toBeTruthy();
     expect(screen.getByText('지금 30칸보다 줄일 수 없어요.')).toBeTruthy();
   });
   it('[바꾸기]는 「기본 스티커」 화면을 연다',()=>{
@@ -202,7 +212,7 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   });
   it('완성한 판 설정은 마지막 정보 줄에 밑줄이 없어 [삭제하기] 위 구분선과 겹치지 않는다',()=>{
     const bottom=(label:string)=>parseFloat(getComputedStyle(screen.getByText(label).parentElement!).borderBottomWidth)||0;
-    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 · 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
+    render(<CompletedGoalSettingsScreen name="독서" sticker="basic.book" boardLabel="적립판 15칸" completedLabel="10월 9일" onDelete={()=>{}} onBack={()=>{}}/>);
     expect(bottom('기본 스티커')).toBeGreaterThan(0);
     expect(bottom('판 종류')).toBe(0);
     cleanup();
@@ -213,5 +223,138 @@ describe('홈 목록·판 상세 컴포넌트 (2026-09-29)',()=>{
   it('홈 목록은 footer를 스크롤 밖 맨 아래에 둔다',()=>{
     render(<GoalListScreen tab="active" onTab={vi.fn()} active={[]} completed={[]} onOpen={vi.fn()} onAdd={vi.fn()} footer={<PixelText>광고 자리</PixelText>}/>);
     expect(screen.getByText('광고 자리')).toBeTruthy();
+  });
+});
+
+describe('내 목표 끌어 옮기기 (PRD 4.1, 2026-10-30)',()=>{
+  const card=(id:string)=>({id,name:id,sticker:'basic.sprout' as const,kind:'적립판',percent:10,status:['10% 채웠어요']});
+  it('끄는 카드의 끝이 다른 카드의 가운데를 넘으면 그 자리로 간다',()=>{
+    const heights=[100,100,100,100]; // 간격 12 → 가운데 50, 162, 274, 386
+    expect(goalDropIndex(heights,0,0)).toBe(0);
+    expect(goalDropIndex(heights,0,61)).toBe(0);  // 아래 끝 161 < 162
+    expect(goalDropIndex(heights,0,63)).toBe(1);  // 163 > 162
+    expect(goalDropIndex(heights,0,400)).toBe(3);
+    expect(goalDropIndex(heights,3,-61)).toBe(3); // 위 끝 275 > 274
+    expect(goalDropIndex(heights,3,-63)).toBe(2);
+    expect(goalDropIndex(heights,3,-1000)).toBe(0);
+  });
+  it('높이가 다른 카드도 끝과 가운데로 잰다',()=>{
+    expect(goalDropIndex([80,140,80],0,81)).toBe(0); // 아래 끝 161 < 둘째 가운데 162
+    expect(goalDropIndex([80,140,80],0,83)).toBe(1);
+  });
+  it('지나간 카드만 끄는 카드 높이만큼 비켜선다',()=>{
+    expect([0,1,2,3].map(index=>goalDragShift(index,1,3,112))).toEqual([0,0,-112,-112]);
+    expect([0,1,2,3].map(index=>goalDragShift(index,3,1,112))).toEqual([0,112,112,0]);
+    expect([0,1,2].map(index=>goalDragShift(index,1,1,112))).toEqual([0,0,0]);
+  });
+  it('놓아서 순서가 바뀌면 비켜선 카드는 새 순서의 제자리와 같은 곳에 있어, 미끄럼 없이 새 값(0)으로 그린다 (2026-11-05 튕김)',()=>{
+    // 끄는 동안 보이던 자리(옛 자리 + 비켜선 거리)가 새 순서의 자리와 같다. 그래서 미끄럼이 남으면 한 칸 더 밀려 튕긴다
+    const size=112,ids=['a','b','c','d'];
+    for(const [from,to] of [[0,3],[3,0],[1,2],[2,1]] as const){
+      const next=ids.filter((_,index)=>index!==from);next.splice(to,0,ids[from]); // 앱의 moveItem과 같은 옮기기
+      ids.forEach((id,index)=>{if(index!==from) expect(index*size+goalDragShift(index,from,to,size)).toBe(next.indexOf(id)*size);});
+    }
+  });
+  it('화면 읽기 동작은 끝 자리에서 그 방향을 뺀다',()=>{
+    expect(goalMoveActionList(true,true).map(action=>action.label)).toEqual(['위로 옮기기','아래로 옮기기']);
+    expect(goalMoveActionList(false,true).map(action=>action.label)).toEqual(['아래로 옮기기']);
+    expect(goalMoveActionList(true,false).map(action=>action.label)).toEqual(['위로 옮기기']);
+    expect(goalMoveActionList(false,false)).toEqual([]);
+  });
+  it('꾹 눌렀다 움직이지 않고 떼면 들었다 내려놓기만 한다',()=>{
+    const onMove=vi.fn(),onOpen=vi.fn(),onDragChange=vi.fn();
+    render(<GoalListScreen tab="active" onTab={vi.fn()} active={[card('a'),card('b')]} completed={[]} onOpen={onOpen} onAdd={vi.fn()} onMove={onMove} onDragChange={onDragChange}/>);
+    longPress(screen.getByLabelText('a, 적립판, 10% 채웠어요'));
+    expect(onDragChange.mock.calls).toEqual([[true],[false]]);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+  it('완성한 판 탭은 꾹 눌러도 끌지 않는다',()=>{
+    const onDragChange=vi.fn();
+    render(<GoalListScreen tab="completed" onTab={vi.fn()} active={[]} completed={[card('a'),card('b')]} onOpen={vi.fn()} onAdd={vi.fn()} onMove={vi.fn()} onDragChange={onDragChange}/>);
+    longPress(screen.getByLabelText('a, 적립판, 10% 채웠어요'));
+    expect(onDragChange).not.toHaveBeenCalled();
+  });
+  it('짧게 누르면 그대로 판을 연다',()=>{
+    const onOpen=vi.fn();
+    render(<GoalListScreen tab="active" onTab={vi.fn()} active={[card('a'),card('b')]} completed={[]} onOpen={onOpen} onAdd={vi.fn()} onMove={vi.fn()}/>);
+    fireEvent.click(screen.getByLabelText('b, 적립판, 10% 채웠어요'));
+    expect(onOpen).toHaveBeenCalledWith('b');
+  });
+});
+describe('영어 문구 (공통 부품)',()=>{
+  afterEach(()=>setLanguage('ko'));
+  it('달력은 달 이름과 요일을 영어로 그리고 칸 이름도 영어다',()=>{
+    setLanguage('en');
+    render(<CalendarBoard year={2026} month={9} records={{'2026-09-02':'sprout'}} onSelect={vi.fn()} onMonthChange={vi.fn()}/>);
+    expect(screen.getByText('Sep 2026')).toBeTruthy();
+    expect(screen.getByText('Sun')).toBeTruthy();
+    expect(screen.getByRole('button',{name:'Sep 2, has a sticker'})).toBeTruthy();
+  });
+  it('다이얼로그 문구는 읽는 순간의 언어를 따른다',()=>{
+    expect(boardDialogs.unsaved.title).toBe('저장하지 않고 나갈까요?');
+    setLanguage('en');
+    expect(boardDialogs.unsaved.title).toBe('Leave without saving?');
+    expect(removeStickerAction.label).toBe('Remove sticker');
+  });
+});
+
+describe('판 진행 표시와 안내 (2026-11-02)',()=>{
+  it('차곡이 머리 위 블록은 25%마다 하나씩 늘어난다',()=>{
+    expect([0,0.24,0.25,0.49,0.5,0.74,0.75,1].map(progressBlockPose)).toEqual(['b0','b0','b1','b1','b2','b2','b3','b3']);
+  });
+  it('진행 막대 끝은 늘 차곡이 몸에 닿고, 100%에서는 몸 안쪽에 묻힌다 (2026-11-05 사용자)',()=>{
+    // 차곡이 40pt, 몸은 24칸 중 4~19칸 = 6.67pt~33.33pt. 오른쪽 끝에서는 몸이 막대 끝보다 4칸(6.67pt) 더 나간다
+    const bodyLeft=40*4/24, bodyRight=40*20/24, overhang=40*4/24, width=250;
+    for(const ratio of [0.02,0.08,0.2,0.5,0.9,0.97,1]){
+      const left=progressMascotLeft(ratio,width);
+      const fillEnd=ratio*width-left;
+      expect(fillEnd).toBeGreaterThanOrEqual(bodyLeft-1e-9);
+      expect(fillEnd).toBeLessThanOrEqual(bodyRight+1e-9);
+      expect(left+bodyLeft).toBeGreaterThanOrEqual(-1e-9);
+      expect(left+bodyRight).toBeLessThanOrEqual(width+overhang+1e-9);
+    }
+    const full=progressMascotLeft(1,width);
+    expect(width-full).toBeCloseTo(bodyRight-overhang); // 100%: 막대 끝이 몸 오른쪽 끝에서 4칸 안쪽
+    expect(progressMascotLeft(0.2,width)).toBe(30); // 막대 끝 50pt가 차곡이 가운데
+    expect(progressMascotLeft(0,width)).toBeCloseTo(-bodyLeft);
+  });
+  it('진행 줄은 %만 보이고 화면 읽기에는 칸 수를 함께 읽어 준다',()=>{
+    render(<BoardProgressRow value={3} total={15} percentLabel="20%" sticker="basic.sprout"/>);
+    expect(screen.getByText('20%')).toBeTruthy();
+    expect(screen.queryByText('3 / 15')).toBeNull();
+    expect(screen.getByLabelText('15칸 중 3칸, 20%')).toBeTruthy();
+  });
+  it('안내 카드는 동작과 닫기를 전달한다',()=>{
+    const onClose=vi.fn();
+    render(<GuideCard text="안내" onClose={onClose}/>);
+    fireEvent.click(screen.getByRole('button',{name:'닫기'}));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('적립판 쪽 넘기기 (2026-11-03 시안 P1)',()=>{
+  // 칸 높이 76, 줄 간격 10 → 줄 하나 86
+  it('남은 높이에 다 들어가면 쪽을 나누지 않는다',()=>{
+    expect(tallyPageSize(15,500,76,10)).toBe(15);
+  });
+  it('넘치면 넘김 줄을 빼고 들어가는 줄만큼 넣는다',()=>{
+    expect(tallyPageSize(40,600,76,10)).toBe(18); // (600-52+10)/86 = 6줄
+    expect(tallyPageSize(40,700,76,10)).toBe(21); // 7줄
+  });
+  it('아주 작은 화면도 최소 3줄을 넣는다',()=>{
+    expect(tallyPageSize(40,200,76,10)).toBe(9);
+  });
+});
+
+describe('목표 순서: 놓은 순서를 저장이 올 때까지 먼저 그린다 (2026-11-05 실기기)',()=>{
+  const g=(...ids:string[])=>ids.map(id=>({id}));
+  it('앱 목록이 그대로면 놓은 순서로, 새 목록이 오면 앱 목록으로',()=>{
+    const pending=movedOrder(g('a','b','c'),2,0);
+    expect(pending.ids).toEqual(['c','a','b']);
+    expect(pendingOrder(g('a','b','c'),pending).map(x=>x.id)).toEqual(['c','a','b']);
+    expect(pendingOrder(g('c','a','b'),pending).map(x=>x.id)).toEqual(['c','a','b']);
+    expect(pendingOrder(g('a','b'),pending).map(x=>x.id)).toEqual(['a','b']);
+    expect(pendingOrder(g('a','b','c'),null).map(x=>x.id)).toEqual(['a','b','c']);
   });
 });

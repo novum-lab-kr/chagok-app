@@ -26,6 +26,8 @@ function Conflict() {
 
 // 2. 설정 탭
 export const SettingsSynced:Story={name:'2 설정 · 연결됨',render:()=><Stage tab="settings"><SettingsTab/></Stage>};
+/** 새 조립(사용자 확인 전): 로그인해 있으면 계정 칸 맨 아래 「차단한 사람」 줄 (PRD 4.15) */
+export const SettingsBlockedRow:Story={name:'2 설정 연결됨 차단한 사람 줄',render:()=><Stage tab="settings"><SettingsTab blocked/></Stage>};
 export const SettingsStates:Story={name:'2 설정 · 계정 칸 상태별',render:()=><Stage auto><View style={{padding:20,gap:12}}>
   <Label>계정 없음</Label>
   <AccountBackupPanel status={{state:'local'}} onConnect={noop} onLogin={noop} onLogout={noop} onDelete={noop}/>

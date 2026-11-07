@@ -1,18 +1,20 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode} from 'react';
 import {View, Pressable, Image, TextInput, ScrollView, KeyboardAvoidingView, Keyboard, Platform, Dimensions, Modal, StyleSheet,type ImageSourcePropType, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle} from 'react-native';
-import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize} from './components';
+import {clampLength,FieldError,PixelButton,PixelFrame,PixelIcon,PixelInput,PixelPanel,PixelText,PixelBadge,PixelLoadingDots,PixelTabs,CompletionSticker,ProgressBar,SCREEN_MAX_WIDTH,SCREEN_PADDING,useLayoutSize,InlineModalContext,InlineModalLayer} from './components';
 import {CalendarBoard,calendarDateKey} from './calendar';
 import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 import {retro} from './tokens';
 import {touchSlop} from './touch';
 import {Mascot} from './mascot';
 import Svg,{Path} from 'react-native-svg';
-import {pixelOutline} from './geometry';
+import {photoFrameRatio,pixelOutline,progressRatio} from './geometry';
 import {ActionSymbol,StickerGlyph,stickerLabel,type StickerId} from './sticker-glyphs';
+import {t} from '../i18n';
+import type {MascotBlocks} from './mascot';
 
 export function ScreenHeader({title,onBack,action}:{title:string;onBack?:()=>void;action?:ReactNode}) {
   return <View style={{flexDirection:'row',alignItems:'center',minHeight:48}}>
-    <View style={{width:72,alignItems:'flex-start'}}>{onBack&&<PixelButton label="" accessibilityLabel="뒤로" variant="secondary" icon={<ActionSymbol name="back"/>} onPress={onBack} style={{width:48}}/>}</View>
+    <View style={{width:72,alignItems:'flex-start'}}>{onBack&&<PixelButton label="" accessibilityLabel={t('common.back')} variant="secondary" icon={<ActionSymbol name="back"/>} onPress={onBack} style={{width:48}}/>}</View>
     <PixelText accessibilityRole="header" variant="title" style={{flex:1,textAlign:'center'}}>{title}</PixelText>
     <View style={{width:72,alignItems:'flex-end'}}>{action}</View>
   </View>;
@@ -29,7 +31,7 @@ function BoardMiniature({kind,selected}:{kind:BoardKind;selected:boolean}) {
   const height=96;
   return <View ref={ref} accessible={false} aria-hidden style={{height,width:'100%'}} onLayout={onLayout}>
     {width>0&&<>
-      {calendar&&<View style={{position:'absolute',top:8,left:start,width:cell*7+gap*6,flexDirection:'row',gap}}>{['일','월','화','수','목','금','토'].map(day=><PixelText key={day} style={{width:cell,textAlign:'center',fontSize:10,lineHeight:14}}>{day}</PixelText>)}</View>}
+      {calendar&&<View style={{position:'absolute',top:8,left:start,width:cell*7+gap*6,flexDirection:'row',gap}}>{[0,1,2,3,4,5,6].map(day=><PixelText key={day} style={{width:cell,textAlign:'center',fontSize:10,lineHeight:14}}>{t('date.weekdayNarrow',day)}</PixelText>)}</View>}
       <Svg key={`${width}x${height}`} width={width} height={height} style={{position:'absolute',left:0,top:0}}>
         {calendar&&<Path d={pixelOutline(width,height,1.5,3)} fill="none" stroke={retro.color.ink} strokeWidth={retro.shape.cellBorder}/>}
         {Array.from({length:calendar?28:9},(_,i)=>{
@@ -49,13 +51,13 @@ function BoardTypeCard({kind,selected}:{kind:BoardKind;selected:boolean}) {
       <Path d={pixelOutline(size.width,size.height,1.5,retro.shape.controlUnit)} fill={selected?retro.color.primary:retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>
       {selected&&<Path d={pixelOutline(size.width,size.height,7.5,retro.shape.controlUnit)} fill={retro.color.lcd} stroke={retro.color.ink} strokeWidth={retro.shape.border}/>}
     </Svg>}
-    <PixelText style={{textAlign:'center',fontSize:20,lineHeight:28}}>{kind==='calendar'?'달력판':'적립판'}</PixelText>
+    <PixelText style={{textAlign:'center',fontSize:20,lineHeight:28}}>{kind==='calendar'?t('board.calendar'):t('board.tally')}</PixelText>
     <BoardMiniature kind={kind} selected={selected}/>
   </View>;
 }
 export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(value:BoardKind)=>void}) {
-  return <View style={{gap:8}}><PixelText>판 종류</PixelText><View accessibilityRole="radiogroup" style={{flexDirection:'row',gap:12}}>
-    {(['calendar','tally'] as const).map(kind=><Pressable key={kind} accessibilityRole="radio" accessibilityLabel={kind==='calendar'?'달력판':'적립판'} accessibilityState={{checked:value===kind}} aria-checked={value===kind} onPress={()=>onChange(kind)} style={{flex:1}}>
+  return <View style={{gap:8}}><PixelText>{t('board.type')}</PixelText><View accessibilityRole="radiogroup" style={{flexDirection:'row',gap:12}}>
+    {(['calendar','tally'] as const).map(kind=><Pressable key={kind} accessibilityRole="radio" accessibilityLabel={kind==='calendar'?t('board.calendar'):t('board.tally')} accessibilityState={{checked:value===kind}} aria-checked={value===kind} onPress={()=>onChange(kind)} style={{flex:1}}>
       <BoardTypeCard kind={kind} selected={value===kind}/>
     </Pressable>)}
   </View></View>;
@@ -64,34 +66,62 @@ export function BoardTypePicker({value,onChange}:{value:BoardKind;onChange:(valu
  * 칸 수 고르기. min을 주면 그보다 작은 버튼은 비활성이다 — 목표 설정의 적립판 칸 수는 늘리기만 된다 (2026-09-30).
  * 직접 입력 자릿수는 min이 담기도록 늘린다. 칸 늘리기로 999칸을 넘긴 판도 지금 값을 보여줄 수 있어야 한다.
  */
-export function SlotCountPicker({value,onChange,label='칸 수',min=0}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number}) {
+export function SlotCountPicker({value,onChange,label=t('slotCount.label'),min=0,max}:{value:string;onChange:(value:string)=>void;/** 칸 늘리기는 '더할 칸 수' */label?:string;/** 이보다 작은 값은 고를 수 없다 */min?:number;/** 상한(함께 목표 1000). 넘는 값도 한 자리 더 쳐서 상한 문구를 볼 수 있게 직접 입력 길이를 늘린다 */max?:number}) {
   const [custom,setCustom]=useState(!['15','20','30'].includes(value));
   return <View style={{gap:8}}><PixelText>{label}</PixelText><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
     {['15','20','30'].map(n=><PixelButton key={n} label={n} disabled={Number(n)<min} variant={!custom&&value===n?'primary':'secondary'} onPress={()=>{setCustom(false);onChange(n)}} style={{flex:1}}/>)}
-    <PixelButton label="직접 입력" variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
-  </View>{custom&&<PixelInput label={`${label} 직접 입력`} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1)}/>}</View>;
+    <PixelButton label={t('slotCount.custom')} variant={custom?'primary':'secondary'} onPress={()=>setCustom(true)}/>
+  </View>{custom&&<PixelInput label={t('slotCount.customLabel',label)} value={value} onChangeText={onChange} keyboardType="number-pad" maxLength={Math.max(3,String(min).length+1,max===undefined?0:String(max).length+1)}/>}</View>;
 }
 export function StickerSummary({value,onChange}:{value:StickerId;onChange?:()=>void}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',gap:12,alignItems:'center'}}>
     <StickerGlyph id={value} size={48}/><View style={{width:retro.shape.border,height:48,backgroundColor:retro.color.ink}}/>
-    <PixelText style={{flex:1}}>{stickerLabel(value)}</PixelText>{onChange&&<PixelButton label="바꾸기" variant="secondary" onPress={onChange}/>}
+    <PixelText style={{flex:1}}>{stickerLabel(value)}</PixelText>{onChange&&<PixelButton label={t('common.change')} variant="secondary" onPress={onChange}/>}
   </PixelFrame>;
 }
 export function RecordSummary({goalName,date,sticker}:{goalName:string;date:string;sticker:StickerId}) {
   return <PixelFrame contentStyle={{padding:20,flexDirection:'row',alignItems:'center',gap:16}}><StickerGlyph id={sticker} size={56}/><View style={{width:retro.shape.border,height:56,backgroundColor:retro.color.ink}}/><View style={{flex:1,gap:4}}><PixelText variant="title">{goalName}</PixelText><PixelText>{date}</PixelText></View></PixelFrame>;
 }
+/** 사진이 없거나 크기를 알기 전의 틀 비율 (2026-10-17 시안 3판 B) */
+export const PHOTO_FRAME_DEFAULT_RATIO=586/494;
+function photoUri(source?:ImageSourcePropType){
+  if(source==null||typeof source==='number') return null;
+  return (Array.isArray(source)?source[0]:source)?.uri??null;
+}
+/** 틀이 사진 비율과 달라 사진 전체를 넣을 때 남는 자리의 색. 기록 화면 사진 틀(PixelFrame)의 바탕과 같다 (2026-11-06) */
+export const PHOTO_MAT=retro.color.lcd;
+/**
+ * 크게 보는 사진 틀 비율과 사진을 그리는 방식. 기록에 사진 크기를 저장하지 않아서 Image.getSize로 읽어 바꾼다. 그 전에는 기본 틀 (2026-11-05 A안).
+ * 틀은 세로 3:4에서 가로 16:9까지라, 그보다 길거나 넓은 사진(휴대폰 화면 캡처 등)은 자르지 않고 전체를 가운데 넣는다(contain, 남는 자리는 PHOTO_MAT, 2026-11-06 사용자).
+ * 범위 안의 사진은 틀과 비율이 같아 지금처럼 꽉 채운다(cover). onLoad가 아닌 getSize를 쓰는 건 웹(Storybook)의 onLoad 이벤트에 크기가 없어서다.
+ */
+export function usePhotoFrameRatio(source?:ImageSourcePropType):{ratio:number;resizeMode:'cover'|'contain'} {
+  const uri=photoUri(source);
+  const [loaded,setLoaded]=useState<{uri:string;ratio:number;resizeMode:'cover'|'contain'}|null>(null);
+  useEffect(()=>{
+    if(!uri) return;
+    let live=true;
+    Image.getSize(uri,(width,height)=>{
+      const ratio=photoFrameRatio(width,height);
+      if(live&&ratio!=null) setLoaded({uri,ratio,resizeMode:ratio===width/height?'cover':'contain'});
+    },()=>{});
+    return ()=>{live=false;};
+  },[uri]);
+  return loaded&&loaded.uri===uri?{ratio:loaded.ratio,resizeMode:loaded.resizeMode}:{ratio:PHOTO_FRAME_DEFAULT_RATIO,resizeMode:'cover'};
+}
 export function PhotoAttachment({source,preview,onChoose,onTakePhoto,onRemove,onPhotoError,actionsInFrame:inFrame=false}:{source?:ImageSourcePropType;preview?:ReactNode;/** 앨범에서 고르기 */onChoose:()=>void;/** 카메라로 찍기. 주면 빈 프레임에 [사진 찍기]·[앨범에서 고르기]를 함께 둔다 (2026-10-11 시안 B) */onTakePhoto?:()=>void;onRemove:()=>void;onPhotoError?:()=>void;actionsInFrame?:boolean}) {
   const attached=!!source||!!preview;
+  const frame=usePhotoFrameRatio(source);
   return <View style={{gap:12}}>
-    <PixelFrame contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:586/494,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
-      {source?<Image source={source} onError={onPhotoError} accessibilityLabel="기록 사진" resizeMode="cover" style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label="사진 찍기" variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label="앨범에서 고르기" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label="사진 추가" variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>사진을 남겨보세요</PixelText></View>)}
-      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel="사진 지우기" onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
+    <PixelFrame fill={PHOTO_MAT} contentStyle={{padding:retro.shape.panelInnerInset+4}}><View style={{aspectRatio:frame.ratio,overflow:'hidden',alignItems:'center',justifyContent:'center'}}>
+      {source?<Image source={source} onError={onPhotoError} accessibilityLabel={t('photo.alt')} resizeMode={frame.resizeMode} style={{width:'100%',height:'100%'}}/>:preview??(inFrame?(onTakePhoto?<View style={{gap:12,alignSelf:'stretch',paddingHorizontal:'12%'}}><PixelButton label={t('photo.take')} variant="secondary" icon={<ActionSymbol name="camera" size={18}/>} onPress={onTakePhoto}/><PixelButton label={t('photo.choose')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/></View>:<PixelButton label={t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={18}/>} onPress={onChoose}/>):<View style={{gap:12,alignItems:'center'}}><ActionSymbol name="photo" size={36}/><PixelText>{t('photo.prompt')}</PixelText></View>)}
+      {inFrame&&attached&&<Pressable accessibilityRole="button" accessibilityLabel={t('photo.remove')} onPress={onRemove} hitSlop={touchSlop({width:44,height:44})} style={{position:'absolute',top:8,right:8,width:44,height:44,alignItems:'center',justifyContent:'center'}}><PixelFrame variant="button" fill={retro.color.secondary} contentStyle={{width:40,height:40,alignItems:'center',justifyContent:'center'}}><ActionSymbol name="close" size={20}/></PixelFrame></Pressable>}
     </View></PixelFrame>
-    {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?'사진 바꾸기':'사진 추가'} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label="사진 지우기" variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
+    {!inFrame&&<View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}><PixelButton label={attached?t('photo.replace'):t('photo.add')} variant="secondary" icon={<ActionSymbol name="photo" size={16}/>} onPress={onChoose} style={{flexGrow:1,flexBasis:150}}/><PixelButton label={t('photo.remove')} variant="secondary" icon={<ActionSymbol name="trash" size={16}/>} disabled={!attached} onPress={onRemove} style={{flexGrow:1,flexBasis:150}}/></View>}
   </View>;
 }
 export function MemoEditor({value,onChange,maxLength,error}:{value:string;onChange:(value:string)=>void;maxLength?:number;/** 패널 아래 검사 문구 */error?:string}) {
-  return <View style={{gap:8}}><PixelPanel title="메모"><TextInput allowFontScaling={false} accessibilityLabel="메모" value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder="오늘의 기록을 남겨보세요" placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
+  return <View style={{gap:8}}><PixelPanel title={t('memo.title')} invalid={!!error}><TextInput allowFontScaling={false} accessibilityLabel={t('memo.title')} value={value} onChangeText={text=>onChange(clampLength(text,maxLength))} maxLength={maxLength} multiline placeholder={t('memo.placeholder')} placeholderTextColor={retro.color.ink} style={{minHeight:84,paddingTop:10,paddingHorizontal:0,color:retro.color.ink,...retro.typography.body,fontFamily:retro.fontFamily,fontWeight:'400',textAlignVertical:'top'}}/></PixelPanel><FieldError message={error}/></View>;
 }
 export function TextAction({label,onPress,icon}:{label:string;onPress:()=>void;icon?:ReactNode}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={touchSlop({height:retro.layout.touch})} style={{minHeight:retro.layout.touch,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}>{icon}<PixelText>{label}</PixelText></Pressable>;
@@ -115,7 +145,7 @@ export function ShortNotice({title,detail,emphasis=false}:{title:string;detail?:
     {detail&&<PixelText variant={emphasis?'caption':'body'} style={emphasis?{color:retro.color.buttonText}:{fontSize:15,lineHeight:22}}>{detail}</PixelText>}
   </PixelFrame></View>;
 }
-export function PixelLoadingIndicator({label='진행 중'}:{label?:string}) {
+export function PixelLoadingIndicator({label=t('common.inProgress')}:{label?:string}) {
   return <View accessible accessibilityRole="progressbar" accessibilityLabel={label} style={{flexDirection:'row',justifyContent:'center',padding:14}}>
     <PixelLoadingDots/>
   </View>;
@@ -158,15 +188,53 @@ function useCenteringScroll() {
   };
   return {scroll,content,offset,scrollProps,scrollToCenter};
 }
+/** 안쪽 판 밀기가 손가락을 잡은 동안 바깥 세로 스크롤을 멈춘다(true) 풀어 준다(false). */
+type ScrollLock=(locked:boolean)=>void;
+const ScrollLockContext=createContext<ScrollLock>(()=>{});
+/**
+ * 판 밀기가 쓴다. iOS 세로 스크롤(UIScrollView)은 안쪽에서 JS가 손가락을 잡아도 멈추지 않아,
+ * 가로로 밀어도 판이 위아래로 같이 끌렸다(2026-11-05 실기기 녹화). 감싼 스크롤을 모두 멈춘다.
+ */
+export function useScrollLock() {
+  return useContext(ScrollLockContext);
+}
+/** 이 스크롤의 잠금 상태와, 바깥 스크롤까지 함께 잠그는 함수 */
+function useNestedScrollLock() {
+  const parent=useContext(ScrollLockContext);
+  const [locked,setLocked]=useState(false);
+  const lock=useCallback<ScrollLock>(on=>{setLocked(on);parent(on);},[parent]);
+  return {locked,lock};
+}
 /**
  * 화면 일부만 스크롤하는 영역. 안에서 useScrollToCenter를 부르면 이 영역을 옮긴다.
  * 판 상세는 제목·진행 줄을 고정하고 칸만 이 안에서 스크롤한다 (2026-09-30).
  */
 export function CenteringScrollView({children,style,testID}:{children:ReactNode;style?:StyleProp<ViewStyle>;testID?:string}) {
   const {content,scrollProps,scrollToCenter}=useCenteringScroll();
-  return <ScrollView testID={testID} {...scrollProps} style={style}>
-    <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider></View>
+  // 내용이 영역보다 클 때만 스크롤한다. 다 들어가는데도 끌리면 실기기에서 달력 머리가 위로 밀려 사라졌다 (2026-11-03 녹화).
+  const [sizes,setSizes]=useState({viewport:0,content:0});
+  const overflow=sizes.viewport>0&&sizes.content>sizes.viewport+1;
+  const {locked,lock}=useNestedScrollLock();
+  return <ScrollView testID={testID} {...scrollProps} style={style} scrollEnabled={overflow&&!locked} bounces={overflow}
+    onLayout={event=>{scrollProps.onLayout(event);const viewport=event.nativeEvent.layout.height;setSizes(previous=>previous.viewport===viewport?previous:{...previous,viewport});}}
+    onContentSizeChange={(width,height)=>{scrollProps.onContentSizeChange(width,height);setSizes(previous=>previous.content===height?previous:{...previous,content:height});}}>
+    <View ref={content}><ScrollToCenterContext.Provider value={scrollToCenter}><ScrollLockContext.Provider value={lock}>{children}</ScrollLockContext.Provider></ScrollToCenterContext.Provider></View>
   </ScrollView>;
+}
+/** 키보드가 떠 있으면 대상의 아래 끝이 키보드 위로 오게 RetroScreen을 내린다. 키보드가 없거나 RetroScreen 밖이면 아무것도 안 한다. */
+type RevealAboveKeyboard=(target:Pick<View,'measureInWindow'>)=>void;
+const RevealAboveKeyboardContext=createContext<RevealAboveKeyboard>(()=>{});
+/**
+ * 안의 내용이 키보드에 가리지 않게 둔다. watch가 새 값으로 나타날 때마다(입력칸 아래 오류 문구 등) 이 묶음 끝까지 보이게 내린다.
+ * 포커스한 입력칸만 올리는 RetroScreen의 처리로는 그 아래에 새로 생긴 문구가 키보드에 가렸다(2026-11-05 친구와 함께 만들기 칸 수).
+ */
+export function KeepAboveKeyboard({watch,children,style}:{watch?:string;children:ReactNode;style?:StyleProp<ViewStyle>}) {
+  const reveal=useContext(RevealAboveKeyboardContext);
+  const box=useRef<View>(null);
+  useEffect(()=>{
+    if(watch&&box.current) reveal(box.current);
+  },[watch,reveal]);
+  return <View ref={box} style={style}>{children}</View>;
 }
 /**
  * 화면 껍데기. 내용이 길면 세로로 스크롤하고, 노치와 홈 인디케이터를 피해서 그린다.
@@ -179,9 +247,10 @@ export function CenteringScrollView({children,style,testID}:{children:ReactNode;
  */
 /** 제목 줄과 본문 사이. 화면마다 gap(14·16)을 따르면 제목에 본문이 붙어 보여 모든 화면을 24로 맞췄다 (2026-10-10). */
 const HEADER_GAP=24;
-export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap=HEADER_GAP,scrollable=true}:{children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** 헤더와 본문 사이. 헤더 끝이 제목이 아니라 탭이면 본문 간격으로 줄인다 (2026-10-10) */headerGap?:number;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
+export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap=HEADER_GAP,scrollable=true,scrollEnabled=true}:{/** false면 잠시 스크롤을 멈춘다. 내 목표를 끄는 동안(PRD 4.1) */scrollEnabled?:boolean;children:ReactNode;style?:StyleProp<ViewStyle>;avoidKeyboard?:boolean;/** 스크롤 밖에 고정할 화면 헤더(뒤로가기·제목 등). 없으면 모두 스크롤한다 (2026-09-30) */header?:ReactNode;/** 헤더와 본문 사이. 헤더 끝이 제목이 아니라 탭이면 본문 간격으로 줄인다 (2026-10-10) */headerGap?:number;/** false면 화면 전체를 스크롤하지 않는다. 본문이 남은 높이에 맞춰 줄고, 넘치는 부분은 본문 안에서 스크롤한다 */scrollable?:boolean}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
   const {scroll,content,offset,scrollProps,scrollToCenter}=useCenteringScroll();
+  const {locked:swipeLocked,lock}=useNestedScrollLock();
   // iOS 시트(모달)는 화면 아래에 붙어 위가 비어 있다. 시트 안에서는 measureInWindow·layout이 시트 기준이고 키보드 위치는
   // 화면 기준이라, 그 빈 높이만큼 키보드와 겹침을 적게 잡아 새 목표의 「칸 수 직접 입력」이 키패드에 가려졌다 (2026-10-10).
   // 화면 높이 − 이 화면 높이로 빈 높이를 구해 두 계산에 더한다. 전체 화면은 0이다.
@@ -194,15 +263,18 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
   // Android는 키보드 이벤트가 KeyboardAvoidingView가 스크롤 영역을 줄이기 전에 와서, 그때는 내릴 자리가 없어 덜 내려간다.
   // 영역이 줄어든 뒤(onLayout)에 한 번 더 맞춘다 (2026-10-11).
   const keyboardTop=useRef<number|null>(null);
-  const revealFocused=useCallback(()=>{
+  const reveal=useCallback<RevealAboveKeyboard>(target=>{
     const top=keyboardTop.current;
-    const input=TextInput.State.currentlyFocusedInput?.();
-    if(top===null||!input) return;
-    input.measureInWindow((_x,y,_width,height)=>{
+    if(top===null) return;
+    target.measureInWindow((_x,y,_width,height)=>{
       const overlap=sheetTop+y+height+SCREEN_PADDING-top;
       if(overlap>0) scroll.current?.scrollTo({y:offset.current+overlap,animated:true});
     });
   },[offset,scroll,sheetTop]);
+  const revealFocused=useCallback(()=>{
+    const input=TextInput.State.currentlyFocusedInput?.();
+    if(input) reveal(input);
+  },[reveal]);
   useEffect(()=>{
     const show=Keyboard.addListener('keyboardDidShow',event=>{keyboardTop.current=event.endCoordinates.screenY;revealFocused();});
     const hide=Keyboard.addListener('keyboardDidHide',()=>{keyboardTop.current=null;});
@@ -211,6 +283,11 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
   // 빈 곳을 누르면 키보드를 내린다. 「칸 수 직접 입력」은 number-pad라 iOS에 리턴 키가 없고,
   // 메모는 multiline이라 리턴이 줄바꿈이다. 두 경우 모두 이것 말고는 내릴 방법이 없다.
   // 자식이 Pressable이면 그쪽이 먼저 응답자가 되므로 버튼 탭을 가로채지 않는다.
+  // 넘치는 것이 아래 여백뿐이면 스크롤하지 않는다. 몇 pt만 넘쳐도 스크롤이 켜져, 보이지 않는 것이 없는데
+  // 판 전체가 손가락을 따라 크게 끌렸다가 돌아왔다(2026-11-05 시뮬레이터, 친구를 기다리는 한 판). 아직 못 쟀으면 스크롤을 둔다.
+  const [viewHeight,setViewHeight]=useState(0);
+  const [contentHeight,setContentHeight]=useState(0);
+  const overflows=viewHeight===0||contentHeight===0||contentHeight-viewHeight>insets.bottom+SCREEN_PADDING;
   const column=[{width:'100%',maxWidth:SCREEN_MAX_WIDTH,padding:SCREEN_PADDING,gap:20} as const,style,header?{paddingTop:0}:null];
   // 스크롤하지 않는 화면: 본문이 남은 높이 안에 들어가고, 넘치는 부분은 본문이 직접 스크롤한다(판 상세).
   const body=!scrollable
@@ -218,13 +295,18 @@ export function RetroScreen({children,style,avoidKeyboard=false,header,headerGap
     : <ScrollView
     testID="retro-scroll"
     {...scrollProps}
-    onLayout={event=>{scrollProps.onLayout(event);revealFocused();}}
+    scrollEnabled={scrollEnabled&&!swipeLocked&&overflows}
+    // 내용이 화면에 다 들어가면 위아래로 튕기지 않는다. iOS 기본값(늘 튕김)이면 스크롤할 것이 없어도
+    // 세로 스크롤이 손가락을 먼저 잡아, 판 가로 밀기가 판 전체를 위아래로 끄는 것이 되었다(2026-11-05 실기기 녹화).
+    alwaysBounceVertical={false}
+    onLayout={event=>{scrollProps.onLayout(event);setViewHeight(event.nativeEvent.layout.height);revealFocused();}}
+    onContentSizeChange={(width,height)=>{scrollProps.onContentSizeChange(width,height);setContentHeight(height);}}
     style={{flex:1}}
     contentContainerStyle={{flexGrow:1,alignItems:'center',paddingBottom:insets.bottom+SCREEN_PADDING}}
     keyboardShouldPersistTaps="handled"
     keyboardDismissMode={Platform.OS==='ios'?'interactive':'on-drag'}>
     <Pressable ref={content} accessible={false} onPress={()=>Keyboard.dismiss()} style={column}>
-      <ScrollToCenterContext.Provider value={scrollToCenter}>{children}</ScrollToCenterContext.Provider>
+      <ScrollToCenterContext.Provider value={scrollToCenter}><RevealAboveKeyboardContext.Provider value={reveal}><ScrollLockContext.Provider value={lock}>{children}</ScrollLockContext.Provider></RevealAboveKeyboardContext.Provider></ScrollToCenterContext.Provider>
     </Pressable>
   </ScrollView>;
   // 상태 표시줄 여백은 스크롤 밖에 둔다. 안에 두면 스크롤한 내용이 시계 영역까지 올라가 겹친다(2026-09-30 실기기 녹화).
@@ -255,9 +337,10 @@ export function SheetSafeArea({children}:{children:ReactNode}) {
  */
 export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay,children}:{visible:boolean;title:string;onRequestClose:()=>void;/** iOS: 닫히는 애니메이션까지 끝난 뒤 */onDismiss?:()=>void;/** 시트 위에 띄울 다이얼로그. iOS는 떠 있는 Modal 옆에 둔 Modal을 띄우지 못해서 시트 Modal 안에 그린다 */overlay?:ReactNode;children:ReactNode}) {
   const insets=useContext(SafeAreaInsetsContext)??NO_INSETS;
-  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>
+  const inline=useContext(InlineModalContext);
+  const body=<>
     <View style={{flex:1,justifyContent:'flex-end',alignItems:'center',paddingHorizontal:12,paddingBottom:Math.max(insets.bottom,12)}}>
-      <Pressable testID="sheet-scrim" accessibilityLabel="닫기" onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
+      <Pressable testID="sheet-scrim" accessibilityLabel={t('common.close')} onPress={onRequestClose} style={[StyleSheet.absoluteFill,{backgroundColor:retro.color.ink,opacity:retro.opacity.scrim}]}/>
       <View accessibilityViewIsModal style={{width:'100%',maxWidth:SCREEN_MAX_WIDTH}}>
         <PixelFrame variant="dialog" contentStyle={{padding:retro.layout.dialogPadding,paddingTop:24,gap:16}}>
           <PixelText accessibilityRole="header" variant="title" style={{fontSize:22,lineHeight:30}}>{title}</PixelText>
@@ -266,7 +349,8 @@ export function PixelBottomSheet({visible,title,onRequestClose,onDismiss,overlay
       </View>
     </View>
     {overlay}
-  </Modal>;
+  </>;
+  return inline?<InlineModalLayer visible={visible}>{body}</InlineModalLayer>:<Modal transparent visible={visible} animationType="fade" onRequestClose={onRequestClose} onDismiss={onDismiss} statusBarTranslucent>{body}</Modal>;
 }
 
 export function SelectionBadge() {
@@ -278,22 +362,34 @@ const caption={color:retro.color.buttonText};
 /** 앱 최상단: 차곡이 + 차곡차곡. onSettings를 주면 톱니바퀴도(2026-10-12부터 앱은 하단 「설정」 탭을 쓴다). */
 export function AppHeader({onSettings}:{onSettings?:()=>void}) {
   return <View style={{height:44,flexDirection:'row',gap:10,alignItems:'center'}}>
-    <Mascot size={44}/><PixelText variant="brand">차곡차곡</PixelText>
-    {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel="앱 설정" onPress={onSettings} hitSlop={touchSlop({width:36,height:40})} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
+    <Mascot size={44}/><PixelText variant="brand">{t('app.name')}</PixelText>
+    {onSettings&&<Pressable accessibilityRole="button" accessibilityLabel={t('header.settings')} onPress={onSettings} hitSlop={touchSlop({width:36,height:40})} style={{marginLeft:'auto',width:36,height:40,alignItems:'center',justifyContent:'center'}}><PixelIcon name="gear" size={28}/></Pressable>}
   </View>;
 }
 export type GoalListTab='active'|'completed';
 /** 목록 위 한 줄: `내 목표 n / 완성한 판 n` 탭과 오른쪽 끝 주황 `+`. 작은 화면에서도 스크롤 없이 새 목표에 닿는다. */
 export function GoalListHeader({tab,counts,onTab,onAdd,addTargetRef}:{tab:GoalListTab;counts:Record<GoalListTab,number>;onTab:(tab:GoalListTab)=>void;onAdd:()=>void;/** 튜토리얼이 + 위치를 잴 때 */addTargetRef?:React.Ref<View>}) {
   return <View style={{flexDirection:'row',alignItems:'center',gap:8,paddingBottom:8,borderBottomWidth:retro.shape.panelTitleBorder,borderColor:retro.color.ink}}>
-    <PixelTabs items={[{key:'active',label:`내 목표 ${counts.active}`},{key:'completed',label:`완성한 판 ${counts.completed}`}] as const} value={tab} onChange={onTab}/>
-    <View ref={addTargetRef} style={{marginLeft:'auto'}}><PixelButton label="" accessibilityLabel="새 목표 만들기" minHeight={44} icon={<PixelIcon name="plus" size={20}/>} onPress={onAdd} style={{width:52}}/></View>
+    <PixelTabs items={[{key:'active',label:t('goalList.active',counts.active)},{key:'completed',label:t('goalList.completed',counts.completed)}] as const} value={tab} onChange={onTab}/>
+    <View ref={addTargetRef} style={{marginLeft:'auto'}}><PixelButton label="" accessibilityLabel={t('goalList.add')} minHeight={44} icon={<PixelIcon name="plus" size={20}/>} onPress={onAdd} style={{width:52}}/></View>
   </View>;
 }
+/** 화면 읽기로 내 목표를 한 칸씩 옮기는 동작 (PRD 4.1, 2026-10-30). 끝 자리에서는 그 방향을 빼고 단다. */
+const goalMoveActions={up:{name:'moveUp'},down:{name:'moveDown'}} as const;
+export function goalMoveActionList(canUp:boolean,canDown:boolean) {
+  return [...(canUp?[{...goalMoveActions.up,label:t('goal.moveUp')}]:[]),...(canDown?[{...goalMoveActions.down,label:t('goal.moveDown')}]:[])];
+}
 /** 목록 카드. 모든 판이 같은 모양: 스티커, 이름(최대 2줄), [판 종류 배지] 요약 글자, 진행 막대. */
-export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name:string;sticker:StickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${name}, ${kind}, ${status.join(', ')}`} onPress={onPress}>
-    {({pressed})=><PixelFrame variant="button" fill={retro.color.secondary} pressed={pressed} contentStyle={{padding:12}}>
+export function GoalSummaryCard({name,sticker,kind,status,percent,onPress,onLongPress,onPressOut,lifted=false,onMoveUp,onMoveDown}:{name:string;sticker:StickerId;/** 배지 글자: 적립판 / 달력판 */kind:string;/** 배지 옆 요약. 조각마다 줄바꿈 단위가 된다. 예: ['40% 채웠어요'], ['100%', '9/29 완성'] */status:readonly string[];percent:number;onPress?:()=>void;/** 꾹 누르면 끌어 옮기기를 시작한다. 누른 곳의 화면 세로 위치를 넘긴다 (PRD 4.1) */onLongPress?:(pageY:number)=>void;onPressOut?:()=>void;/** 끌고 있는 카드. 눌린 모양을 그대로 둔다 */lifted?:boolean;/** 화면 읽기의 위로, 아래로 옮기기. 끝 자리면 넘기지 않는다 */onMoveUp?:()=>void;onMoveDown?:()=>void}) {
+  const actions=goalMoveActionList(Boolean(onMoveUp),Boolean(onMoveDown));
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${name}, ${kind}, ${status.join(', ')}`} onPress={onPress}
+    onLongPress={onLongPress?event=>onLongPress(event.nativeEvent.pageY):undefined} onPressOut={onPressOut}
+    accessibilityActions={actions.length?actions:undefined}
+    onAccessibilityAction={event=>{
+      if(event.nativeEvent.actionName===goalMoveActions.up.name) onMoveUp?.();
+      if(event.nativeEvent.actionName===goalMoveActions.down.name) onMoveDown?.();
+    }}>
+    {({pressed})=><PixelFrame variant="button" fill={retro.color.secondary} pressed={pressed||lifted} contentStyle={{padding:12}}>
       <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
         <StickerGlyph id={sticker} size={48}/>
         <View style={{flex:1,gap:4}}>
@@ -306,11 +402,34 @@ export function GoalSummaryCard({name,sticker,kind,status,percent,onPress}:{name
     </PixelFrame>}
   </Pressable>;
 }
-/** 판 상세 상단 한 줄: `n / nn [여백] m% 달성중`. 완성하면 오른쪽이 완성 스티커로 바뀐다. */
+/** 진행 표시의 차곡이 머리 위 블록: 25%마다 하나씩 (2026-11-02 시안 C). */
+export function progressBlockPose(ratio:number):MascotBlocks {
+  return ratio>=0.75?'b3':ratio>=0.5?'b2':ratio>=0.25?'b1':'b0';
+}
+const PROGRESS_MASCOT=40;
+/** 차곡이 그림(24칸)에서 몸이 차지하는 가로 범위: 4~19칸. 양옆은 투명한 여백이다. */
+const MASCOT_BODY_LEFT=PROGRESS_MASCOT*4/24, MASCOT_BODY_RIGHT=PROGRESS_MASCOT*20/24;
+/** 막대 오른쪽 끝에서 차곡이 몸이 더 나가는 거리(4칸). 몸 위쪽 모서리가 둥글어, 몸 끝을 막대 끝에 맞추면 둥근 막대 끝이 비져 보였다 */
+const MASCOT_END_OVERHANG=PROGRESS_MASCOT*4/24;
+/**
+ * 진행 막대 위 차곡이의 왼쪽 위치. 막대 끝에 차곡이 가운데를 두되, 왼쪽은 몸이 막대 시작을 넘지 않게,
+ * 오른쪽은 막대 끝이 몸 안쪽(4칸)에 묻히게 멈춘다. 그래서 100%에서는 차곡이가 막대 끝을 덮는다.
+ * 예전에는 막대 끝이 그림 왼쪽 여백에 떨어져 낮은 %에서 막대와 차곡이 사이가 떠 보였고, 100%에서는 막대 끝이 차곡이 오른쪽으로 나왔다 (2026-11-05 사용자).
+ */
+export function progressMascotLeft(ratio:number,width:number):number {
+  return Math.min(width-MASCOT_BODY_RIGHT+MASCOT_END_OVERHANG,Math.max(-MASCOT_BODY_LEFT,ratio*width-PROGRESS_MASCOT/2));
+}
+/** 판 상세 상단 한 줄: 진행 막대와 그 위 차곡이, 오른쪽 `m%`. 완성하면 오른쪽이 완성 스티커로 바뀐다. 화면 읽기에는 칸 수까지 읽어 준다. */
 export function BoardProgressRow({value,total,percentLabel,completed=false,sticker,completionTargetRef,animateCompletion=false}:{value:number;total:number;/** 예: '40%', '이번 달 30%' */percentLabel:string;completed?:boolean;sticker:StickerId;completionTargetRef?:React.Ref<View>;/** 완성 순간: [완성] 스티커 붙이기 모션 */animateCompletion?:boolean}) {
-  return <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:48}}>
-    <PixelText variant="number">{value} / {total}</PixelText>
-    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel} 달성중</PixelText>}
+  const ratio=completed?1:progressRatio(value,total);
+  const [width,setWidth]=useState(0);
+  return <View accessible accessibilityLabel={t('board.progressA11y',value,total,percentLabel)} style={{flexDirection:'row',alignItems:'center',gap:10,minHeight:48}}>
+    <View onLayout={e=>setWidth(e.nativeEvent.layout.width)} style={{flex:1,height:PROGRESS_MASCOT,justifyContent:'center'}}>
+      <ProgressBar value={completed?1:value} total={completed?1:total}/>
+      {/* 폭을 재기 전(첫 그림)에는 비율로 둔다 */}
+      <View pointerEvents="none" style={{position:'absolute',top:0,...(width>0?{left:progressMascotLeft(ratio,width)}:{left:`${ratio*100}%`,marginLeft:-ratio*PROGRESS_MASCOT})}}><Mascot pose={progressBlockPose(ratio)} size={PROGRESS_MASCOT}/></View>
+    </View>
+    {completed?<View ref={completionTargetRef}><CompletionSticker sticker={sticker} animate={animateCompletion} withSticker={false}/></View>:<PixelText style={{fontSize:18,lineHeight:24}}>{percentLabel}</PixelText>}
   </View>;
 }
 /** 목록이 비었을 때의 안내 상자. */
@@ -335,7 +454,7 @@ export function EndDatePicker({firstAllowed,selected,hint,onSelect}:{firstAllowe
       isDateEnabled={date=>date>=firstAllowed} canGoPrev={shown.year*12+shown.month>first.year*12+first.month}/>
   </PixelFrame>;
 }
-const longDate=(key:string)=>`${Number(key.slice(5,7))}월 ${Number(key.slice(8,10))}일`;
+const longDate=(key:string)=>t('date.monthDay',Number(key.slice(5,7)),Number(key.slice(8,10)));
 const dayAfter=(key:string)=>{const d=new Date(`${key}T00:00`);d.setDate(d.getDate()+1);return calendarDateKey(d.getFullYear(),d.getMonth()+1,d.getDate());};
 function FieldRow({label,children,disabled=false}:{label:string;children:ReactNode;disabled?:boolean}) {
   return <View style={{flexDirection:'row',alignItems:'center',gap:8,minHeight:48,opacity:disabled?retro.opacity.disabled:1}}><PixelText style={{width:64}}>{label}</PixelText>{children}</View>;
@@ -347,19 +466,21 @@ function FieldRow({label,children,disabled=false}:{label:string;children:ReactNo
 export function PeriodField({startDate,endDate,lastPlacedDate,picking,onPick,onChange,onClear}:{startDate:string;endDate?:string;/** 없으면 시작일 */lastPlacedDate?:string;picking:boolean;onPick:()=>void;onChange:(date:string)=>void;onClear:()=>void}) {
   const last=lastPlacedDate??startDate;
   return <View style={{gap:4}}>
-    <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>기간</PixelText>
-    <FieldRow label="시작일" disabled><View style={{flex:1}}><PixelText>{longDate(startDate)}</PixelText><PixelText variant="caption" style={caption}>만든 날이라 바꿀 수 없어요</PixelText></View></FieldRow>
-    <FieldRow label="종료일">
-      <PixelText style={{flex:1}}>{endDate?longDate(endDate):'없음'}</PixelText>
-      {endDate?<><PixelButton label="바꾸기" variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/><PixelButton label="지우기" variant="secondary" minHeight={40} onPress={onClear}/></>:<PixelButton label="정하기" variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/>}
+    <PixelText variant="title" style={{fontSize:20,lineHeight:28}}>{t('period.title')}</PixelText>
+    <FieldRow label={t('period.start')} disabled><View style={{flex:1}}><PixelText>{longDate(startDate)}</PixelText><PixelText variant="caption" style={caption}>{t('period.startLocked')}</PixelText></View></FieldRow>
+    <FieldRow label={t('period.end')}>
+      <PixelText style={{flex:1}}>{endDate?longDate(endDate):t('period.none')}</PixelText>
+      {endDate?<><PixelButton label={t('common.change')} variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/><PixelButton label={t('period.clear')} variant="secondary" minHeight={40} onPress={onClear}/></>:<PixelButton label={t('period.set')} variant={picking?'primary':'secondary'} minHeight={40} onPress={onPick}/>}
     </FieldRow>
-    {picking&&<EndDatePicker firstAllowed={dayAfter(last)} selected={endDate} onSelect={onChange} hint={lastPlacedDate?`마지막으로 붙인 ${longDate(lastPlacedDate)} 다음 날부터 고를 수 있어요.`:'시작일 다음 날부터 고를 수 있어요.'}/>}
+    {picking&&<EndDatePicker firstAllowed={dayAfter(last)} selected={endDate} onSelect={onChange} hint={lastPlacedDate?t('period.hintAfterLast',longDate(lastPlacedDate)):t('period.hintAfterStart')}/>}
   </View>;
 }
-/** 화면 맨 아래 삭제 영역: 구분선, [삭제하기] 보조 버튼, 무엇이 지워지는지 안내. 누르면 호스트가 삭제 확인 다이얼로그를 띄운다. */
-export function DeleteSection({onDelete,description='목표와 붙인 스티커, 사진·메모가 모두 지워져요.'}:{onDelete:()=>void;description?:string}) {
+/**
+ * 화면 맨 아래 삭제 영역: 구분선, [삭제하기] 보조 버튼. 누르면 호스트가 삭제 확인 다이얼로그를 띄우고, 무엇이 지워지는지는 그 창이 말한다.
+ * 버튼 아래에 같은 안내를 또 두지 않는다(2026-11-05 사용자).
+ */
+export function DeleteSection({onDelete}:{onDelete:()=>void}) {
   return <View style={{gap:8,marginTop:8,paddingTop:16,borderTopWidth:retro.shape.cellBorder,borderColor:retro.color.ink}}>
-    <PixelButton label="삭제하기" variant="secondary" icon={<ActionSymbol name="trash" size={18}/>} onPress={onDelete}/>
-    <PixelText variant="caption" style={[caption,{textAlign:'center'}]}>{description}</PixelText>
+    <PixelButton label={t('common.delete')} variant="secondary" icon={<ActionSymbol name="trash" size={18}/>} onPress={onDelete}/>
   </View>;
 }

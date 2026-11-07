@@ -1,10 +1,14 @@
 import { createGoal } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
-import { loadWidgetSnapshot } from '../src/widgets/loadSnapshot';
+import { loadWidgetInputs } from '../src/widgets/loadSnapshot';
+import { buildWidgetSnapshot } from '../src/widgets/snapshot';
 import { withFreshDb } from './support/setup';
 
 withFreshDb();
+
+/** 위젯이 실제로 받는 스냅샷: 기기 기록을 읽어 만든다 */
+const loadWidgetSnapshot = async (now: Date) => buildWidgetSnapshot(await loadWidgetInputs(now), now);
 
 describe('loadWidgetSnapshot', () => {
   it('진행 중인 목표를 읽어 스냅샷을 만든다', async () => {

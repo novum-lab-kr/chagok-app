@@ -1,6 +1,8 @@
 # 인계
 
-갱신: 2026-10-28
+갱신: 2026-11-05
+
+**지금 일의 중심은 [1.1.0 출시 순서](RELEASE-1.1.0.md)다.** 1.0(빌드 7)은 2026-11-03 한국 App Store에 공개됐고, 운영 서버 사용자는 0명이다(2026-11-05 조회). 1.1.0 작업은 `release/1.1.0`에 모았다(main으로 올리는 PR #30). 그다음 판은 [1.1.1과 1.2.0 계획](RELEASE-NEXT.md)(2026-11-06 초안). 아래 「계정·외부 준비가 끝난 뒤」 등에는 2026-10-28 뒤로 고치지 않은 부분이 남아 있다.
 
 다음 세션이 바로 이어서 일할 수 있게 **지금 상태, 진행 중인 것, 다음 할 일, 아직 확인 못 한 것**만 둔다. 끝난 일은 지운다(git 기록에 있다).
 
@@ -11,17 +13,43 @@
 
 ## 지금 상태
 
-PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드로 실행, 개발 서버 `chagok-dev`). PRD와 다른 곳은 아래뿐이다.
+**1.1.0 출시 진행과 제출 전에 고칠 것은 [1.1.0 출시 순서](RELEASE-1.1.0.md)가 원본이다.** 이 문서와 다르면 그 문서를 따른다.
+
+PRD 4절 기능은 대부분 앱에 연결돼 있다(기기 DB는 최종 구조 v1, 개발 빌드로 실행, 개발 서버 `chagok-dev`). PRD와 다른 곳은 아래뿐이다.
 
 | 기능 | 지금 | PRD |
 | --- | --- | --- |
 | 결제·광고 | RevenueCat **Test Store**(가짜 결제, 키는 `.env.local` `EXPO_PUBLIC_REVENUECAT_KEY`)와 AdMob **Google 테스트 광고 ID**로 연결(2026-10-13). 키나 네이티브 모듈이 없는 빌드는 개발용 대역(누르면 바로 성공)으로 돈다. 가격은 스토어에서 받아 온다(원화는 「2,200원」, 다른 통화는 스토어 글자 그대로, 못 받아 오면 가격만 뺀다 — 2026-10-13). 지금은 Test Store에 넣은 가격 | 스토어 키·실제 광고 단위 ID (4.12) |
 | 로그인 | **Apple**(iOS), **카카오**, **Google**(2026-10-22 main). 첫 화면은 「반가워요」 판 위에 차곡이, 카카오, Google, Apple 버튼(높이 40, 글자는 「계속하기」)과 개발 빌드의 [개발 계정으로 계속]. 처음 만든 계정만 로그인 뒤 동의 시트. 시작, 동의, 복원, 로그아웃, 계정 삭제 화면 연결됨. 실기기 확인은 Apple만 끝남(아래 「Apple 로그인」) | — |
-| 한 번에 한 기기 | 없음 | 4.8 |
+| 한 번에 한 기기 | 없음(1.1.1 이후) | 4.8 |
 | 위젯 | iOS 세 종류만 | Android도 (4.10) |
 | 앱 설정 | 하단 「설정」 탭(2026-10-12). 계정, 구매, 도움말과 정보(사용법 다시 보기, 문의하기, 광고 신고하기, 약관과 라이선스, 앱 버전, 2026-10-28 브랜치 `docs/review-prep`, 사용자 확인 전). 구역은 판(`PixelPanel`) 배치 | 4.9 |
 | 위젯 미리보기 | Storybook에 없다(예전 링 위젯 미리보기는 2026-10-10 지움). 흐름도 위젯 노드는 스토리 없이 둔다 | 4.10 |
 | `/dev/sync` | 개발 전용 동기화 화면(`__DEV__`). 계정 화면이 붙은 뒤에도 동기화를 손으로 확인할 때 쓰려고 남겨 둔다(2026-10-18 사용자 결정) | — |
+
+## 함께 목표 (2026-11-05, 브랜치 `feat/friends-goal`)
+
+친구와 같은 목표를 채우는 기능(PRD 4.15, 1.1.0에 같이 넣는다). 설계와 계획은 `docs/superpowers/specs/2026-11-05-friends-goal-handoff.md`와 `docs/superpowers/plans/2026-11-05-friends-goal-data-sync.md`, `...-screens.md`이고 계획 끝의 「진행 기록」과 「아침에 물을 것」이 원본이다.
+
+- **끝난 것:** 1단계 서버 계약 2판과 기기 DB, 올리기와 받아 오기 동기화. 2단계 화면: 목표 탭 + 시트, 친구와 함께 만들기, 각자 판과 한 판, 친구 판 크게, 함께 목표 설정, 신고, 차단한 사람, 입력 검사.
+- **남은 것:** 초대 링크 받기와 [함께하기] 화면(C, `app/invite`가 없고 `join_goal`을 부르는 곳도 없다. 1.1.0에 넣는다, 2026-11-06. 웹 초대 페이지와 운영 Caddy 설정은 끝, 2026-11-06), 내 목표 보여주기(B13), 위젯과 워치(D), 운영 서버 마이그레이션 6과 7, 약관과 처리방침의 함께 목표 문안과 스토어 신고(E). 약관 문안을 2판(novum-web PR #64)에 합칠지 다음 판으로 낼지는 위 결정에 따른다. 두 계획의 「아침에 물을 것」에는 2026-11-05 사용자 답이 달려 있다. 시뮬레이터 확인(`qa`)과 `security` 검토 결과는 screens 계획 진행 기록에서 본다.
+- **개발 데이터:** `dev@chagok.test`의 2026-11-05 밤 시험 데이터(목표 2, 스티커 4, 기록 2)는 시험용으로 남겨 둔다(2026-11-05 사용자 결정). 지우지 않는다. 두 번째 계정 `dev2@chagok.test`는 `npm run server:dev-friend`로 다룬다([DEV-SETUP](DEV-SETUP.md) 「두 번째 개발 계정」). 시험이 끝나면 `cleanup`.
+- **주의:** `/settings/blocked` 같은 새 경로는 Metro를 한 번 돌려야 `.expo/types`에 잡힌다(다른 체크아웃에서 타입 검사가 먼저 실패할 수 있다).
+
+## 커밋 안 한 작업
+
+확인을 기다리느라 커밋하지 못한 채 세션을 끝냈으면 여기 적는다. 커밋하거나 버리면 줄을 지운다(AGENTS.md 「사용자와 일하는 규칙」). 2026-11-05 기준이다.
+
+| worktree | 무엇 | 기다리는 것 |
+| --- | --- | --- |
+| `~/.athena-studio/.../feat-one-device-min-build` | 한 번에 한 기기와 최소 앱 버전 28개 파일(서버 마이그레이션 포함) | 1.1.1 이후. 서버 2판 위로 다시 맞춰야 한다 |
+| `~/.athena-studio/.../docs-post-launch-db-rules` | DEV-SETUP 「운영 DB 바꾸기」 출시 뒤 절차 초안 | DEV-SETUP 「지금: 통째로 지우지 않는다」에 같은 내용이 들어가 있다. 버려도 되는지 확인 |
+| `~/.athena-studio/.../docs-release-docs-cleanup` | 출시 문서를 `docs/release/`로 옮기는 정리 27개 파일 | 할지 결정. 이 브랜치의 정리와 겹친다 |
+| `chagok-wt-ads` | 맞춤 광고 동의 시안(아직 앱에 반영 안 함) | 시안 결정 |
+| `chagok-wt-notif-spike` | 알림 위젯 시험 구현 | 계속할지 결정 |
+| `chagok-wt-store-shots` | 스토어 스크린샷 생성 스크립트(`gen*.mjs`, `slides.json`). 확정본 그림은 main에 있다 | 다시 찍을 일(영어 스크린샷 등)이 있으면 커밋, 없으면 버리기 |
+| `chagok-wt-launch-video` | 출시 영상 프로젝트(`videos/chagok-launch/`) | 계속할지 결정 |
+| `chagok-wt-landing` | 랜딩 초안(`docs/landing/index.html`). 랜딩은 novum-web으로 옮겨 갔다 | 버려도 되는지 확인 |
 
 ## 진행 중인 브랜치와 worktree
 
@@ -37,22 +65,22 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 2. **Android 점검** — 화면 QA는 2026-10-11 에뮬레이터(Android 16)에서 했다: 키보드가 기록 메모·칸 수 직접 입력을 가리는 문제를 고쳐 main에 합쳤다(`def1b33`, 사용자가 에뮬레이터에서 확인). 나머지 화면(홈·판·달력 스와이프·뒤로가기 확인 창·앱 설정·약관 시트·스티커 고르기·튜토리얼 스포트라이트·사진 고르기 취소)은 문제없음. 남은 것: Android 위젯(계획 2: 새 모양·목표 고르기·앱이 꺼졌을 때 첫 탭 유실 문제).
 3. **앱 설정 마무리** — 2026-10-28 문의하기, 광고 신고하기(심사 지침 1.5, 2.5.18), 앱 버전 줄을 넣었다(시안 2판 A, 브랜치 `docs/review-prep`). 남은 확인: 실기기에서 메일 쓰기 화면이 제목과 본문을 채워 열리는지(기본 메일 앱을 Gmail로 바꾼 경우 포함), 메일 앱이 없을 때 다이얼로그와 주소 복사. 시뮬레이터에는 메일 앱이 없다. 새 네이티브 모듈 `expo-application`, `expo-clipboard`가 들어가 개발 빌드를 다시 만들어야 한다.
 4. **접근성** — 스크린리더 레이블(문안 사용자 확인). 탭 대상 크기는 2026-10-11 Android에서 쟀다(dp): 홈 [앱 설정] 36×40, 판 [목표 설정] 40×40, 달력 날짜 칸 41×55(7열이라 폭 한계), [이전 달]·[접기]·홈 탭·[스티커 떼기] 높이 44. 기준(iOS 44 / Android 48)과 넓히는 방법(`hitSlop`이면 모양은 그대로) 사용자 결정 대기.
-5. **출시 준비 문서** — 개인정보 라벨·데이터 보안·연령 등급·Privacy Manifest 답안 초안: [스토어 개인정보 신고 초안](release-store-privacy-draft.md)(2026-10-11 두 스토어 공식 정의와 대조 완료, 사용자 승인). Privacy Manifest는 `app.json`과 `plugins/widget-goal`로 앱·위젯 확장 둘 다에 들어간다(2026-10-15 prebuild 결과에서 두 `PrivacyInfo.xcprivacy`가 각 타깃 Resources에 있는 것 확인, ITMS-91053). 처리방침 5절 수탁자·보관 위치는 운영 서버를 고를 때 함께 정한다(서울 지역이면 지금 문구 그대로). 2026-10-11 기록에 **카메라 촬영**이 들어갔다 — 찍은 사진도 스토어 라벨의 「사진」이라 답안은 그대로이고, 처리방침 9절(사진 접근 권한)에 카메라 접근을 더한다. 남은 것: 스티커 원본 권리, KIPRIS 상표(9류·42류), 스크린샷, `LICENSE` 종류(사용자 결정). 2026-10-28 라벨에 결제와 광고 항목을 더하고(기기 ID 추적 칸은 사용자 결정), 심사 메모, 상품 메모, 설명 초안을 [App Store 제출 문안 초안](release-app-store-submission.md)에 썼다(사용자 확인 전).
+5. **출시 준비 문서** — 개인정보 라벨·데이터 보안·연령 등급·Privacy Manifest 답안 초안: [스토어 개인정보 신고 초안](release-store-privacy-draft.md)(2026-10-11 두 스토어 공식 정의와 대조 완료, 사용자 승인). Privacy Manifest는 `app.json`과 `plugins/widget-goal`로 앱·위젯 확장 둘 다에 들어간다(2026-10-15 prebuild 결과에서 두 `PrivacyInfo.xcprivacy`가 각 타깃 Resources에 있는 것 확인, ITMS-91053). 처리방침 5절 수탁자·보관 위치는 운영 서버를 고를 때 함께 정한다(서울 지역이면 지금 문구 그대로). → 운영 서버를 말레이시아 VPS로 정해(2026-10-21) 처리방침 1판 7절(처리 위탁)과 8절(국외 이전)에 적었다. 2026-10-11 기록에 **카메라 촬영**이 들어갔다 — 찍은 사진도 스토어 라벨의 「사진」이라 답안은 그대로이고, 처리방침 9절(사진 접근 권한)에 카메라 접근을 더한다. 남은 것: 스티커 원본 권리, KIPRIS 상표(9류·42류), 스크린샷, `LICENSE` 종류(사용자 결정). 2026-10-28 라벨에 결제와 광고 항목을 더하고(기기 ID 추적 칸은 사용자 결정), 심사 메모, 상품 메모, 설명 초안을 [App Store 제출 문안 초안](release-app-store-submission.md)에 썼다(사용자 확인 전).
 6. **워치** — 설계 승인(2026-10-16, PRD 4.14). 계획 1: 폰 쪽 TS(완성 요청, 성장 수, 블록 색, 스냅샷, 동기화)와 시험 구현(watchOS 타깃, WatchConnectivity, 글꼴과 그림, 시뮬레이터 짝짓기). 계획 1과 계획 2를 2026-10-17 main에 합쳤다. 계획 2(워치 앱 본 구현): 폰 네이티브 모듈 `modules/chagok-watch`, 워치 SwiftUI 앱 `targets/watch`(Logic은 `sh scripts/test-watch-logic.sh`로 테스트). 사용자가 정할 것과 임시로 정한 것은 [워치 앱 질문](superpowers/specs/2026-10-16-watch-app-questions.md). 워치 → 폰 요청은 시뮬레이터에서 폰 앱이 켜져 있을 때 도착했다. 실기기는 개발 빌드로 워치 등록(UDID)이 막혀서 TestFlight로 확인한다(2026-10-17, Xcode 27과 26.6 모두 워치를 못 알아봄).
 
 **계정·외부 준비가 끝난 뒤**
 
-- **결제·광고 출시 연결** — 코드는 Test Store·테스트 광고로 붙어 있다(2026-10-13). 2026-10-26 iOS 연결: App Store Connect 상품 5개, RevenueCat App Store 앱과 상품, EAS `production` RevenueCat 키, AdMob 가입과 iOS 앱, 광고 단위, 광고 등급 G(RELEASE-DECISIONS 10-26). 2026-10-27 TestFlight 1.0.0 (4)(운영 서버, App Store 결제 키, 실제 광고 ID)에서 사용자가 Google 로그인, 사진 백업, 다른 기기 동기화, 로그아웃 뒤 다시 로그인을 확인했다. 남은 확인: Apple과 카카오 로그인, 실제 결제(2026-10-28 유료 앱 계약 동의 메일을 받음, 계약 탭 「활성」 확인 전), 실제 광고. 2026-10-28 TestFlight에서 배너가 안 보이고 [광고 보고 하루 써 보기]가 실패 안내를 띄운다(사용자 확인, 광고 제거는 사지 않음). EAS 기록으로 빌드 4(2a408e9)와 5(25ce382)가 실제 광고 ID 커밋으로 만들어진 것은 확인했다. AdMob 콘솔은 앱 「검토 필요」, 「광고 게재가 제한됨」, 계정 「아직 승인되지 않음」, 최근 7일 요청수 0이다. 계정 승인과 출시 뒤 스토어 연결이 끝나야 광고가 나온다(RELEASE-CHECKLIST 5절). 요청이 실제로 나가는지는 기기 로그로 확인하지 못했다. 묶음 가격이 $로 보였다 — 앱은 Apple이 준 통화를 그대로 쓰니 샌드박스 계정 국가 때문으로 보이며, 샌드박스 계정을 한국으로 바꿔 「원」이 나오는지 확인한다. 남은 것: Google Play 상품과 RevenueCat Android 앱, AdMob Android 앱, `app-ads.txt`(개발자 웹사이트 `https://chagok.novum-lab.com`는 2026-10-29 열었고 파일은 아직 없다), 통신판매업 신고 확인. 약관과 처리방침 1판의 결제와 광고 조항은 2026-10-26 게시했다(정책 저장소 `publish` 167382d).
+- **결제·광고 출시 연결** — 코드는 Test Store·테스트 광고로 붙어 있다(2026-10-13). 2026-10-26 iOS 연결: App Store Connect 상품 5개, RevenueCat App Store 앱과 상품, EAS `production` RevenueCat 키, AdMob 가입과 iOS 앱, 광고 단위, 광고 등급 G(RELEASE-DECISIONS 10-26). 2026-10-27 TestFlight 1.0.0 (4)(운영 서버, App Store 결제 키, 실제 광고 ID)에서 사용자가 Google 로그인, 사진 백업, 다른 기기 동기화, 로그아웃 뒤 다시 로그인을 확인했다. 남은 확인: Apple과 카카오 로그인, 실제 결제(2026-10-28 유료 앱 계약 동의 메일을 받음, 계약 탭 「활성」 확인 전), 실제 광고. 2026-10-28 TestFlight에서 배너가 안 보이고 [광고 보고 하루 써 보기]가 실패 안내를 띄운다(사용자 확인, 광고 제거는 사지 않음). EAS 기록으로 빌드 4(2a408e9)와 5(25ce382)가 실제 광고 ID 커밋으로 만들어진 것은 확인했다. AdMob 콘솔은 앱 「검토 필요」, 「광고 게재가 제한됨」, 계정 「아직 승인되지 않음」, 최근 7일 요청수 0이다. 계정 승인과 출시 뒤 스토어 연결이 끝나야 광고가 나온다(RELEASE-CHECKLIST 5절). 요청이 실제로 나가는지는 기기 로그로 확인하지 못했다. 묶음 가격이 $로 보였다 — 앱은 Apple이 준 통화를 그대로 쓰니 샌드박스 계정 국가 때문으로 보이며, 샌드박스 계정을 한국으로 바꿔 「원」이 나오는지 확인한다. 남은 것: Google Play 상품과 RevenueCat Android 앱, AdMob Android 앱, `app-ads.txt`는 `https://chagok.novum-lab.com/app-ads.txt`에 올렸다(novum-web main, 2026-11-05 확인), 통신판매업 신고 확인. 약관과 처리방침 1판(결제와 광고 조항 포함)은 2026-11-03 novum-web에 게시와 시행됐다.
 - **Apple 로그인** — 2026-10-17 main에 합침(`apple-link`로 Apple 토큰을 맡기고, 계정 삭제 때 폐기). 개발 서버 `chagok-dev`에 함수 두 개 배포와 DB 리셋 끝. iPhone에서 연결과 첫 백업, 창 닫기, 로그아웃 뒤 다시 로그인과 복원을 사용자가 확인했다. 2026-10-22 iPhone에서 새 계정의 동의 시트와 동의 기록, 이미 동의한 계정으로 다시 로그인, 동의 시트 [그만하기]로 계정 삭제, 설정의 계정 삭제(서버에서 지워지고 Apple 연동 해지 메일이 오며, iPhone 「Apple로 로그인」 목록에서 빠짐)를 확인했다. **「Apple로 로그인」 목록에서 먼저 끊은 뒤 삭제는 아직 확인 안 함** — 문제가 나오면 그때 고친다(사용자 결정). 로그인 버튼은 각 회사 규정 모양이다. Apple은 2026-10-22부터 HIG대로 직접 만든 버튼(로고 파일은 git 밖, DEV-SETUP), 로고 파일이 없는 빌드는 기본 `AppleAuthenticationButton`(DESIGN-SYSTEM). EAS에는 secret 파일 변수 `APPLE_SIWA_LOGO_SVG`로 올렸고, 클라우드 빌드에 실제로 들어가는지는 다음 TestFlight 빌드에서 본다(RELEASE-CHECKLIST 3절).
-- **카카오 로그인** — 2026-10-22 main에 합침. 개발 서버에 `delete-account`(카카오 연결 끊기 포함, Apple과 카카오 단계 모두 원문 오류는 서버 로그에만)를 배포했다. 약관, 처리방침 1판과 계정 삭제 안내에 카카오를 더한 것은 정책 저장소 main에 있다(`publish` 전). 시뮬레이터에서 로그인과 복원을 사용자가 확인했다. 남은 것: `auth.identities`의 회원번호 칸, 계정 삭제 뒤 카카오톡 「연결된 서비스 관리」에서 빠지는지, 실기기와 Android. EAS 릴리스 키 해시는 첫 Android EAS 빌드 뒤 카카오 콘솔에 더한다. 2026-10-26 연결 해제 웹훅(`kakao-unlink`): 카카오톡에서 연결을 끊거나 카카오계정을 탈퇴하면 서버 계정과 백업을 지운다. 개발 서버에 배포했고 카카오 콘솔 웹훅은 개발 주소로 [사용함](DEV-SETUP 「카카오 연결 해제 웹훅」). 카카오로 로그인할 때마다 사용자 정보 조회를 한 번 부른다(가입 미완료로 끊기지 않게). 계정 삭제 안내 페이지에 카카오톡에서 연결 끊는 방법을 적었다(정책 저장소). 운영 주소로 바꾸는 것은 운영 서버 계획 4단계.
-- **출시 전에만 넣을 수 있는 것** — 한 번에 한 기기(서버 RPC `push_changes`·`replace_all`에서 확인·거절, 앱은 안내 후 다시 연결 — 문구 사용자 확인), 동기화 버전·최소 앱 버전(구버전 앱이 서버 기록을 망가뜨리지 않게, [버전 규칙](RELEASE-VERSIONING.md)).
-- **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다. **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. → 2026-10-26 `production`에 App Store 키를 넣었고, Supabase 두 값도 `production` 전용 변수로 나눠 운영 서버 값을 넣었다(`preview`는 개발 서버 그대로). App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, 2026-10-20 새 계정 Apple ID `6824725721` — `eas.json` `submit.production.ios.ascAppId`). 옛 계정에는 2026-10-18 빌드 7(1.0.0)을 TestFlight에 올렸다(그래서 옛 번들 ID는 다시 못 쓴다). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드의 로그인은 카카오, Google, Apple이다(2026-10-22 앱에 합침, 2026-10-26 운영 서버에 켬. 실제 로그인은 운영 빌드의 TestFlight에서 확인).
+- **카카오 로그인** — 2026-10-22 main에 합침. 개발 서버에 `delete-account`(카카오 연결 끊기 포함, Apple과 카카오 단계 모두 원문 오류는 서버 로그에만)를 배포했다. 약관, 처리방침 1판과 계정 삭제 안내에 카카오가 들어가 있다(2026-11-03 게시). 시뮬레이터에서 로그인과 복원을 사용자가 확인했다. 남은 것: `auth.identities`의 회원번호 칸, 계정 삭제 뒤 카카오톡 「연결된 서비스 관리」에서 빠지는지, 실기기와 Android. EAS 릴리스 키 해시는 첫 Android EAS 빌드 뒤 카카오 콘솔에 더한다. 2026-10-26 연결 해제 웹훅(`kakao-unlink`): 카카오톡에서 연결을 끊거나 카카오계정을 탈퇴하면 서버 계정과 백업을 지운다. 개발 서버에 배포했고 카카오 콘솔 웹훅은 개발 주소로 [사용함](DEV-SETUP 「카카오 연결 해제 웹훅」). 카카오로 로그인할 때마다 사용자 정보 조회를 한 번 부른다(가입 미완료로 끊기지 않게). 계정 삭제 안내 페이지에 카카오톡에서 연결 끊는 방법을 적었다(정책 저장소). 운영 주소로 바꾸는 것은 운영 서버 계획 4단계.
+- **한 번에 한 기기, 동기화 버전과 최소 앱 버전** — 1.0과 1.1.0 모두 없이 나간다. 1.1.1 이후에 넣는다. 1.0 사용자가 생긴 뒤라 구버전 앱을 막는 방법을 그때 다시 정한다([버전 규칙](RELEASE-VERSIONING.md)).
+- **TestFlight** — 2026-10-15 준비: EAS 환경 변수(preview·production)에 `EXPO_PUBLIC_SUPABASE_URL`·`EXPO_PUBLIC_SUPABASE_ANON_KEY`(개발 서버 `chagok-dev`)와 `EXPO_PUBLIC_REVENUECAT_KEY`(Test Store)를 `sensitive`로 넣었다. 개발 계정 이메일·비밀번호는 넣지 않는다. 운영 서버를 정하면 서버 값을, 정식 심사 전에는 결제 키를 실제 키로 바꾼다(둘 다 2026-10-26에 했다, 아래). **2026-10-17: 워치 TestFlight 확인용으로 `EXPO_PUBLIC_REVENUECAT_KEY`를 `production`에서 뺐다(`preview`에만 남음).** Release 빌드는 Test Store 키를 보면 「Wrong API Key」를 띄우고 앱을 닫는다(시뮬레이터에서 확인). 지금 `production` 빌드는 결제가 꺼져 있다. 실제 결제 키를 넣을 때 `production`에 다시 넣는다. → 2026-10-26 `production`에 App Store 키를 넣었고, Supabase 두 값도 `production` 전용 변수로 나눠 운영 서버 값을 넣었다(`preview`는 개발 서버 그대로). App Store Connect에 앱을 등록했다(「차곡차곡: 스티커로 쌓는 기록」, 2026-10-20 새 계정 Apple ID `6824725721` — `eas.json` `submit.production.ios.ascAppId`). 옛 계정에는 2026-10-18 빌드 7(1.0.0)을 TestFlight에 올렸다(그래서 옛 번들 ID는 다시 못 쓴다). 올릴 때: `eas build --platform ios --profile production`(EAS 비용, 사용자에게 먼저 묻는다) → `eas submit --platform ios --profile production`. 판매 지역은 한국만으로 둔다(EU 거래자 입력 불필요). 셀룰러로 개발 빌드 보기는 [개발 설정](DEV-SETUP.md) 「Tailscale」. 출시 빌드의 로그인은 카카오, Google, Apple이다(2026-10-22 앱에 합침, 2026-10-26 운영 서버에 켬. 실제 로그인은 운영 빌드의 TestFlight에서 확인).
 - **Google 로그인** — 2026-10-22 main에 합침. 무료 라이브러리 16.1.5, 서버 함수 변경 없음(계정 삭제 때 앱이 `revokeAccess`, 앱을 다시 켠 뒤면 저장된 로그인을 되살린 뒤 끊음). 시뮬레이터에서 로그인과 로그아웃 뒤 복원을 사용자가 확인했다. 버튼 순서는 카카오 → Google → Apple(DESIGN-SYSTEM). Apple이 이유 없이 실패를 돌려주면(`ERR_REQUEST_UNKNOWN`) 「연결하지 못했어요 / 다시 시도해 주세요.」. 남은 것: 계정 삭제 뒤 Google 계정 「서드파티 연결」에서 빠지는지(앱을 다시 켠 뒤 삭제 포함), Android 에뮬레이터(Google Play 이미지), Google이 넘기는 이름과 사진 주소가 `auth.identities`에 남는지(처리방침 1판에 적음), 출시 전 동의 화면 게시와 브랜드 확인.
-- **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`, 계획 `docs/superpowers/plans/2026-10-15-social-login.md`. 로그인 버튼은 회사 표준 버튼을 쓴다(2026-10-21, 동그라미 아이콘 `LoginCircles`는 지웠다). `src/design-system/apple-logo.ts`는 Storybook의 Apple 버튼 미리보기만 쓴다.
+- **로그인 계획**(2026-10-15 확정) — Apple → 카카오 → Google 순. iOS는 Apple·카카오·Google, Android는 카카오·Google. Google은 무료 라이브러리 + nonce 확인 끄기, OAuth 준비 뒤. 조사 `docs/superpowers/specs/2026-10-15-social-login-research.md`. 로그인 버튼은 회사 표준 버튼을 쓴다(2026-10-21, 동그라미 아이콘 `LoginCircles`는 지웠다). `src/design-system/apple-logo.ts`는 Storybook의 Apple 버튼 미리보기만 쓴다.
 
 **출시 직전에는** [출시 전 최종 점검](RELEASE-CHECKLIST.md)을 위에서부터 확인한다.
 
-**사용자 결정이 필요한 것**은 [PRD 11절](PRD.md#11-남은-결정)과 [출시 준비 결정](RELEASE-DECISIONS.md) 「열림」에 있다. 운영 서버와 날짜·시간대 처리가 출시 전에 먼저 필요하다.
+**사용자 결정이 필요한 것**은 [PRD 11절](PRD.md#11-남은-결정)과 [출시 준비 결정](RELEASE-DECISIONS.md) 「열림」에 있다.
 
 ## 계정과 외부 준비
 
@@ -89,4 +117,4 @@ PRD 4절 기능은 대부분 앱에 연결돼 있다(스키마 v6, 개발 빌드
 
 **시뮬레이터** — 확인은 기본으로 **iOS 26.5**(사용자 폰과 가장 가까운 버전, Xcode 27이 주는 최신)에서 한다. `iPhone 15 Pro (iOS 26.5)` `679C5118-84D9-4DA6-93FC-8486E90EAC89`, iPhone 17 Pro·Pro Max(26.5)도 있다. iOS 18.3은 비교용으로만(2026-06 Apple 집계로 iOS 26이 79%, 18이 약 14%). 앱 최소 지원은 iOS 16.4.
 
-**개발 데이터 초기화(2026-10-12)** — 출시 전이라 기기 DB(v1)와 서버 마이그레이션을 최종 구조 하나로 합쳤다(DEV-SETUP 「개발 서버」). 개발 서버를 비우고 개발 계정을 다시 만들었고, 시뮬레이터 3대(iPhone 15 Pro 26.5 · 16 Pro · 16 Pro Max)와 에뮬레이터 `Chagok_Pixel_7`의 앱 데이터를 지웠다. **사용자 iPhone 개발 빌드는 앱을 지우고 다시 설치해야 한다**(옛 DB 구조로는 새 코드가 열지 못한다). `Pixel_7` AVD는 확인하지 않았다.
+**개발 데이터 초기화(2026-10-12)** — 그때 기기 DB(v1)와 서버 마이그레이션을 최종 구조 하나로 합쳤다(DEV-SETUP 「개발 서버」). 2026-11-05 서버 2판으로 한 번 더 다시 만들었고, 다음부터는 마이그레이션을 더한다(AGENTS.md 「서버와 약관 규칙」). 개발 서버를 비우고 개발 계정을 다시 만들었고, 시뮬레이터 3대(iPhone 15 Pro 26.5 · 16 Pro · 16 Pro Max)와 에뮬레이터 `Chagok_Pixel_7`의 앱 데이터를 지웠다. **사용자 iPhone 개발 빌드는 앱을 지우고 다시 설치해야 한다**(옛 DB 구조로는 새 코드가 열지 못한다). `Pixel_7` AVD는 확인하지 않았다.

@@ -1,7 +1,15 @@
 export type BoardType = 'calendar' | 'tally';
 
+/** solo 혼자, each 각자 판, one 한 판, show 보여주기 */
+export type GoalMode = 'solo' | 'each' | 'one' | 'show';
+export type MemberRole = 'owner' | 'member' | 'viewer';
+
 export type Goal = {
   id: string;
+  /** 함께 목표 방식. 혼자 목표는 solo */
+  mode: GoalMode;
+  /** 내가 이 목표에서 맡은 역할 */
+  role: MemberRole;
   name: string;
   boardType: BoardType;
   /** tally일 때만 값, calendar는 null */
@@ -19,14 +27,31 @@ export type Goal = {
   completedAt: number | null;
   /** 완성 뒤 닫기/계속하기를 골랐는가. false인 완성한 판은 열 때 완성 흐름을 보여준다 */
   completionSeen: boolean;
-  /** 마지막으로 붙인 시각. 떼도 바뀌지 않는다. 목록 정렬과 종료일 하한에 쓴다 (PRD 4.1) */
+  /** 마지막으로 붙인 시각. 떼도 바뀌지 않는다. 종료일 하한과 옛 목표의 첫 순서에 쓴다 (PRD 4.1) */
   lastPlacedAt: number | null;
   /** 적립판을 만들 때의 칸 수. 칸 늘리기 기본값. 달력판은 null */
   initialSlots: number | null;
+  /**
+   * 내 목표 목록 순서. 작을수록 위다. 사용자가 끌어 옮겨 정한다 (PRD 4.1, 2026-10-30).
+   * null = 순서를 정하기 전 기록(서버에만 남은 옛 행). 읽을 때 최근순으로 놓는다.
+   */
+  sortOrder: number | null;
 };
 
 /** 목표가 기본 스티커 없이 만들어졌을 때의 값 */
-export const DEFAULT_STICKER_ID = 'basic.sprout';
+/** 새 목표와 스티커의 기본 그림 (2026-11-04 새싹에서 네잎클로버로) */
+export const DEFAULT_STICKER_ID = 'basic.clover';
+
+/** 함께 목표의 멤버 한 줄. isMe는 이 기기 사용자 본인. */
+export type GoalMember = {
+  goalId: string;
+  userId: string;
+  isMe: boolean;
+  role: MemberRole;
+  displayName: string | null;
+  stickerId: string | null;
+  joinedAt: number | null;
+};
 
 export type Sticker = {
   id: string;
@@ -38,6 +63,10 @@ export type Sticker = {
   dateKey: string;
   /** 붙일 때 기기 시간대. UTC보다 몇 분 빠른가(한국 540). 붙인 곳의 시각을 보여 줄 때 쓴다 */
   tzOffsetMin: number;
+  /** 어느 판에 붙었는가. 내 판은 'me', 한 판은 null, 친구 판은 그 사람 id */
+  boardUserId: string | null;
+  /** 붙인 사람. 'me' 또는 그 사람 id, 차단으로 가려지면 null */
+  placedBy: string | null;
 };
 
 export type RecordNote = {
@@ -46,10 +75,4 @@ export type RecordNote = {
   photoUri: string | null;
   memo: string | null;
   createdAt: number;
-};
-
-export type Slot = {
-  index: number;
-  label: string;
-  sticker: Sticker | null;
 };

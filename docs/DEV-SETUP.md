@@ -47,8 +47,22 @@ npx expo run:android --no-bundler   # 첫 Gradle 빌드 약 8분
 바꿨을 때만. JS·화면 코드는 Metro 리로드로 충분하다.
 
 ```sh
-npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은 방식
+npm run prebuild:dev && npx expo run:ios --no-bundler   # 개발 앱으로 만든다. Android는 APP_VARIANT=development npx expo prebuild --clean --platform android
 ```
+
+**개발 앱과 출시 앱 (2026-11-04~)** — 이 맥과 EAS `development`에서 만드는 개발 빌드는 출시 앱과 다른 앱이다. 한 폰에 둘 다 깔리고 기록도 따로다. `app.config.js`가 `APP_VARIANT=development`일 때만 바꾼다.
+
+| | 출시 앱 | 개발 앱 |
+| --- | --- | --- |
+| 홈 화면 이름 | 차곡차곡 / Chagok | 차곡 개발 / Chagok Dev, 아이콘 아래 DEV 띠 (`assets/icon-dev.png`) |
+| 번들 ID | `com.novumlab.chagok` (위젯 `.ExpoWidgetsTarget`, 워치 `.watch`, 컴플리케이션 `.watch.widgets`) | 같은 자리에 `com.novumlab.chagok.dev` |
+| 앱 그룹 | `group.com.novumlab.chagok`, `group.com.novumlab.chagok.watch` | `.dev`가 붙는다 |
+| scheme | `chagok` (위젯 링크도 앱이 넘긴다) | `chagok-dev` |
+| Google iOS 클라이언트 | `…jmu9re3f…` | `…dh9esjca…` (Cloud 클라이언트 「chagok iOS dev」) |
+| 카카오 네이티브 앱 키 | `eee7d607…` (Default Native AppKey) | `09334c77…` (Dev Native AppKey, 키 하나에 iOS 번들 ID 하나라 따로 만듦) |
+
+- **`APP_VARIANT` 없이 prebuild하면 출시 앱 ID로 만들어진다.** 폰에 깔면 App Store 앱을 덮어쓰고, 개발 서버의 Apple 로그인도 실패한다(아래 「Apple 로그인」). 이 맥에서는 `npm run prebuild:dev`, Metro는 `npm run start:dev`로 띄운다.
+- 개발 서버 Supabase의 로그인 허용 목록(Apple Client IDs, Google, 카카오 Client ID)에는 두 앱 값이 모두 있다. 운영 서버에는 출시 앱 값만 둔다.
 
 **알아 둘 것**
 
@@ -63,13 +77,15 @@ npx expo prebuild --clean && npx expo run:ios --no-bundler   # Android도 같은
 [버전 규칙](RELEASE-VERSIONING.md)). iOS 실기기·스토어 빌드는 Apple Developer Program 승인 뒤에 한다.
 **클라우드 빌드는 `.env.local`을 읽지 않는다** — `preview`·`production`을 빌드하기 전에 서버 주소·키를 EAS 환경 변수로 넣어야 한다.
 
+**이벤트 기록과 오류 보고** — 이름은 `.env.example`에 있다. `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST`, `EXPO_PUBLIC_SENTRY_DSN`이 없으면 앱은 보내지 않고 그대로 동작한다. 개발 빌드(`__DEV__`)는 값이 있어도 보내지 않는다. 저장 지역은 둘 다 독일이다(2026-10-31, 처리방침과 같은 값). PostHog는 EU Cloud 프로젝트에 `https://eu.i.posthog.com`, Sentry는 Frankfurt로 만든 조직의 DSN을 쓴다. Sentry 지역은 조직을 만들 때 정하면 바꿀 수 없고 앱은 DSN이 가리키는 곳으로 보낸다. 소스맵 올리기는 `SENTRY_URL`(`https://de.sentry.io/`), `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`을 쓴다. 토큰은 앱에 들어가지 않게 `EXPO_PUBLIC_`을 붙이지 않는다. 토큰 없이 Release를 빌드할 때는 `SENTRY_DISABLE_AUTO_UPLOAD=true`를 붙인다.
+
 **실기기 iPhone 개발 빌드** (2026-10-10 설치, iPhone 15 Pro · iOS 26.6.2)
 
 - 빌드: `npx eas-cli@latest build --profile development --platform ios`. 전역 `eas`(16.17.4)는 오래돼서 Apple 로그인 단계가
   「iTunes service key is empty」로 실패한다. Apple 로그인·인증서 질문이 대화형이라 **사용자의 터미널 앱에서** 돌린다(Claude의 `!`로는 안 된다).
 - 기기는 EAS에 등록돼 있고 배포 인증서도 있다. 네이티브 쪽(`app.json`·플러그인·네이티브 라이브러리)을 바꿨을 때만 다시 빌드한다.
-- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AJ7LJPM82M -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. TestFlight 앱을 덮어쓰고 데이터는 남는다.
-- 실행: Mac에서 `npx expo start --dev-client --port 8081`. 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8081`로 연다.
+- 이 Mac에 개발 인증서가 생긴 뒤(2026-10-17)로는 EAS 대신 로컬에서 빌드해 설치한다. 먼저 `npm run prebuild:dev`로 개발 앱 프로젝트를 만든다. `npx expo run:ios --device`는 서명 단계에서 실패하니 `ios/`에서 `SENTRY_DISABLE_AUTO_UPLOAD=true xcodebuild -workspace app.xcworkspace -scheme app -configuration Debug -destination 'id=<기기 UDID>' -allowProvisioningUpdates DEVELOPMENT_TEAM=AJ7LJPM82M -derivedDataPath <임시 폴더> build` 뒤 `xcrun devicectl device install app --device <기기 UDID> <임시 폴더>/Build/Products/Debug-iphoneos/app.app`. 개발 앱(2026-11-04~)은 App Store나 TestFlight 앱과 따로 깔린다.
+- 실행: Mac에서 `npm run start:dev`(개발 앱 scheme으로 8081에 띄운다). 폰과 Mac이 **같은 Wi-Fi**여야 하고, 폰 앱에서 `http://<Mac LAN IP>:8081`로 연다.
   JS·위젯 레이아웃 변경은 Metro 리로드로 폰에 반영된다.
 - worktree에서 Metro를 띄우면 `.env.local`을 링크하고, 다른 worktree에서 띄웠던 직후라면 `--clear`를 붙인다
   ([PITFALLS](PITFALLS.md)).
@@ -288,20 +304,32 @@ secret 키는 관리자 권한이다. 앱에 넣지 않고 커밋하지 않는�
 
 ```sh
 supabase db query --linked "select 1"              # 연결 확인
-supabase db reset --linked                         # 개발 서버를 비우고 supabase/migrations를 처음부터 다시 적용한다
+supabase db push --linked --dry-run                # 새 마이그레이션 파일만 들어가는지 먼저 본다
+supabase db push --linked                          # 새 마이그레이션 파일을 개발 서버에 올린다
 supabase functions deploy delete-account --use-api # 계정 삭제 함수 (Docker 없이)
 supabase functions deploy apple-link --use-api     # Apple 토큰 맡기기 함수
 supabase functions deploy kakao-unlink --use-api   # 카카오 연결 해제 웹훅 (토큰 없이 받는다, config.toml verify_jwt = false)
+supabase functions deploy purge-photos --use-api   # 서버가 지운 기록의 사진 파일 지우기 (나가기, 내보내기, 차단 뒤 앱이 부른다)
 npm run test:server                                # 실제 서버 테스트 (만든 테스트 사용자는 끝나면 지운다)
 npm run server:dev-user                            # 개발용 계정 만들기
+npm run server:dev-friend -- setup                 # 두 번째 개발 계정 dev2@chagok.test 만들기 (비밀번호는 .env.local DEV2_PASSWORD)
+npm run server:dev-friend -- --help                # 함께 목표의 친구 쪽 시험 도구(들어오기, 붙이기, 이름 바꾸기, 나가기, 차단, 목표 목록과 지우기, 정리)
 ```
 
-**출시 전(2026-10-12~):** 서버 구조를 바꿀 때 새 파일을 더하지 않고 `supabase/migrations`의 파일을 최종 구조로 고친 뒤 `db reset --linked`로 개발 서버를 비운다. 기기 DB(`src/db/schema.ts`)도 v1을 고치고 개발 기기의 앱 데이터를 지운다. 리셋하면 로그인 사용자도 지워지므로 `npm run server:dev-user`로 개발 계정을 다시 만들고, 사진 저장소(`record-photos`)에 남은 파일은 service 키로 지운다. **출시 뒤에는** 올린 파일을 고치지 않고 새 파일을 더한다(`db push`).
+**두 번째 개발 계정 (2026-11-05~):** 함께 목표는 두 사람이 있어야 시험할 수 있고 초대 받기 화면은 아직 없다. `scripts/dev-friend.mjs`가 `dev2@chagok.test`로 로그인해 앱이 쓰는 공개 RPC(`join_goal`, `sync_push`, `update_member`, `leave_goal`, `block_user`, `unblock_user`, `pull_goal`, `sync_pull`, `my_blocks`)만 부른다. SQL로 고치지 않는다. 비밀번호는 `.env.local`의 `DEV2_PASSWORD`(저장소에 넣지 않는다. `EXPO_PUBLIC_`이 아니라 앱 번들에 들어가지 않는다)에 두고 `setup`이 service 키로 계정을 한 번 만든다. 시험이 끝나면 `cleanup`(dev2가 든 함께 목표에서 나가고 차단을 모두 푼다). 목표 자체와 dev 계정 쪽 데이터는 `cleanup`이 지우지 않고, 각자 판에서 나가면 dev2 쪽에 그 판을 옮긴 혼자 목표가 남는다. 남은 혼자 목표는 `goals`로 id와 이름을 보고 `delete <goalId>`로 지운다(앱이 혼자 목표를 지울 때와 같은 `sync_push` 목표 삭제. 함께 목표는 서버가 `not_allowed`로 거절한다).
+
+- **초대 코드**는 시뮬레이터 클립보드로 못 받는 일이 많다. 서버 `invites`(`goal_id`가 그 목표, `revoked_at is null`)에서 읽어 `join <코드> <이름> <스티커>`로 들어온다. 스티커는 `basic.cat`처럼 `basic.<이름>`.
+- **`place <goalId> <칸 번호|YYYY-MM-DD> [스티커]`:** 칸 번호는 화면 번호(1부터)다. 스티커는 세 번째 인자(기본 `basic.clover`)이고 멤버 스티커를 쓰지 않는다. 한 판은 칸의 스티커를 그리므로 친구 스티커로 보이게 하려면 그 값을 넘긴다.
+- **dev(A)를 「함께하는 사람」으로 넣기:** 같은 스크립트를 셸 환경 `EXPO_PUBLIC_DEV2_EMAIL=dev@chagok.test DEV2_PASSWORD=<.env.local의 dev 비밀번호>`로 돌리면 dev@로 `join`과 `leave`가 된다(셸 값이 파일 값보다 먼저다).
+- **내보내진 사람(`kicked`)은 새 링크로도 그 목표에 돌아오지 못한다.** 만든 사람이 차단하면 그 사람은 내 모든 함께 목표에서 `kicked`된다. 내보내기 시험은 차단보다 먼저 하거나 새 목표에서 한다.
+- **무료 목표 5개 한도에 함께 목표도 든다.** 개발 계정에 혼자 목표가 있으면 새로 만들 수 있는 수가 그만큼 준다.
+
+**서버 구조 바꾸기:** 올린 마이그레이션 파일을 고치지 않고 새 파일을 더해 `db push`로 올린다. 기기 DB도 `src/db/schema.ts` `MIGRATIONS` 끝에 새 판을 더한다. **서버를 비우고 처음부터 다시 만드는 일은 2026-11-05(서버 2판, 운영 사용자 0명)가 마지막이다.** 앞으로는 운영 데이터를 옮기는 마이그레이션으로 바꾼다. 운영 쪽 순서는 [운영 DB 바꾸기](#운영-db-바꾸기).
 
 **Apple 로그인 (2026-10-15~)** — 개발 빌드에서만 된다(Expo Go는 번들 ID가 달라 Supabase가 거절한다).
 
-- Supabase Authentication → Providers → Apple: Client IDs `com.novumlab.chagok`. Secret Key는 비운다(네이티브 전용).
-- 함수 secret 네 개: `APPLE_TEAM_ID`(AJ7LJPM82M), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`(com.novumlab.chagok), `APPLE_PRIVATE_KEY`(`.secrets/AuthKey_<KeyID>.p8` 내용). `supabase secrets list`로 확인.
+- Supabase Authentication → Providers → Apple: Client IDs는 개발 서버 `com.novumlab.chagok,com.novumlab.chagok.dev`, 운영 서버 `com.novumlab.chagok`. Secret Key는 비운다(네이티브 전용).
+- 함수 secret 네 개: `APPLE_TEAM_ID`(AJ7LJPM82M), `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY`. `APPLE_CLIENT_ID`는 Apple과 코드를 바꿀 때 쓰는 앱 ID라 서버마다 다르다: 개발 서버 `com.novumlab.chagok.dev`(2026-11-04~, 개발 앱만 Apple 로그인이 된다), 운영 서버 `com.novumlab.chagok`. `APPLE_PRIVATE_KEY`는 `.secrets/AuthKey_<KeyID>.p8` 내용이다. `supabase secrets list`로 확인.
 - `.p8`은 Apple에서 한 번만 내려받을 수 있다. 잃어버리면 새 키를 만들고 두 secret을 바꾼다.
 - 실기기 빌드에는 Xcode Accounts에 팀 AJ7LJPM82M 계정이 있어야 한다(`app.json` `ios.appleTeamId`).
 
@@ -390,14 +418,69 @@ delete from private.account_deletions where completed_at < now() - interval '1 y
 - **알림:** Healthchecks.io의 「서버 오류」 점검이 모은 로그의 오류를 받아 메일로 알린다. 신호 주소는 `~/monitor/hc.env`(비밀값).
 - **다시 만들기 전에:** `sh run.sh recreate`나 업데이트 전에 `~/logs/collect.sh`를 한 번 돌린다. 안 돌리면 마지막으로 모은 뒤의 로그가 사라진다.
 
+## 운영 DB 바꾸기
+
+`supabase/migrations`를 운영 DB에 올리는 방법은 1.0 공개(2026-11-03) 뒤로는 아래 「지금: 통째로 지우지 않는다」만 쓴다(AGENTS.md 「서버와 약관 규칙」).
+
+**주의: 파일을 고쳐도 버전 번호가 같으면 운영은 「이미 적용됨」으로 보고 넘어간다.** `supabase db push`는 `supabase_migrations.schema_migrations`의 버전 번호만 보고 내용은 비교하지 않는다. 2026-10-26에 계정 관리 마이그레이션(당시 `20260930000004`)을 고쳐 카카오 실패 기록 표와 찾기 함수를 더했지만, 운영은 그 전에 같은 번호로 적용돼 있어 들어가지 않았다. 2026-10-29 카카오 웹훅 테스트에서 `failed … find not recorded`로 드러났다.
+
+**통째로 다시 넣는 방법 (2026-10-29, 2026-11-05에 썼다. 이제 하지 않는다)**
+
+운영의 사용자, 기록, 사진이 모두 사라진다. 2026-11-05 서버 2판(운영 사용자 0명 확인)이 마지막이다. 기록으로만 남긴다. 그때 맞춘 것: `log_min_error_statement` 다시 걸기, 그때 있던 함수 폴더 다시 올리기, 컨테이너 11개 healthy, Healthchecks 7개 초록.
+
+```sh
+# 서버 (ssh chagok@<운영 서버 주소>)
+# 1. 백업
+mkdir -p ~/backup/manual
+docker exec supabase-db pg_dump -U supabase_admin -d postgres -Fc > ~/backup/manual/prod-<날짜>-before-reset.dump
+tar -C ~/supabase/volumes -czf ~/backup/manual/storage-<날짜>-before-reset.tgz storage
+
+# 2. 비우기
+~/logs/collect.sh   # 다시 만들면 컨테이너 로그가 사라지므로 먼저 모은다(운영 서버 로그)
+cd ~/supabase && sh run.sh stop
+mv volumes/db/data volumes/db/data.bak-<날짜>
+mv volumes/storage volumes/storage.bak-<날짜>
+sh run.sh start     # 빈 DB로 뜬다. 컨테이너 11개가 healthy인지 본다
+
+# 3. 이 맥 (main 체크아웃): 터널을 열고 마이그레이션 전체를 넣는다
+ssh -f -N -L 18432:127.0.0.1:5432 chagok@<운영 서버 주소>
+supabase db push --db-url "postgresql://postgres.chagok:<비밀번호>@127.0.0.1:18432/postgres?sslmode=disable"
+pkill -f "ssh .*-L 18432:127.0.0.1:5432"
+
+# 4. 서버: DB 설정을 다시 건다. ALTER SYSTEM 값은 volumes/db/data 안에 있어 새 DB에는 없다
+docker exec supabase-db psql -U supabase_admin -d postgres \
+  -c "ALTER SYSTEM SET log_min_error_statement = panic" -c "select pg_reload_conf()"
+```
+
+5. **함수:** [운영 서버 함수 올리기](#운영-서버-함수-올리기)대로 네 폴더를 모두 main으로 넣는다.
+6. **확인:** `public` 표 4개, `private` 표 3개(`apple_tokens`, `kakao_unlink_failures`, `account_deletions`), `record-photos` 버킷, RLS 정책 8개가 있는지 본다. 그다음 함수 「올린 뒤 확인」(401, `external`, Healthchecks)과 카카오 콘솔 웹훅 테스트(200, 함수 로그 `no_user`)를 한다.
+7. **되돌리기:** `sh run.sh stop`, 새 `data`와 `storage`를 지우고 `.bak-<날짜>` 이름을 되돌린 뒤 `sh run.sh start`.
+
+**지금: 통째로 지우지 않는다**
+
+올린 마이그레이션 파일을 고치지 않고 새 파일만 더한다. 운영에는 새 파일만 올린다.
+
+1. **운영과 main 비교:** 운영 `supabase_migrations.schema_migrations`의 `statements`(버전마다 적용한 문장 목록)를 꺼내 main의 같은 버전 파일과 문장 단위로 비교한다. 주석과 공백은 빼고 본다. 이미 있는 버전에 차이가 있으면 누군가 올린 파일을 고친 것이니 멈추고, 그 차이를 새 파일로 옮긴다.
+
+   ```sh
+   docker exec supabase-db psql -U supabase_admin -d postgres -At \
+     -c "select version, statements from supabase_migrations.schema_migrations order by version"
+   ```
+
+2. **백업:** `docker exec supabase-db pg_dump -U supabase_admin -d postgres -Fc > ~/backup/manual/prod-<날짜>-before-<파일 이름>.dump`
+3. **올리기:** 위 3번처럼 터널을 열고 같은 `supabase db push --db-url ...`를 한다. 운영에 없는 버전(새 파일)만 들어간다. 먼저 `--dry-run`을 붙여 들어갈 파일이 새 파일뿐인지 본다.
+4. **함수:** 바뀐 폴더만 올린다. 방법은 [운영 서버 함수 올리기](#운영-서버-함수-올리기)와 같고 묶음과 지울 폴더 목록만 바뀐 폴더로 줄인다.
+5. **확인:** 새 파일이 만든 표, 함수, 정책이 있는지 보고, 함수 「올린 뒤 확인」을 한다.
+6. **되돌리기:** 2번 덤프를 [운영 서버 복구](#운영-서버-복구)의 `pg_restore`로 넣는다. 그 사이에 생긴 사용자 데이터는 사라지므로 먼저 새 파일로 되돌리는 마이그레이션을 쓸 수 있는지 본다.
+
 ## 운영 서버 함수 올리기
 
-셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
+셀프호스팅은 파일 복사가 배포다. `supabase/functions`의 `_shared`, `apple-link`, `delete-account`, `kakao-unlink`, `purge-photos`를 서버 `~/supabase/volumes/functions/`에 넣고 functions만 다시 띄운다. `main/`과 `deno.jsonc`는 Supabase가 둔 파일이라 건드리지 않는다. 함수가 읽는 비밀값(`APPLE_*`, `KAKAO_ADMIN_KEY`)은 서버 `.env`에 있고 `docker-compose.chagok.yml`이 넘긴다.
 
 ```sh
 # 이 맥 (main 체크아웃)
-COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink
-scp /tmp/fn.tgz chagok@187.127.114.161:~/fn.tgz && rm /tmp/fn.tgz
+COPYFILE_DISABLE=1 tar -C supabase/functions -czf /tmp/fn.tgz _shared apple-link delete-account kakao-unlink purge-photos
+scp /tmp/fn.tgz chagok@<운영 서버 주소>:~/fn.tgz && rm /tmp/fn.tgz
 
 # 서버
 cd ~/supabase/volumes
@@ -422,7 +505,7 @@ cd ~/supabase && sh run.sh recreate functions
 - `/auth/v1/settings`의 `external`이 `apple`, `google`, `kakao`만 true인지.
 - 5분 안에 Healthchecks.io 6개가 모두 초록인지.
 
-**운영 서버 테스트 (출시 전까지만, 2026-10-26 결정)**
+**운영 서버 테스트 (출시 전까지만 쓰던 방법, 2026-10-26 결정. 1.0이 공개된 지금은 하지 않는다)**
 
 `__tests__/server`는 관리 키로 테스트 사용자를 만들고 이메일과 비밀번호로 로그인한다. 운영은 이메일 로그인이 꺼져 있어, 돌리는 동안만 켠다.
 
@@ -431,7 +514,7 @@ cd ~/supabase && sh run.sh recreate functions
 cd ~/supabase && sed -i "s|^ENABLE_EMAIL_SIGNUP=.*|ENABLE_EMAIL_SIGNUP=true|" .env && sh run.sh recreate auth
 
 # 이 맥: 터널을 열고 돌린다. server-test.env는 http://127.0.0.1:18000과 운영 키를 가리킨다
-ssh -f -N -L 18000:127.0.0.1:8000 chagok@187.127.114.161
+ssh -f -N -L 18000:127.0.0.1:8000 chagok@<운영 서버 주소>
 set -a; . .secrets/prod/server-test.env; set +a
 npx jest __tests__/server --runInBand
 pkill -f "ssh .*-L 18000:127.0.0.1:8000"
@@ -444,7 +527,7 @@ sed -i "s|^ENABLE_EMAIL_SIGNUP=.*|ENABLE_EMAIL_SIGNUP=false|" .env && sh run.sh 
 
 ## 운영 서버 업데이트
 
-Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 `update.sh`가 설정 파일을 새 판과 3방향으로 합친다. `.env` 값, `volumes/db/data`, `volumes/storage`는 건드리지 않지만 **DB와 사진을 백업하지는 않는다.** 지금 판은 `~/supabase/.supabase-version`에 있다(2026-10-26 `self-hosted/v0.8.3`). 모두 `ssh chagok@187.127.114.161`에서 한다.
+Supabase는 대략 한 달에 한 번 `self-hosted/v*` 태그를 낸다. 공식 `update.sh`가 설정 파일을 새 판과 3방향으로 합친다. `.env` 값, `volumes/db/data`, `volumes/storage`는 건드리지 않지만 **DB와 사진을 백업하지는 않는다.** 지금 판은 `~/supabase/.supabase-version`에 있다(2026-10-26 `self-hosted/v0.8.3`). 모두 `ssh chagok@<운영 서버 주소>`에서 한다.
 
 1. **바뀌는 것 읽기:** 새 태그의 `CHANGELOG.md`와 `upgrades.json`(깨지는 변경)을 읽는다. Postgres 큰 판이 바뀌면(17 → 18 등) 이 순서로 하지 않고 따로 계획한다.
 2. **백업:** `systemctl --user start chagok-backup.service`. Healthchecks.io의 백업이 방금 시각으로 초록인지 본다.
@@ -509,3 +592,11 @@ npx expo start --go --lan --port 8081   # 개발 빌드로 볼 때는 --go를 �
 에이전트가 백그라운드 작업으로 띄운 개발 서버는 장시간 실행 프로세스 정리 대상이라
 시스템 메모리에 여유가 있어도 중간에 죽는다. Metro는 사용자 터미널에서 돌리는 것이 맞다.
 QR과 `r`(리로드) 같은 단축키도 그래야 쓸 수 있다.
+
+## 초대 링크 개발 사이트 (2026-11-06)
+
+개발 앱(`com.novumlab.chagok.dev`)의 함께 목표 초대 링크는 `https://chagok-dev.novum-lab.com/invite/<코드>`다. 이 페이지는 개발 서버(Supabase chagok-dev)에서 초대를 읽고, [차곡차곡에서 열기]는 개발 앱(`chagok-dev://`)을 연다.
+
+- 앱: `.env.local`에 `EXPO_PUBLIC_INVITE_BASE=https://chagok-dev.novum-lab.com/invite/`가 있어야 개발 사이트 주소로 링크를 만든다. 없으면 운영 주소(`chagok.novum-lab.com`)로 만든다. 출시 빌드(EAS)는 이 값이 없어 운영 주소다.
+- 개발 앱은 개발 사이트의 앱 링크만 받는다(`app.config.js` `associatedDomains`). 바꾼 뒤에는 `npm run prebuild:dev`로 개발 빌드를 다시 만들어야 기기에 반영된다.
+- 사이트 올리기는 novum-web `deploy/chagok-dev.sh`(novum-web `docs/chagok.md` 「개발 사이트」). 어느 브랜치든 올릴 수 있어 약관 같은 페이지를 공개 전에 미리 볼 때도 쓴다.

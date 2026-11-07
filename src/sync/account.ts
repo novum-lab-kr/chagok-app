@@ -1,9 +1,30 @@
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import type { RpcClient } from './supabaseServer';
 
-export type FunctionsClient = { functions: { invoke(name: string): PromiseLike<{ error: { message: string } | null }> } };
+export type FunctionsClient = {
+  auth: { getSession(): PromiseLike<{ data: { session: unknown }; error: unknown }> };
+  functions: { invoke(name: string): PromiseLike<{ error: { message: string } | null }> };
+};
 
-/** 서버의 계정·사진·기록을 지운다 (계정·백업 설계 ③). 실패하면 던진다 — 기기에서는 아무것도 지우지 않는다. */
+/** 이 기기에 로그인 세션이 없다. 다시 로그인해야 서버 일을 할 수 있다. */
+export class NeedsLoginError extends Error {
+  constructor() {
+    super('needs login');
+    this.name = 'NeedsLoginError';
+  }
+}
+
+/**
+ * 서버의 계정·사진·기록을 지운다 (계정·백업 설계 ③). 실패하면 던진다 — 기기에서는 아무것도 지우지 않는다.
+ * 세션이 없으면 보내지 않고 NeedsLoginError를 던진다. supabase-js는 세션이 없으면 anon 키를 실어 보내 함수가 401을 낸다
+ * (2026-10-29 TestFlight 6: 서버에 없는 refresh token으로 갱신이 실패해 세션이 지워진 기기). 오프라인이라 확인하지 못한 것은 연결 실패다.
+ */
 export async function deleteAccountOnServer(client: FunctionsClient): Promise<void> {
+  const session = await client.auth.getSession();
+  if (!session.data.session) {
+    if (isAuthRetryableFetchError(session.error)) throw session.error;
+    throw new NeedsLoginError();
+  }
   const { error } = await client.functions.invoke('delete-account');
   if (error) throw new Error(error.message);
 }

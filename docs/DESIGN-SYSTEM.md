@@ -25,7 +25,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 
 - **기존 디자인 시스템으로 화면을 조립한다.** 팔레트·폰트·공통 프레임·포커스를 새로 바꾸지 않는다. 토큰은 추가만 하고 기존 값은 바꾸지 않는다(사용자 승인 기준). 앱 연결은 기존 컴포넌트에 선택(optional) prop을 더하는 방식으로 한다.
 - **기준은 Storybook이다**(2026-09-29 확정). 원본 이미지 시안과 픽셀 단위로 같다는 뜻은 아니다 — 폰트·프레임 치수·포커스·단색 자산에서 오는 차이는 남아 있다. 테스트 통과나 토큰 버전을 사용자 승인으로 보지 않는다.
-- 새 화면 시안은 아티팩트로 먼저 보여 주고, 확정되면 Storybook에 반영한다. 아직 열려 있는 시안의 원본은 [design/proposals-2026-10/](design/proposals-2026-10/README.md), 확정된 시안의 원본은 git 기록(`402913e`)에 있다.
+- 새 화면 시안은 초안까지 디자인 시스템을 기준으로 만들어 아티팩트로 먼저 보여 준다. 확정되면 기존 Storybook 컴포넌트를 먼저 확인하고, 없던 컴포넌트이거나 props가 늘어나는 경우에만 Storybook에 추가한다. 아직 열려 있는 시안의 원본은 [design/proposals-2026-10/](design/proposals-2026-10/README.md), 확정된 시안의 원본은 git 기록(`402913e`)에 있다.
 - 판 종류 카드는 사용자가 첨부한 [상세 시안](design/retro-pocket-v1/review-set-02/references/board-type-detail-user.png)이 기준이다(달력 요일/빈칸, 적립판 첫 칸 체크, 주황 외곽 선택).
 - 시안의 폰 목업·OS 상태바·광원·질감은 구현 대상이 아니다. `review-set-01`, `screen-preview`의 거절된 실험과 종이 테마를 되살리지 않는다.
 - 확대 화면만 보고 끝내지 않는다. 100% 배율, DPR 1, 390px와 320px에서 본다.
@@ -45,7 +45,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 
 ## 스티커 자산
 
-- **컬러 스티커(앱이 쓰는 것):** `src/stickers/color/`. 24×24 도트 66종 — 기본 6(무료), 운동·간식·사물·동물·감정·날씨계절 각 10. ID는 `묶음.이름`. 원본은 `source/sticker-packs-24.json`, 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다. 위젯용 그림은 `widgetStickerArt.generated.ts`. 검토는 Storybook `Stickers / Color Assets`. [README](../src/stickers/color/README.md).
+- **컬러 스티커(앱이 쓰는 것):** `src/stickers/color/`. 24×24 도트 102종, 묶음마다 10개씩 보인다. 기본(무료)은 네잎클로버, 물방울, 책, 꽃, 별, 고양이, 달, 영양제, 불꽃, 음표(2026-11-04). 새싹과 운동화는 묶음에서만 빼고(`retiredColorStickers`) 그림은 남겨 이미 붙인 판에서 그대로 보인다. 새 목표의 기본 스티커는 네잎클로버(`DEFAULT_COLOR_STICKER`). ID는 `묶음.이름`. 원본은 `source/sticker-packs-24.json`, 고친 뒤 `node scripts/build-color-stickers.mjs`로 `stickers.generated.ts`를 다시 만든다. 위젯용 그림은 `widgetStickerArt.generated.ts`. 검토는 Storybook `Stickers / Color Assets`. [README](../src/stickers/color/README.md).
 - **흑백 스티커:** `src/stickers/pocket/`(6종, 56×56 SVG path). 앱 저장값은 스키마 v6에서 컬러로 옮겼다. `node scripts/trace-pocket-stickers.mjs`는 추가 5종 파일을 덮어쓰니 자산을 다시 만들 때만 쓴다.
 - `src/stickers/catalog.ts`(22종)는 쓰는 코드가 없지만 옛 마이그레이션 매핑 근거라 지우지 않는다.
 
@@ -60,6 +60,7 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | Viewport background | `#AFE1CB` |
 | Main frame / LCD background | `#C7DE94` |
 | Primary button | `#FD855F` |
+| Invalid (입력 검사 실패: 입력칸 테두리와 검사 문구, 2026-11-04) | `#A61E1E` |
 | Secondary button / dialog / input | `#FEF1D1` |
 | Main text / frame / sticker ink | `#06261C` |
 | Button text | `#01241C` |
@@ -94,24 +95,29 @@ PRD 시안에서 보강한 공통 컴포넌트(사진 프레임의 세 상태, �
 | StickerSlot | 빈칸/붙일 수 있음/붙임 |
 | PixelDialog | `tutorial`은 단계 숫자(오른쪽에 `onSkip`이 있으면 밑줄 글자 [건너뛰기], 누르는 영역은 hitSlop으로 넓힘), 구분선과 왼쪽 정렬 텍스트, 아래 [이전]과 [다음]을(첫 단계는 `secondaryDisabled`로 [이전]을 흐리게, 2026-10-28). 상자 최대 폭 `DIALOG_MAX_WIDTH` 360이라 400pt 넘는 화면에서 튜토리얼 상자는 열 안에서 대상 쪽으로 옮겨 놓는다. `basic`은 숫자·구분선 없는 중앙 정렬 텍스트를 사용. 제목·설명·버튼 스타일은 동일. `single`이면 버튼 하나(primary)가 다이얼로그 너비를 채운다 — 저장 실패 같은 알림용 (2026-09-30) |
 | GoalStickerCell | 붙인 칸의 사진·메모 기록 표식 B안. 비어 있거나 기록이 없으면 표식 없음 |
-| PhotoAttachment | 사진 프레임 안 추가 버튼과 첨부 사진 오른쪽 위 삭제 버튼 (`actionsInFrame`) |
+| PhotoAttachment | 사진 프레임 안 추가 버튼과 첨부 사진 오른쪽 위 삭제 버튼 (`actionsInFrame`). 빈 틀은 586:494, 사진이 있으면 사진 비율(세로 3:4에서 가로 16:9까지, `usePhotoFrameRatio`, 2026-11-05). 그보다 길거나 넓은 사진(화면 캡처 등)은 자르지 않고 틀 안에 전체를 가운데 넣고, 남는 자리는 틀 바탕색 `lcd`(`PHOTO_MAT`, 2026-11-06 사용자) |
 | SettingRow | 앱 설정·약관의 이동 행, 값 표시, 비활성 상태 |
 | ShortNotice / PixelLoadingIndicator | 백업·저장 알림 표면과 복원·로그아웃 로딩 표시. 로딩 점(`PixelLoadingDots`)은 진한 점이 250ms마다 오른쪽으로 옮겨 가고, 기기의 모션 감소 설정이면 가운데 점에 멈춘다 |
-| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
+| PixelDialogModal | `basic` 다이얼로그의 앱용 호스트. 네이티브 `Modal`, 배경 차단(scrim), 화면 중앙 배치, 문구가 화면보다 길면 스크롤, Android 뒤로가기 닫기. 삭제·떼기 같은 위험 동작도 같은 primary 버튼을 쓴다 (2026-09-29 확정) |
 | PixelBottomSheet | 화면 아래에 붙는 시트. 다이얼로그 틀(`PixelFrame` dialog)과 `dialogPadding`을 그대로 쓰고 제목은 22/30, 위 여백 24, 줄 사이 16. 양옆 12, 아래는 기기 여백(최소 12). 끌어 닫기는 없고 배경 누르기와 Android 뒤로가기가 `onRequestClose`를 부른다. 첫 사용처는 로그인 뒤 새 계정 동의 (2026-10-21) |
 | PixelBadge | 짧은 글자 배지. `tone`: `ink`(판 종류), `primary`(완성). `badge` 글씨 |
 | PixelTabs | 작은 채움 탭. 선택은 잉크 채움 + LCD 글씨 |
 | CompletionSticker | 판의 기본 스티커 + `primary` 「완성」 배지. `tilted`는 붙인 듯 비스듬히 |
 | AppHeader / GoalListHeader | 앱 최상단(차곡이·차곡차곡. 앱은 톱니바퀴 없이 쓴다) / 목록 탭 `내 목표 n · 완성한 판 n` + 오른쪽 끝 `+` |
 | FloatingTabBar / TabIcon / TabTitle | 하단 탭(2026-10-12): 화면 가장자리에서 16pt 떨어진 `dialog` 판 모양 바, 탭마다 아이콘 32(16칸 그림의 2배)만, 이름은 화면 낭독용으로만(2026-10-15, 이전: 아이콘 24 + 이름 13). 고른 탭은 아이콘 `primary`(살구) + 바탕 `screen`(민트) `selection` 도트 칸, 나머지는 0.45 투명도 — 위 PixelTabs의 잉크 채움과 겹쳐 보이지 않게 잉크로 채우지 않는다. 누르는 높이 48. 누른 채 끌면 칸이 손가락을 따라오고(누르는 동안 칸 세로 1.12·가로 1.06배, 지나가는 아이콘 위로 4·1.2배), 놓으면 스프링으로 제자리. `onTick`은 누를 때·탭 경계마다(앱은 `Haptics.selectionAsync`). 「동작 줄이기」면 움직임 없이 바로 옮겨 간다. `position`(화면 넘김 위치, 소수)을 주면 화면을 밀 때 칸이 그 값을 따라간다(2026-10-17, 앱은 expo-router `js-top-tabs`를 아래 탭으로 쓴다). 탭 화면 제목은 `TabTitle`(brand 글씨). 탭 안 화면은 `TabSafeArea`로 아래 안전 영역을 탭 바에 맡긴다 |
-| RecordTimelineScreen / RecordFeedScreen / StickerCollectionScreen | 기록 탭(2026-10-17: 제목 옆 보기 바꾸기 아이콘 44 두 개, 목표 칩은 스티커 28만 두고 고른 칩만 이름(최대 150)을 펼침. 타임라인은 잉크 날짜 띠 「10월 12일」+작은 요일, 기록 줄은 스티커 40 · 민트 배지 목표 이름 · 잉크 메모 16/22 2줄 · 사진 72. 피드는 3열 정사각형 칸, 간격 3, 메모 칸은 13/18 4줄) / 펼친 화면(기록마다 스티커 32 · 아이보리 배지 목표 이름 · 날짜, 사진 틀 586:494, 메모 16/22 전체, 메모만이면 큰 글씨 카드 18/26, 기록 사이 28) / 스티커 탭(기본 스티커 화면에서 고르기 줄을 뺀 둘러보기, `PackCard selectable={false}`) |
-| TrialReadyCard / CompletionNudge | 목표 탭 맨 위 체험 열림 카드 / 판 완성 뒤 판 아래에 뜨는 「다음 판은 새 스티커로」. 둘 다 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 모서리 ×(44pt, 글자 폭을 빼앗지 않게 겹쳐 둔다) |
-| GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대 |
-| BoardProgressRow | 판 상세 `n / nn [여백] m% 달성중`, 완성하면 완성 스티커 |
+| RecordTimelineScreen / RecordFeedScreen / StickerCollectionScreen | 기록 탭(2026-10-17: 제목 옆 보기 바꾸기 아이콘 44 두 개, 목표 칩은 스티커 28만 두고 고른 칩만 이름(최대 150)을 펼침. 타임라인은 잉크 날짜 띠 「10월 12일」+작은 요일, 기록 줄은 스티커 40 · 민트 배지 목표 이름 · 잉크 메모 16/22 2줄 · 사진 72. 피드는 3열 정사각형 칸, 간격 3, 메모 칸은 13/18 4줄) / 펼친 화면(기록마다 스티커 32 · 아이보리 배지 목표 이름 · 날짜, 사진 틀은 사진 비율(세로 3:4에서 가로 16:9까지, 크기를 읽기 전 586:494, 2026-11-05. 범위 밖 사진은 전체를 넣고 남는 자리는 `lcd`, 2026-11-06), 메모 16/22 전체, 메모만이면 큰 글씨 카드 18/26, 기록 사이 28) / 스티커 탭(기본 스티커 화면에서 고르기 줄을 뺀 둘러보기, `PackCard selectable={false}`) |
+| TrialReadyCard / CompletionNudge | 목표 탭 맨 위 체험 열림 카드 / 판 완성 뒤 판 아래에 뜨는 「다음 판은 새 스티커로」. 둘 다 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 ×(44pt, 모서리에서 4pt 안쪽, 2026-11-02, 글자 폭을 빼앗지 않게 겹쳐 둔다) |
+| GoalSummaryCard | 목록 카드: 스티커, 이름 2줄, 판 종류 배지, 요약 글자 조각, 진행 막대. 내 목표 탭에서는 꾹 누르면 눌린 모양(`lifted`)으로 들어 올려 끌어 옮기고, 화면 읽기 동작 「위로 옮기기」 「아래로 옮기기」를 단다(2026-10-30, PRD 4.1). 옮기는 동안 목록 스크롤과 탭 넘김을 멈춘다 |
+| BoardProgressRow | 판 상세 진행 줄: `ProgressBar`와 그 위 차곡이(크기 40, 25%마다 블록 `b0`~`b3`), 오른쪽 `m%`, 완성하면 완성 스티커. 판 패널은 `titleRule={false}`로 제목 아래 줄을 뺀다 |
+| TallyPageNavigation | 적립판 쪽 넘김 줄(`board-screens.tsx` 안). `MonthNavigation`과 같은 44pt 버튼 둘과 가운데 제목 20/28, 아래 간격 8. 한 쪽 칸 수는 `tallyPageSize`가 칸 영역 높이로 정한다(한 줄 3칸) |
+| 함께 목표 화면 조각 (`together-screens.tsx`, 2026-11-05) | 판 화면과 설정은 이미 있던 조각에 선택 prop만 더해 이었다(기존 값은 그대로). `FriendBoardList.onResend`(없으면 [링크 다시 보내기] 없음), `MemberList.onRotate`([초대 링크 새로 만들기]), `TogetherSettingsScreen.slots`(만든 사람만 칸 수 칸, 혼자 목표와 같은 `SlotsField`), `SlotCountPicker.max`(직접 입력 상한, 함께 목표 1000), `BlockPickSheet.title`과 `extraRows`(신고 고르기에서 「목표 이름」 줄), `BlockedPerson`은 `id`와 `name`(null 가능)뿐이다(2026-11-05 사용자: 이름만, 스티커와 차단한 목표 이름 자리는 없앴다), `AddGoalSheet.onDismiss`(로그인 창은 시트를 닫은 뒤 띄우므로 `overlay`는 뺐다), `TogetherSettingsScreen.saveError`와 `TogetherGoalScreen.error`(서버가 거절한 칸 문구를 버튼 바로 위에도), `TogetherGoalScreen.countError`(칸 수 칸 바로 아래), `TogetherSettingsScreen.onReport`는 선택(없으면 신고 줄 없음), `deleteOwnerDescription(mode)`, `AccountBackupPanel.onBlocked`(맨 아래 「차단한 사람」 줄), `TallyBoardView.hidden`(가려진 칸: 붙은 칸 바탕만 투명도 0.4, 누를 수 없음), `CalendarBoardView.records2`(한 판 달력판 그날 둘째 장: 작은 판 날 칸에서 둘 다 24pt, `dayStickerSpot` 지그재그 자리: 첫 장은 칸 왼쪽, 날짜 숫자 아래(위 18pt), 마지막 장은 칸 오른쪽 끝, 위아래를 번갈아 칸 아래 끝까지. 그날 칸 테두리와 오늘 꺾쇠에는 걸쳐도 되고 옆 칸은 넘지 않는다. 나중에 붙인 장이 위. 2~6장까지 같은 규칙, 2026-11-05 시안 「한 날 여러 장」 B), 함께 목표 날 칸의 오늘 꺾쇠만 두께 5pt(`PixelFocusRing.cornerThickness`, 토큰 값 8은 그대로, 2026-11-05 사용자), `BoardDetailScreen.above`(판 패널 위, 한 판 기다림 카드 `OneBoardWaiting`), `CalendarBoardView.placeable`(한 번 누르면 붙는 날, 화면 읽기에 「누르면 내 스티커를 붙여요」). `togetherDialogs`에 login, offlineOne, slotTaken, leave(mode), kick(name), rotate, report(target), reportDone, gone, ownerOnly, failed |
+| 함께 목표 고침 (2026-11-06 사용자) | 친구 적립판 줄(`FriendBoardStrip`)은 판 칸 수 뒤 자리를 그리지 않는다(마지막 칸이 창 끝, 칸 수가 두 줄보다 적으면 그만큼만). 이름 배지 아래 캡션 「붙인 칸/전체 칸」, 다 채우면 그 자리에 [완성] 배지(`PixelBadge` primary). 함께하는 사람의 목표 설정 목표 칸(`TogetherSettingsScreen`)은 `boardLabel`(달력판은 `periodLabel`도)을 늘 보이고, 완성한 판이면 `completedLabel`로 「M월 D일 완성」. 한 판 아래 안내 글(`OneBoardNote`)은 지우고 `OneBoardMembers`(「함께하는 사람 n」, 스티커 24, 이름, 오른쪽 붙인 칸 수 「n칸」, 누를 수 없음)로 바꿨다. 한 판 달력판은 `BoardDetailScreen.calendarMonth`로 4주 창 대신 그 달 전체(머리말 「2026년 11월」, 1일 앞과 마지막 날 뒤는 빈 자리, 달 넘기기는 혼자 달력판과 같은 `canGoPrev`, `canGoNext`) |
+| 함께 목표 새 조립 (2026-11-05, 사용자 확인 전) | 확정 시안 9판에 없는 모양을 기존 조각으로 조립했다: 더하기 시트를 닫은 뒤 목표 탭 위 로그인 창(`AddSheetLogin`), [저장하기] 위 거절 문구 한 줄, 가려진 칸, 한 판 창 둘(연결 없음, 칸 겹침), 기다리는 자리의 [링크 다시 보내기] 없는 모양, [초대 링크 새로 만들기]와 만든 사람 칸 수 칸, 신고 고르기 시트와 확인 창, 계정 칸 맨 아래 「차단한 사람」 줄, 이름만 있는 차단한 사람 줄 |
+| GuideCard | 한 번짜리 안내 카드. 체험 카드와 같은 `dialog` 판 + 차곡이 sparkle + 오른쪽 위 ×. 첫 스티커 안내, 기록 저장 뒤 안내 |
 | EmptyState | 목록이 비었을 때의 안내 상자 |
 | OptionButtons | 둘 이상 중 하나를 고르는 버튼 줄 |
 | EndDatePicker / PeriodField | 종료일 고르기(앞선 날짜 비활성) / 달력판 기간(시작일 고정, 종료일 정하기·바꾸기·지우기) |
-| DeleteSection | 화면 맨 아래 구분선 + [삭제하기] + 안내 |
+| DeleteSection | 화면 맨 아래 구분선 + [삭제하기]. 지워지는 내용은 확인 창이 말하고 버튼 아래에 다시 쓰지 않는다(2026-11-05) |
 | LoadingScreen / ScreenFailed | 화면을 열 때 읽는 동안 로딩 점, 못 보여 주면 차곡이 갸웃 + 상황별 문구(`kind`: records·goals·stickers·screen) + [다시 시도] [홈으로]. 앱 대기 화면과 ErrorBoundary가 같이 쓴다. 다시 시도 상태는 `useLoadRetry` (2026-10-10) |
 
 다이얼로그는 **표면 컴포넌트**다. 일반 화면용 호스트는 `PixelDialog variant="basic"`을 화면의 가로·세로 중앙에 놓는다. 실제 Modal 호스트의 포커스 관리·배경 차단·Escape/뒤로가기 등은 화면 통합 단계에서 구현한다. 데모의 붙인 칸 재클릭은 데모 리셋이며 제품의 스티커 삭제 정책을 정의하지 않는다. 새싹 픽셀 원본은 공통화한 초안으로, 이미지 시안과 픽셀 단위 일치를 확정한 자산이 아니다.
@@ -186,7 +192,7 @@ npm run check:storybook
 
 공통 새싹 원본은 지정 시안의 **기본 스티커 옆 작은 미리보기**로 갱신했다. `SproutSticker`는 모든 크기에서 같은56×56 viewBox 경로를 사용한다. 큰 스탬프 윤곽을 줄이던 이전 자산은 더 이상 사용하지 않는다.
 
-2026-09-23: 스티커 자산 소유 위치는 `src/stickers/pocket/`로 분리했다. `catalog.ts`에서 6종과 메타데이터를 관리하며 `StickerGlyph`가 현재 디자인 시스템의 ink를 전달한다. 새싹 경로는 그대로 유지했다. 추가 5종은 review-set-02 설정 시안 윤곽을 추출했고 꽃은 헤더용 `PixelIcon`과 다른 자산이다. [확장 방법](../src/stickers/pocket/README.md), [시안 비교](design/retro-pocket-v1/review-set-02/asset-review/README.md).
+2026-09-23: 스티커 자산 소유 위치는 `src/stickers/pocket/`로 분리했다. `catalog.ts`에서 6종과 메타데이터를 관리하며 `StickerGlyph`가 현재 디자인 시스템의 ink를 전달한다. 새싹 경로는 그대로 유지했다. 추가 5종은 review-set-02 설정 시안 윤곽을 추출했고 꽃은 헤더용 `PixelIcon`과 다른 자산이다. [확장 방법](../src/stickers/pocket/README.md), 시안 비교(지금은 지운 파일, git 기록에 있다).
 
 `StickerGrid`가 3열 배치와 여백을 관리한다. 자식 `StickerSlot`에는 width/height를 `100%`로 전달한다. `retro.layout`에 boardInset6, boardGap15, boardRowGap10, stickerSize54, stickerBottomInset2, progressGridGap2, stickerPreviewSize32를 정의했다. 칸의 새싹은 아래 정렬하며, 숫자는 slotNumber28/32를 사용한다.
 
@@ -210,5 +216,7 @@ npm run check:storybook
 
 **화면 조합 (2026-09-30).** 목록·판 상세·목표 설정·완성한 판 설정·새 목표·칸/종료일 늘리기는 `board-screens.tsx`, 5단계 첫 실행 튜토리얼은 `first-run-tutorial.tsx`에 있고 Storybook과 앱이 같은 소스를 쓴다. 옛 `HomeScreen`·`GoalEditorScreen`·3단계 `TutorialScreen`·`GoalChip`·`GoalStickerLink`/`DefaultStickerLink`는 지웠다. 모션은 `StickMotion`(붙이기, 모션 감소 설정이면 생략). `SettingRow`는 앱 설정 구현 때 쓸 컴포넌트로 남겼고 스토리는 지웠다.
 
-**스티커 묶음·구매 (2026-10-08, PRD 4.12).** `sticker-shop.tsx`에 `PackViewSwitch`·`FoldToggle`·`StickerChoice`·`RewardProgress`·`PickedStickerBar`·`PackCard`·`StickerChooserScreen`(「기본 스티커」)·`PackScreen`(묶음 화면)·`PurchasePanel`(앱 설정 「구매」, 그 아래 「도움말과 정보」는 `policy-screens.tsx`의 `HelpInfoPanel`과 `contactDialogs`)·`stickerShopDialogs`·`colorPack`이 있다. 스토리는 `Screens/Sticker Shop`. `composition-controls.tsx`의 `InfoRow`는 누를 수 없는 「항목 · 값」 줄이다. 디자인 시스템은 스티커로 `StickerId`(흑백 + 컬러 `묶음.이름`)를 받고, `StickerGlyph`는 컬러를 24의 배수 크기로 그린다(판 칸·목록 카드 48). 묶음 카드의 접힌 줄은 재어 본 폭에 들어가는 만큼만 보이고(`packRowCount`, 최대 5) 나머지는 「+n」이다 — 폴드 커버(344dp)에서 5개 + 「+n」이 카드 밖으로 넘쳤다(2026-10-12).
+**보내는 정보 (2026-11-01, PRD 8.2).** `policy-screens.tsx`의 `AnalyticsConsentSheet`(사용 기록 동의 시트, 스토리 `Screens/Analytics Consent`)와 `SendInfoScreen`(앱 설정 상세). 상세의 체크 줄은 `SettingRow`와 같은 높이 56이고 체크 상자가 오른쪽 끝에 있다. 시트를 펼친 줄은 라벨 폭 84, 글자 ink 투명도 0.7, 줄 사이 6이다.
+
+**스티커 묶음·구매 (2026-10-08, PRD 4.12).** `sticker-shop.tsx`에 `PackViewSwitch`·`FoldToggle`·`StickerChoice`·`RewardProgress`·`PickedStickerBar`·`PackCard`·`StickerChooserScreen`(「기본 스티커」)·`PackScreen`(묶음 화면)·`PurchasePanel`(앱 설정 「구매」, 그 아래 「도움말과 정보」는 `policy-screens.tsx`의 `HelpInfoPanel`과 `contactDialogs`)·`stickerShopDialogs`·`colorPack`이 있다. 스토리는 `Screens/Sticker Shop`. `composition-controls.tsx`의 `InfoRow`는 누를 수 없는 「항목 · 값」 줄이다. 디자인 시스템은 스티커로 `StickerId`(흑백 + 컬러 `묶음.이름`)를 받고, `StickerGlyph`는 컬러를 24의 배수 크기로 그린다(판 칸·목록 카드 48). 묶음 카드의 접힌 줄은 재어 본 폭에 들어가는 만큼만 보이고(`packRowCount`, 최대 5) 나머지는 「+n」이다 — 폴드 커버(344dp)에서 5개 + 「+n」이 카드 밖으로 넘쳤다(2026-10-12). 접힌 줄은 카드 안 폭에 고르게 편다(`space-between`, 칸 사이는 6 아래로 줄지 않음). 넓은 폰에서 오른쪽이 비었다(2026-11-06).
 

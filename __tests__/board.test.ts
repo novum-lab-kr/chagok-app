@@ -3,9 +3,10 @@ import {
 } from '../src/domain/dates';
 import {
   startDate, isCompleted, isPeriodOver, periodEndAt, progressBasis, progressOf, inPeriod,
-  canPlace, completesBoard, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
-  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, pendingCompletion, parseSlotCount,
+  canPlace, completesBoard, filledCount, needsRemoveConfirm, isDateEnabled, monthNav, placedAtFor,
+  endDateFloor, extendEndDateFloor, defaultExtraSlots, nextEmptySlot, orderGoals, moveItem, mostRecentGoal, pendingCompletion, parseSlotCount, SHARED_SLOTS_MAX,
   GOAL_NAME_MAX, MEMO_MAX, goalNameError, memoError, shownGoalNameError,
+  MEMBER_NAME_MAX, memberNameError, shownMemberNameError,
 } from '../src/domain/board';
 import type { Goal, Sticker } from '../src/domain/types';
 
@@ -14,15 +15,15 @@ const at = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m -
 const NOW = new Date(2026, 8, 29, 10); // 2026-09-29 10:00
 
 const base: Goal = {
-  id: 'g', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
+  id: 'g', mode: 'solo', role: 'owner', name: '목표', boardType: 'tally', totalSlots: 15, defaultStickerId: 'sprout',
   createdAt: at(2026, 9, 10), endDate: null, completedAt: null, completionSeen: false,
-  lastPlacedAt: null, initialSlots: 15,
+  lastPlacedAt: null, initialSlots: 15, sortOrder: null,
 };
 const tally = (over: Partial<Goal> = {}): Goal => ({ ...base, ...over });
 const calendar = (over: Partial<Goal> = {}): Goal =>
   ({ ...base, boardType: 'calendar', totalSlots: null, initialSlots: null, ...over });
 const stk = (slotIndex: number, placedAt = at(2026, 9, 20)): Sticker =>
-  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540 });
+  ({ id: `s${slotIndex}-${placedAt}`, goalId: 'g', placedAt, slotIndex, stickerType: 'sprout', dateKey: localDateKey(placedAt), tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me' });
 const onDay = (d: number, m = 9) => stk(d - 1, at(2026, m, d));
 
 describe('dates', () => {
@@ -214,17 +215,64 @@ describe('칸 늘리기 (2026-09-30)', () => {
 });
 
 describe('목록 정렬 (PRD 4.1)', () => {
-  it('내 목표는 마지막으로 붙인 시각(없으면 만든 시각) 최근순, 완성한 판은 완성 시각 최근순', () => {
+  it('내 목표는 사용자가 정한 순서(sortOrder 작은 쪽이 위), 완성한 판은 완성 시각 최근순', () => {
+    const goals = [
+      tally({ id: 'b', sortOrder: 1, lastPlacedAt: 100 }),
+      tally({ id: 'a', sortOrder: 0, lastPlacedAt: 1 }),
+      tally({ id: 'top', sortOrder: -1, createdAt: 5 }),
+      tally({ id: 'done-early', completedAt: 10, sortOrder: -5 }),
+      tally({ id: 'done-late', completedAt: 20, sortOrder: 9 }),
+    ];
+    const { active, completed } = orderGoals(goals);
+    expect(active.map((goal) => goal.id)).toEqual(['top', 'a', 'b']);
+    expect(completed.map((goal) => goal.id)).toEqual(['done-late', 'done-early']);
+  });
+  it('붙여도 순서가 바뀌지 않는다 — 자동 정렬은 없다', () => {
+    const before = [tally({ id: 'a', sortOrder: 0 }), tally({ id: 'b', sortOrder: 1 })];
+    const after = [before[0], { ...before[1], lastPlacedAt: at(2026, 9, 29) }];
+    expect(orderGoals(after).active.map((goal) => goal.id)).toEqual(['a', 'b']);
+  });
+  it('순서가 없는 옛 목표는 마지막으로 붙인 시각(없으면 만든 시각) 최근순이다', () => {
     const goals = [
       tally({ id: 'old-placed', createdAt: 1, lastPlacedAt: 50 }),
       tally({ id: 'new-empty', createdAt: 60 }),
       tally({ id: 'recent', createdAt: 2, lastPlacedAt: 100 }),
-      tally({ id: 'done-early', completedAt: 10 }),
-      tally({ id: 'done-late', completedAt: 20 }),
     ];
-    const { active, completed } = orderGoals(goals);
-    expect(active.map((g) => g.id)).toEqual(['recent', 'new-empty', 'old-placed']);
-    expect(completed.map((g) => g.id)).toEqual(['done-late', 'done-early']);
+    expect(orderGoals(goals).active.map((goal) => goal.id)).toEqual(['recent', 'new-empty', 'old-placed']);
+  });
+  it('순서가 있는 목표가 순서가 없는 목표보다 위다', () => {
+    const goals = [tally({ id: 'legacy', lastPlacedAt: 999 }), tally({ id: 'ordered', sortOrder: 3 })];
+    expect(orderGoals(goals).active.map((goal) => goal.id)).toEqual(['ordered', 'legacy']);
+  });
+  it('순서 값이 같으면 최근순, 그다음 id순으로 늘 같은 결과다', () => {
+    const goals = [
+      tally({ id: 'y', sortOrder: 0, lastPlacedAt: 10 }),
+      tally({ id: 'x', sortOrder: 0, lastPlacedAt: 10 }),
+      tally({ id: 'z', sortOrder: 0, lastPlacedAt: 20 }),
+    ];
+    expect(orderGoals(goals).active.map((goal) => goal.id)).toEqual(['z', 'x', 'y']);
+  });
+  it('위젯 기본 목표는 순서와 따로, 가장 최근에 붙인(없으면 만든) 목표다 (PRD 4.10)', () => {
+    const goals = [
+      tally({ id: 'top', sortOrder: 0, lastPlacedAt: 10 }),
+      tally({ id: 'used', sortOrder: 1, lastPlacedAt: 30 }),
+      tally({ id: 'made', sortOrder: 2, createdAt: 20 }),
+    ];
+    expect(mostRecentGoal(goals)?.id).toBe('used');
+    expect(mostRecentGoal([tally({ id: 'b', createdAt: 5 }), tally({ id: 'a', createdAt: 5 })])?.id).toBe('a');
+    expect(mostRecentGoal([])).toBeNull();
+  });
+});
+
+describe('목표 옮기기 (PRD 4.1)', () => {
+  it('한 칸을 다른 자리로 옮긴 id 목록을 준다', () => {
+    expect(moveItem(['a', 'b', 'c', 'd'], 0, 2)).toEqual(['b', 'c', 'a', 'd']);
+    expect(moveItem(['a', 'b', 'c', 'd'], 3, 0)).toEqual(['d', 'a', 'b', 'c']);
+  });
+  it('범위를 넘는 자리는 끝으로 맞추고, 같은 자리면 그대로다', () => {
+    expect(moveItem(['a', 'b', 'c'], 1, 9)).toEqual(['a', 'c', 'b']);
+    expect(moveItem(['a', 'b', 'c'], 1, -3)).toEqual(['b', 'a', 'c']);
+    expect(moveItem(['a', 'b', 'c'], 1, 1)).toEqual(['a', 'b', 'c']);
   });
 });
 
@@ -243,6 +291,13 @@ describe('목표 설정 칸 수 입력 (2026-09-30)', () => {
     expect(parseSlotCount('abc', 30)).toEqual({ ok: false, reason: '숫자만 입력할 수 있어요.' });
     expect(parseSlotCount('0', 0)).toEqual({ ok: false, reason: '1칸 이상이어야 해요.' });
   });
+  it('함께 목표는 1000칸까지만 받는다', () => {
+    expect(parseSlotCount('1000', 30, SHARED_SLOTS_MAX)).toEqual({ ok: true, value: 1000 });
+    expect(parseSlotCount('1001', 30, SHARED_SLOTS_MAX)).toEqual({ ok: false, reason: '1000칸까지 만들 수 있어요.' });
+  });
+  it('상한을 주지 않으면(혼자 목표) 5000도 받는다', () => {
+    expect(parseSlotCount('5000', 30)).toEqual({ ok: true, value: 5000 });
+  });
 });
 
 describe('입력 글자 수 (2026-10-08)', () => {
@@ -250,16 +305,17 @@ describe('입력 글자 수 (2026-10-08)', () => {
     expect(goalNameError('')).toBe('목표 이름을 입력해주세요.');
     expect(goalNameError('   ')).toBe('목표 이름을 입력해주세요.');
   });
-  test('목표 이름: 20자에 닿으면 한도를 알린다', () => {
+  test('목표 이름: 20자까지 받고 21자부터 한도를 알린다', () => {
     expect(GOAL_NAME_MAX).toBe(20);
     expect(goalNameError('가'.repeat(19))).toBeUndefined();
-    expect(goalNameError('가'.repeat(20))).toBe('20자까지 입력할 수 있어요.');
+    expect(goalNameError('가'.repeat(20))).toBeUndefined();
+    expect(goalNameError('가'.repeat(21))).toBe('20자까지 입력할 수 있어요.');
   });
-  test('메모: 비어도 괜찮고 500자에 닿으면 한도를 알린다', () => {
+  test('메모: 비어도 괜찮고 500자까지 받고 501자부터 한도를 알린다', () => {
     expect(MEMO_MAX).toBe(500);
     expect(memoError('')).toBeUndefined();
-    expect(memoError('가'.repeat(499))).toBeUndefined();
-    expect(memoError('가'.repeat(500))).toBe('500자까지 입력할 수 있어요.');
+    expect(memoError('가'.repeat(500))).toBeUndefined();
+    expect(memoError('가'.repeat(501))).toBe('500자까지 입력할 수 있어요.');
   });
   test('새 목표: 처음 연 빈 칸에는 문구가 없고, 건드린 뒤 비면 보인다', () => {
     expect(shownGoalNameError('', false)).toBeUndefined();
@@ -272,3 +328,40 @@ describe('입력 글자 수 (2026-10-08)', () => {
     expect(shownGoalNameError('가'.repeat(25), false)).toBe('20자까지 입력할 수 있어요.');
   });
 });
+
+describe('함께 목표 내 이름 (2026-11-04)', () => {
+  test('비었거나 띄어쓰기만 있으면 적어 달라고 한다', () => {
+    expect(memberNameError('')).toBe('이름을 적어 주세요.');
+    expect(memberNameError('   ')).toBe('이름을 적어 주세요.');
+  });
+  test('10자까지 받고 11자부터 한도를 알린다', () => {
+    expect(MEMBER_NAME_MAX).toBe(10);
+    expect(memberNameError('은주')).toBeUndefined();
+    expect(memberNameError('가'.repeat(10))).toBeUndefined();
+    expect(memberNameError('가'.repeat(11))).toBe('10자까지 입력할 수 있어요.');
+  });
+  test('처음 연 빈 칸에는 문구가 없고, 건드린 뒤 비면 보인다', () => {
+    expect(shownMemberNameError('', false)).toBeUndefined();
+    expect(shownMemberNameError('', true)).toBe('이름을 적어 주세요.');
+    expect(shownMemberNameError(' ', false)).toBe('이름을 적어 주세요.');
+  });
+});
+
+describe('filledCount (완성과 남은 칸을 셀 때 찬 칸 수)', () => {
+  const g = (over: Partial<Goal>): Goal => ({
+    id: 'g', mode: 'solo', role: 'owner', name: '걷기', boardType: 'calendar', totalSlots: null, initialSlots: null, defaultStickerId: 'basic.shoe',
+    createdAt: 0, endDate: '2026-09-30', completedAt: null, completionSeen: true, lastPlacedAt: null, sortOrder: null, ...over,
+  });
+  const on = (id: string, dateKey: string, placedBy = 'me'): Sticker =>
+    ({ id, goalId: 'g', placedAt: 0, slotIndex: 0, stickerType: 'basic.shoe', dateKey, tzOffsetMin: 540, boardUserId: null, placedBy });
+  const list = [on('a', '2026-09-03'), on('b', '2026-09-03', 'u-min'), on('c', '2026-09-04', 'u-gone')];
+  it('한 판 달력판은 스티커가 있는 날 수(가려진 칸 포함)', () => {
+    expect(filledCount(g({ mode: 'one' }), list)).toBe(2);
+  });
+  it('그 밖의 판은 스티커 수', () => {
+    expect(filledCount(g({}), list)).toBe(3);
+    expect(filledCount(g({ mode: 'each' }), list)).toBe(3);
+    expect(filledCount(g({ mode: 'one', boardType: 'tally', totalSlots: 10, endDate: null }), list)).toBe(3);
+  });
+});
+

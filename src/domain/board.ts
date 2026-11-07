@@ -3,9 +3,10 @@
  * 시각은 `now`로 받아 테스트에서 고정한다. 날짜는 모두 로컬 날짜 키다.
  * 적립판 칸 번호는 0부터(slotIndex)다. 화면의 1부터 번호는 어댑터가 바꾼다.
  */
-import { dateKeyOf, dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
+import { dayAfter, daysInclusive, daysInMonth, localDateKey, monthKeyOf, startOfDayAfter } from './dates';
 import type { DateKey } from './dates';
 import type { Goal, Sticker } from './types';
+import { t } from '../i18n';
 
 /** 붙일 자리. 적립판은 칸, 달력판은 날짜. */
 export type PlaceTarget = { slot: number } | { date: DateKey };
@@ -113,6 +114,14 @@ export function placedAtFor(date: DateKey, now: number): number {
 }
 
 /**
+ * 완성과 남은 칸을 셀 때 판에 찬 칸 수. 한 판 달력판은 하루에 두 장까지 붙으므로 스티커가 있는 날 수로 센다
+ * (가려진 칸 포함, 2026-11-05 판정). 그 밖의 판은 스티커 수다.
+ */
+export function filledCount(goal: Goal, stickers: readonly Sticker[]): number {
+  return goal.mode === 'one' && goal.boardType === 'calendar' ? new Set(stickers.map(stickerDate)).size : stickers.length;
+}
+
+/**
  * 이번에 붙이면 판이 다 차는가. placedTotal은 붙이기 전 그 목표에 붙어 있는 전체 스티커 수다.
  * 기간 없는 달력판은 붙여서 완성되지 않는다 (목표 설정에서 수동 완성, PRD 4.3).
  */
@@ -150,43 +159,92 @@ export function extendEndDateFloor(goal: Goal, now: Date): DateKey {
 /** 칸 늘리기의 기본값: 처음 만든 칸 수만큼 더한다 (2026-09-30). */
 export const defaultExtraSlots = (goal: Goal): number => goal.initialSlots ?? goal.totalSlots ?? 0;
 
-/** 내 목표: 마지막으로 붙인 시각(없으면 만든 시각) 최근순. 완성한 판: 완성 시각 최근순 (PRD 4.1). */
+/** 마지막으로 붙인 시각(없으면 만든 시각). 순서를 정하지 않은 옛 목표의 첫 순서 기준이다 (PRD 4.1). */
+const recentAt = (goal: Goal) => goal.lastPlacedAt ?? goal.createdAt;
+
+/** 순서 값이 없는 쪽을 아래로. 둘 다 있거나 둘 다 없으면 0. */
+function compareMissing(left: number | null, right: number | null): number {
+  if (left === null && right !== null) return 1;
+  if (left !== null && right === null) return -1;
+  return 0;
+}
+
+/** 최근순, 같은 시각이면 id순. 기기 DB 마이그레이션(v2)의 `other.id < goals.id`와 같은 바이트 비교다. */
+function compareRecent(left: Goal, right: Goal): number {
+  const recent = recentAt(right) - recentAt(left);
+  if (recent !== 0) return recent;
+  if (left.id === right.id) return 0;
+  return left.id < right.id ? -1 : 1;
+}
+
+/**
+ * 내 목표 순서 (PRD 4.1, 2026-10-30). 사용자가 정한 순서(sortOrder 작은 쪽이 위)이고 붙여도 바뀌지 않는다.
+ * 순서가 없는 옛 목표는 순서가 있는 목표 아래에 최근순으로 둔다. 값이 같으면 최근순, 그다음 id순.
+ */
+function compareActive(left: Goal, right: Goal): number {
+  const missing = compareMissing(left.sortOrder, right.sortOrder);
+  if (missing !== 0) return missing;
+  if (left.sortOrder !== null && right.sortOrder !== null && left.sortOrder !== right.sortOrder) {
+    return left.sortOrder - right.sortOrder;
+  }
+  return compareRecent(left, right);
+}
+
+/** 내 목표: 사용자가 정한 순서. 완성한 판: 완성 시각 최근순 (PRD 4.1). 목표 탭, 위젯, 워치가 함께 쓴다. */
 export function orderGoals<G extends Goal>(goals: readonly G[]): { active: G[]; completed: G[] } {
-  const recent = (g: Goal) => g.lastPlacedAt ?? g.createdAt;
   return {
-    active: goals.filter((g) => !isCompleted(g)).sort((a, b) => recent(b) - recent(a)),
+    active: goals.filter((g) => !isCompleted(g)).sort(compareActive),
     completed: goals.filter(isCompleted).sort((a, b) => b.completedAt! - a.completedAt!),
   };
+}
+
+/**
+ * 가장 최근에 붙인(한 번도 안 붙였으면 만든) 목표. 위젯에서 목표를 고르지 않았을 때 보인다 (PRD 4.10).
+ * 내 목표 순서와 따로 센다 — 맨 위 목표가 아니라 방금 쓴 목표가 나온다.
+ */
+export function mostRecentGoal<G extends Goal>(goals: readonly G[]): G | null {
+  return goals.reduce<G | null>((best, goal) => (best === null || compareRecent(goal, best) < 0 ? goal : best), null);
+}
+
+/** from 자리의 항목을 to 자리로 옮긴 새 배열. to는 0~마지막으로 맞춘다 (목표 옮기기, PRD 4.1). */
+export function moveItem<T>(items: readonly T[], from: number, to: number): T[] {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  if (moved === undefined) return next;
+  next.splice(Math.min(Math.max(to, 0), next.length), 0, moved);
+  return next;
 }
 
 /**
  * 목표 설정의 적립판 칸 수 입력 (2026-09-30). 늘리기만 된다 — 지금 칸 수 이상의 정수만 받는다.
  * 앞의 0은 무시한다("030" → 30). reason은 입력칸 아래에 그대로 보여준다.
  */
-export function parseSlotCount(input: string, current: number): { ok: true; value: number } | { ok: false; reason: string } {
+export function parseSlotCount(input: string, current: number, max?: number): { ok: true; value: number } | { ok: false; reason: string } {
   const text = input.trim();
-  if (text === '') return { ok: false, reason: '칸 수를 입력해 주세요.' };
-  if (!/^\d+$/.test(text)) return { ok: false, reason: '숫자만 입력할 수 있어요.' };
+  if (text === '') return { ok: false, reason: t('validation.slotCountEmpty') };
+  if (!/^\d+$/.test(text)) return { ok: false, reason: t('validation.digitsOnly') };
   const value = Number(text);
-  if (value < 1) return { ok: false, reason: '1칸 이상이어야 해요.' };
-  if (value < current) return { ok: false, reason: `지금 ${current}칸보다 줄일 수 없어요.` };
+  if (value < 1) return { ok: false, reason: t('validation.slotCountMin') };
+  if (max !== undefined && value > max) return { ok: false, reason: t('validation.slotCountMax', max) };
+  if (value < current) return { ok: false, reason: t('validation.slotCountBelowCurrent', current) };
   return { ok: true, value };
 }
 
 /**
  * 입력 글자 수 (2026-10-08). 입력칸은 maxLength로 한도를 넘지 못하게 하고, 이 문구는 입력칸 아래에 보여준다.
- * 글자 수는 RN maxLength와 같은 기준(string.length)으로 센다.
+ * 글자 수는 RN maxLength와 같은 기준(string.length)으로 센다. 한도와 같은 길이는 받고, 넘을 때만 알린다(2026-11-06: 20자 이름이 거절처럼 보였다).
+ * 서버도 같은 한도를 포함한다(goals.name 1~20자, 이름 private.clean_name 1~10자).
  */
 export const GOAL_NAME_MAX = 20;
 export const MEMO_MAX = 500;
 export function goalNameError(name: string): string | undefined {
-  if (name.trim() === '') return '목표 이름을 입력해주세요.';
-  if (name.length >= GOAL_NAME_MAX) return `${GOAL_NAME_MAX}자까지 입력할 수 있어요.`;
+  if (name.trim() === '') return t('validation.goalNameEmpty');
+  if (name.length > GOAL_NAME_MAX) return t('validation.maxLength', GOAL_NAME_MAX);
   return undefined;
 }
 /** 메모는 비워 둬도 된다. */
 export function memoError(memo: string): string | undefined {
-  return memo.length >= MEMO_MAX ? `${MEMO_MAX}자까지 입력할 수 있어요.` : undefined;
+  return memo.length > MEMO_MAX ? t('validation.maxLength', MEMO_MAX) : undefined;
 }
 /**
  * 새 목표의 이름 문구. 처음 연 빈 칸에는 보이지 않고, 이름을 썼다가 지웠거나
@@ -195,5 +253,22 @@ export function memoError(memo: string): string | undefined {
 export function shownGoalNameError(name: string, touched: boolean): string | undefined {
   return name === '' && !touched ? undefined : goalNameError(name);
 }
+/** 함께 목표 적립판의 칸 수 상한. 서버 private.check_slots와 같은 값이다(혼자 목표는 상한이 없다). */
+export const SHARED_SLOTS_MAX = 1000;
+/** 함께 목표 최대 인원(만든 사람 포함). 서버 goals.max_members 기본값이다. 문구 「친구를 n명까지」는 여기서 1을 뺀다. */
+export const SHARED_MAX_MEMBERS = 6;
+/**
+ * 함께 목표에서 다른 사람에게 보이는 내 이름 (PRD 4.15, 2026-11-04). 1~10자, 저장할 때 앞뒤 공백을 뺀다.
+ * 10자는 판 화면 이름 배지(폭 56) 두 줄을 생각한 값이다. 금칙어는 서버가 거른다(문구는 서버 응답에 따라 화면이 넘긴다).
+ */
+export const MEMBER_NAME_MAX = 10;
+export function memberNameError(name: string): string | undefined {
+  if (name.trim() === '') return t('validation.memberNameEmpty');
+  if (name.length > MEMBER_NAME_MAX) return t('validation.maxLength', MEMBER_NAME_MAX);
+  return undefined;
+}
+/** 목표 이름과 같이, 처음 연 빈 칸에는 문구를 보이지 않는다. */
+export function shownMemberNameError(name: string, touched: boolean): string | undefined {
+  return name === '' && !touched ? undefined : memberNameError(name);
+}
 
-export { dateKeyOf };

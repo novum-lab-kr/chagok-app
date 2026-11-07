@@ -19,7 +19,7 @@ npm run typecheck
 npm run lint
 ```
 
-- 화면을 추가, 변경, 삭제했거나 이동 경로가 바뀌었으면 화면 흐름도(`stories/flows/app-flow.json`)를 맞추고 [stories/flows/README.md](../../../stories/flows/README.md)의 스토리 ID 검사를 돌린다.
+- 화면을 추가, 변경, 삭제했거나 이동 경로가 바뀌었으면 화면 흐름도(`stories/flows/app-flow.json`)를 맞추고 [stories/flows/README.md](../../../stories/flows/README.md)의 스토리 ID 검사를 돌린다. 시안을 거치는 작업은 그 작업의 시안이 전부 확정된 뒤 맞추므로, 아직 남은 시안이 있으면 이 커밋에서는 맞추지 않는다.
 - 새로 쓴 문구, 스토리 이름, 문서에 가운뎃점이 없는지 본다.
 
 ## 커밋
@@ -37,6 +37,18 @@ npm run lint
 1. `git push origin main`. 로컬 main에 이번 작업이 아닌 커밋이 먼저 쌓여 있으면 함께 올라간다고 보고한다.
 2. push가 끝나면 묻지 않고 정리한다: 그 worktree에서 내가 띄운 Metro를 끄고, `.env.local` 링크를 지우고, `git worktree remove <폴더>`, `git branch -d <브랜치>`.
 3. 내가 띄운 다른 서버(시안 미리보기 등)도 끈다.
+
+## PR로 합칠 때 (출시 브랜치 `release/*` 포함)
+
+1. PR을 만들거나 push하는 것은 사용자가 요청할 때만 한다.
+2. PR이 합쳐진 것을 확인하면(`gh pr view <번호> --json state,baseRefName`) 위 push 뒤 정리와 똑같이 그 worktree와 로컬 브랜치를 지운다. base가 main이 아니어도 같다.
+3. 확인을 기다리느라 커밋하지 못한 변경이 남으면 지우지 말고 HANDOFF 「커밋 안 한 작업」에 적는다.
+
+## Gotchas
+
+- **`git add`에 이미 지운 파일 경로를 섞으면 add 전체가 멈춘다**(`fatal: pathspec ... did not match`). 그 상태로 `git commit`하면 미리 staged된 것만 들어간다. 지운 파일은 `git rm`으로 따로 올리고, 커밋 뒤 `git status --short`가 비었는지 본다(2026-11-02).
+- **`git apply --3way`로 옮긴 변경은 이미 staged 상태다.** 덩어리별로 나눠 커밋할 때 다른 커밋에 섞여 들어간다(2026-11-04 배너 수정이 문구 커밋에 섞임). 옮긴 직후 `git reset -q <파일>`로 내려 두거나, 커밋마다 `git show --stat`으로 파일 목록을 본다.
+- 새 worktree에는 git 밖 파일이 없어 확인 명령이 실패할 수 있다. AGENTS.md 「작업마다 새 worktree」 줄의 세 파일을 먼저 챙긴다.
 
 ## 새 worktree를 만든 직후
 

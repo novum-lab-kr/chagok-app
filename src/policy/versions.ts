@@ -1,4 +1,5 @@
 import type { DateKey } from '../domain/dates';
+import { t } from '../i18n';
 
 export type PolicyKind = 'terms' | 'privacy';
 
@@ -37,6 +38,6 @@ export function upcomingChange(list: readonly PolicyVersion[], today: DateKey, s
 /** 'YYYY-MM-DD' → 'M월 D일' (안내 문구). */
 export function monthDayLabel(key: DateKey): string {
   const [, month, day] = key.split('-').map(Number);
-  return `${month}월 ${day}일`;
+  return t('date.monthDay', month, day);
 }
 

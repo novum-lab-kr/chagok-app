@@ -1,16 +1,26 @@
+import * as Application from 'expo-application';
+import { AppState } from 'react-native';
 import { initializeKakaoSDK } from '@react-native-kakao/core';
 import { login, logout, me } from '@react-native-kakao/user';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { KakaoSignInDeps } from './kakao';
-import { KAKAO_NATIVE_APP_KEY } from './kakaoKey';
+import { kakaoNativeAppKey } from './kakaoKey';
 import { makeNonce } from './nonce';
+import { settleOnReturn, type AppStateSource } from './returnWatch';
 
 let initialized = false;
 function ensureInitialized() {
   if (initialized) return;
-  void initializeKakaoSDK(KAKAO_NATIVE_APP_KEY);
+  void initializeKakaoSDK(kakaoNativeAppKey(Application.applicationId));
   initialized = true;
 }
+
+const appState: AppStateSource = {
+  current: () => AppState.currentState,
+  subscribe: (onChange) => { const sub = AppState.addEventListener('change', onChange); return () => sub.remove(); },
+};
+/** 카카오 창이나 카카오톡에서 돌아온 뒤 이만큼 기다려도 결과가 없으면 취소로 본다. 돌아온 뒤 토큰 교환이 끝날 시간을 둔다. */
+const RETURN_GRACE_MS = 10_000;
 
 /** 창 닫기(Cancelled)와 카카오톡 동의 화면에서 취소(AccessDenied). iOS와 Android 모두 SDK 오류 이유 이름이 code로 온다. */
 const CANCEL_CODES = new Set(['Cancelled', 'AccessDenied']);
@@ -23,7 +33,9 @@ export function expoKakaoDeps(client: SupabaseClient): KakaoSignInDeps {
       ensureInitialized();
       try {
         // scopes를 넘기면 카카오톡 앱 로그인을 건너뛰고 계정 로그인만 한다. OpenID Connect가 켜져 있으면 ID 토큰은 그냥 온다.
-        const token = await login({ nonce });
+        // 돌아왔는데 SDK가 결과를 주지 않으면(주소를 받지 못함) 연결 화면이 잠기지 않게 취소로 돌린다
+        const token = await settleOnReturn(login({ nonce }), appState, RETURN_GRACE_MS);
+        if (token === 'returned') return 'canceled';
         return { idToken: token.idToken ?? null };
       } catch (e) {
         if (CANCEL_CODES.has(String((e as { code?: unknown } | null)?.code))) return 'canceled';

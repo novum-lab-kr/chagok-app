@@ -1,3 +1,4 @@
+import { setLanguage } from '../src/i18n';
 import { buildWidgetSnapshot } from '../src/widgets/snapshot';
 import { goalWidgetProps, monthWidgetProps, nextMidnight, tallyWidgetProps } from '../src/widgets/widgetProps';
 import type { WidgetArt } from '../src/widgets/widgetProps';
@@ -5,9 +6,9 @@ import type { Goal } from '../src/domain/types';
 
 const at = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h);
 const goal = (over: Partial<Goal>): Goal => ({
-  id: 'g', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'shoe',
+  id: 'g', mode: 'solo', role: 'owner', name: '산책', boardType: 'calendar', totalSlots: null, defaultStickerId: 'shoe',
   createdAt: at(2026, 10, 1).getTime(), endDate: null, completedAt: null, completionSeen: false,
-  lastPlacedAt: null, initialSlots: null, ...over,
+  lastPlacedAt: null, initialSlots: null, sortOrder: null, ...over,
 });
 const art: WidgetArt = {
   mascotYet: 'y', mascotDone: 'd', mascotFull: 'f', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' },
@@ -47,5 +48,16 @@ describe('위젯 props', () => {
 
   it('다음 자정은 기기 기준 다음 날 0시', () => {
     expect(nextMidnight(at(2026, 10, 31, 23))).toEqual(new Date(2026, 10, 1, 0, 0));
+  });
+});
+
+describe('위젯 문구는 앱 언어를 따른다', () => {
+  afterEach(() => setLanguage('ko'));
+  it('영어면 달 이름과 빈 안내가 영어다', () => {
+    setLanguage('en');
+    const s = buildWidgetSnapshot([], at(2026, 10, 6));
+    const p = monthWidgetProps(s, art, at(2026, 10, 6));
+    expect(p.labels.firstCalendar).toBe('Create a calendar goal');
+    expect(p.labels.makeGoal).toBe('New goal');
   });
 });

@@ -1,5 +1,5 @@
 import { createGoal, getGoal } from '../src/repositories/goalRepository';
-import { placeSticker, listStickers, getSticker, removeSticker } from '../src/repositories/stickerRepository';
+import { placeSticker, listStickers, listStickersInMonth, listBoardStickers, countAllStickers, getSticker, removeSticker, hasHiddenStickers } from '../src/repositories/stickerRepository';
 import { withFreshDb } from './support/setup';
 import { getDb } from '../src/db/client';
 import { localDateKey } from '../src/domain/dates';
@@ -20,9 +20,9 @@ describe('stickerRepository', () => {
     expect(s.placedAt).toBeGreaterThan(0);
   });
 
-  it('종류를 안 주면 새싹이가 기본값이다', async () => {
+  it('종류를 안 주면 네잎클로버가 기본값이다', async () => {
     const g = await goal();
-    expect((await placeSticker(g.id, 0)).stickerType).toBe('basic.sprout');
+    expect((await placeSticker(g.id, 0)).stickerType).toBe('basic.clover');
   });
 
   it('한 판 안에서 종류를 섞어 쓸 수 있다', async () => {
@@ -54,8 +54,8 @@ describe('stickerRepository', () => {
     const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
     const db = await getDb();
     // 다른 시간대에서 붙인 스티커: 시각은 이 기기로 10월 11일이지만 붙인 날짜는 10월 12일이다.
-    await db.run(`INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min)
-      VALUES ('far', ?, ?, 11, 'star', 1, '2026-10-12', -420)`, g.id, new Date(2026, 9, 11, 12).getTime());
+    await db.run(`INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min, board_user_id, placed_by)
+      VALUES ('far', ?, ?, 11, 'star', 1, '2026-10-12', -420, 'me', 'me')`, g.id, new Date(2026, 9, 11, 12).getTime());
     await expect(placeSticker(g.id, 11, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() })).rejects.toThrow('이미 붙인 칸');
     await expect(placeSticker(g.id, 10, 'star', { placedAt: new Date(2026, 9, 11, 9).getTime() })).resolves.toMatchObject({ dateKey: '2026-10-11' });
   });
@@ -112,33 +112,6 @@ describe('이미 붙인 칸 (위젯 요청과 겹칠 때)', () => {
     expect(await listStickers(g.id)).toHaveLength(1);
     // 다른 날은 붙는다 (다음 날 0시, 같은 달 다른 날짜)
     await expect(placeSticker(g.id, 6, 'sprout', { placedAt: new Date(2026, 9, 7, 0).getTime() })).resolves.toMatchObject({ slotIndex: 6 });
-  });
-});
-
-describe('누적 총계 (PRD 4.3)', () => {
-  it('그 목표에 현재 붙어 있는 스티커 수를 센다', async () => {
-    const g = await goal();
-    await placeSticker(g.id, 0, 'sprout');
-    await placeSticker(g.id, 1, 'star');
-    const { countStickers } = await import('../src/repositories/stickerRepository');
-    expect(await countStickers(g.id)).toBe(2);
-  });
-
-  it('뗀 스티커는 총계에서 빠진다', async () => {
-    const g = await goal();
-    const s = await placeSticker(g.id, 0);
-    await placeSticker(g.id, 1);
-    const { countStickers, removeSticker: rm } = await import('../src/repositories/stickerRepository');
-    await rm(s.id);
-    expect(await countStickers(g.id)).toBe(1);
-  });
-
-  it('다른 목표 스티커는 세지 않는다', async () => {
-    const a = await goal();
-    const b = await goal();
-    await placeSticker(a.id, 0);
-    const { countStickers } = await import('../src/repositories/stickerRepository');
-    expect(await countStickers(b.id)).toBe(0);
   });
 });
 
@@ -226,3 +199,118 @@ describe('누른 날 기록 (placed_days, 2026-10-08)', () => {
     expect(await days()).toEqual([localDateKey(Date.now())]);
   });
 });
+
+describe('stickerRepository: 판 주인과 붙인 사람', () => {
+  async function friendSticker(goalId: string, over: Record<string, string | number | null> = {}) {
+    const row = { id: 'f1', placed_at: 1, slot_index: 0, date_key: '2026-10-12', board_user_id: 'u2', placed_by: 'u2', ...over };
+    await (await getDb()).run(
+      `INSERT INTO stickers (id, goal_id, placed_at, slot_index, sticker_type, updated_at, date_key, tz_offset_min, board_user_id, placed_by)
+       VALUES (?, ?, ?, ?, 'basic.star', 1, ?, 540, ?, ?)`,
+      row.id as string, goalId, row.placed_at as number, row.slot_index as number, row.date_key as string, row.board_user_id, row.placed_by,
+    );
+  }
+
+  it('hasHiddenStickers: 차단으로 가려진 칸(붙인 사람 null)이 있을 때만 true', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    await friendSticker(g.id, { id: 'f1', slot_index: 1 });
+    expect(await hasHiddenStickers(g.id)).toBe(false);
+    await friendSticker(g.id, { id: 'f2', slot_index: 2, placed_by: null });
+    expect(await hasHiddenStickers(g.id)).toBe(true);
+  });
+
+  it('혼자 목표에 붙이면 판 주인과 붙인 사람이 나다', async () => {
+    const g = await goal();
+    const s = await placeSticker(g.id, 0);
+    expect(s).toMatchObject({ boardUserId: 'me', placedBy: 'me' });
+    expect(await getSticker(s.id)).toEqual(s);
+  });
+
+  it('한 판(one)에 붙이면 판 주인은 null이고 붙인 사람은 나다', async () => {
+    const g = await goal();
+    await (await getDb()).run("UPDATE goals SET mode = 'one' WHERE id = ?", g.id);
+    const s = await placeSticker(g.id, 0);
+    expect(s).toMatchObject({ boardUserId: null, placedBy: 'me' });
+    expect((await listStickers(g.id)).map((x) => x.id)).toEqual([s.id]);
+  });
+
+  it('붙이면 마지막으로 붙인 시각이 내 멤버 행에 남고 outbox에는 sticker와 member가 간다', async () => {
+    const g = await goal();
+    const s = await placeSticker(g.id, 0);
+    const db = await getDb();
+    expect((await db.first<{ last_placed_at: number }>('SELECT last_placed_at FROM goal_members WHERE goal_id = ?', g.id))?.last_placed_at).toBe(s.placedAt);
+    expect((await db.all<{ entity: string }>('SELECT entity FROM outbox ORDER BY entity')).map((r) => r.entity)).toEqual(['goal', 'member', 'sticker']);
+  });
+
+  it('listStickers, listStickersInMonth는 친구 판의 칸을 뺀다', async () => {
+    const g = await goal();
+    const mine = await placeSticker(g.id, 0, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() });
+    await friendSticker(g.id);
+    expect((await listStickers(g.id)).map((s) => s.id)).toEqual([mine.id]);
+    expect((await listStickersInMonth(g.id, 2026, 10)).map((s) => s.id)).toEqual([mine.id]);
+  });
+
+  it('친구 판에 같은 칸 번호가 있어도 내 판에는 붙는다 (적립판)', async () => {
+    const g = await goal();
+    await friendSticker(g.id, { slot_index: 3 });
+    await expect(placeSticker(g.id, 3)).resolves.toMatchObject({ slotIndex: 3, boardUserId: 'me' });
+    await expect(placeSticker(g.id, 3)).rejects.toThrow('이미 붙인 칸');
+  });
+
+  it('친구 판에 같은 날짜가 있어도 내 판에는 붙는다 (달력판)', async () => {
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    await friendSticker(g.id, { date_key: '2026-10-12' });
+    await expect(placeSticker(g.id, 11, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() })).resolves.toMatchObject({ dateKey: '2026-10-12' });
+  });
+
+  it('한 판 달력판은 같은 날 내가 이미 붙였으면 막는다', async () => {
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    await (await getDb()).run("UPDATE goals SET mode = 'one' WHERE id = ?", g.id);
+    const day = (h: number) => ({ placedAt: new Date(2026, 9, 12, h).getTime() });
+    await placeSticker(g.id, 11, 'star', day(9));
+    await expect(placeSticker(g.id, 11, 'star', day(10))).rejects.toThrow('이미 붙인 칸');
+  });
+
+  it('한 판 달력판은 그날 두 장이 붙었으면 아직 안 붙인 나도 막는다', async () => {
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    await (await getDb()).run("UPDATE goals SET mode = 'one' WHERE id = ?", g.id);
+    await friendSticker(g.id, { id: 'f1', board_user_id: null, placed_by: 'u2' });
+    await friendSticker(g.id, { id: 'f2', board_user_id: null, placed_by: 'u3' });
+    await expect(placeSticker(g.id, 11, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() })).rejects.toThrow('이미 붙인 칸');
+    // 한 장만 붙은 날은 아직 붙이지 않은 내가 붙일 수 있다
+    await expect(placeSticker(g.id, 12, 'star', { placedAt: new Date(2026, 9, 13, 9).getTime() })).resolves.toMatchObject({ boardUserId: null });
+  });
+
+  it('한 판 달력판에서 다른 사람이 한 장 붙인 날은 내가 붙일 수 있다', async () => {
+    const g = await createGoal({ name: '달력', boardType: 'calendar', totalSlots: null });
+    await (await getDb()).run("UPDATE goals SET mode = 'one' WHERE id = ?", g.id);
+    await friendSticker(g.id, { id: 'f1', board_user_id: null, placed_by: 'u2' });
+    await expect(placeSticker(g.id, 11, 'star', { placedAt: new Date(2026, 9, 12, 9).getTime() })).resolves.toMatchObject({ placedBy: 'me' });
+  });
+
+  it('listBoardStickers는 그 사람의 판만 준다 (가려진 칸은 종류가 빈 문자열)', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    await friendSticker(g.id, { id: 'f1', slot_index: 2 });
+    await friendSticker(g.id, { id: 'f2', slot_index: 1, placed_by: null });
+    await (await getDb()).run("UPDATE stickers SET sticker_type = NULL WHERE id = 'f2'");
+    const theirs = await listBoardStickers(g.id, 'u2');
+    expect(theirs.map((s) => [s.id, s.slotIndex, s.placedBy, s.stickerType])).toEqual([['f2', 1, null, ''], ['f1', 2, 'u2', 'basic.star']]);
+    expect((await listBoardStickers(g.id, 'me')).map((s) => s.slotIndex)).toEqual([0]);
+  });
+
+  it('친구가 붙인 칸은 뗄 수 없다', async () => {
+    const g = await goal();
+    await friendSticker(g.id);
+    await expect(removeSticker('f1')).rejects.toThrow('내가 붙인 칸');
+    expect(await getSticker('f1')).not.toBeNull();
+  });
+
+  it('countAllStickers는 내가 붙인 칸만 센다', async () => {
+    const g = await goal();
+    await placeSticker(g.id, 0);
+    await friendSticker(g.id);
+    expect(await countAllStickers()).toBe(1);
+  });
+});
+

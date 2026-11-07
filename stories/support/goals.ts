@@ -13,7 +13,7 @@ export const TODAY = localDateKey(NOW.getTime());
 const at = (month: number, day: number, hour = 9) => new Date(2026, month - 1, day, hour).getTime();
 
 type Fields = Pick<Goal, 'id' | 'name' | 'defaultStickerId' | 'createdAt'> & Partial<Goal>;
-const base = {totalSlots: null, endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, initialSlots: null};
+const base = {mode: 'solo' as const, role: 'owner' as const, totalSlots: null, endDate: null, completedAt: null, completionSeen: true, lastPlacedAt: null, initialSlots: null, sortOrder: null};
 const tally = (g: Fields & {totalSlots: number}): Goal => ({...base, boardType: 'tally', initialSlots: g.totalSlots, ...g});
 const calendar = (g: Fields): Goal => ({...base, boardType: 'calendar', ...g});
 
@@ -27,7 +27,7 @@ export const goals = {
 export type GoalKey = keyof typeof goals;
 
 function sticker(goal: Goal, slotIndex: number, dateKey: string): Sticker {
-  return {id: `${goal.id}-${slotIndex}`, goalId: goal.id, placedAt: NOW.getTime(), slotIndex, stickerType: goal.defaultStickerId, dateKey, tzOffsetMin: 540};
+  return {id: `${goal.id}-${slotIndex}`, goalId: goal.id, placedAt: NOW.getTime(), slotIndex, stickerType: goal.defaultStickerId, dateKey, tzOffsetMin: 540, boardUserId: 'me', placedBy: 'me'};
 }
 /** 적립판: 앞에서부터 count칸 */
 export const slots = (goal: Goal, count: number): Sticker[] => Array.from({length: count}, (_, i) => sticker(goal, i, TODAY));
@@ -48,9 +48,9 @@ function placedInBasis(goal: Goal, stickers: readonly Sticker[]) {
   return basis.kind === 'all' ? stickers.length : stickers.filter(s => s.dateKey.startsWith(monthKeyOf(basis.year, basis.month))).length;
 }
 
-/** 목록 카드. 앱 목표 탭과 같은 goalCard. */
-export const cardOf = (goal: Goal, stickers: readonly Sticker[]): GoalCardItem =>
-  goalCard({goal, placedAll: stickers.length, placedInBasis: placedInBasis(goal, stickers)}, NOW);
+/** 목록 카드. 앱 목표 탭과 같은 goalCard. memberCount는 함께 목표의 함께하는 사람 수(혼자 목표는 1). */
+export const cardOf = (goal: Goal, stickers: readonly Sticker[], memberCount = 1): GoalCardItem =>
+  goalCard({goal, placedAll: stickers.length, placedInBasis: placedInBasis(goal, stickers), memberCount}, NOW);
 export const cardFor = (key: GoalKey) => cardOf(goals[key], stickersOf[key]);
 
 /** 판 상세(BoardDetailScreen) 값. 앱 app/goal/[id]/index.tsx와 같은 함수로 만든다. 누르는 동작은 비운다. */

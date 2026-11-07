@@ -1,7 +1,8 @@
 import { getDb } from '../db/client';
+import type { DbDriver } from '../db/driver';
 import { newId } from './ids';
 
-export type AppFlag = 'tutorialDone' | 'startDone';
+export type AppFlag = 'tutorialDone' | 'startDone' | 'reorderGuideDone' | 'firstStickerGuideDone' | 'firstStickerGuidePending';
 
 /** 정해둔 적 없으면 false. 첫 실행에서 튜토리얼이 뜨도록 한다. */
 export async function getFlag(key: AppFlag): Promise<boolean> {
@@ -25,6 +26,8 @@ export async function setFlag(key: AppFlag, on: boolean): Promise<void> {
 /** 문자열 값. 계정·동기화 상태를 담는다 (계정·백업 설계 ②). 동기화하지 않는다. */
 export type SettingKey =
   | 'deviceId' | 'accountUserId' | 'lastSyncedAt' | 'syncCursor' | 'pendingPhotoDownloads'
+  /** 받아 오기가 커서를 넘긴 뒤 아직 끝내지 못한 목표: {"refetch": 다시 받을 id, "drop": 지울 id} (src/sync/pull.ts) */
+  | 'pendingGoalSync'
   /** 'Apple' | 'Google' | '카카오' | '개발' — 앱 설정 계정 칸 문구 */
   | 'accountProvider'
   /** '1'이면 마지막 전송이 실패했거나 보류가 남았다 */
@@ -43,22 +46,29 @@ export type SettingKey =
   | 'dayTrialsClaimed'
   /** '1'이면 광고 제거를 샀다. 하루 체험 버튼이 없다 */
   | 'adFree'
+  /** 마지막으로 확인한 구독 상태 JSON {plan, expiresAt, willRenew, verifiedAt}. 없으면 구독한 적 없음 (src/domain/subscription.ts) */
+  | 'subscription'
   /** 체험 열림 카드를 ×로 닫을 때 넘긴 문턱(7, 14…). 다음 문턱까지 카드를 숨긴다 (2026-10-12) */
   | 'trialCardDismissed'
   /** 워치 성장 수(블록 수). 지금 붙어 있는 스티커 수보다 작아지지 않는다. 복원하면 지운다 (PRD 4.14) */
   | 'watchGrowth'
   /** 'feed'면 기록 탭을 사진 격자로 연다. 없으면 타임라인 (2026-10-17) */
-  | 'recordsView';
+  | 'recordsView'
+  /** '0'이면 사용 기록 보내기에 동의, '1'이면 거부나 철회, 없으면 아직 묻지 않았다. 로그아웃해도 남긴다 (src/sync/wipe.ts) */
+  | 'analyticsOff'
+  /** '1'이면 오류 보고를 보내지 않는다. 로그아웃해도 남긴다 (src/sync/wipe.ts) */
+  | 'errorReportOff';
 
-export async function getSetting(key: SettingKey): Promise<string | null> {
-  const db = await getDb();
+/** db: 트랜잭션 안에서 읽고 쓸 때 그 tx를 넘긴다. */
+export async function getSetting(key: SettingKey, db?: DbDriver): Promise<string | null> {
+  db ??= await getDb();
   const row = await db.first<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', key);
   return row?.value ?? null;
 }
 
 /** null이면 지운다. */
-export async function setSetting(key: SettingKey, value: string | null): Promise<void> {
-  const db = await getDb();
+export async function setSetting(key: SettingKey, value: string | null, db?: DbDriver): Promise<void> {
+  db ??= await getDb();
   if (value === null) {
     await db.run('DELETE FROM app_settings WHERE key = ?', key);
     return;
@@ -70,11 +80,18 @@ export async function setSetting(key: SettingKey, value: string | null): Promise
   );
 }
 
-/** 설치마다 한 번 만든다. 서버 행의 "마지막으로 쓴 기기"다. */
-export async function getDeviceId(): Promise<string> {
+async function readOrCreateDeviceId(): Promise<string> {
   const existing = await getSetting('deviceId');
   if (existing) return existing;
   const id = newId();
   await setSetting('deviceId', id);
   return id;
+}
+
+let deviceIdInFlight: Promise<string> | null = null;
+
+/** 설치마다 한 번 만든다. 서버 행의 "마지막으로 쓴 기기"다. 첫 실행에 동시에 불러도 ID가 갈리지 않게 하나로 묶는다. */
+export function getDeviceId(): Promise<string> {
+  deviceIdInFlight ??= readOrCreateDeviceId().finally(() => { deviceIdInFlight = null; });
+  return deviceIdInFlight;
 }

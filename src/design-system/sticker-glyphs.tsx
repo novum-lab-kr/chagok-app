@@ -6,7 +6,7 @@ import { StickerArtwork } from '../stickers/pocket/StickerArtwork';
 import { getPocketSticker, type PocketStickerId } from '../stickers/pocket/catalog';
 import { ColorStickerArtwork } from '../stickers/color/ColorStickerArtwork';
 import { getColorSticker, type ColorStickerId } from '../stickers/color/catalog';
-export { pocketStickers } from '../stickers/pocket/catalog';
+import { stickerName } from '../i18n/stickerNames';
 export type { PocketStickerId } from '../stickers/pocket/catalog';
 export type { ColorStickerId } from '../stickers/color/catalog';
 
@@ -15,7 +15,7 @@ export type StickerId=PocketStickerId|ColorStickerId;
 export const isColorStickerId=(id:StickerId):id is ColorStickerId=>id.includes('.');
 /** 흑백 6종은 기본 묶음에 같은 그림이 있다. */
 export const toColorStickerId=(id:PocketStickerId)=>`basic.${id}` as ColorStickerId;
-export const stickerLabel=(id:StickerId)=>isColorStickerId(id)?getColorSticker(id).label:getPocketSticker(id).label;
+export const stickerLabel=(id:StickerId)=>stickerName(id,isColorStickerId(id)?getColorSticker(id).label:getPocketSticker(id).label);
 
 /** Design-system adapter; artwork and metadata live in the sticker library. 컬러는 24칸 도트라 24의 배수로만 그린다. */
 export function StickerGlyph({id,size=48}:{id:StickerId;size?:number}) {

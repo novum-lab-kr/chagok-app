@@ -31,7 +31,7 @@ const button = (root: unknown) => all(root).find((e) => e.type === 'Button')!;
 const hasPlaceLink = (root: unknown) => JSON.stringify(all(root).map((e) => e.props)).includes('?place=1');
 
 const t = (d: number, h = 12, m = 0) => new Date(2026, 9, d, h, m).getTime();
-const shared = { order: [{ id: 'run', name: '런닝' }], defaultId: 'run', today: '2026-10-06', mascotYet: 'y', mascotDone: 'd', mascotFull: 'f', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' } };
+const shared = { labels: { firstGoal: 'a', firstCalendar: 'b', firstTally: 'c', makeGoal: 'd' }, order: [{ id: 'run', name: '런닝' }], defaultId: 'run', today: '2026-10-06', mascotYet: 'y', mascotDone: 'd', mascotFull: 'f', mascotSleepy: 'z', bubbles: { ivory: 'bi', white: 'bw', ink: 'bk' } };
 const card = { id: 'run', name: '런닝', placed: 5, total: 31, placedToday: false, undoable: false, remaining: null as number | null, sticker: 's' };
 // expo-widgets는 항목 시각을 env.date(Date)로 넘긴다(timestamp는 지운다).
 const env = (ts: number) => ({ date: new Date(ts), configuration: { background: 'ivory' } });
@@ -58,7 +58,7 @@ describe('위젯 화면 로직', () => {
 
   it('자정 항목에서도 어젯밤 요청이 보이고 오늘 붙일 수 있다 (Review Focus 2)', () => {
     const days = Array.from({ length: 31 }, (_, i) => (i < 6 ? 'missed' : 'future')) as MonthWidgetProps['goals'][string]['days'];
-    const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
+    const month = { ...card, month: 10, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
     const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [lateTap] } as MonthWidgetProps, env(t(7, 0, 0)));
     expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(1); // 10/6 칸
     expect(texts(root)).toContain('Ready?');
@@ -75,7 +75,7 @@ describe('위젯 화면 로직', () => {
 
   it('카드의 달과 항목의 달이 다르면 다른 달 요청을 칸에 합치지 않는다', () => {
     const days = Array.from({ length: 31 }, () => 'future') as MonthWidgetProps['goals'][string]['days'];
-    const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 0 };
+    const month = { ...card, month: 10, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 0 };
     const novTap = { id: 'w2', goalId: 'run', kind: 'add' as const, at: new Date(2026, 10, 1, 0, 3).getTime(), dateKey: '2026-11-01' };
     const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [novTap] } as MonthWidgetProps, env(new Date(2026, 10, 1, 0, 5).getTime()));
     expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(0);
@@ -109,7 +109,7 @@ describe('위젯 화면 로직', () => {
 
     it('이번 달은 오늘 칸에 요청을 합친다', () => {
       const days = Array.from({ length: 31 }, (_, i) => (i < 4 ? 'missed' : 'future')) as MonthWidgetProps['goals'][string]['days'];
-      const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 4 };
+      const month = { ...card, month: 10, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 4 };
       const todayTap = { id: 'w3', goalId: 'run', kind: 'add' as const, at: t(7, 8), dateKey: '2026-10-07' };
       const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [todayTap] } as MonthWidgetProps, stale);
       expect(all(root).filter((e) => e.type === 'Image' && e.props.uiImage === 's')).toHaveLength(1);
@@ -118,7 +118,7 @@ describe('위젯 화면 로직', () => {
 
     it('이번 달은 지난 빈 날을 눌러 그 날짜에 붙이고, 앞날은 누르지 않는다 (2026-10-08)', () => {
       const days = Array.from({ length: 31 }, (_, i) => (i < 6 ? 'missed' : 'future')) as MonthWidgetProps['goals'][string]['days'];
-      const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
+      const month = { ...card, month: 10, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
       const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [] } as MonthWidgetProps, env(t(7, 9)));
       const day3 = all(root).find((e) => e.type === 'Button' && e.props.target === 'day-3')!;
       const out = (day3.props.onPress as () => { requests: { kind: string; dateKey: string }[] })();
@@ -180,11 +180,16 @@ describe('체험이 끝난 묶음 (2026-10-08)', () => {
 });
 
 describe('지금 붙일 칸 표시 (2026-10-16 결정 6 T1: 앱처럼 네 귀퉁이 괄호)', () => {
+  beforeEach(() => { jest.useFakeTimers(); jest.setSystemTime(t(7, 9)); });
+  afterEach(() => jest.useRealTimers());
   const props = (root: unknown) => JSON.stringify(all(root).map((e) => e.props));
   const rects = (root: unknown) => all(root).filter((e) => e.type === 'Rectangle').length;
+  // 달력 위젯은 지금 시각도 본다. 실제 시계가 10월을 지나면 오늘 칸이 사라지므로 항목 시각에 맞춰 고정한다.
+  beforeEach(() => jest.useFakeTimers({ now: t(7, 9) }));
+  afterEach(() => jest.useRealTimers());
   it('달력 위젯의 오늘 빈 칸은 괄호, 살구 테두리 없음', () => {
     const days = Array.from({ length: 31 }, (_, i) => (i < 6 ? 'missed' : 'future'));
-    const month = { ...card, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
+    const month = { ...card, month: 10, monthLabel: '10월', days, firstWeekday: 4, todayIndex: 6 };
     const root = ChagokMonth({ ...shared, goals: { run: month }, requests: [] } as unknown as MonthWidgetProps, env(t(7, 9)));
     expect(props(root)).not.toContain('#FD855F');
     expect(rects(root)).toBe(8);

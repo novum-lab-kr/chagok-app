@@ -1,10 +1,13 @@
 import {
   createGoal, listGoals, getGoal, deleteGoal, updateGoal, completeGoal, markCompletionSeen, reopenGoal,
-  extendSlots, extendEndDate, settleExpiredPeriods, countGoalContents, listGoalSummaries,
+  extendSlots, extendEndDate, settleExpiredPeriods, countGoalContents, listGoalSummaries, reorderGoals,
 } from '../src/repositories/goalRepository';
 import { placeSticker } from '../src/repositories/stickerRepository';
 import { upsertRecord } from '../src/repositories/recordRepository';
 import { withFreshDb } from './support/setup';
+import { getDb } from '../src/db/client';
+import { orderGoals } from '../src/domain/board';
+import { subscribeLocalChange } from '../src/sync/changes';
 
 withFreshDb();
 
@@ -46,9 +49,9 @@ describe('goalRepository', () => {
     expect((await getGoal(g.id))?.defaultStickerId).toBe('shoe');
   });
 
-  it('기본 스티커를 안 주면 새싹이가 된다', async () => {
+  it('기본 스티커를 안 주면 네잎클로버가 된다', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
-    expect(g.defaultStickerId).toBe('basic.sprout');
+    expect(g.defaultStickerId).toBe('basic.clover');
   });
 
   it('이름과 기본 스티커를 바꿀 수 있다', async () => {
@@ -198,6 +201,19 @@ describe('목록 요약 (PRD 4.1, 6.3)', () => {
     const [row] = await listGoalSummaries(nextMonth);
     expect(row).toMatchObject({ placedAll: 1, placedInBasis: 0 });
   });
+
+  it('memberCount는 보기만 하는 사람(viewer)을 빼고 센다. 혼자 목표는 1', async () => {
+    const solo = await createGoal({ name: '혼자', boardType: 'tally', totalSlots: 5 });
+    const shared = await createGoal({ name: '함께', boardType: 'tally', totalSlots: 5 });
+    const db = await getDb();
+    await db.run("UPDATE goals SET mode = 'each' WHERE id = ?", shared.id);
+    for (const [user, role] of [['u1', 'member'], ['u2', 'member'], ['u3', 'viewer']]) {
+      await db.run('INSERT INTO goal_members (goal_id, user_id, role, joined_at) VALUES (?, ?, ?, 1)', shared.id, user, role);
+    }
+    const byId = Object.fromEntries((await listGoalSummaries(new Date())).map((r) => [r.goal.id, r]));
+    expect(byId[solo.id].memberCount).toBe(1);
+    expect(byId[shared.id].memberCount).toBe(3);
+  });
 });
 
 describe('외래키가 꺼진 연결에서도 (expo 트랜잭션 연결)', () => {
@@ -251,3 +267,119 @@ describe('목표 설정에서 칸 늘리기 (2026-09-30)', () => {
     await expect(updateGoal(g.id, { totalSlots: 5 })).rejects.toThrow('완성한 판');
   });
 });
+
+describe('내 목표 순서 (PRD 4.1, 2026-10-30)', () => {
+  const shown = async () => orderGoals(await listGoals()).active.map((goal) => goal.name);
+  const outboxGoals = async () => (await (await getDb()).all<{ row_id: string }>(
+    "SELECT row_id FROM outbox WHERE entity = 'member' ORDER BY row_id",
+  )).map((row) => row.row_id);
+
+  it('새 목표는 맨 위에 온다', async () => {
+    await createGoal({ name: '첫째', boardType: 'tally', totalSlots: 5 });
+    await createGoal({ name: '둘째', boardType: 'tally', totalSlots: 5 });
+    const third = await createGoal({ name: '셋째', boardType: 'tally', totalSlots: 5 });
+    expect(await shown()).toEqual(['셋째', '둘째', '첫째']);
+    expect(third.sortOrder).toBe(-2);
+  });
+
+  it('스티커를 붙여도 순서가 바뀌지 않는다', async () => {
+    const first = await createGoal({ name: '첫째', boardType: 'tally', totalSlots: 5 });
+    await createGoal({ name: '둘째', boardType: 'tally', totalSlots: 5 });
+    await placeSticker(first.id, 0);
+    expect(await shown()).toEqual(['둘째', '첫째']);
+  });
+
+  it('옮긴 순서를 저장하고 다시 읽어도 그대로다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    const c = await createGoal({ name: 'c', boardType: 'tally', totalSlots: 5 });
+    await reorderGoals([a.id, c.id, b.id]);
+    expect(await shown()).toEqual(['a', 'c', 'b']);
+    // 그다음 만든 목표는 옮긴 순서 위에 온다
+    await createGoal({ name: 'd', boardType: 'tally', totalSlots: 5 });
+    expect(await shown()).toEqual(['d', 'a', 'c', 'b']);
+  });
+
+  it('자리가 바뀐 목표만 outbox에 넣고 updated_at을 바꾼다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    const c = await createGoal({ name: 'c', boardType: 'tally', totalSlots: 5 });
+    await reorderGoals([c.id, b.id, a.id]); // 보이는 순서 그대로 0부터 다시 매긴다
+    const db = await getDb();
+    await db.exec('DELETE FROM outbox');
+    const before = await db.first<{ updated_at: number }>('SELECT updated_at FROM goal_members WHERE goal_id = ?', c.id);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await reorderGoals([c.id, a.id, b.id]);
+    expect(await outboxGoals()).toEqual([a.id, b.id].sort());
+    expect(await db.first<{ updated_at: number }>('SELECT updated_at FROM goal_members WHERE goal_id = ?', c.id)).toEqual(before);
+  });
+
+  it('옮기면 로컬 변경 신호를 보낸다 (위젯과 워치 갱신)', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    let notified = 0;
+    const off = subscribeLocalChange(() => { notified++; });
+    await reorderGoals([a.id, b.id]);
+    off();
+    expect(notified).toBeGreaterThan(0);
+  });
+
+  it('그사이 지워진 목표는 건너뛴다', async () => {
+    const a = await createGoal({ name: 'a', boardType: 'tally', totalSlots: 5 });
+    const b = await createGoal({ name: 'b', boardType: 'tally', totalSlots: 5 });
+    await deleteGoal(b.id);
+    await expect(reorderGoals([b.id, a.id])).resolves.toBeUndefined();
+    expect((await getGoal(a.id))?.sortOrder).toBe(1);
+  });
+});
+
+describe('goalRepository: goals + 내 멤버 행', () => {
+  it('createGoal은 혼자 목표(solo)와 owner 멤버 행을 한 번에 만든다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3, defaultStickerId: 'basic.star' });
+    expect(g).toMatchObject({ mode: 'solo', role: 'owner', defaultStickerId: 'basic.star' });
+    const db = await getDb();
+    expect(await db.first('SELECT mode, owner_id, max_members FROM goals WHERE id = ?', g.id)).toEqual({ mode: 'solo', owner_id: null, max_members: 1 });
+    expect(await db.first('SELECT user_id, role, sticker_id, joined_at FROM goal_members WHERE goal_id = ?', g.id))
+      .toEqual({ user_id: 'me', role: 'owner', sticker_id: 'basic.star', joined_at: g.createdAt });
+  });
+
+  it('사람마다 값(기본 스티커, 완성, 순서)은 내 멤버 행에서 읽는다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const db = await getDb();
+    await db.run("UPDATE goal_members SET sticker_id = 'basic.cat', completed_at = 77, completion_seen = 1, last_placed_at = 66, sort_order = 4 WHERE goal_id = ?", g.id);
+    expect(await getGoal(g.id)).toMatchObject({ defaultStickerId: 'basic.cat', completedAt: 77, completionSeen: true, lastPlacedAt: 66, sortOrder: 4 });
+  });
+
+  it('내 멤버 행이 없는 목표는 목록, 요약, 조회에 나오지 않는다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const db = await getDb();
+    await db.run("DELETE FROM goal_members WHERE goal_id = ?", g.id);
+    expect(await listGoals()).toEqual([]);
+    expect(await listGoalSummaries(new Date())).toEqual([]);
+    expect(await getGoal(g.id)).toBeNull();
+  });
+
+  it('함께 목표에서 목표 자체를 바꾸는 쓰기는 던지고, 내 값만 바꾸는 쓰기는 된다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    const db = await getDb();
+    await db.run("UPDATE goals SET mode = 'each' WHERE id = ?", g.id);
+    await expect(updateGoal(g.id, { name: '걷기' })).rejects.toThrow('함께 목표');
+    await expect(updateGoal(g.id, { totalSlots: 5 })).rejects.toThrow('함께 목표');
+    await expect(extendSlots(g.id, 2)).rejects.toThrow('함께 목표');
+    await expect(extendEndDate(g.id, '2026-12-31')).rejects.toThrow('함께 목표');
+    await expect(deleteGoal(g.id)).rejects.toThrow('함께 목표');
+    expect((await getGoal(g.id))?.name).toBe('산책');
+    await updateGoal(g.id, { defaultStickerId: 'basic.star' });
+    await completeGoal(g.id, 5);
+    expect(await getGoal(g.id)).toMatchObject({ mode: 'each', defaultStickerId: 'basic.star', completedAt: 5 });
+  });
+
+  it('목표를 지우면 내 멤버 행과 올리지 못한 멤버 항목도 사라진다', async () => {
+    const g = await createGoal({ name: '산책', boardType: 'tally', totalSlots: 3 });
+    await deleteGoal(g.id);
+    const db = await getDb();
+    expect(await db.all('SELECT * FROM goal_members')).toEqual([]);
+    expect(await db.all("SELECT * FROM outbox WHERE entity = 'member'")).toEqual([]);
+  });
+});
+

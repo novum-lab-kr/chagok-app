@@ -18,20 +18,20 @@ const undo = (goalId: string, id: string, at = now): WidgetRequest => ({ id, goa
 describe('applyWidgetRequests', () => {
   it('요청 id를 스티커 id로 붙인다', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
-    expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: true });
+    expect(await applyWidgetRequests([add(g.id, 'w1')], 'widget')).toEqual({ handled: ['w1'], changed: true });
     expect((await listStickers(g.id)).map((s) => s.id)).toEqual(['w1']);
   });
 
   it('같은 요청을 두 번 처리해도 한 장 (Review Focus 3)', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
-    await applyWidgetRequests([add(g.id, 'w1')]);
-    expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: false });
+    await applyWidgetRequests([add(g.id, 'w1')], 'widget');
+    expect(await applyWidgetRequests([add(g.id, 'w1')], 'widget')).toEqual({ handled: ['w1'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(1);
   });
 
   it('시각 순서대로 처리한다: 붙이고 되돌리면 남는 것이 없다', async () => {
     const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
-    const out = await applyWidgetRequests([undo(g.id, 'w2', now + 1), add(g.id, 'w1')]);
+    const out = await applyWidgetRequests([undo(g.id, 'w2', now + 1), add(g.id, 'w1')], 'widget');
     expect(out.handled).toEqual(['w1', 'w2']);
     expect(await listStickers(g.id)).toHaveLength(0);
   });
@@ -39,14 +39,14 @@ describe('applyWidgetRequests', () => {
   it('지운 목표·완성한 판은 건너뛴다 (Review Focus 4)', async () => {
     const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
     await deleteGoal(g.id);
-    expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: false });
+    expect(await applyWidgetRequests([add(g.id, 'w1')], 'widget')).toEqual({ handled: ['w1'], changed: false });
   });
 
   it('기록이 있으면 떼지 않는다 (Review Focus 6)', async () => {
     const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
     const s = await placeSticker(g.id, new Date(now).getDate() - 1);
     await upsertRecord(s.id, { memo: '좋았다', photoUri: null });
-    await applyWidgetRequests([undo(g.id, 'w1', Date.now())]);
+    await applyWidgetRequests([undo(g.id, 'w1', Date.now())], 'widget');
     expect(await listStickers(g.id)).toHaveLength(1);
   });
 
@@ -55,18 +55,18 @@ describe('applyWidgetRequests', () => {
     await placeSticker(g.id, 0);
     await placeSticker(g.id, 1);
     const tap = Date.now(); // 되돌리기는 누른 순간까지 붙은 스티커만 본다
-    expect(await applyWidgetRequests([undo(g.id, 'u1', tap)])).toEqual({ handled: ['u1'], changed: true });
+    expect(await applyWidgetRequests([undo(g.id, 'u1', tap)], 'widget')).toEqual({ handled: ['u1'], changed: true });
     expect(await listStickers(g.id)).toHaveLength(1);
-    expect(await applyWidgetRequests([undo(g.id, 'u1', tap)])).toEqual({ handled: ['u1'], changed: false });
+    expect(await applyWidgetRequests([undo(g.id, 'u1', tap)], 'widget')).toEqual({ handled: ['u1'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(1);
   });
 
   it('붙이고 되돌린 뒤 같은 요청을 다시 처리해도 다시 붙지 않는다', async () => {
     const g = await createGoal({ name: '산책', boardType: 'calendar', totalSlots: null });
     const reqs = [add(g.id, 'w1'), undo(g.id, 'w2', now + 1)];
-    await applyWidgetRequests(reqs);
+    await applyWidgetRequests(reqs, 'widget');
     expect(await listStickers(g.id)).toHaveLength(0);
-    await applyWidgetRequests(reqs);
+    await applyWidgetRequests(reqs, 'widget');
     expect(await listStickers(g.id)).toHaveLength(0);
   });
 
@@ -77,12 +77,12 @@ describe('applyWidgetRequests', () => {
       (opts?.id === 'bad' ? Promise.reject(new Error('저장 실패')) : real(goalId, slot, type, opts)));
     try {
       const reqs = [add(g.id, 'bad'), add(g.id, 'next', now + 1)];
-      expect(await applyWidgetRequests(reqs)).toEqual({ handled: [], changed: false });
-      expect(await applyWidgetRequests(reqs)).toEqual({ handled: [], changed: false });
-      expect(await applyWidgetRequests(reqs)).toEqual({ handled: ['bad', 'next'], changed: true });
+      expect(await applyWidgetRequests(reqs, 'widget')).toEqual({ handled: [], changed: false });
+      expect(await applyWidgetRequests(reqs, 'widget')).toEqual({ handled: [], changed: false });
+      expect(await applyWidgetRequests(reqs, 'widget')).toEqual({ handled: ['bad', 'next'], changed: true });
       expect((await listStickers(g.id)).map((s) => s.id)).toEqual(['next']);
       // 넘긴 요청은 다시 오지 않는다
-      expect(await applyWidgetRequests(reqs)).toEqual({ handled: ['bad', 'next'], changed: false });
+      expect(await applyWidgetRequests(reqs, 'widget')).toEqual({ handled: ['bad', 'next'], changed: false });
     } finally {
       spy.mockRestore();
     }
@@ -94,7 +94,7 @@ describe('누른 날 기록 (placed_days)', () => {
     const { getDb } = await import('../src/db/client');
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
     const yesterday = now - 24 * 60 * 60 * 1000;
-    await applyWidgetRequests([add(g.id, 'w1', yesterday)]);
+    await applyWidgetRequests([add(g.id, 'w1', yesterday)], 'widget');
     const db = await getDb();
     const days = (await db.all<{ date_key: string }>('SELECT date_key FROM placed_days')).map((r) => r.date_key);
     expect(days).toEqual([localDateKey(yesterday)]);
@@ -104,14 +104,14 @@ describe('누른 날 기록 (placed_days)', () => {
 describe('체험이 끝난 묶음 (2026-10-08)', () => {
   it('잠긴 묶음 스티커가 기본인 목표의 요청은 붙이지 않고 처리한 것으로 둔다', async () => {
     const g = await createGoal({ name: '동물', boardType: 'tally', totalSlots: 10, defaultStickerId: 'sports_normal.run' });
-    expect(await applyWidgetRequests([add(g.id, 'w1')])).toEqual({ handled: ['w1'], changed: false });
+    expect(await applyWidgetRequests([add(g.id, 'w1')], 'widget')).toEqual({ handled: ['w1'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(0);
   });
   it('워치 완성 요청은 마지막 칸을 붙이고 판을 완성한다', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 2 });
     await placeSticker(g.id, 0);
     const r: WidgetRequest = { ...add(g.id, 'w-last'), complete: true };
-    expect(await applyWidgetRequests([r])).toEqual({ handled: ['w-last'], changed: true });
+    expect(await applyWidgetRequests([r], 'widget')).toEqual({ handled: ['w-last'], changed: true });
     expect((await getGoal(g.id))!.completedAt).not.toBeNull();
   });
 
@@ -119,12 +119,12 @@ describe('체험이 끝난 묶음 (2026-10-08)', () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 1 });
     await placeSticker(g.id, 0);
     const r: WidgetRequest = { ...add(g.id, 'w-full'), complete: true };
-    expect(await applyWidgetRequests([r])).toEqual({ handled: ['w-full'], changed: false });
+    expect(await applyWidgetRequests([r], 'widget')).toEqual({ handled: ['w-full'], changed: false });
     expect(await listStickers(g.id)).toHaveLength(1);
   });
   it('동시에 불려도 처리한 요청 id를 서로 지우지 않는다 (최종 검토 3)', async () => {
     const g = await createGoal({ name: '독서', boardType: 'tally', totalSlots: 10 });
-    await Promise.all([applyWidgetRequests([add(g.id, 'c1')]), applyWidgetRequests([add(g.id, 'c2', now + 1)])]);
+    await Promise.all([applyWidgetRequests([add(g.id, 'c1')], 'widget'), applyWidgetRequests([add(g.id, 'c2', now + 1)], 'widget')]);
     const done = JSON.parse((await getSetting('widgetHandledRequests')) ?? '[]') as string[];
     expect(done.sort()).toEqual(['c1', 'c2']);
   });

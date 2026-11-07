@@ -13,13 +13,16 @@ const grid: Record<string, [row: number, col: number]> = {
   // 1 일상 기록
   widget: [1, 0], watch: [1, 1], list: [1, 2], new: [1, 3], detail: [1, 4], record: [1, 5], photos: [1, 6], 'records-tab': [1, 7], 'records-feed': [1, 8],
   // 2 목표 관리·판 완료
-  'goal-settings': [2, 4], 'goal-delete': [2, 5], complete: [2, 6], extend: [2, 7], 'completed-board': [2, 8],
+  'analytics-consent': [2, 3], 'goal-settings': [2, 4], 'goal-delete': [2, 5], complete: [2, 6], extend: [2, 7], 'completed-board': [2, 8],
   // 3 앱 설정·정보
-  'app-settings': [3, 2], policies: [3, 3], license: [3, 4], 'policy-web': [3, 5], mail: [3, 6],
+  'app-settings': [3, 2], policies: [3, 3], license: [3, 4], 'policy-web': [3, 5], mail: [3, 6], 'send-info': [3, 1],
   // 4 계정 삭제
   'account-delete': [4, 3], deleted: [4, 4],
   // 5 스티커 묶음·구매
-  'stickers-tab': [5, 2], 'sticker-chooser': [5, 3], pack: [5, 4], 'store-pay': [5, 5], 'rewarded-ad': [5, 6],
+  'stickers-tab': [5, 2], 'sticker-chooser': [5, 3], pack: [5, 4], subscription: [5, 5], 'store-pay': [5, 6], 'rewarded-ad': [5, 7],
+  // 6 함께 목표 (PRD 4.15)
+  'together-sheet': [6, 2], 'together-new': [6, 3], 'share-sheet': [6, 4], 'invite-login': [6, 5], 'invite-join': [6, 6], 'invite-problem': [6, 7],
+  'together-board': [6, 8], 'one-board': [6, 9], 'friend-board': [6, 10], 'show-board': [6, 11], 'together-settings': [6, 12], 'block-pick': [6, 13], 'report-pick': [6, 14], blocked: [6, 15],
 };
 
 export const appFlow = {

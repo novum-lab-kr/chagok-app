@@ -3,15 +3,15 @@
 import Foundation
 
 enum Complication {
-  /** 워치 앱과 컴플리케이션이 함께 쓰는 저장소 */
-  static let appGroup = "group.com.novumlab.chagok.watch"
+  /** 워치 앱과 컴플리케이션이 함께 쓰는 저장소. 「group.」 + 워치 앱 ID라 개발 앱(…dev.watch)은 따로 쓴다 (targets/watch/expo-target.config.js) */
+  static let appGroup = "group." + (Bundle.main.bundleIdentifier ?? "com.novumlab.chagok.watch")
   static let textKey = "complicationText"
   static let imageFile = "complication-chagok.png"
 
   static func text(lastGoal: WatchGoal?, growth: Int) -> String {
-    if let g = lastGoal, g.placedToday { return "\(g.name) 스티커를\n오늘 붙였어요" }
-    if growth == 0 { return "폰에서 첫 목표를\n만들어 보세요" }
-    return "블록 \(growth)개를\n쌓았어요"
+    if let g = lastGoal, g.placedToday { return Language.pick("\(g.name) 스티커를\n오늘 붙였어요", "\(g.name)\nplaced today") }
+    if growth == 0 { return Language.pick("폰에서 첫 목표를\n만들어 보세요", "Create a goal\non your phone") }
+    return Language.pick("블록 \(growth)개를\n쌓았어요", "\(growth) blocks\nstacked")
   }
 }
 

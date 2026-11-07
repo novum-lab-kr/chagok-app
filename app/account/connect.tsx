@@ -1,43 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { track } from '../../src/analytics';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import {
-  AccountLoginScreen, AppleLoginButton, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
+  AccountLoginScreen, AppleLoginButton, InviteLoginPrompt, ConsentSheet, GoogleLoginButton, KakaoLoginButton, LOGIN_BUTTON_HEIGHT, hasCustomAppleButton, PixelBusyModal, PixelButton, PixelDialogModal, RestoreConflictScreen, accountDialogs,
   type RecordSnapshot, type RestoreSide,
 } from '../../src/design-system';
 import { goBackOrHome } from '../../src/app-data/goBack';
+import { clearSignInSessions } from '../../src/app-data/signOut';
+import { signOutDeps } from '../../src/app-data/signOutDeps';
 import { removeManagedRecordPhoto } from '../../src/app-data/recordPhotos';
 import { useDialog } from '../../src/app-data/useDialog';
 import { localDateKey } from '../../src/domain/dates';
 import { currentVersions, fetchPolicyManifest } from '../../src/policy/manifest';
 import { openPolicy } from '../../src/policy/openPolicy';
 import { getSetting, setFlag, setSetting } from '../../src/repositories/appSettingsRepository';
-import { deleteAccountOnServer, hasConsented, recordConsent, signOutLocal } from '../../src/sync/account';
+import { deleteAccountOnServer, hasConsented, recordConsent } from '../../src/sync/account';
 import { providerFromAuth } from '../../src/sync/accountStatus';
 import { syncDepsFor } from '../../src/sync/appSync';
 import { decideConnection } from '../../src/sync/connectAccount';
 import { enqueueAll } from '../../src/sync/outbox';
 import type { PushDeps } from '../../src/sync/push';
 import {
-  applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, summarizeDevice, summarizeSnapshot,
+  applyRestore, downloadRestoredPhotos, hasLocalData, pullAll, replaceServerWithDevice, resetForNewAccount, summarizeDevice, summarizeSnapshot,
   type RecordSummary, type ServerSnapshot,
 } from '../../src/sync/restore';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { signInWithApple } from '../../src/sync/signIn/apple';
 import { appleSignInAvailable, expoAppleDeps } from '../../src/sync/signIn/expoApple';
-import { expoGoogleDeps, signOutGoogle } from '../../src/sync/signIn/expoGoogle';
-import { completeKakaoSignUp, expoKakaoDeps, signOutKakao } from '../../src/sync/signIn/expoKakao';
+import { expoGoogleDeps } from '../../src/sync/signIn/expoGoogle';
+import { completeKakaoSignUp, expoKakaoDeps } from '../../src/sync/signIn/expoKakao';
 import { signInWithGoogle } from '../../src/sync/signIn/google';
 import { signInWithKakao } from '../../src/sync/signIn/kakao';
-import { clearStoredSession, getSupabase } from '../../src/sync/supabaseClient';
+import { getSupabase } from '../../src/sync/supabaseClient';
 import { beginConnect, endConnect, markRestored } from '../../src/sync/connectMarker';
 import { pauseSync, resumeSync } from '../../src/sync/syncGate';
+import { t } from '../../src/i18n';
 
 const DEV_EMAIL = process.env.EXPO_PUBLIC_DEV_EMAIL;
 const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_PASSWORD;
 
-type From = 'start' | 'settings' | 'relogin';
+/**
+ * together: 목표 탭 + 시트 [친구와 함께]에서 왔다. 연결이 끝나면 친구와 함께 만들기로 간다(PRD 4.15).
+ * invite: 초대 링크 화면(app/invite/[code].tsx)이 로그인 전에 이 화면을 안에 그린다. 로그인 자리가 「초대 링크 로그인 전」 모양이고, 끝나면 onDone으로 초대 화면에 돌려준다.
+ */
+type From = 'start' | 'settings' | 'relogin' | 'together' | 'invite';
+/** from이 invite일 때 로그인 화면에 보이는 초대 (초대 미리보기 값) */
+type InviteInfo = { ownerName: string; goalName: string };
 type Step =
   | { kind: 'login' }
   | { kind: 'restoring' }
@@ -54,13 +64,13 @@ type ConsentAnswer = 'agree' | 'quit' | 'abort';
 
 type Method = 'apple' | 'kakao' | 'google' | 'dev';
 
-const connectFailed = { title: '연결하지 못했어요', description: '인터넷 연결을 확인하고 다시 시도해 주세요.', primaryLabel: '확인' };
+const connectFailed = () => ({ title: t('connect.failedTitle'), description: t('account.checkInternetRetry'), primaryLabel: t('common.ok') });
 /** Apple이 이유를 알려 주지 않은 실패(예: 기기에 Apple 계정이 없어 안내를 닫음). 원인을 짐작하지 않는다 (2026-10-22 사용자 결정). */
-const connectFailedUnknown = { title: '연결하지 못했어요', description: '다시 시도해 주세요.', primaryLabel: '확인' };
+const connectFailedUnknown = () => ({ title: t('connect.failedTitle'), description: t('connect.tryAgain'), primaryLabel: t('common.ok') });
 
 function toCard(s: RecordSummary): RecordSnapshot {
   const d = s.updatedAt === null ? null : new Date(s.updatedAt);
-  return { goals: s.goals, stickers: s.stickers, goalNames: s.goalNames, updatedAt: d ? `${d.getMonth() + 1}월 ${d.getDate()}일` : '없음' };
+  return { goals: s.goals, stickers: s.stickers, goalNames: s.goalNames, updatedAt: d ? t('date.monthDay', d.getMonth() + 1, d.getDate()) : t('period.none') };
 }
 
 /**
@@ -69,17 +79,19 @@ function toCard(s: RecordSummary): RecordSnapshot {
  * 연결이 끝날 때까지 자동 전송을 잠근다 — 복원 충돌을 고르기 전에 기기 기록이 올라가지 않게.
  */
 export default function ConnectAccountRoute() {
-  const { from = 'settings' } = useLocalSearchParams<{ from?: From }>();
+  const { from: raw } = useLocalSearchParams<{ from?: string }>();
+  // start와 invite는 화면 안에서 그릴 때만 쓴다(onDone이 있어야 끝난 뒤 돌아갈 곳이 있다). 링크로 들어온 값은 거른다
+  const from: From = raw === 'relogin' || raw === 'together' ? raw : 'settings';
   return <ConnectAccount from={from} />;
 }
 
 /** 첫 실행 시작 화면(홈)은 이 화면을 그대로 띄운다 — from 'start'면 끝날 때 onDone, [로그인 없이 시작하기]는 onLocal. */
-export function ConnectAccount(props: { from: From; onDone?: (restored: boolean) => void; onLocal?: () => void }) {
+export function ConnectAccount(props: { from: From; onDone?: (restored: boolean) => void; onLocal?: () => void; invite?: InviteInfo }) {
   const supabase = getSupabase();
   return supabase ? <Connect supabase={supabase} {...props} /> : null;
 }
 
-function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient; from: From; onDone?: (restored: boolean) => void; onLocal?: () => void }) {
+function Connect({ supabase, from, onDone, onLocal, invite }: { supabase: SupabaseClient; from: From; onDone?: (restored: boolean) => void; onLocal?: () => void; invite?: InviteInfo }) {
   const navigation = useNavigation();
   const { ask, dialog } = useDialog();
   const [age, setAge] = useState(false);
@@ -146,10 +158,17 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
       await setFlag('startDone', true);
       if (restored) await setFlag('tutorialDone', true);
     }
+    // 앱을 처음 깔고 초대 링크로 바로 로그인했다. 시작 화면(로그인할지 고르기)은 이미 지난 것으로 둔다
+    if (from === 'invite') {
+      await setFlag('startDone', true);
+      // 복원했으면 이미 쓰던 사람이라 첫 튜토리얼을 다시 보이지 않는다(시작 화면과 같음)
+      if (restored) await setFlag('tutorialDone', true);
+    }
     settled.current = true;
     await endConnect();
     resumeSync();
-    if (from === 'start') onDone?.(restored);
+    if (from === 'start' || from === 'invite') onDone?.(restored);
+    else if (from === 'together') router.replace('/goal/together');
     else goBackOrHome();
   };
 
@@ -182,10 +201,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     if (consentAnswer.current) answerConsent('abort');
     setConsent(null);
     try {
-      await signOutLocal(supabase, clearStoredSession);
-      // 카카오 SDK 토큰도 지운다 — 다음 시도에서 다른 카카오 계정을 고를 수 있게(카카오로 들어온 적이 없으면 아무 일도 없다)
-      await signOutKakao();
-      await signOutGoogle();
+      await clearSignInSessions(signOutDeps(supabase));
       await setSetting('accountUserId', previous.current);
       await endConnect();
     } finally {
@@ -212,7 +228,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     const s = session.current!;
     setStep({ kind: 'restoring' });
     try {
-      const data = snap ?? await pullAll(s.deps.server);
+      const data = snap ?? await pullAll({ server: s.deps.server, userId: s.userId });
       const { photos, oldPhotoUris } = await applyRestore(data);
       // 기기가 이제 이 계정 기록이다. 이 뒤에서 실패해 취소해도 이전 계정 표시로 되돌리지 않게 먼저 연결한다.
       await link(s.userId);
@@ -230,8 +246,9 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     const s = session.current!;
     setStep({ kind: 'restoring' });
     try {
-      await replaceServerWithDevice(s.deps.server, s.deps.deviceId);
+      const { removedPhotoUris } = await replaceServerWithDevice({ server: s.deps.server, userId: s.userId }, s.deps.deviceId);
       await link(s.userId);
+      removedPhotoUris.forEach(removeManagedRecordPhoto);
       await finish(false); // 사진은 잠금이 풀린 뒤 자동 전송이 올린다
     } catch {
       setFailed(() => () => { setFailed(null); void keepDevice(); });
@@ -248,7 +265,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
       try {
         versions = currentVersions(await fetchPolicyManifest(), localDateKey(Date.now()));
       } catch {
-        await ask(connectFailed);
+        await ask(connectFailed());
         return;
       }
       // 여기서부터 끝나거나 취소될 때까지 전송을 잠근다. 앱이 꺼져도 다음 실행에서 되돌린다 (connectMarker).
@@ -263,6 +280,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         signingIn.current = true;
         // 로그인 실패도 check() 뒤에 던진다 — 화면을 떠난 시도가 다이얼로그를 띄우지 않게
         let signIn: { user: User } | 'canceled' | { failed: unknown };
+        track('login_start', { method });
         try {
           signIn = await signInWith(method);
         } catch (e) {
@@ -271,8 +289,15 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
           signingIn.current = false;
         }
         check();
-        if (signIn === 'canceled') throw CANCELED;
-        if ('failed' in signIn) throw signIn.failed;
+        if (signIn === 'canceled') {
+          track('login_cancel', { method });
+          throw CANCELED;
+        }
+        if ('failed' in signIn) {
+          track('login_fail', { method });
+          throw signIn.failed;
+        }
+        track('login_success', { method });
         const { user } = signIn;
         // 카카오에 가입 완료를 알린다. 로그인할 때마다 불러 한 번 실패해도 다음 로그인에서 메운다. 기다리지 않는다
         if (method === 'kakao') void completeKakaoSignUp();
@@ -306,6 +331,11 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         const deviceHasData = await hasLocalData();
         check();
         const plan = decideConnection({ previousUserId: previous.current, userId: user.id, deviceHasData, serverHasData });
+        if (plan === 'linkOnly' || plan === 'firstBackup') {
+          // 다른 계정이다. 지난 계정의 커서와 함께 목표를 비워 이 계정으로 처음부터 받는다
+          const { removedPhotoUris } = await resetForNewAccount();
+          removedPhotoUris.forEach(removeManagedRecordPhoto);
+        }
         if (plan === 'same' || plan === 'linkOnly') {
           await link(user.id);
           await finish(false);
@@ -317,15 +347,13 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         } else if (plan === 'restore') {
           await runRestore(null);
         } else {
-          const snap = await pullAll(deps.server);
+          const snap = await pullAll({ server: deps.server, userId: user.id });
           setStep({ kind: 'conflict', snap, server: toCard(summarizeSnapshot(snap)), device: toCard(await summarizeDevice()), choice: 'server' });
         }
       } catch (e) {
         if (e === ABORTED) {
           // 취소가 이미 정리했다. 그 뒤에 생긴 세션과, 로그인 이벤트가 늦게 쓴 계정 기록을 되돌리고 잠금을 푼다.
-          await signOutLocal(supabase, clearStoredSession);
-          await signOutKakao();
-          await signOutGoogle();
+          await clearSignInSessions(signOutDeps(supabase));
           await setSetting('accountUserId', previous.current);
           resumeSync();
           return;
@@ -334,7 +362,7 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
         if (e === CANCELED) return;
         // 사용자에게는 일반 안내만 보이니, 개발 중에는 실제 이유를 Metro 로그로 본다
         if (__DEV__) console.warn('[connect] failed', e);
-        await ask((e as { code?: unknown } | null)?.code === 'ERR_REQUEST_UNKNOWN' ? connectFailedUnknown : connectFailed);
+        await ask((e as { code?: unknown } | null)?.code === 'ERR_REQUEST_UNKNOWN' ? connectFailedUnknown() : connectFailed());
       }
     } finally {
       setBusy(false);
@@ -354,32 +382,39 @@ function Connect({ supabase, from, onDone, onLocal }: { supabase: SupabaseClient
     );
   }
 
-  return (
-    <>
-      <AccountLoginScreen
+  // 로그인 버튼은 계정 연결과 초대가 같은 것을 쓴다
+  const loginButtons = <>
+    {/* 순서 카카오 → Google → Apple(Apple은 덜 쓰여 맨 아래), 글자는 셋 다 「계속하기」 (2026-10-22 사용자 결정) */}
+    <KakaoLoginButton onPress={() => void connect('kakao')} />
+    <GoogleLoginButton onPress={() => void connect('google')} />
+    {/* Apple: 로고 파일이 있으면 HIG대로 직접 만든 버튼(로고를 다른 버튼과 맞춤), 없으면 기본 버튼. 기본 버튼은 밝은 바탕이라 흰 바탕 테두리, 모서리 12 (HIG, 2026-10-21 시안 2안). */}
+    {appleReady && hasCustomAppleButton && <AppleLoginButton onPress={() => void connect('apple')} />}
+    {appleReady && !hasCustomAppleButton && (
+      <AppleAuthentication.AppleAuthenticationButton
+        buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+        buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
+        cornerRadius={12}
+        style={{ width: '100%', height: LOGIN_BUTTON_HEIGHT }}
+        onPress={() => void connect('apple')}
+      />
+    )}
+    {__DEV__ && DEV_EMAIL && DEV_PASSWORD
+      ? <PixelButton label="개발 계정으로 계속" loading={busy && !consent} onPress={() => void connect('dev')} />
+      : null}
+  </>;
+  const loginScreen = from === 'invite' && invite
+    ? <InviteLoginPrompt ownerName={invite.ownerName} goalName={invite.goalName} loginButtons={loginButtons}
+        onBack={() => { if (!busy) goBackOrHome(); }} />
+    : <AccountLoginScreen
         onBack={from === 'start' ? undefined : () => { if (!busy) goBackOrHome(); }}
         onLocal={from === 'start' ? onLocal : undefined}
         busy={busy}
-        loginButtons={<>
-          {/* 순서 카카오 → Google → Apple(Apple은 덜 쓰여 맨 아래), 글자는 셋 다 「계속하기」 (2026-10-22 사용자 결정) */}
-          <KakaoLoginButton onPress={() => void connect('kakao')} />
-          <GoogleLoginButton onPress={() => void connect('google')} />
-          {/* Apple: 로고 파일이 있으면 HIG대로 직접 만든 버튼(로고를 다른 버튼과 맞춤), 없으면 기본 버튼. 기본 버튼은 밝은 바탕이라 흰 바탕 테두리, 모서리 12 (HIG, 2026-10-21 시안 2안). */}
-          {appleReady && hasCustomAppleButton && <AppleLoginButton onPress={() => void connect('apple')} />}
-          {appleReady && !hasCustomAppleButton && (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
-              cornerRadius={12}
-              style={{ width: '100%', height: LOGIN_BUTTON_HEIGHT }}
-              onPress={() => void connect('apple')}
-            />
-          )}
-          {__DEV__ && DEV_EMAIL && DEV_PASSWORD
-            ? <PixelButton label="개발 계정으로 계속" loading={busy && !consent} onPress={() => void connect('dev')} />
-            : null}
-        </>}
-      />
+        loginButtons={loginButtons}
+      />;
+
+  return (
+    <>
+      {loginScreen}
       <ConsentSheet
         visible={consent !== null}
         ageChecked={age}

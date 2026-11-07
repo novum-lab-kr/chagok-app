@@ -4,6 +4,8 @@ import { canUseSticker, packStatus, type PackAccess } from '../domain/packs';
 import { colorStickerPacks, colorStickersInPack, getColorSticker, type ColorStickerId, type ColorStickerPackId } from '../stickers/color/catalog';
 import { DEFAULT_COLOR_STICKER, normalizeStickerId } from '../stickers/stickerIds';
 import type { PriceLabels } from '../purchases/price';
+import { t } from '../i18n';
+import { packName } from '../i18n/stickerNames';
 
 /** 「기본 스티커」·묶음 화면의 묶음 목록. colorStickerPacks 순서 (PRD 4.12). 가격은 스토어에서 받아 온 것만 붙인다. */
 export function packViews(access: readonly PackAccess[], now: number, prices: PriceLabels = {}): PackView[] {
@@ -11,8 +13,9 @@ export function packViews(access: readonly PackAccess[], now: number, prices: Pr
     const s = packStatus(p.id, access, now);
     return {
       id: p.id,
-      label: p.label,
-      state: s.state,
+      label: packName(p.id),
+      // 구독 중은 쓸 수 있는 묶음으로 다루되 배지는 두지 않는다 — 구독하면 모든 묶음을 쓰니 표시가 필요 없다 (2026-11-04 사용자, 이전: 「구독 중」 배지)
+      state: s.state === 'subscribed' ? 'trial' : s.state,
       stickers: colorStickersInPack(p.id).map((c) => c.id as ColorStickerId),
       ...(s.trialLabel ? { trialLabel: s.trialLabel } : {}),
       ...(prices[p.id] ? { price: prices[p.id] } : {}),
@@ -29,10 +32,7 @@ export const samplePlacement = (pack: PackView) => pack.stickers.slice(0, 5);
  */
 export function endLabel(endsAt: number, now: number): string {
   const d = new Date(endsAt);
-  const day = localDateKey(endsAt) === localDateKey(now) ? '오늘' : '내일';
-  const h = d.getHours();
-  const part = h < 6 ? '새벽' : h < 12 ? '아침' : h < 18 ? '낮' : '밤';
-  return `${day} ${part} ${h % 12 === 0 ? 12 : h % 12}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return t('shop.trialEnd', localDateKey(endsAt) === localDateKey(now), d.getHours(), d.getMinutes());
 }
 
 /**

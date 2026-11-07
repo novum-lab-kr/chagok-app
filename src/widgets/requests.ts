@@ -1,6 +1,6 @@
 import type { DateKey } from '../domain/dates';
 import type { Goal, Sticker } from '../domain/types';
-import { completesBoard, inPeriod, isCompleted, nextEmptySlot, placedAtFor, stickerDate } from '../domain/board';
+import { completesBoard, filledCount, inPeriod, isCompleted, nextEmptySlot, placedAtFor, stickerDate } from '../domain/board';
 
 /**
  * 위젯이 "눌렀다"고 남긴 요청 (위젯 설계 「위젯에서 붙이기」). 위젯 타임라인 props.requests에 쌓인다.
@@ -55,7 +55,7 @@ export function planRequest(goal: Goal | null, stickers: readonly Sticker[], rec
   if (goal.boardType === 'calendar') {
     if (!inPeriod(goal, req.dateKey)) return { action: 'skip', reason: 'outside' };
     if (that.length > 0) return { action: 'skip', reason: 'done' };
-    if (completesBoard(goal, stickers.length)) {
+    if (completesBoard(goal, filledCount(goal, stickers))) {
       if (!req.complete) return { action: 'skip', reason: 'last' };
       return { action: 'place', slotIndex: Number(req.dateKey.slice(8, 10)) - 1, placedAt: placedAtFor(req.dateKey, req.at), complete: true };
     }

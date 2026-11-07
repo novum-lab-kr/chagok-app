@@ -1,6 +1,7 @@
 import { getDb } from '../db/client';
 import { AD_TRIAL_MS, DAY_TRIAL_MS, canStartDayTrial, type PackAccess } from '../domain/packs';
-import type { ColorStickerPackId } from '../stickers/color/catalog';
+import { isSubscribed, subscriptionEnd, type StoredSubscription } from '../domain/subscription';
+import { colorStickerPacks, type ColorStickerPackId } from '../stickers/color/catalog';
 import { getSetting, setSetting } from './appSettingsRepository';
 
 /**
@@ -12,9 +13,29 @@ const toAccess = (r: Row): PackAccess => ({ packId: r.pack_id as ColorStickerPac
 const UPSERT = `INSERT INTO pack_access (pack_id, source, granted_at, expires_at) VALUES (?, ?, ?, ?)
   ON CONFLICT(pack_id) DO UPDATE SET source = excluded.source, granted_at = excluded.granted_at, expires_at = excluded.expires_at`;
 
+export async function getSubscription(): Promise<StoredSubscription | null> {
+  const raw = await getSetting('subscription');
+  if (!raw) return null;
+  try {
+    const s = JSON.parse(raw) as StoredSubscription;
+    return s.plan && typeof s.expiresAt === 'number' && typeof s.verifiedAt === 'number' ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveSubscription(s: StoredSubscription | null): Promise<void> {
+  await setSetting('subscription', s ? JSON.stringify(s) : null);
+}
+
+/** 구독이 있으면(끝났어도) 유료 묶음마다 구독 줄을 더한다. 저장하지 않으니 체험 줄을 덮지 않는다 (구독 설계 4.1). */
+const subscriptionRows = (s: StoredSubscription | null): PackAccess[] =>
+  s ? colorStickerPacks.filter((p) => !p.free).map((p) => ({ packId: p.id, source: 'sub' as const, grantedAt: s.verifiedAt, expiresAt: subscriptionEnd(s) })) : [];
+
 export async function listPackAccess(): Promise<PackAccess[]> {
   const db = await getDb();
-  return (await db.all<Row>('SELECT * FROM pack_access ORDER BY pack_id')).map(toAccess);
+  const stored = (await db.all<Row>('SELECT * FROM pack_access ORDER BY pack_id')).map(toAccess);
+  return [...stored, ...subscriptionRows(await getSubscription())];
 }
 
 /** 묶음마다 한 줄. 새로 연 방법이 이전 줄을 덮는다 — 산 것은 영구다. */
@@ -53,14 +74,26 @@ export async function setAdFree(on: boolean): Promise<void> {
   await setSetting('adFree', on ? '1' : null);
 }
 
-/** 화면에 필요한 것 한 번에: 묶음 권한, 붙인 날 수, 받은 체험 수, 광고 제거. */
-export async function loadPackState(): Promise<{ access: PackAccess[]; days: number; claimed: number; adFree: boolean }> {
+/**
+ * 화면에 필요한 것 한 번에: 묶음 권한, 붙인 날 수, 받은 체험 수, 광고 제거, 구독.
+ * adFree는 광고가 없는가(광고 제거를 샀거나 구독 중), adFreePurchased는 광고 제거를 샀는가.
+ */
+/** loadPackState가 돌려주는 것. 디자인 시스템의 PackState(묶음 하나의 상태)와 다르다 */
+export type LoadedPackState = { access: PackAccess[]; days: number; claimed: number; adFree: boolean; adFreePurchased: boolean; subscription: StoredSubscription | null; subscribed: boolean };
+
+export async function loadPackState(now = Date.now()): Promise<LoadedPackState> {
   const db = await getDb();
   const days = (await db.first<{ n: number }>('SELECT COUNT(*) AS n FROM placed_days'))?.n ?? 0;
+  const subscription = await getSubscription();
+  const subscribed = isSubscribed(subscription, now);
+  const adFreePurchased = (await getSetting('adFree')) === '1';
   return {
     access: await listPackAccess(),
     days,
     claimed: Number((await getSetting('dayTrialsClaimed')) ?? 0),
-    adFree: (await getSetting('adFree')) === '1',
+    subscription,
+    subscribed,
+    adFreePurchased,
+    adFree: adFreePurchased || subscribed,
   };
 }
