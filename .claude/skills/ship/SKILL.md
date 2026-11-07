@@ -51,6 +51,10 @@ npm run lint
 3. 답을 받으면 `gh workflow run start-release.yml -f version=<다음 버전>`을 돌리고, `gh run watch`로 끝난 것과 `release/<다음 버전>`이 생긴 것을 확인한다(`.github/workflows/start-release.yml`, main 끝에서 딴다).
 4. 다음 판의 `app.json` `version` 올리기는 워크플로가 하지 않는다. 그 판의 첫 작업에서 한다.
 
+## 심사 반려나 출시한 판을 급히 고칠 때
+
+[버전 규칙](../../../docs/RELEASE-VERSIONING.md) 「브랜치」대로 한다. main에서 `hotfix/<버전>`을 따서 고치고 → main에 `--no-ff`(또는 PR Merge commit)로 합치고 → 다시 내는 빌드는 그 main에서 만들고 → main을 다음 판 `release/<다음 버전>`에 합쳐 최신으로 맞춘다. 같은 버전 빌드가 출시되면 `v<버전>` 태그를 그 빌드 커밋으로 옮긴다.
+
 ## Gotchas
 
 - **`git add`에 이미 지운 파일 경로를 섞으면 add 전체가 멈춘다**(`fatal: pathspec ... did not match`). 그 상태로 `git commit`하면 미리 staged된 것만 들어간다. 지운 파일은 `git rm`으로 따로 올리고, 커밋 뒤 `git status --short`가 비었는지 본다(2026-11-02).
